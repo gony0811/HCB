@@ -1,0 +1,30 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/SYSTEM/COMMON/Styles/Palette.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+    <Style x:Key="WindowBg" TargetType="Grid">
+        <Setter Property="Background" Value="{StaticResource DG.Separator}"> </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type telerik:GridViewRow}">
+        <Setter Property="Background" Value="#FF2D2D30"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+
+    <Style x:Key="MenuBtn" TargetType="telerik:RadToggleButton"
+           
+       BasedOn="{StaticResource {x:Type telerik:RadToggleButton}}">
+        <Setter Property="MinHeight" Value="80"></Setter>
+        <Setter Property="MinWidth" Value="120"></Setter>
+        <Setter Property="Margin" Value="2,0,0,0"></Setter>
+        <Setter Property="IsHitTestVisible" Value="True"/>
+        <Style.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter Property="IsHitTestVisible" Value="False"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+</ResourceDictionary>
+

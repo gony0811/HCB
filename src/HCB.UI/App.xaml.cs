@@ -1,0 +1,98 @@
+﻿using Autofac;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media;
+using Telerik.Windows.Controls;
+using Telerik.Windows.Controls.SplashScreen;
+
+namespace HCB.UI
+{
+    /// <summary>
+    /// Interaction logic for App.xaml
+    /// </summary>
+    public partial class App : Application
+    {
+        static public string Project = "EGGPLANT";
+        public static IContainer Container { get; private set; } = null;
+        private Mutex _mutex;
+
+        public App()
+        {
+            this.InitializeComponent();
+        }
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            SQLitePCL.Batteries_V2.Init();
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            base.OnStartup(e);
+
+            // ① 단일 실행 보장: 뮤텍스는 필드로 잡고, 종료 때까지 유지(+Release는 OnExit에서)
+            _mutex = new Mutex(true, Project, out bool isNew);
+            if (!isNew)
+            {
+                MessageBox.Show($"이미 {Project} 이(가) 실행 중입니다.", "에러",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown();
+                return;
+            }
+
+            // ② DI 컨테이너 초기화
+            Container = StartUp.Build();
+
+            // 1. 스플래시 스크린 시작
+            RadSplashScreenManager.Show();
+            // 2. 초기화 로직 실행
+            // 이 위치에서 다음 단계의 이벤트를 사용하여 초기화 함수를 호출해야 합니다.
+            InitializeApplicationAsync();
+        }
+
+        private async void InitializeApplicationAsync()
+        {
+            // Task.Run을 사용하여 초기화 작업을 백그라운드 스레드에서 실행
+            await Task.Run(() =>
+            {
+                // ===============================================
+                // ⭐️ 초기화 로직을 여기에 삽입합니다. (데이터 로드, DB 연결 등)
+                // ===============================================
+
+                // 예시: 3초 동안 초기화 작업 시뮬레이션
+                System.Threading.Thread.Sleep(3000);
+
+                // 선택 사항: 스플래시 스크린의 텍스트 업데이트
+                // Telerik WPF는 UI 스레드가 아닌 곳에서의 업데이트를 지원하지 않을 수 있으므로, 
+                // Dispatcher.Invoke를 사용하거나, 이 업데이트를 생략하는 것이 안전합니다.
+                // Dispatcher.Invoke(() => RadSplashScreenManager.UpdateProgress("초기화 완료됨...", 99));
+            });
+
+            // 4. 모든 초기화가 완료되면 스플래시 스크린 닫기
+            // Close()는 반드시 UI 스레드에서 호출되어야 합니다.
+            // 현재 async void 메서드는 UI 스레드에서 실행되고 있으므로 바로 호출 가능합니다.
+            RadSplashScreenManager.Close();
+
+            // 5. 메인 창 표시 (선택 사항)
+            // ③ 메인 윈도우 실행
+            var mainWindow = Container.Resolve<UMain>();
+
+            FluentPalette.LoadPreset(FluentPalette.ColorVariation.Dark);
+            FluentPalette palette = FluentPalette.Palette;
+            // 2. 원하는 색상으로 강조 색상 (Accent Color) 변경
+            // 예: Telerik의 기본 파란색 대신 진한 주황색으로 변경
+            palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
+
+            mainWindow.Show();
+            mainWindow.Activate();
+            mainWindow.Focus();
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            try { _mutex?.ReleaseMutex(); } catch { /* ignore */ }
+            _mutex?.Dispose();
+            Container?.Dispose();
+            base.OnExit(e);
+        }
+    }
+}

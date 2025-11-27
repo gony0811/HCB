@@ -1,0 +1,138 @@
+﻿<Page x:Class="HCB.UI.USub01"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+      xmlns:local="clr-namespace:HCB.UI"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <local:KeyEqualsConverter x:Key="KeyEquals"/>
+        </ResourceDictionary>
+    </Page.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <telerik:RadHighlightTextBlock Text="현재 디바이스" 
+               IsEnabled="True"
+               IsHitTestVisible="False"
+               FontSize="24"
+               Grid.Column="0" 
+               VerticalAlignment="Center" 
+               Margin="{StaticResource ToolbarButtonsMargin}"
+               Style="{StaticResource RadHighlightTextBlockStyle}"/>
+
+            <telerik:RadHighlightTextBlock x:Name="tbCurrentDevice"
+               Text="{Binding CurrentDevice}"         
+               IsEnabled="True"
+               IsHitTestVisible="False"
+               FontSize="24"
+               Grid.Column="1" 
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center" 
+               Margin="{StaticResource ToolbarButtonsMargin}"
+               Style="{StaticResource RadHighlightTextBlockStyle}"/>
+        </Grid>
+
+        <!-- Tab Panel-->
+        <Border Style="{StaticResource Panel.Radius5}" Grid.Row="1">
+            <Grid Grid.Row="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 콘텐츠 영역 -->
+                    <Frame x:Name="ContentFrame" Content="{Binding CurrentTab}" Grid.Column="0" NavigationUIVisibility="Hidden"/>
+
+                    <!-- 탭 패널 -->
+                    <Grid x:Name="TabPanel" Grid.Column="1" Width="150">
+                        <Grid.RowDefinitions>
+                            <RowDefinition></RowDefinition>
+                            <RowDefinition></RowDefinition>
+                            <RowDefinition></RowDefinition>
+                            <RowDefinition></RowDefinition>
+                            <RowDefinition></RowDefinition>
+                        </Grid.RowDefinitions>
+
+                        <telerik:RadToggleButton Tag="LOADING"
+                               Content="LOADING"
+                               Grid.Row="0"
+                               Command="{Binding SetTabCommand}"
+                               CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
+                               IsChecked="{Binding SelectedTabKey, Converter={StaticResource KeyEquals}, ConverterParameter=LOADING}"
+                               Style="{StaticResource Toggle.Switch}"
+                               Margin="0 1 0 1">
+                        </telerik:RadToggleButton>
+
+                        <telerik:RadToggleButton Tag="AUTO"
+                               Content="AUTO"
+                               Grid.Row="1"
+                               Command="{Binding SetTabCommand}"
+                               CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
+                               IsChecked="{Binding SelectedTabKey, Converter={StaticResource KeyEquals}, ConverterParameter=AUTO}"
+                               Style="{StaticResource Toggle.Switch}"
+                               Margin="0 1 0 1">
+                        </telerik:RadToggleButton>
+
+                        <telerik:RadToggleButton Tag="MANUAL"
+                               Content="MANUAL"
+                               Grid.Row="2"
+                               Command="{Binding SetTabCommand}"
+                               CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
+                               IsChecked="{Binding SelectedTabKey, Converter={StaticResource KeyEquals}, ConverterParameter=MANUAL}"
+                               Style="{StaticResource Toggle.Switch}"
+                               Margin="0 1 0 1">
+                        </telerik:RadToggleButton>
+
+                        <telerik:RadToggleButton Tag="STEP"
+                               Content="STEP"
+                               Grid.Row="3"
+                               Command="{Binding SetTabCommand}"
+                               CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
+                               IsChecked="{Binding SelectedTabKey, Converter={StaticResource KeyEquals}, ConverterParameter=STEP}"
+                               Style="{StaticResource Toggle.Switch}"
+                               Margin="0 1 0 1">
+                        </telerik:RadToggleButton>
+                        <telerik:RadToggleButton Tag="VISION"
+                               Content="VISION"
+                               Grid.Row="4"
+                               Command="{Binding SetTabCommand}"
+                               CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
+                               IsChecked="{Binding SelectedTabKey, Converter={StaticResource KeyEquals}, ConverterParameter=VISION}"
+                               Style="{StaticResource Toggle.Switch}"
+                               Margin="0 1 0 1">
+
+                        </telerik:RadToggleButton>
+                        <telerik:RadToggleButton Tag="CALIBRATION"
+                                Content="CALIBRATION"
+                                Grid.Row="4"
+                                Command="{Binding SetTabCommand}"
+                                CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
+                                IsChecked="{Binding SelectedTabKey, Converter={StaticResource KeyEquals}, ConverterParameter=CALIBRATION}"
+                               Style="{StaticResource Toggle.Switch}"
+                                Margin="0 1 0 1">
+
+                        </telerik:RadToggleButton>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>
