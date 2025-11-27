@@ -51,10 +51,10 @@
                     </WrapPanel>
 
                 </Grid>
-                <ItemsControl ItemsSource="{Binding DTableList}" Grid.Column="1" Margin="10">
+                <ItemsControl ItemsSource="{Binding DTableList}" Grid.Column="1" Margin="5">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <telerik:RadUniformGrid Columns="3" Margin="10" />
+                            <telerik:RadUniformGrid Columns="3" Margin="5" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
 
@@ -62,16 +62,16 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:SensorIoItemViewModel}">
                             <Border BorderBrush="#16233B"
-                                    BorderThickness="1"
+                                    BorderThickness="0"
                                     CornerRadius="6">
-                                <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <telerik:HighlightTextBlock Text="{Binding Name}"
-                                               Margin="10"
-                                                HorizontalAlignment="Center"
+                                               Margin="5"
+                                                HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"
                                                 Foreground="White"
                                                 FontWeight="SemiBold"
-                                                FontSize="16"/>
+                                                FontSize="18"/>
                                     <!-- 토글 -->
                                     <uc:IoPillToggle
                                             Grid.Column="1"
@@ -120,13 +120,13 @@
 
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10 0 0 10">
-                    <telerik:RadButton Content="Die" Width="100" Height="80" Margin="{StaticResource ControlMargin}"></telerik:RadButton>
-                    <telerik:RadButton Content="4 inch" Width="100" Height="80" Margin="{StaticResource ControlMargin}"></telerik:RadButton>
-                    <telerik:RadButton Content="6 inch" Width="100" Height="80" Margin="{StaticResource ControlMargin}"></telerik:RadButton>
-                    <telerik:RadButton Content="8 inch" Width="100" Height="80" Margin="{StaticResource ControlMargin}"></telerik:RadButton>
-                    <telerik:RadButton Content="12 inch" Width="100" Height="80" Margin="{StaticResource ControlMargin}"></telerik:RadButton>
+                    <telerik:RadButton Content="Die" Width="100" Height="80" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
+                    <telerik:RadButton Content="4 inch" Width="100" Height="80" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
+                    <telerik:RadButton Content="6 inch" Width="100" Height="80" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
+                    <telerik:RadButton Content="8 inch" Width="100" Height="80" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
+                    <telerik:RadButton Content="12 inch" Width="100" Height="80" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
                 </StackPanel>
-                <telerik:RadButton Content="All Off" Grid.Column="2" Width="120" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{StaticResource ControlMargin}"></telerik:RadButton>
+                <telerik:RadButton Content="All Off" Grid.Column="2" Width="120" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
             </Grid>
         </telerik:GroupBox>
     </Grid>

@@ -14,12 +14,24 @@ namespace HCB.UI
     [ViewModel(Lifetime.Singleton)]
     public partial class USub01ViewModel : ObservableObject
     {
+        #region
+        private LoadingTab loadingTab;
+        private AutoTab autoTab;
+        private ManualTab manualTab;
+        #endregion
+
         [ObservableProperty] public UserControl currentTab;
         [ObservableProperty] public string currentDevice = "UNKNOWN DEVICE";
         [ObservableProperty] private string selectedTabKey = "LOADING";
 
-        public USub01ViewModel()
+
+
+        public USub01ViewModel(LoadingTab loadingTab, AutoTab autoTab, ManualTab manualTab)
         {
+            this.loadingTab = loadingTab;
+            this.autoTab = autoTab;
+            this.manualTab = manualTab;
+
             SetTab(selectedTabKey);
             
         }
@@ -30,9 +42,9 @@ namespace HCB.UI
             SelectedTabKey = viewName;
             switch (viewName)
             {
-                case "LOADING": CurrentTab = App.Container.Resolve<LoadingTab>(); break;
-                case "AUTO": CurrentTab = App.Container.Resolve<AutoTab>(); break;
-                case "MANUAL": CurrentTab = App.Container.Resolve<ManualTab>(); break;
+                case "LOADING": CurrentTab = loadingTab; break;
+                case "AUTO": CurrentTab = autoTab; break;
+                case "MANUAL": CurrentTab = manualTab; break;
                 //case "STEP": CurrentTab = App.Container.Resolve<StepTab>(); break;
                 //case "VISION": CurrentTab = App.Container.Resolve<LoadingTab>(); break;
                 //case "CALIBRATION": CurrentTab = App.Container.Resolve<LoadingTab>(); break;

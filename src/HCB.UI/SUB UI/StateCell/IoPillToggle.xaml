@@ -7,25 +7,26 @@
              xmlns:local="clr-namespace:HCB.UI"
              mc:Ignorable="d"
              x:Name="root"
-             Width="112" Height="36" >
+             Width="150" Height="60" >
     <UserControl.Resources>
         <local:InverseBoolConverter x:Key="InvBool"/>
     </UserControl.Resources>
 
     <!-- 버튼 전체가 토글 역할 -->
-    <ToggleButton x:Name="PART_Toggle"
+    <telerik:RadToggleButton x:Name="PART_Toggle"
                   IsChecked="{Binding IsChecked, ElementName=root, Mode=TwoWay}"
                   IsEnabled="{Binding IsReadOnly, ElementName=root, Converter={StaticResource InvBool}}"
                   Command="{Binding Command, ElementName=root}"  
                   CommandParameter="{Binding CommandParameter, ElementName=root}"
-                  Background="Transparent" BorderThickness="0" Cursor="Hand" Focusable="True">
-        <ToggleButton.Template>
-            <ControlTemplate TargetType="ToggleButton">
+                  Background="Transparent" BorderThickness="0" Cursor="Hand" Focusable="True"
+                  Style="{StaticResource RadToggleButtonStyle}">
+        <telerik:RadToggleButton.Template>
+            <ControlTemplate TargetType="telerik:RadToggleButton">
                 <Grid SnapsToDevicePixels="True" Margin="0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- 좌측 원형 인디케이터 -->
@@ -42,16 +43,17 @@
                     <!-- 우측 ON/OFF pill -->
                     <Border x:Name="pill"
                               Grid.Column="2"
-                              MinWidth="52" Height="24"
+                              MinWidth="100" Height="50"
                               CornerRadius="5"
                               Background="{Binding PillOffBrush, ElementName=root}"
                               >
-                        <TextBlock x:Name="lbl"
+                        <telerik:HighlightTextBlock x:Name="lbl"
                                    Text="{Binding OffText, ElementName=root}"
                                    Foreground="{Binding LabelInactiveBrush, ElementName=root}"
                                    FontWeight="SemiBold"
                                    FontSize="{Binding LabelFontSize, ElementName=root}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Style="{StaticResource HighlightTextBlockStyle}"/>
                     </Border>
                 </Grid>
 
@@ -95,6 +97,6 @@
                     </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
-        </ToggleButton.Template>
-    </ToggleButton>
+        </telerik:RadToggleButton.Template>
+    </telerik:RadToggleButton>
 </UserControl>

@@ -1,11 +1,12 @@
 ﻿using Autofac;
-using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using Telerik.Windows.Controls;
-using Telerik.Windows.Controls.SplashScreen;
+using Serilog;
 
 namespace HCB.UI
 {
@@ -15,7 +16,7 @@ namespace HCB.UI
     public partial class App : Application
     {
         static public string Project = "EGGPLANT";
-        public static IContainer Container { get; private set; } = null;
+        private IHost _host;
         private Mutex _mutex;
 
         public App()
@@ -23,7 +24,7 @@ namespace HCB.UI
             this.InitializeComponent();
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             SQLitePCL.Batteries_V2.Init();
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -39,8 +40,13 @@ namespace HCB.UI
                 return;
             }
 
-            // ② DI 컨테이너 초기화
-            Container = StartUp.Build();
+            // 1. 호스트 빌드
+            _host = StartUp.BuildHost(e.Args);
+
+            await StartUp.InitDatabaseAsync(_host);
+
+            // 3. 호스트 실행 (백그라운드 서비스 시작)
+            await _host.StartAsync();
 
             // 1. 스플래시 스크린 시작
             RadSplashScreenManager.Show();
@@ -74,7 +80,7 @@ namespace HCB.UI
 
             // 5. 메인 창 표시 (선택 사항)
             // ③ 메인 윈도우 실행
-            var mainWindow = Container.Resolve<UMain>();
+            var mainWindow = _host.Services.GetRequiredService<UMain>();
 
             FluentPalette.LoadPreset(FluentPalette.ColorVariation.Dark);
             FluentPalette palette = FluentPalette.Palette;
@@ -89,9 +95,18 @@ namespace HCB.UI
 
         protected override void OnExit(ExitEventArgs e)
         {
-            try { _mutex?.ReleaseMutex(); } catch { /* ignore */ }
+            using (_mutex)
+            {
+                _mutex.ReleaseMutex();
+            }
+
+            using (_host)
+            {
+                _host.StopAsync().GetAwaiter().GetResult();
+            }
+                try { _mutex?.ReleaseMutex(); } catch { /* ignore */ }
             _mutex?.Dispose();
-            Container?.Dispose();
+            _host?.Dispose();
             base.OnExit(e);
         }
     }

@@ -26,48 +26,56 @@
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="*"/>
         <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
-    <Border Grid.Row="0">
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" Content="LOGO" Width="150" Height="60" Margin="5"/>
-            <WrapPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center" Margin="3">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock  Text="THREAD :"/>
-                    <TextBlock x:Name="tbThread" Text="{Binding ThreadText}" VerticalAlignment="Center"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="TIME :"/>
-                    <TextBlock x:Name="tbTime" Text="{Binding TimeText}" VerticalAlignment="Center"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="LOG IN LEVEL :"/>
-                    <TextBlock x:Name="tbUser"  Text="{Binding UserService.CurrentAuthority.Name, TargetNullValue=--, FallbackValue=--}" VerticalAlignment="Center"/>
-                </StackPanel>
-            </WrapPanel>
+                <Button Grid.Column="0" Content="LOGO" Width="150" Height="60" Margin="5"/>
+                <WrapPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center" Margin="3">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock  Text="THREAD :"/>
+                        <TextBlock x:Name="tbThread" Text="{Binding ThreadText}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="TIME :"/>
+                        <TextBlock x:Name="tbTime" Text="{Binding TimeText}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="LOG IN LEVEL :"/>
+                        <TextBlock x:Name="tbUser"  Text="{Binding UserService.CurrentAuthority.Name, TargetNullValue=--, FallbackValue=--}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </WrapPanel>
 
-            <TextBlock  Grid.Column="3" x:Name="tbStatus" Text="{Binding StatusText}" FontSize="36" VerticalAlignment="Center" Width="Auto" TextAlignment="Center"/>
-            <WrapPanel Grid.Column="4" Orientation="Vertical" VerticalAlignment="Center" Margin="3">
-                <TextBlock  x:Name="tbBuild" Text="{Binding BuildText}" TextAlignment="Right"/>
-                <TextBlock  x:Name="tbDeveloper" Text="{Binding DeveloperText}" TextAlignment="Right"/>
-                <TextBlock  x:Name="tbSerialNumber" Text="{Binding SerialNumberText}" TextAlignment="Right"/>
-            </WrapPanel>
+                <TextBlock  Grid.Column="3" x:Name="tbStatus" Text="{Binding StatusText}" FontSize="36" VerticalAlignment="Center" Width="Auto" TextAlignment="Center"/>
+                <WrapPanel Grid.Column="4" Orientation="Vertical" VerticalAlignment="Center" Margin="3">
+                    <TextBlock  x:Name="tbBuild" Text="{Binding BuildText}" TextAlignment="Right"/>
+                    <TextBlock  x:Name="tbDeveloper" Text="{Binding DeveloperText}" TextAlignment="Right"/>
+                    <TextBlock  x:Name="tbSerialNumber" Text="{Binding SerialNumberText}" TextAlignment="Right"/>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="{StaticResource SubPageMargin}">
+            <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden" JournalOwnership="OwnsJournal" Content="{Binding CurrentPage}"/>
         </Grid>
-    </Border>
 
-    <Grid Grid.Row="1" Margin="{StaticResource SubPageMargin}">
-        <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden" JournalOwnership="OwnsJournal" Content="{Binding CurrentPage}"/>
-    </Grid>
+        <Grid Grid.Row="2">
+            <telerik:RadGridView Grid.Row="2" 
+          ItemsSource="{Binding Logs}" 
+          AutoGenerateColumns="False" />
+        </Grid>
 
-    <Grid Grid.Row="2">
+
+        <Grid Grid.Row="3">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>

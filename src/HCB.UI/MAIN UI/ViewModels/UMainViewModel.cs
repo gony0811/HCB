@@ -2,7 +2,11 @@
 using Autofac;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HCB.Data.Entity;
 using HCB.IoC;
+using Serilog;
+using System;
+using System.Collections.ObjectModel;
 using System.Windows.Controls;
 
 namespace HCB.UI
@@ -11,24 +15,59 @@ namespace HCB.UI
     public partial class UMainViewModel : ObservableObject
     {
 
-        //[ObservableProperty] private ObservableCollection<string> logMessages = new ObservableCollection<string>();
+        private ILogger logger;
+
+        private Page mainPage;
+        private Page parameterPage;
+        private Page userPage;
+        private Page logPage;
+        private Page alarmPage;
+        private Page motionPage;
+        private Page ioPage;
+        private Page devicePage;
+
 
         private UserService UserService;
 
         private NavigationViewModel NavVM;
+
+        [ObservableProperty] public ObservableCollection<LogModel> logs = new();
 
         [ObservableProperty] public Page currentPage;
 
         [ObservableProperty] private string selectedPageKey;
         //public string selectedPageKey { get; set; }
 
-        public UMainViewModel(UserService userService, NavigationViewModel navVM)
+        public string LogText => string.Join("", Logs);
+
+        public UMainViewModel(
+            ILogger logger,
+            USub01 uSub01, 
+            USub08 uSub08,
+            UserService userService, 
+            NavigationViewModel navVM)
         {
+            this.mainPage = uSub01;
+            this.devicePage = uSub08;
             this.UserService = userService;
             this.NavVM = navVM;
+            this.logger = logger;
             _ = UserService.InitializeAsync();
             Navigate("Main");
 
+            GridLogSink.LogReceived += OnLogReceived;
+        }
+
+        private void OnLogReceived(LogModel log)
+        {
+            // UI 스레드에서 컬렉션 업데이트 (필수!)
+            App.Current.Dispatcher.InvokeAsync(() =>
+            {
+                Logs.Insert(0, log);
+
+                // 로그가 너무 많이 쌓이면 메모리 관리 (예: 1000줄 유지)
+                if (Logs.Count > 1000) Logs.RemoveAt(Logs.Count - 1);
+            });
         }
 
         [RelayCommand]
@@ -40,7 +79,16 @@ namespace HCB.UI
             switch(key)
             {
                 case "MAIN":
-                    CurrentPage = App.Container.Resolve<USub01>();
+                    CurrentPage = mainPage;
+
+                    Logs.Add(new LogModel
+                    {
+                        Timestamp = DateTime.Now.ToString(),
+                        Level = "Test",
+                        Message = "이게 보이면 Grid 연결은 정상입니다."
+                    });
+
+                    logger.Information("애플리케이션 시작됨.");
                     break;
                 case "PARAMETER":
                     //CurrentPage = App.Container.Resolve<USub02>();
@@ -61,7 +109,7 @@ namespace HCB.UI
                     //CurrentPage = App.Container.Resolve<USub07>();
                     break;
                 case "DEVICE":
-                    CurrentPage = App.Container.Resolve<USub08>();
+                    CurrentPage = devicePage;
                     break;
                 default:
                     //CurrentPage = App.Container.Resolve<USub01>();

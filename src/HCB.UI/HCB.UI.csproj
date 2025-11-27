@@ -11,8 +11,17 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="9.0.0" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="PropertyTools.Wpf" Version="3.1.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Serilog.Sinks.SQLite" Version="6.0.0" />
     <PackageReference Include="Telerik.UI.for.Wpf.80" Version="2025.4.1111" />
     <PackageReference Include="Telerik.Windows.Themes.Windows11.for.Wpf" Version="2025.4.1111" />
   </ItemGroup>
@@ -90,7 +99,11 @@
     <DependentUpon>App.xaml</DependentUpon>
     <SubType>Code</SubType>
   </Compile>
-  <Compile Include="SERVICE\Interface\IMainService.cs" />
+  <Compile Include="appsettings.Designer.cs">
+    <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    <AutoGen>True</AutoGen>
+    <DependentUpon>appsettings.json</DependentUpon>
+  </Compile>
   <Compile Include="SYSTEM\COMMON\Converter\BoolToBrushConverter.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToTextConvert.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\KeyEqualsConverter.cs" />
@@ -165,7 +178,16 @@
   <Compile Include="SUB UI\USub08Tab\MotionDeviceDetailViewModel.cs" />
   <Compile Include="SUB UI\USub08Tab\MotionDeviceView.xaml.cs" />
   <Compile Include="SUB UI\USub08Tab\MotionParameterCreateVM.cs" />
+  <Compile Include="SYSTEM\Logging\GridLogSink.cs" />
+  <Compile Include="SYSTEM\Logging\TextBoxSink.cs" />
 </ItemGroup>
+  
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>appsettings.Designer.cs</LastGenOutput>
+    </Content>
+  </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\HCB\HCB.csproj" />
