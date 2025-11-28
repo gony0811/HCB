@@ -27,12 +27,11 @@ namespace HCB.UI
                 {
                     // 원하시는 포맷
                     //var outputTemplate = "[{Timestamp:yyMMddTHH:mm:ss.fffffffz}][{Level}] {Message:lj}  { NewLine}     {Exception}";
-                
+
                     loggerConfiguration
-                        .ReadFrom.Configuration(context.Configuration) // appsettings.json 읽기
-                        .Enrich.FromLogContext()
-                        // ★ 여기서 커스텀 Sink 등록!
-                        .WriteTo.Sink(new GridLogSink());
+                            .ReadFrom.Configuration(context.Configuration)
+                            .Enrich.FromLogContext()
+                            .WriteTo.Sink(new GridLogSink());
                 })
                 // 1. Autofac 서비스 공급자 사용 선언
                 .UseServiceProviderFactory(new AutofacServiceProviderFactory())

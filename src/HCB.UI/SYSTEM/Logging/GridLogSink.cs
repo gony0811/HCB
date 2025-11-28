@@ -11,26 +11,36 @@ namespace HCB.UI
 {
     public class GridLogSink : ILogEventSink
     {
-        // UI(ViewModel)로 데이터를 넘겨줄 이벤트
         public static event Action<LogModel>? LogReceived;
 
         public void Emit(LogEvent logEvent)
         {
+            // 1. Properties 딕셔너리에서 값을 안전하게 꺼내는 로컬 함수
+            string GetProperty(string key)
+            {
+                // 키가 존재하고, 값이 있으면 문자열로 변환하여 반환
+                if (logEvent.Properties.TryGetValue(key, out var value))
+                {
+                    return value.ToString().Trim('"'); // 따옴표 제거
+                }
+                return ""; // 없으면 빈 문자열
+            }
+
+            // 2. 로그 모델 생성
             var log = new LogModel
             {
-                // 사용자가 원한 포맷 그대로 변환
-                Timestamp = logEvent.Timestamp.ToString("yyMMddTHH:mm:ss.fffffffz"),
-
+                // [기존] 기본 정보
+                Timestamp = logEvent.Timestamp, // DateTimeOffset 그대로 사용 (DB 저장용)
                 Level = logEvent.Level.ToString(),
-
-                // 메시지 템플릿이 아닌 완성된 메시지 가져오기
                 Message = logEvent.RenderMessage(),
+                Exception = logEvent.Exception?.ToString(),
 
-                // 예외가 있으면 문자열로, 없으면 null
-                Exception = logEvent.Exception?.ToString()
+                // [추가] 딕셔너리에서 꺼내온 정보들
+                // "ThreadId", "SourceContext"는 Enricher가 추가해준 키 이름입니다.
+                ThreadId = int.TryParse(GetProperty("ThreadId"), out int tid) ? tid : 0,
+                SourceContext = GetProperty("SourceContext")
             };
 
-            // 이벤트 발생
             LogReceived?.Invoke(log);
         }
     }

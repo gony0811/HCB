@@ -3,6 +3,7 @@ using Autofac;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Entity;
+using HCB.Data.Repository;
 using HCB.IoC;
 using Serilog;
 using System;
@@ -16,6 +17,7 @@ namespace HCB.UI
     {
 
         private ILogger logger;
+        private LogRepository logRepository;
 
         private Page mainPage;
         private Page parameterPage;
@@ -25,7 +27,6 @@ namespace HCB.UI
         private Page motionPage;
         private Page ioPage;
         private Page devicePage;
-
 
         private UserService UserService;
 
@@ -42,6 +43,7 @@ namespace HCB.UI
 
         public UMainViewModel(
             ILogger logger,
+            LogRepository logRepository,
             USub01 uSub01, 
             USub08 uSub08,
             UserService userService, 
@@ -51,22 +53,33 @@ namespace HCB.UI
             this.devicePage = uSub08;
             this.UserService = userService;
             this.NavVM = navVM;
-            this.logger = logger;
+            this.logger = logger.ForContext<UMainViewModel>();
+            this.logRepository = logRepository;
             _ = UserService.InitializeAsync();
-            Navigate("Main");
 
             GridLogSink.LogReceived += OnLogReceived;
+
+            Navigate("Main");   
         }
 
         private void OnLogReceived(LogModel log)
         {
             // UI 스레드에서 컬렉션 업데이트 (필수!)
-            App.Current.Dispatcher.InvokeAsync(() =>
+            App.Current.Dispatcher.InvokeAsync(async () =>
             {
                 Logs.Insert(0, log);
 
                 // 로그가 너무 많이 쌓이면 메모리 관리 (예: 1000줄 유지)
                 if (Logs.Count > 1000) Logs.RemoveAt(Logs.Count - 1);
+
+                try
+                {                     
+                    await logRepository.AddAsync(log);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error("로그 저장 중 오류 발생: {ErrorMessage}", ex.Message);
+                }
             });
         }
 
@@ -80,13 +93,6 @@ namespace HCB.UI
             {
                 case "MAIN":
                     CurrentPage = mainPage;
-
-                    Logs.Add(new LogModel
-                    {
-                        Timestamp = DateTime.Now.ToString(),
-                        Level = "Test",
-                        Message = "이게 보이면 Grid 연결은 정상입니다."
-                    });
 
                     logger.Information("애플리케이션 시작됨.");
                     break;

@@ -400,4 +400,21 @@ namespace HCB.Data
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
+
+    public class LogConfig : IEntityTypeConfiguration<LogModel>
+    {
+        public void Configure(EntityTypeBuilder<LogModel> e)
+        {
+            e.ToTable("Logs"); // 테이블 이름 지정
+
+            // Message는 필수
+            e.Property(x => x.Message).IsRequired();
+
+            // Level 최대 길이 지정
+            e.Property(x => x.Level).HasMaxLength(16).IsRequired(false);
+
+            // ★★★ 인덱스 추가 (시간 역순 검색에 유리) ★★★
+            e.HasIndex(x => x.Timestamp).IsDescending();
+        }
+    }
 }

@@ -3,11 +3,13 @@ using HCB.Data.Entity;
 using HCB.Data.Entity.Type;
 using HCB.Data.Repository;
 using HCB.IoC;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 namespace HCB.UI
 {
     [Service(Lifetime.Singleton)]
@@ -78,5 +80,7 @@ namespace HCB.UI
         {           
             return alarmHistoryRepository.GetAlarmHistoryListByTimeRange(from: from, to: to);
         }
+
+
     }
 }

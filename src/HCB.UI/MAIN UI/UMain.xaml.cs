@@ -10,9 +10,9 @@ namespace HCB.UI
     public partial class UMain : Window
     {
         public UMain(UMainViewModel vm)
-        {
-            this.DataContext = vm;
+        {        
             InitializeComponent();
+            this.DataContext = vm;
         }
 
         private void Window_Closed(object sender, System.EventArgs e)

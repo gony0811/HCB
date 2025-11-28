@@ -4,21 +4,15 @@
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="/SYSTEM/COMMON/Styles/Palette.xaml"/>
     </ResourceDictionary.MergedDictionaries>
+
     <Style x:Key="WindowBg" TargetType="Grid">
-        <Setter Property="Background" Value="{StaticResource DG.Separator}"> </Setter>
+        <Setter Property="Background" Value="{StaticResource DG.Separator}"/>
     </Style>
 
-    <Style TargetType="{x:Type telerik:GridViewRow}">
-        <Setter Property="Background" Value="#FF2D2D30"/>
-        <Setter Property="Foreground" Value="White"/>
-    </Style>
-
-    <Style x:Key="MenuBtn" TargetType="telerik:RadToggleButton"
-           
-       BasedOn="{StaticResource {x:Type telerik:RadToggleButton}}">
-        <Setter Property="MinHeight" Value="80"></Setter>
-        <Setter Property="MinWidth" Value="120"></Setter>
-        <Setter Property="Margin" Value="2,0,0,0"></Setter>
+    <Style x:Key="MenuBtn" TargetType="telerik:RadToggleButton" BasedOn="{StaticResource {x:Type telerik:RadToggleButton}}">
+        <Setter Property="MinHeight" Value="80"/>
+        <Setter Property="MinWidth" Value="120"/>
+        <Setter Property="Margin" Value="2,0,0,0"/>
         <Setter Property="IsHitTestVisible" Value="True"/>
         <Style.Triggers>
             <Trigger Property="IsChecked" Value="True">

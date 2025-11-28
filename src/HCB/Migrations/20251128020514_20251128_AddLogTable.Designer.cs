@@ -3,6 +3,7 @@ using System;
 using HCB.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HCB.Migrations
 {
     [DbContext(typeof(AppDb))]
-    partial class AppDbModelSnapshot : ModelSnapshot
+    [Migration("20251128020514_20251128_AddLogTable")]
+    partial class _20251128_AddLogTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.11");
@@ -155,11 +158,11 @@ namespace HCB.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ThreadId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("TraceId")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

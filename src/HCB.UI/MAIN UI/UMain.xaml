@@ -34,32 +34,32 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Button Grid.Column="0" Content="LOGO" Width="150" Height="60" Margin="5"/>
+                <telerik:RadButton Grid.Column="0" Content="LOGO" Width="150" Height="60" Margin="5" Style="{StaticResource RadButtonStyle}"/>
                 <WrapPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center" Margin="3">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock  Text="THREAD :"/>
-                        <TextBlock x:Name="tbThread" Text="{Binding ThreadText}" VerticalAlignment="Center"/>
+                        <telerik:RadHighlightTextBlock  Text="THREAD :" Style="{StaticResource RadHighlightTextBlockStyle}"/>
+                        <telerik:RadHighlightTextBlock x:Name="tbThread" Text="{Binding ThreadText}" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="TIME :"/>
-                        <TextBlock x:Name="tbTime" Text="{Binding TimeText}" VerticalAlignment="Center"/>
+                        <telerik:RadHighlightTextBlock Text="TIME :" Style="{StaticResource RadHighlightTextBlockStyle}"/>
+                        <telerik:RadHighlightTextBlock x:Name="tbTime" Text="{Binding TimeText}" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="LOG IN LEVEL :"/>
-                        <TextBlock x:Name="tbUser"  Text="{Binding UserService.CurrentAuthority.Name, TargetNullValue=--, FallbackValue=--}" VerticalAlignment="Center"/>
+                        <telerik:RadHighlightTextBlock Text="LOG IN LEVEL :" Style="{StaticResource RadHighlightTextBlockStyle}"/>
+                        <telerik:RadHighlightTextBlock x:Name="tbUser"  Text="{Binding UserService.CurrentAuthority.Name, TargetNullValue=--, FallbackValue=--}" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
                     </StackPanel>
                 </WrapPanel>
 
-                <TextBlock  Grid.Column="3" x:Name="tbStatus" Text="{Binding StatusText}" FontSize="36" VerticalAlignment="Center" Width="Auto" TextAlignment="Center"/>
+                <telerik:RadHighlightTextBlock  Grid.Column="3" x:Name="tbStatus" Text="{Binding StatusText}" FontSize="36" VerticalAlignment="Center" Width="Auto" TextAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
                 <WrapPanel Grid.Column="4" Orientation="Vertical" VerticalAlignment="Center" Margin="3">
-                    <TextBlock  x:Name="tbBuild" Text="{Binding BuildText}" TextAlignment="Right"/>
-                    <TextBlock  x:Name="tbDeveloper" Text="{Binding DeveloperText}" TextAlignment="Right"/>
-                    <TextBlock  x:Name="tbSerialNumber" Text="{Binding SerialNumberText}" TextAlignment="Right"/>
+                    <telerik:RadHighlightTextBlock  x:Name="tbBuild" Text="{Binding BuildText}" TextAlignment="Right" Style="{StaticResource RadHighlightTextBlockStyle}"/>
+                    <telerik:RadHighlightTextBlock  x:Name="tbDeveloper" Text="{Binding DeveloperText}" TextAlignment="Right" Style="{StaticResource RadHighlightTextBlockStyle}"/>
+                    <telerik:RadHighlightTextBlock  x:Name="tbSerialNumber" Text="{Binding SerialNumberText}" TextAlignment="Right" Style="{StaticResource RadHighlightTextBlockStyle}"/>
                 </WrapPanel>
             </Grid>
         </Border>
@@ -69,9 +69,57 @@
         </Grid>
 
         <Grid Grid.Row="2">
-            <telerik:RadGridView Grid.Row="2" 
-          ItemsSource="{Binding Logs}" 
-          AutoGenerateColumns="False" />
+            <telerik:RadGridView ItemsSource="{Binding Logs}"
+                         Height="200"
+                         AutoGenerateColumns="False" 
+                         IsReadOnly="True"
+                         ShowGroupPanel="False"
+                         RowIndicatorVisibility="Collapsed"
+                         GridLinesVisibility="Horizontal"
+                         >
+
+                <telerik:RadGridView.Columns>
+
+                    <telerik:GridViewDataColumn Header="Time"
+                                        DataMemberBinding="{Binding Timestamp}"
+                                        Width="200" />
+                    <telerik:GridViewDataColumn Header="ThreadId"
+                                        DataMemberBinding="{Binding ThreadId}"
+                                        Width="150" />
+                    <telerik:GridViewDataColumn Header="LogSource"
+                                        DataMemberBinding="{Binding SourceContext}"
+                                        Width="250" />
+                    <telerik:GridViewDataColumn Header="Level"
+                                        DataMemberBinding="{Binding Level}"
+                                        Width="100">
+                        <telerik:GridViewDataColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Level}" FontWeight="Bold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                    <Setter Property="Foreground" Value="Red"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                                    <Setter Property="Foreground" Value="DarkOrange"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Information">
+                                                    <Setter Property="Foreground" Value="Green"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </telerik:GridViewDataColumn.CellTemplate>
+                    </telerik:GridViewDataColumn>
+
+                    <telerik:GridViewDataColumn Header="Message"
+                                        DataMemberBinding="{Binding Message}"
+                                        Width="*" />
+                </telerik:RadGridView.Columns>
+            </telerik:RadGridView>
         </Grid>
 
 

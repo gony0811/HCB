@@ -2,6 +2,7 @@
 using HCB.Data.Entity;
 using HCB.Data.Repository;
 using HCB.IoC;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;

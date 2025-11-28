@@ -2,6 +2,7 @@
 using Autofac.Builder;
 using Autofac.Core;
 using Autofac.Features.Scanning;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -31,6 +32,8 @@ namespace HCB.IoC
             // 4) **인터페이스 마커 지원(신규)**:
             RegisterInterfaceContractsByAttribute<ServiceAttribute>(b, assemblies);
             RegisterInterfaceContractsByAttribute<RepositoryAttribute>(b, assemblies);
+
+            RegisterHostedServices(b, assemblies);
         }
 
         // ---------- 공통: Service / Repository / ViewModel ----------
@@ -249,67 +252,16 @@ namespace HCB.IoC
                 default: rb.InstancePerDependency(); break;
             }
         }
-        /// <summary>
-        /// SQLite DbContext를 AsSelf + InstancePerLifetimeScope로 등록.
-        /// 사용자는 DbPath 옵션과 DbContext 타입만 지정하면 됨.
-        /// </summary>
-        //public static void RegisterSqliteDbContext<TContext>(
-        //    this ContainerBuilder b,
-        //    SqliteDbOptions opt,
-        //    Action<DbContextOptionsBuilder<TContext>> configure = null)
-        //    where TContext : DbContext
-        //{
-        //    b.Register(ctx =>
-        //    {
-        //        var path = opt.BuildPath();
-
-        //        var ob = new DbContextOptionsBuilder<TContext>();
-        //        ob.UseSqlite($"Data Source={path}", sqlite =>
-        //        {
-        //            if (!string.IsNullOrWhiteSpace(opt.MigrationsAssembly))
-        //                sqlite.MigrationsAssembly(opt.MigrationsAssembly);
-        //        });
-
-        //        // 추가 옵션(로깅/캐시/동시성 등)
-        //        if (configure != null)
-        //        {
-        //            configure.Invoke(ob);
-        //        }
-
-        //        var options = ob.Options;
-
-        //        // (DbContextOptions<TContext>) → (DbContextOptions) → 매개변수 없는 생성자
-        //        var t = typeof(TContext);
-        //        var ctorTyped = t.GetConstructor(new[] { typeof(DbContextOptions<TContext>) });
-        //        if (ctorTyped != null) return (TContext)ctorTyped.Invoke(new object[] { options });
-
-        //        var ctorUntyped = t.GetConstructor(new[] { typeof(DbContextOptions) });
-        //        if (ctorUntyped != null) return (TContext)ctorUntyper.Invoke(new object[] { options });
-
-        //        var ctorEmpty = t.GetConstructor(Type.EmptyTypes);
-        //        if (ctorEmpty != null) return (TContext)ctorEmpty.Invoke(null);
-
-        //        throw new InvalidOperationException(
-        //            $"{t.Name} 생성자에 DbContextOptions<{t.Name}> 또는 DbContextOptions가 필요합니다.");
-        //    })
-        //    .AsSelf()
-        //    .InstancePerLifetimeScope();
-
-        //    // 필요하면 Func<TContext>도 제공 (요청마다 새 컨텍스트)
-        //    b.Register(ctx => new Func<TContext>(() => ctx.Resolve<TContext>()))
-        //     .As<Func<TContext>>()
-        //     .InstancePerLifetimeScope();
-        //}
-
-        ///// <summary>앱 시작 시 최신 마이그레이션 자동 적용 (선택)</summary>
-        //public static void AutoMigrate<TContext>(this IContainer container)
-        //    where TContext : DbContext
-        //{
-        //    using (var scope = container.BeginLifetimeScope())
-        //    {
-        //        var db = scope.Resolve<TContext>();
-        //        db.Database.Migrate();
-        //    }
-        //}
+        private static void RegisterHostedServices(ContainerBuilder b, Assembly[] assemblies)
+        {
+            // IHostedService를 구현한 모든 클래스(추상 클래스 제외)를 찾음
+            b.RegisterAssemblyTypes(assemblies)
+             .Where(t => typeof(IHostedService).IsAssignableFrom(t)
+                         && t.IsClass
+                         && !t.IsAbstract)
+             .As<IHostedService>() // 호스트가 실행할 수 있게 IHostedService로 등록
+             .AsSelf()             // 필요하면 클래스 자체로도 접근 가능하게 등록
+             .SingleInstance();    
+        }
     }
 }
