@@ -36,8 +36,6 @@ namespace HCB.UI
         [RelayCommand]
         public async Task DeviceCreate()
         {
-
-
             var vm = new DeviceCreateVM();
             var modal = new CreateModal
             {
