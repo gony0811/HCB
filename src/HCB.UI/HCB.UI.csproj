@@ -188,6 +188,7 @@
   <Compile Include="SUB UI\USub08Tab\MotionParameterCreateVM.cs" />
   <Compile Include="SYSTEM\Logging\GridLogSink.cs" />
   <Compile Include="SYSTEM\Logging\TextBoxSink.cs" />
+  <Compile Include="SYSTEM\Options\DataOptions.cs" />
 </ItemGroup>
   
   <ItemGroup>

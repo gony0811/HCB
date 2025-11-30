@@ -35,19 +35,24 @@ namespace HCB.UI
                 })
                 // 1. Autofac 서비스 공급자 사용 선언
                 .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                
 
                 // 2. MS 표준 서비스 등록 (HostedService)
                 .ConfigureServices((context, services) =>
                 {
-                    // 백그라운드 워커 등록
-                
+                    services.Configure<DataOptions>(context.Configuration.GetSection(DataOptions.Data));
                     // (필요하다면) DB Context 등 MS 친화적인 것들 등록
                     // services.AddDbContext<AppDb>(...); 
                 })
 
                 // 3. Autofac 컨테이너 설정 
-                .ConfigureContainer<ContainerBuilder>(builder =>
+                .ConfigureContainer<ContainerBuilder>((context, builder) =>
                 {
+                    var dataOptions = context.Configuration.GetSection(DataOptions.Data).Get<DataOptions>()
+                           ?? new DataOptions();
+                    builder.RegisterInstance(dataOptions).As<DataOptions>().SingleInstance();
+
+
                     var scans = new[] {
                         Assembly.GetExecutingAssembly(),
                         Assembly.Load("HCB"),
@@ -55,7 +60,7 @@ namespace HCB.UI
 
                     // === DB 경로 & 연결문자열 ===
                     var exeDir = AppDomain.CurrentDomain.BaseDirectory;
-                    var dbPath = Path.Combine(exeDir, "ecb.db");
+                    var dbPath = Path.Combine(exeDir, dataOptions.Db);
                     var dbDir = Path.GetDirectoryName(dbPath) ?? AppDomain.CurrentDomain.BaseDirectory;
                     Directory.CreateDirectory(dbDir);
                     var connStr = $"Data Source={dbPath};Cache=Shared";
