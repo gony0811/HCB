@@ -7,6 +7,8 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Telerik.Windows.Controls.GridView;
+using Telerik.Windows.Controls;
 
 namespace HCB.UI
 {
@@ -38,8 +40,8 @@ namespace HCB.UI
         {
             var vm = new DeviceCreateVM();
             var modal = new CreateModal
-            {
-                Header = "Device Create",
+            {              
+                Title = "Device Create",
                 DataContext = vm,
                 Width = 400,
                 Height = 800,

@@ -16,7 +16,11 @@
                     <local:MotionDeviceView />
                 </DataTemplate>
             </local:DeviceDetailTemplateSelector.MotionTemplate>
-
+            <local:DeviceDetailTemplateSelector.IOTemplate>
+                <DataTemplate>
+                    <local:IoDeviceView />
+                </DataTemplate>
+            </local:DeviceDetailTemplateSelector.IOTemplate>            
         </local:DeviceDetailTemplateSelector>
 
     </Page.Resources>

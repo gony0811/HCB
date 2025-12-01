@@ -1,10 +1,22 @@
-﻿<telerik:RadWindow x:Class="HCB.UI.CreateModal"
+﻿<Window x:Class="HCB.UI.CreateModal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
-        xmlns:pt="clr-namespace:PropertyTools.Wpf;assembly=PropertyTools.Wpf">
+        xmlns:pt="clr-namespace:PropertyTools.Wpf;assembly=PropertyTools.Wpf"
+         telerik:StyleManager.Theme="Windows11"
+        >
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/COMMON/Styles/UMainStyle.xaml"></ResourceDictionary>
+                <ResourceDictionary>
+                    <Thickness x:Key="SubPageMargin">10</Thickness>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
-    <Grid Margin="10">
+    <Grid Margin="10" Style="{StaticResource WindowBg}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- 공통 정보 -->
@@ -18,18 +30,15 @@
 
         <!-- 공통 Device 정보 -->
         <telerik:GroupBox Header="Device 기본정보" Grid.Row="0" Margin="0 0 0 10" Style="{StaticResource GroupBoxStyle}">
-            <pt:PropertyGrid x:Name="MainGrid" SelectedObject="{Binding}" Style="{StaticResource DialogBaseStyle}">
-                <pt:PropertyGrid.TabPageHeaderTemplate>
-                    <DataTemplate>
-                        <telerik:HighlightTextBlock Text="기본" Style="{StaticResource HighlightTextBlockStyle}"/>
-                    </DataTemplate>
-                </pt:PropertyGrid.TabPageHeaderTemplate>
-                <pt:PropertyGrid.TabHeaderTemplate>
-                    <DataTemplate>
-                        <telerik:HighlightTextBlock Text="디바이스" Style="{StaticResource HighlightTextBlockStyle}"/>
-                    </DataTemplate>
-                </pt:PropertyGrid.TabHeaderTemplate>
-            </pt:PropertyGrid>
+            <telerik:RadPropertyGrid x:Name="MainGrid" Item="{Binding}" AutoGeneratePropertyDefinitions="True" LabelColumnWidth="100" Style="{StaticResource RadPropertyGridStyle}">
+              <!--  <telerik:RadPropertyGrid.PropertyDefinitions>
+                    <telerik:PropertyDefinition Binding="{Binding Name}" DisplayName="Name" />
+                    <telerik:PropertyDefinition Binding="{Binding DeviceType}" DisplayName="Device Type" />
+                    <telerik:PropertyDefinition Binding="{Binding Description}" DisplayName="Description" />
+                    <telerik:PropertyDefinition Binding="{Binding ConfigFilePath}" DisplayName="Config File Path"/>
+                </telerik:RadPropertyGrid.PropertyDefinitions>
+                -->
+            </telerik:RadPropertyGrid>
         </telerik:GroupBox>
 
         <!-- 구분선 -->
@@ -37,19 +46,17 @@
 
         <!-- 타입별 상세 설정 -->
         <telerik:GroupBox Header="타입별 상세설정" Grid.Row="2" Style="{StaticResource GroupBoxStyle}">
-            <pt:PropertyGrid x:Name="DetailGrid" SelectedObject="{Binding ExtraSetting}" Style="{StaticResource TextElementPropertiesExplicitStyle}">
-                <pt:PropertyGrid.TabHeaderTemplate>
-                    <DataTemplate>
-                        <telerik:HighlightTextBlock Text="상세정보" Style="{StaticResource HighlightTextBlockStyle}"/>
-                    </DataTemplate>
-                </pt:PropertyGrid.TabHeaderTemplate>
-            </pt:PropertyGrid>
+            <telerik:RadPropertyGrid x:Name="DetailGrid" Item="{Binding ExtraSetting}" 
+                                     AutoGeneratePropertyDefinitions="True"                              
+                                     Style="{StaticResource RadPropertyGridStyle}">
+                
+            </telerik:RadPropertyGrid>
         </telerik:GroupBox>
 
         <!-- 버튼 -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 10 0 0">
             <telerik:RadButton Content="저장" Width="80" Height="35" Margin="4" Click="Save_Click" Style="{StaticResource RadButtonStyle}"/>
-            <telerik:RadButton Content="취소" Width="80" Height="35" Margin="4" Click="Cancel_Click" Style="{StaticResource RadButtonCloseStyle}"/>
+            <telerik:RadButton Content="취소" Width="80" Height="35" Margin="4" Click="Cancel_Click" Style="{StaticResource RadButtonStyle}"/>
         </StackPanel>
     </Grid>
-</telerik:RadWindow>
+</Window>

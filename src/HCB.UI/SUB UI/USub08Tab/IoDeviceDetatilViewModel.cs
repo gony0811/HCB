@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Repository;
-using HCB.UI.DEVICE.Factory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +37,7 @@ namespace HCB.UI
             var vm = new IoDataCreateVM();
             var modal = new CreateModal
             {
-                Header = "Device Create",
+                Title = "Io Data Create",
                 DataContext = vm,
                 Width = 400,
                 Height = 800,

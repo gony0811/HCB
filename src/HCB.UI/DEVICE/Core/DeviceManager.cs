@@ -186,6 +186,61 @@ namespace HCB.UI
                 }
             }
 
+            // IoController의 경우 추가 상세 매핑
+            if (device is IIoDevice io && entity.IoDeviceDetail != null)
+            {
+                var d = entity.IoDeviceDetail;
+                io.Ip = d.Ip;
+                io.Port = d.Port;
+                io.IoDeviceType = d.IoDeviceType;
+                foreach (var ioData in d.IoDataList)
+                {
+                    switch (ioData.IoDataType)
+                    {
+                        case IoType.DigitalInput:
+                            io.IoDataList.Add(new DigitalInput
+                            {
+                                Id = ioData.Id,
+                                Name = ioData.Name,
+                                Address = ioData.Address,
+                                Index = ioData.Index,
+                                IoType = ioData.IoDataType,
+                            });
+                            break;
+                        case IoType.DigitalOutput:
+                            io.IoDataList.Add(new DigitalOutput
+                            {
+                                Id = ioData.Id,
+                                Name = ioData.Name,
+                                Address = ioData.Address,
+                                Index = ioData.Index,
+                                IoType = ioData.IoDataType,
+                            });
+                            break;
+                        case IoType.AnalogInput:
+                            io.IoDataList.Add(new AnalogInput
+                            {
+                                Id = ioData.Id,
+                                Name = ioData.Name,
+                                Address = ioData.Address,
+                                Index = ioData.Index,
+                                IoType = ioData.IoDataType,
+                            });
+                            break;
+                        case IoType.AnalogOutput:
+                            io.IoDataList.Add(new AnalogOutput
+                            {
+                                Id = ioData.Id,
+                                Name = ioData.Name,
+                                Address = ioData.Address,
+                                Index = ioData.Index,
+                                IoType = ioData.IoDataType,
+                            });
+                            break;
+                    }
+                }
+            }
+
             return device;
         }
 
