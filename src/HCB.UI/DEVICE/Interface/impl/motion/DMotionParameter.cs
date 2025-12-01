@@ -14,6 +14,6 @@ namespace HCB.UI
         [ObservableProperty] private double? doubleValue;
         [ObservableProperty] private bool? boolValue;
         [ObservableProperty] private UnitType unit;
-        [ObservableProperty] private IMotion parentMotion;
+        [ObservableProperty] private IAxis parentMotion;
     }
 }

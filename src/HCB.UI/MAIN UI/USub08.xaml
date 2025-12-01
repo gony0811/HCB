@@ -21,7 +21,7 @@
 
     </Page.Resources>
 
-    <Grid local:GridHelper.Rows="1*, 3*">
+    <Grid local:GridHelper.Rows="1*, 2*">
         <telerik:GroupBox Header="Device" Foreground="White" FontSize="14" Style="{StaticResource GroupBoxStyle}">
             <Grid local:GridHelper.Rows="1*, Auto" Grid.ColumnSpan="2" Grid.Row="0">
                 <telerik:RadGridView 
@@ -35,7 +35,6 @@
                     ScrollViewer.CanContentScroll="True"
                     PreviewMouseRightButtonDown="DataGrid_PreviewMouseRightButtonDown"
                     Margin="10"
-                    Height="300"
                     Style="{StaticResource RadGridViewStyle}">
 
                     <telerik:RadGridView.ContextMenu>

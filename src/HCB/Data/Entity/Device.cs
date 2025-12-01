@@ -22,5 +22,7 @@ namespace HCB.Data.Entity
         public string? Description { get; set; }
 
         public MotionDeviceDetail? MotionDeviceDetail { get; set; }
+
+        public IoDeviceDetail? IoDeviceDetail { get; set; }
     }
 }

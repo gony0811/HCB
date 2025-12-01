@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace HCB.UI
 {
-    public partial class DMotion : ObservableObject, IMotion
+    public partial class DAxis : ObservableObject, IAxis
     {
         [ObservableProperty] private int id;
         [ObservableProperty] private string name;

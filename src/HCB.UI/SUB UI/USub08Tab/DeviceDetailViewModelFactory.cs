@@ -14,23 +14,28 @@ namespace HCB.UI
         private readonly MotionRepository motionRepository;
         private readonly MotionParameterRepository parameterRepository;
         private readonly MotionPositionRepository positionRepository;
+        private readonly IoDataRepository ioDataRepository;
 
-        public DeviceDetailViewModelFactory(
+		public DeviceDetailViewModelFactory(
             MotionRepository motionRepository,
             MotionParameterRepository parameterRepository,
-            MotionPositionRepository positionRepository)
+            MotionPositionRepository positionRepository,
+            IoDataRepository ioDataRepository)
         {
             this.motionRepository = motionRepository;
             this.parameterRepository = parameterRepository;
             this.positionRepository = positionRepository;
+            this.ioDataRepository = ioDataRepository;
         }
 
         public IDeviceDetailViewModel Create(IDevice device)
         {
             if (device is IMotionDevice m)
                 return new MotionDeviceDetailViewModel(m, motionRepository, parameterRepository, positionRepository);
-
-            return null;
+            else if (device is IIoDevice i)
+                return new IoDeviceDetatilViewModel(i, ioDataRepository);
+            else
+                return null;
         }
     }
 

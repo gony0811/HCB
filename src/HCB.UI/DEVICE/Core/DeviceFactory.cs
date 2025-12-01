@@ -12,6 +12,7 @@ namespace HCB.UI
         private static readonly Dictionary<DeviceType, Type> _map = new Dictionary<DeviceType, Type>
         {
             { DeviceType.MotionController, typeof(PowerPmacDevice) },
+            { DeviceType.IODevice, typeof(PmacIoDevice) },
             //{ DeviceType.Camera, typeof(CanonCameraDevice) },
             //{ DeviceType.IODevice, typeof(BeckhoffIODevice) },
             //{ DeviceType.Laser, typeof(LaserDevice) }

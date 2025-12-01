@@ -8,6 +8,6 @@ namespace HCB.UI
         [ObservableProperty] private string name;
         [ObservableProperty] private double speed;
         [ObservableProperty] private double location;
-        [ObservableProperty] private IMotion parentMotion;
+        [ObservableProperty] private IAxis parentMotion;
     }
 }

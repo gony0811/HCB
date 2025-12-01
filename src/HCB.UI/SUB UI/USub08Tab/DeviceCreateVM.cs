@@ -34,7 +34,9 @@ namespace HCB.UI
                 case DeviceType.MotionController:
                     ExtraSetting = new MotionDeviceDetailCreateVM();
                     break;
-
+                case DeviceType.IODevice:
+                    ExtraSetting = new IoDeviceDetailCreateVM();
+                    break;
                 default:
                     ExtraSetting = null;
                     break;
@@ -57,5 +59,14 @@ namespace HCB.UI
         private MotionDeviceType motionDeviceType;
     }
 
+    public partial class IoDeviceDetailCreateVM : DeviceDetailBase
+    {
+        [ObservableProperty]
+        private string ip;
+        [ObservableProperty]
+        private int port;
+        [ObservableProperty]
+        private IoDeviceType ioDeviceType;
+    }
 
 }

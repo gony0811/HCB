@@ -13,8 +13,8 @@ namespace HCB.UI
         int Port { get; set; }
         MotionDeviceType MotionDeviceType { get; set; }
 
-        ObservableCollection<IMotion> MotionList { get; }
-        IMotion FindMotionByMotorIndex(int mIndex);
-        IMotion FindMotionByName(string name);
+        ObservableCollection<IAxis> MotionList { get; }
+        IAxis FindMotionByMotorIndex(int mIndex);
+        IAxis FindMotionByName(string name);
     }
 }

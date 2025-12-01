@@ -3,8 +3,10 @@ using HCB.Data.Entity.Type;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 
@@ -23,7 +25,7 @@ namespace HCB.UI
         [ObservableProperty] private string ip;
         [ObservableProperty] private int port;
         [ObservableProperty] private MotionDeviceType motionDeviceType;
-        [ObservableProperty] public ObservableCollection<IMotion> motionList = new ObservableCollection<IMotion>();
+        [ObservableProperty] public ObservableCollection<IAxis> motionList = new ObservableCollection<IAxis>();
 
         private uint uDeviceId;
         public Task Connect()
@@ -144,14 +146,14 @@ namespace HCB.UI
             throw new NotImplementedException();
         }
 
-        public IMotion FindMotionByName(string name)
+        public IAxis FindMotionByName(string name)
         {
-            return MotionList.FirstOrDefault<IMotion>(motion => motion.Name == name);
+            return MotionList.FirstOrDefault<IAxis>(motion => motion.Name == name);
         }
 
-        public IMotion FindMotionByMotorIndex(int motorIndex)
+        public IAxis FindMotionByMotorIndex(int motorIndex)
         {
-            return MotionList.FirstOrDefault<IMotion>(motion => motion.MotorNo == motorIndex);
+            return MotionList.FirstOrDefault<IAxis>(motion => motion.MotorNo == motorIndex);
         }
 
 
@@ -174,20 +176,44 @@ namespace HCB.UI
 
         public Task<TResult> SendCommand<TResult>(string command)
         {
+            const int MAX_RESPONSE_LENGTH = 1024;
             String strResponse = "";
             Byte[] byCommand;
             Byte[] byResponse;
-            byCommand = new Byte[255];
-            byResponse = new Byte[255];
+            byCommand = new Byte[MAX_RESPONSE_LENGTH];
+            byResponse = new Byte[MAX_RESPONSE_LENGTH];
 
             String stringcmd = command;
 
-            byCommand = System.Text.Encoding.GetEncoding("euc-kr").GetBytes(stringcmd);
-            DTKPowerPmac.Instance.GetResponseA((uint)Id, byCommand, byResponse, Convert.ToInt32(byResponse.Length - 1));
-            strResponse = System.Text.Encoding.GetEncoding("euc-kr").GetString(byResponse);
+            byCommand = Encoding.ASCII.GetBytes(command);
+            uint errorCode = DTKPowerPmac.Instance.GetResponseA((uint)Id, byCommand, byResponse, Convert.ToInt32(byResponse.Length - 1));
+            strResponse = Encoding.ASCII.GetString(byResponse);
+            string trimmedResponse = strResponse.Trim();
+            if (trimmedResponse.StartsWith("?"))
+            {
+                // 오류 코드를 포함하는 예외를 발생시킵니다.
+                throw new Exception($"PowerPMAC Command Error for '{command}': {trimmedResponse}");
+            }
 
-           
-            return Task.FromResult((TResult)Convert.ChangeType(strResponse, typeof(TResult)));
+            try
+            {
+                // double 또는 int 같은 숫자로 변환할 때, 문화권에 독립적인 
+                // CultureInfo.InvariantCulture를 사용하여 소수점(.) 포맷을 강제합니다.
+                object convertedValue = Convert.ChangeType(trimmedResponse, typeof(TResult), CultureInfo.InvariantCulture);
+
+                // Task로 래핑하여 반환
+                return Task.FromResult((TResult)convertedValue);
+            }
+            catch (FormatException ex)
+            {
+                // 변환 실패(예: 숫자가 아닌 문자열을 double로 변환 시도)
+                throw new FormatException($"Cannot convert response '{trimmedResponse}' to type {typeof(TResult).Name}. Command: {command}", ex);
+            }
+            catch (InvalidCastException ex)
+            {
+                // 타입 불일치 오류
+                throw new InvalidCastException($"Invalid type conversion for response '{trimmedResponse}' to {typeof(TResult).Name}.", ex);
+            }
         }
     }
 }

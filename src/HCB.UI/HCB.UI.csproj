@@ -111,7 +111,21 @@
     <AutoGen>True</AutoGen>
     <DependentUpon>appsettings.json</DependentUpon>
   </Compile>
+  <Compile Include="DEVICE\CommonType\IoType.cs" />
+  <Compile Include="DEVICE\Factory\IoDataFactory.cs" />
+  <Compile Include="DEVICE\Interface\device\IMotionDevice.cs" />
+  <Compile Include="DEVICE\Interface\IIoData.cs" />
+  <Compile Include="DEVICE\Interface\device\IIoDevice.cs" />
+  <Compile Include="DEVICE\Interface\impl\analog\AbstractAnalog.cs" />
+  <Compile Include="DEVICE\Interface\impl\analog\AnalogInput.cs" />
+  <Compile Include="DEVICE\Interface\impl\analog\AnalogOutput.cs" />
+  <Compile Include="DEVICE\Interface\impl\digital\AbstractDigital.cs" />
+  <Compile Include="DEVICE\Interface\impl\digital\DigitalInput.cs" />
+  <Compile Include="DEVICE\Interface\impl\digital\DigitalOutput.cs" />
+  <Compile Include="DEVICE\PMAC IO\PmacIoDevice.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
+  <Compile Include="SUB UI\USub08Tab\IoDataCreateVM.cs" />
+  <Compile Include="SUB UI\USub08Tab\IoDeviceDetatilViewModel.cs" />
   <Compile Include="SYSTEM\DB\Service\AlarmService.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToBrushConverter.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToTextConvert.cs" />
@@ -135,11 +149,10 @@
   <Compile Include="DEVICE\Core\DeviceManager.cs" />
   <Compile Include="DEVICE\Factory\MotionFactory.cs" />
   <Compile Include="DEVICE\Interface\IDevice.cs" />
-  <Compile Include="DEVICE\Interface\IMotion.cs" />
-  <Compile Include="DEVICE\Interface\IMotionDevice.cs" />
-  <Compile Include="DEVICE\Interface\impl\DMotion.cs" />
-  <Compile Include="DEVICE\Interface\impl\DMotionParameter.cs" />
-  <Compile Include="DEVICE\Interface\impl\DMotionPosition.cs" />
+  <Compile Include="DEVICE\Interface\IAxis.cs" />
+  <Compile Include="DEVICE\Interface\impl\motion\DAxis.cs" />
+  <Compile Include="DEVICE\Interface\impl\motion\DMotionParameter.cs" />
+  <Compile Include="DEVICE\Interface\impl\motion\DMotionPosition.cs" />
   <Compile Include="DEVICE\POWER PMAC\Core\PowerPmacDevice.cs" />
   <Compile Include="DEVICE\POWER PMAC\Driver\DTKPowerPmacDriver.cs" />
   <Compile Include="DEVICE\POWER PMAC\Interface\IDTKPowerPmac.cs" />

@@ -187,7 +187,7 @@ namespace HCB.Migrations
 
                     b.HasKey("DeviceId");
 
-                    b.ToTable("MotionDeviceDetail");
+                    b.ToTable("MotionDeviceDetail", (string)null);
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.MotionEntity", b =>
@@ -272,7 +272,7 @@ namespace HCB.Migrations
 
                     b.HasIndex("MotionId");
 
-                    b.ToTable("MotionParameter");
+                    b.ToTable("MotionParameter", (string)null);
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.MotionPosition", b =>

@@ -38,9 +38,9 @@ namespace HCB.UI
                                 .Include(d => d.MotionDeviceDetail)
                                     .ThenInclude(md => md.MotionList)
                                         .ThenInclude(m => m.ParameterList)
-                                .Include(d => d.MotionDeviceDetail)
-                                    .ThenInclude(md => md.MotionList)
-                                        .ThenInclude(m => m.PositionList)
+                                //.Include(d => d.MotionDeviceDetail)
+                                //    .ThenInclude(md => md.MotionList)
+                                //        .ThenInclude(m => m.PositionList)
             );
 
             foreach (var entity in deviceEntities)
@@ -146,9 +146,9 @@ namespace HCB.UI
             return device;
         }
 
-        private DMotion ConvertToDMotion(MotionEntity m, IMotionDevice runtime)
+        private DAxis ConvertToDMotion(MotionEntity m, IMotionDevice runtime)
         {
-            var dm = new DMotion
+            var dm = new DAxis
             {
                 Id = m.Id,
                 Name = m.Name,

@@ -23,7 +23,7 @@ namespace HCB.UI
 
         [ObservableProperty] private IMotionDevice device;
 
-        [ObservableProperty] private IMotion selectedMotion;
+        [ObservableProperty] private IAxis selectedMotion;
 
         public MotionDeviceDetailViewModel(IMotionDevice device, 
             MotionRepository motionRepository,

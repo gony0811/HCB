@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace HCB.UI
 {
-    public interface IMotion 
+    public interface IAxis 
     {
         int Id { get; set; }
         string Name { get; set; }

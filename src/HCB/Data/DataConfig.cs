@@ -189,6 +189,11 @@ namespace HCB.Data
                    .WithOne(m => m.Device)
                    .HasForeignKey<MotionDeviceDetail>(m => m.DeviceId)
                    .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(d => d.IoDeviceDetail)
+                   .WithOne(m => m.Device)
+                   .HasForeignKey<IoDeviceDetail>(m => m.DeviceId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 
@@ -225,6 +230,40 @@ namespace HCB.Data
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
+
+    public class IoDeviceDetailConfig : IEntityTypeConfiguration<IoDeviceDetail>
+    {
+        public void Configure(EntityTypeBuilder<IoDeviceDetail> e)
+        {
+            // PK
+            e.HasKey(x => x.DeviceId);
+
+            // 1:1 관계 - Device ↔ MotionDeviceDetail
+            e.HasOne(x => x.Device)
+                .WithOne(x => x.IoDeviceDetail)
+                .HasForeignKey<IoDeviceDetail>(x => x.DeviceId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // SET NULL or RESTRICT로 변경 가능
+
+            // 속성 설정
+            e.Property(x => x.Ip)
+                .HasMaxLength(50)
+                .IsRequired(false);
+
+            e.Property(x => x.Port)
+                .IsRequired();
+
+            e.Property(x => x.IoDeviceType)
+                .HasConversion<string>()   // Enum → int 저장
+                .IsRequired();
+
+            // MotionList: 1 : N 관계
+            e.HasMany(x => x.IoDataList)
+                .WithOne(x => x.ParentDeviceEntity)
+                .HasForeignKey(x => x.ParentDeviceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
     public class MotionConfig : IEntityTypeConfiguration<MotionEntity>
     {
         public void Configure(EntityTypeBuilder<MotionEntity> builder)
@@ -250,6 +289,35 @@ namespace HCB.Data
                 .WithOne(p => p.Motion)
                 .HasForeignKey(p => p.MotionId)
                 .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class IoDataConfig : IEntityTypeConfiguration<IoDataEntity>
+    {
+        public void Configure(EntityTypeBuilder<IoDataEntity> builder)
+        {
+            builder.ToTable("Motion");
+
+            builder.HasKey(m => m.Id);
+
+            builder.Property(m => m.Name)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            builder.Property(m => m.IoDataType)
+                .IsRequired()
+                .HasConversion<string>();
+
+            builder.Property(m => m.Address)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            builder.Property(m => m.Index)
+                .IsRequired();
+
+            builder.Property(x => x.Unit)
+                .HasConversion<string>()
+                .IsRequired();
         }
     }
 

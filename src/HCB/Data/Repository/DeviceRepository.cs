@@ -11,10 +11,12 @@ namespace HCB.Data.Repository
     public class DeviceRepository : DbRepository<Device, AppDb>
     {
         DbSet<MotionDeviceDetail> MotionDeviceDetailRepository;
+        DbSet<IoDeviceDetail> IoDeviceDetailRepository;
 
         public DeviceRepository(AppDb db) : base(db)
         {
             MotionDeviceDetailRepository = db.Set<MotionDeviceDetail>();
+            IoDeviceDetailRepository = db.Set<IoDeviceDetail>();
         }
 
 
@@ -24,6 +26,16 @@ namespace HCB.Data.Repository
                 throw new ArgumentNullException(nameof(entity));
 
             MotionDeviceDetailRepository.Add(entity);
+            await SaveAsync(ct);
+            return entity;
+        }
+
+        public async Task<IoDeviceDetail> AddIoDeviceDetail(IoDeviceDetail entity, CancellationToken ct = default)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            IoDeviceDetailRepository.Add(entity);
             await SaveAsync(ct);
             return entity;
         }

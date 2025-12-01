@@ -9,9 +9,9 @@ namespace HCB.UI
         // =============================================================
         // MotionEntity → DMotion
         // =============================================================
-        public static DMotion ToRuntime(MotionEntity e, IMotionDevice device)
+        public static DAxis ToRuntime(MotionEntity e, IMotionDevice device)
         {
-            var dm = new DMotion
+            var dm = new DAxis
             {
                 Id = e.Id,
                 Name = e.Name,
@@ -45,7 +45,7 @@ namespace HCB.UI
         // =============================================================
         // MotionPositionEntity → DMotionPosition
         // =============================================================
-        public static DMotionPosition ToRuntime(MotionPosition e, IMotion parent)
+        public static DMotionPosition ToRuntime(MotionPosition e, IAxis parent)
         {
             return new DMotionPosition
             {
@@ -60,7 +60,7 @@ namespace HCB.UI
         // =============================================================
         // MotionParameterEntity → DMotionParameter
         // =============================================================
-        public static DMotionParameter ToRuntime(MotionParameter e, DMotion parent)
+        public static DMotionParameter ToRuntime(MotionParameter e, DAxis parent)
         {
             return new DMotionParameter
             {
@@ -79,7 +79,7 @@ namespace HCB.UI
         // =============================================================
         // DMotion → MotionEntity
         // =============================================================
-        public static MotionEntity ToEntity(DMotion r)
+        public static MotionEntity ToEntity(DAxis r)
         {
             var e = new MotionEntity
             {
