@@ -115,10 +115,12 @@
     <DependentUpon>appsettings.json</DependentUpon>
   </Compile>
   <Compile Include="DEVICE\CommonType\IoType.cs" />
+  <Compile Include="DEVICE\CommonType\ValueChangedEventArgs.cs" />
   <Compile Include="DEVICE\Factory\IoDataFactory.cs" />
   <Compile Include="DEVICE\Interface\device\IMotionDevice.cs" />
   <Compile Include="DEVICE\Interface\IIoData.cs" />
   <Compile Include="DEVICE\Interface\device\IIoDevice.cs" />
+  <Compile Include="DEVICE\Interface\impl\AbstractIoBase.cs" />
   <Compile Include="DEVICE\Interface\impl\analog\AbstractAnalog.cs" />
   <Compile Include="DEVICE\Interface\impl\analog\AnalogInput.cs" />
   <Compile Include="DEVICE\Interface\impl\analog\AnalogOutput.cs" />

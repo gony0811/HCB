@@ -89,7 +89,7 @@ namespace HCB.UI
             palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
 
             mainWindow.Show();
-            mainWindow.Activate();
+            //mainWindow.Activate();
             mainWindow.Focus();
         }
 

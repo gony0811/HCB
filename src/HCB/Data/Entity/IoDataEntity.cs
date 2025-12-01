@@ -27,5 +27,4 @@ namespace HCB.Data.Entity
 
         public int ParentDeviceId { get; set; }
         public IoDeviceDetail? ParentDeviceEntity { get; set; }
-    }
-}
+    }}

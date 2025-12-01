@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HCB.UI
 {
-    public partial class AbstractDigital : ObservableObject, IIoData
+    public abstract partial class AbstractDigital : AbstractIoBase
     {
         [ObservableProperty] private int id;
         [ObservableProperty] private string name;
@@ -20,5 +20,11 @@ namespace HCB.UI
         [ObservableProperty] private string description;
 
         public delegate void ValueChangedEventHandler(object sender, ValueChangedEventArgs<bool> e);
+        public event ValueChangedEventHandler? ValueChanged;
+
+        protected virtual void OnValueChanged(ValueChangedEventArgs<bool> e)
+        {
+            ValueChanged?.Invoke(this, e);
+        }
     }
 }
