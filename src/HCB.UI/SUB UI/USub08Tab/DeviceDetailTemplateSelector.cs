@@ -13,6 +13,9 @@ namespace HCB.UI
         {
             if (item is MotionDeviceDetailViewModel) return MotionTemplate;
 
+            if (item is IoDeviceDetatilViewModel) return IOTemplate;
+
+
             // if (item is CameraDeviceDetailViewModel)
             //     return CameraTemplate;
 

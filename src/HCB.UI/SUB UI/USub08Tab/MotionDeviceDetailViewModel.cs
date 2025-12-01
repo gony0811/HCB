@@ -49,7 +49,7 @@ namespace HCB.UI
             var vm = new MotionCreateVM();
             var modal = new CreateModal
             {
-                Title = "Device Create",
+				Header = "Device Create",
                 DataContext = vm,
                 Width = 400,
                 Height = 800,
@@ -88,7 +88,7 @@ namespace HCB.UI
             var vm = new MotionParameterCreateVM();
             var modal = new CreateModal
             {
-                Title = "Device Create",
+				Header = "Device Create",
                 DataContext = vm,
                 Width = 400,
                 Height = 800,

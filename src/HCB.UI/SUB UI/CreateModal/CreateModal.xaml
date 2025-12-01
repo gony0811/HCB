@@ -1,4 +1,4 @@
-﻿<Window x:Class="HCB.UI.CreateModal"
+﻿<telerik:RadWindow x:Class="HCB.UI.CreateModal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
@@ -17,39 +17,39 @@
         </Grid.RowDefinitions>
 
         <!-- 공통 Device 정보 -->
-        <GroupBox Header="Device 기본정보" Grid.Row="0" Margin="0 0 0 10">
-            <pt:PropertyGrid x:Name="MainGrid" SelectedObject="{Binding}">
+        <telerik:GroupBox Header="Device 기본정보" Grid.Row="0" Margin="0 0 0 10" Style="{StaticResource GroupBoxStyle}">
+            <pt:PropertyGrid x:Name="MainGrid" SelectedObject="{Binding}" Style="{StaticResource DialogBaseStyle}">
                 <pt:PropertyGrid.TabPageHeaderTemplate>
                     <DataTemplate>
-                        <TextBlock Text="기본"/>
+                        <telerik:HighlightTextBlock Text="기본" Style="{StaticResource HighlightTextBlockStyle}"/>
                     </DataTemplate>
                 </pt:PropertyGrid.TabPageHeaderTemplate>
                 <pt:PropertyGrid.TabHeaderTemplate>
                     <DataTemplate>
-                        <TextBlock Text="디바이스"/>
+                        <telerik:HighlightTextBlock Text="디바이스" Style="{StaticResource HighlightTextBlockStyle}"/>
                     </DataTemplate>
                 </pt:PropertyGrid.TabHeaderTemplate>
             </pt:PropertyGrid>
-        </GroupBox>
+        </telerik:GroupBox>
 
         <!-- 구분선 -->
-        <Border Grid.Row="1" Height="1" Background="#DDD" Margin="0 5"/>
+        <telerik:BorderContainer Grid.Row="1" Height="1" Background="#DDD" Margin="0 5" Style="{StaticResource BorderContainerStyle}"/>
 
         <!-- 타입별 상세 설정 -->
-        <GroupBox Header="타입별 상세설정" Grid.Row="2">
-            <pt:PropertyGrid x:Name="DetailGrid" SelectedObject="{Binding ExtraSetting}">
+        <telerik:GroupBox Header="타입별 상세설정" Grid.Row="2" Style="{StaticResource GroupBoxStyle}">
+            <pt:PropertyGrid x:Name="DetailGrid" SelectedObject="{Binding ExtraSetting}" Style="{StaticResource TextElementPropertiesExplicitStyle}">
                 <pt:PropertyGrid.TabHeaderTemplate>
                     <DataTemplate>
-                        <TextBlock Text="상세정보"/>
+                        <telerik:HighlightTextBlock Text="상세정보" Style="{StaticResource HighlightTextBlockStyle}"/>
                     </DataTemplate>
                 </pt:PropertyGrid.TabHeaderTemplate>
             </pt:PropertyGrid>
-        </GroupBox>
+        </telerik:GroupBox>
 
         <!-- 버튼 -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 10 0 0">
-            <Button Content="저장" Width="80" Height="35" Margin="4" Click="Save_Click"/>
-            <Button Content="취소" Width="80" Height="35" Margin="4" Click="Cancel_Click"/>
+            <telerik:RadButton Content="저장" Width="80" Height="35" Margin="4" Click="Save_Click" Style="{StaticResource RadButtonStyle}"/>
+            <telerik:RadButton Content="취소" Width="80" Height="35" Margin="4" Click="Cancel_Click" Style="{StaticResource RadButtonCloseStyle}"/>
         </StackPanel>
     </Grid>
-</Window>
+</telerik:RadWindow>

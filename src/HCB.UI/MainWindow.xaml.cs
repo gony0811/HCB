@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using HCB.IoC;
+using Telerik.Windows.Controls;
 
 namespace HCB.UI
 {
@@ -19,7 +20,7 @@ namespace HCB.UI
     /// </summary>
 
     [View(Lifetime.Singleton)]
-    public partial class MainWindow : Window
+    public partial class MainWindow : RadWindow
     {
         public MainWindow()
         {

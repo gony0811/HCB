@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using HCB.Data.Repository;
+using HCB.Data;
 
 namespace HCB.UI
 {
@@ -38,9 +39,8 @@ namespace HCB.UI
                                 .Include(d => d.MotionDeviceDetail)
                                     .ThenInclude(md => md.MotionList)
                                         .ThenInclude(m => m.ParameterList)
-                                //.Include(d => d.MotionDeviceDetail)
-                                //    .ThenInclude(md => md.MotionList)
-                                //        .ThenInclude(m => m.PositionList)
+                                .Include(d => d.IoDeviceDetail)
+                                    .ThenInclude(id => id.IoDataList)
             );
 
             foreach (var entity in deviceEntities)
@@ -96,11 +96,54 @@ namespace HCB.UI
                 MessageBox.Show("저장에 실패했습니다");
             }
         }
-        #endregion
 
-        #region 디바이스 검색 
+		public async Task RegisterDevice(IIoDevice device)
+		{
+			if (device == null || string.IsNullOrEmpty(device.Name))
+				throw new Exception("필수 이름값이 없습니다.");
 
-        public T GetDevice<T>(string name) where T : class, IDevice
+			if (_deviceMap.ContainsKey(device.Name))
+				throw new Exception("같은 이름이 존재합니다.");
+
+			try
+			{
+				Device entity = new Device
+				{
+					Name = device.Name,
+					DeviceType = device.DeviceType,
+					FileName = device.FileName,
+					InstanceName = device.InstanceName,
+					IsEnabled = device.IsEnabled,
+					Description = device.Description
+				};
+				Device result = await deviceRepository.AddAsync(entity);
+				device.Id = result.Id;
+
+
+				IoDeviceDetail detail = new IoDeviceDetail
+				{
+					DeviceId = result.Id,
+					Ip = device.Ip,
+					Port = device.Port,
+					IoDeviceType = device.IoDeviceType
+				};
+
+				IoDeviceDetail detailResult = await deviceRepository.AddIoDeviceDetail(detail);
+
+				_deviceMap.Add(device.Name, device);
+				Devices.Add(device);
+				MessageBox.Show("저장되었습니다");
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show("저장에 실패했습니다");
+			}
+		}
+		#endregion
+
+		#region 디바이스 검색 
+
+		public T GetDevice<T>(string name) where T : class, IDevice
         {
             if (_deviceMap.TryGetValue(name, out var device))
                 return device as T;

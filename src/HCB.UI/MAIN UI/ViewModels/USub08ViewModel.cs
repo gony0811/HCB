@@ -39,13 +39,17 @@ namespace HCB.UI
             var vm = new DeviceCreateVM();
             var modal = new CreateModal
             {
-                Title = "Device Create",
+                Header = "Device Create",
                 DataContext = vm,
                 Width = 400,
                 Height = 800,
             };
 
+            modal.Owner = App.Current.MainWindow;
             bool? result = modal.ShowDialog();
+
+           
+            
 
             if (result == true)
             {
@@ -54,7 +58,7 @@ namespace HCB.UI
                 {
                     case DeviceType.MotionController:
                         var detail = vm.ExtraSetting as MotionDeviceDetailCreateVM;
-                        var device = new PowerPmacDevice
+                        var motionDevice = new PowerPmacDevice
                         {
                             Name = vm.Name,
                             DeviceType = vm.DeviceType,
@@ -67,7 +71,24 @@ namespace HCB.UI
                             Port = detail.Port,
                             MotionDeviceType = detail?.MotionDeviceType ?? MotionDeviceType.PowerPmac
                         };
-                        await deviceManager.RegisterDevice(device);
+                        await deviceManager.RegisterDevice(motionDevice);
+                        break;
+                    case DeviceType.IODevice:
+                        var ioDetail = vm.ExtraSetting as IoDeviceDetailCreateVM;
+                        var ioDevice = new PmacIoDevice
+                        {
+                            Name = vm.Name,
+                            DeviceType = vm.DeviceType,
+                            FileName = Path.GetFileName(vm.ConfigFilePath),
+                            InstanceName = vm.ConfigFilePath,
+                            Description = vm.Description,
+                            IsConnected = false,
+                            IsEnabled = true,
+                            Ip = ioDetail?.Ip,
+                            Port = ioDetail.Port,
+                            IoDeviceType = ioDetail?.IoDeviceType ?? IoDeviceType.PowerPmac
+                        };
+                        await deviceManager.RegisterDevice(ioDevice);
                         break;
 
                     default:

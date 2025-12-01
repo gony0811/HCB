@@ -296,7 +296,7 @@ namespace HCB.Data
     {
         public void Configure(EntityTypeBuilder<IoDataEntity> builder)
         {
-            builder.ToTable("Motion");
+            builder.ToTable("IoData");
 
             builder.HasKey(m => m.Id);
 
