@@ -10,8 +10,9 @@
 
     <Grid local:GridHelper.Columns="1*" local:GridHelper.Rows="Auto, 1*, Auto">
         <telerik:HighlightTextBlock Text="I/O Data" FontSize="20" Style="{StaticResource HighlightTextBlockStyle}" Margin="5"></telerik:HighlightTextBlock>
-        <telerik:RadGridView ItemsSource="{Binding Device.IoDataList}"
+        <telerik:RadGridView ItemsSource="{Binding Device.IoDataList}"         
                 SelectedItem="{Binding SelectedIoData}"
+                ShowGroupPanel="False"
                 Grid.Row="1"
                 AutoGenerateColumns="False"
               IsReadOnly="True"

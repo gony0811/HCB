@@ -78,7 +78,7 @@ namespace HCB.UI
 
         public Task RefreshStatus()
         {
-            foreach (var io in IoDataList)
+            foreach (var data in IoDataList)
             {
                 // 여기서 각 io의 상태를 갱신하는 로직을 구현해야 합니다.
                 try
@@ -86,48 +86,22 @@ namespace HCB.UI
                     String strCommand = "";
                     String strResponse = "";
                     string[] strResponseArry = new string[10];
-                    uint intResponse = 0;
 
-                    //strCommand = "Motor[" + (motion.MotorNo).ToString() + "].Status[0]";         //모터 상태
-                    //strCommand += "Motor[" + (motion.MotorNo).ToString() + "].HomePos";          //home 위치  
-                    //strCommand += "Motor[" + (motion.MotorNo).ToString() + "].ActPos";           //encode 위치 
-                    //strCommand += "Motor[" + (motion.MotorNo).ToString() + "].DesPos";           //
-                    //strCommand += "Motor[" + (motion.MotorNo).ToString() + "].HomeComplete";     // Home Completed 
-                    //strResponse = SendCommand<string>(strCommand).Result;
-                    //strResponseArry[0] = strResponse.Substring(0, strResponse.IndexOf("\r\n"));
-                    //strResponse = strResponse.Remove(0, strResponse.IndexOf("\r\n") + 2);
-                    //strResponseArry[1] = strResponse.Substring(0, strResponse.IndexOf("\r\n"));
-                    //strResponse = strResponse.Remove(0, strResponse.IndexOf("\r\n") + 2);
-                    //strResponseArry[2] = strResponse.Substring(0, strResponse.IndexOf("\r\n"));
-                    //strResponse = strResponse.Remove(0, strResponse.IndexOf("\r\n") + 2);
-                    //strResponseArry[3] = strResponse.Substring(0, strResponse.IndexOf("\r\n"));
-                    //strResponse = strResponse.Remove(0, strResponse.IndexOf("\r\n") + 2);
+                    var io = data as AbstractIoBase;
 
-                    //intResponse = Convert.ToUInt32(strResponseArry[0].Substring(1, strResponseArry[0].Length - 1), 16);  //Using ToUInt32 not ToUInt64, as per OP comment
-                    //double homepos = Convert.ToDouble(strResponseArry[1]) / motion.EncoderCountPerUnit;
-                    //double feedpos = Convert.ToDouble(strResponseArry[2]) / motion.EncoderCountPerUnit;
-                    //double commandpos = Convert.ToDouble(strResponseArry[3]) / motion.EncoderCountPerUnit;
+                    strCommand = string.Format("{0}{1}", io.Address, io.Index);
 
-                    //motion.CurrentPosition = feedpos - homepos;
-                    //motion.CommandPosition = commandpos - homepos;
+                    strResponse = SendCommand<string>(strCommand).Result;
 
-                    //motion.IsEnabled = ((intResponse & 0x00001000) == 0x00001000);
-                    //motion.IsBusy = !((intResponse & 0x00002000) == 0x00002000);
-                    //motion.IsError = ((intResponse & 0x01000000) == 0x00100000);
-                    //motion.IsPlusLimit = ((intResponse & 0x10000000) == 0x10000000);
-                    //motion.IsMinusLimit = ((intResponse & 0x20000000) == 0x20000000);
-                    //motion.IsHomeDone = ((intResponse & 0x00004000) == 0x00004000);
-
-                    //if (motion.CommandPosition + motion.InpositionRange >= motion.CurrentPosition &&
-                    //    motion.CommandPosition - motion.InpositionRange <= motion.CurrentPosition &&
-                    //        (intResponse & 0x00000800) == 0x00000800)
-                    //{
-                    //    motion.InPosition = true;
-                    //}
-                    //else
-                    //{
-                    //    motion.InPosition = false;
-                    //}
+                    switch(io.IoType)
+                    {
+                        case IoType.AnalogInput:
+                            (io as AnalogInput).Value = Convert.ToDouble(strResponse);
+                            break;
+                        case IoType.DigitalInput:
+                            (io as DigitalInput).Value = (Convert.ToUInt32(strResponse) != 0);
+                            break;
+                    }
                 }
                 catch (Exception ex)
                 {

@@ -19,8 +19,9 @@ namespace HCB.UI
             set
             {
                 if (_value != value)
-                {
+                {                 
                     _value = value;
+                    OnValueChanged(new ValueChangedEventArgs<double>(_value, value));
                 }
             }
         }

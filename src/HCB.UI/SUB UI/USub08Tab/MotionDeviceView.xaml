@@ -10,6 +10,7 @@
     <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="Auto, 1*, Auto">
         <telerik:HighlightTextBlock Text="Motion" FontSize="20" Style="{StaticResource HighlightTextBlockStyle}" Margin="5"></telerik:HighlightTextBlock>
         <telerik:RadGridView ItemsSource="{Binding Device.MotionList}"
+                  ShowGroupPanel="False"
                   SelectedItem="{Binding SelectedMotion}"
                   Grid.Row="1"
                   AutoGenerateColumns="False"
@@ -38,6 +39,7 @@
         <telerik:RadGridView ItemsSource="{Binding SelectedMotion.ParameterList}"
                   Grid.Column="1"
                     Grid.Row="1"
+                    ShowGroupPanel="False"
                     AutoGenerateColumns="False"
                     IsReadOnly="True"
                     VirtualizingPanel.IsVirtualizing="True"

@@ -38,6 +38,9 @@
     <Generator>MSBuild:Compile</Generator>
     <SubType>Designer</SubType>
   </ApplicationDefinition>
+  <Page Include="SUB UI\SplashView\SplashView.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub08Tab\IoDeviceView.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -120,15 +123,17 @@
   <Compile Include="DEVICE\Interface\device\IMotionDevice.cs" />
   <Compile Include="DEVICE\Interface\IIoData.cs" />
   <Compile Include="DEVICE\Interface\device\IIoDevice.cs" />
-  <Compile Include="DEVICE\Interface\impl\AbstractIoBase.cs" />
-  <Compile Include="DEVICE\Interface\impl\analog\AbstractAnalog.cs" />
-  <Compile Include="DEVICE\Interface\impl\analog\AnalogInput.cs" />
-  <Compile Include="DEVICE\Interface\impl\analog\AnalogOutput.cs" />
-  <Compile Include="DEVICE\Interface\impl\digital\AbstractDigital.cs" />
-  <Compile Include="DEVICE\Interface\impl\digital\DigitalInput.cs" />
-  <Compile Include="DEVICE\Interface\impl\digital\DigitalOutput.cs" />
+  <Compile Include="DEVICE\impl\AbstractIoBase.cs" />
+  <Compile Include="DEVICE\impl\analog\AbstractAnalog.cs" />
+  <Compile Include="DEVICE\impl\analog\AnalogInput.cs" />
+  <Compile Include="DEVICE\impl\analog\AnalogOutput.cs" />
+  <Compile Include="DEVICE\impl\digital\AbstractDigital.cs" />
+  <Compile Include="DEVICE\impl\digital\DigitalInput.cs" />
+  <Compile Include="DEVICE\impl\digital\DigitalOutput.cs" />
   <Compile Include="DEVICE\PMAC IO\PmacIoDevice.cs" />
+  <Compile Include="SERVICE\DeviceService.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
+  <Compile Include="SUB UI\SplashView\SplashView.xaml.cs" />
   <Compile Include="SUB UI\USub08Tab\IoDataCreateVM.cs" />
   <Compile Include="SUB UI\USub08Tab\IoDeviceDetatilViewModel.cs" />
   <Compile Include="SUB UI\USub08Tab\IoDeviceView.xaml.cs" />
@@ -156,9 +161,9 @@
   <Compile Include="DEVICE\Factory\MotionFactory.cs" />
   <Compile Include="DEVICE\Interface\IDevice.cs" />
   <Compile Include="DEVICE\Interface\IAxis.cs" />
-  <Compile Include="DEVICE\Interface\impl\motion\DAxis.cs" />
-  <Compile Include="DEVICE\Interface\impl\motion\DMotionParameter.cs" />
-  <Compile Include="DEVICE\Interface\impl\motion\DMotionPosition.cs" />
+  <Compile Include="DEVICE\impl\motion\DAxis.cs" />
+  <Compile Include="DEVICE\impl\motion\DMotionParameter.cs" />
+  <Compile Include="DEVICE\impl\motion\DMotionPosition.cs" />
   <Compile Include="DEVICE\POWER PMAC\Core\PowerPmacDevice.cs" />
   <Compile Include="DEVICE\POWER PMAC\Driver\DTKPowerPmacDriver.cs" />
   <Compile Include="DEVICE\POWER PMAC\Interface\IDTKPowerPmac.cs" />
@@ -223,7 +228,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Folder Include="SERVICE\Sequence\" />
+    <Folder Include="SEQUENCE\" />
   </ItemGroup>
 
 </Project>

@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
+using Serilog;
 
 namespace HCB.UI
 {
@@ -28,10 +29,19 @@ namespace HCB.UI
         [ObservableProperty] public ObservableCollection<IAxis> motionList = new ObservableCollection<IAxis>();
 
         private uint uDeviceId;
+
+        public PowerPmacDevice(ILogger logger)
+        {
+
+        }
+
+
+
         public Task Connect()
         {
             Byte[] byCommand;
             UInt32 uRet;
+
             uRet = DTKPowerPmac.Instance.Connect(uDeviceId);
 
             if ((DTK_STATUS)uRet == DTK_STATUS.DS_Ok)

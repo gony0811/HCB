@@ -41,10 +41,17 @@ namespace HCB.IoC
     ContainerBuilder b, Assembly[] assemblies, Bind bind)
     where TAttr : Attribute
         {
+            Func<Type, bool> isNotHostedService = t => !typeof(IHostedService).IsAssignableFrom(t);
             // 공통: 특정 Attribute(TAttr)가 붙은 concrete class만 대상으로
             Func<Type, bool> hasAttr = t =>
                 t.IsClass && !t.IsAbstract &&
-                t.GetCustomAttributes(typeof(TAttr), false).Any();
+                t.GetCustomAttributes(typeof(TAttr), false).Any() && 
+                isNotHostedService(t); // <--- [Service] 등록 시 IHostedService 제외
+
+
+
+
+
 
             // 공통: Lifetime 매칭
             Func<Lifetime, IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle>> reg =
@@ -95,7 +102,10 @@ namespace HCB.IoC
         {
             ApplyBind(
                 b.RegisterAssemblyTypes(assemblies)
-                 .Where(t => t.IsClass && !t.IsAbstract && t.Name.EndsWith(suffix)),
+                 .Where(t => t.IsClass
+                             && !t.IsAbstract
+                             && t.Name.EndsWith(suffix)
+                             && !typeof(IHostedService).IsAssignableFrom(t)), // <--- [Name] 등록 시 IHostedService 제외
                 bind
             ).InstancePerLifetimeScope();
         }

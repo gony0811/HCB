@@ -25,8 +25,9 @@ namespace HCB.UI
                 }
                 else
                 {
-                    string command = string.Format("{0}{1:D4}", Address, Index);
-                    _value = Device.SendCommand<double>(command).Result;
+                    string command = string.Format("{0}{1:D4}={2}", Address, Index, value);
+                    Device.SendCommand(command);
+                    OnValueChanged(new ValueChangedEventArgs<double>(_value, value));
                 }
             }
         }

@@ -10,7 +10,6 @@ using Serilog;
 
 namespace HCB.UI
 {
-    [Service(Lifetime.Singleton)]
     internal class InterlockService : BackgroundService
     {
         private ILogger _logger;
@@ -31,7 +30,7 @@ namespace HCB.UI
                 if (motion != null && !motion.IsConnected) 
                     await motion.Connect();
 
-                
+                _logger.Information("InterlockService ExecuteAsync");
             }
             catch (Exception ex)
             {

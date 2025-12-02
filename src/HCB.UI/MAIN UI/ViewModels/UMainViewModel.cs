@@ -122,5 +122,11 @@ namespace HCB.UI
                     break;
             }
         }
+
+        [RelayCommand]
+        public void ProgramExit()
+        {
+            App.Current.Shutdown();
+        }
     }
 }

@@ -31,6 +31,7 @@
                 <telerik:RadGridView 
                     ItemsSource="{Binding DeviceList}"
                     SelectedItem="{Binding SelectedDevice, Mode=TwoWay}"
+                    ShowGroupPanel="False"
                     AutoGenerateColumns="False"
                     IsReadOnly="True"
                     VirtualizingPanel.IsVirtualizing="True"

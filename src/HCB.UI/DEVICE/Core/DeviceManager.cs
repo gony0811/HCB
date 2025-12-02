@@ -12,15 +12,18 @@ using System.Threading.Tasks;
 using System.Windows;
 using HCB.Data.Repository;
 using HCB.Data;
+using Serilog;
 
 namespace HCB.UI
 {
     [Service(Lifetime.Singleton)]
     public class DeviceManager : ObservableObject
     {
+        private ILogger _logger; 
         private readonly DeviceRepository deviceRepository;
-        public DeviceManager(DeviceRepository deviceRepository)
+        public DeviceManager(ILogger logger, DeviceRepository deviceRepository)
         {
+            this._logger = logger.ForContext<DeviceManager>();
             this.deviceRepository = deviceRepository;
             _ = LoadFromDatabaseAsync();
         }

@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Media;
 using Telerik.Windows.Controls;
 using Serilog;
+using Telerik.Windows.Controls.SplashScreen;
 
 namespace HCB.UI
 {
@@ -22,6 +23,14 @@ namespace HCB.UI
         public App()
         {
             this.InitializeComponent();
+        }
+
+        protected void SplashScreenUpdate(string content, double progressValue)
+        {
+            var context = (SplashScreenDataContext)RadSplashScreenManager.SplashScreenDataContext;
+            context.IsIndeterminate = false;
+            context.Content = content;
+            context.ProgressValue = progressValue;
         }
 
         protected override async void OnStartup(StartupEventArgs e)
@@ -40,42 +49,27 @@ namespace HCB.UI
                 return;
             }
 
-            // 1. 호스트 빌드
-            _host = StartUp.BuildHost(e.Args);
-
-            await StartUp.InitDatabaseAsync(_host);
-
-            // 3. 호스트 실행 (백그라운드 서비스 시작)
-            await _host.StartAsync();
-
             // 1. 스플래시 스크린 시작
-            RadSplashScreenManager.Show();
+            RadSplashScreenManager.Show<SplashView>();
+
             // 2. 초기화 로직 실행
             // 이 위치에서 다음 단계의 이벤트를 사용하여 초기화 함수를 호출해야 합니다.
-            InitializeApplicationAsync();
-        }
+            SplashScreenUpdate("애플리케이션 구동 시작...", 0);
+            
 
-        private async void InitializeApplicationAsync()
-        {
-            // Task.Run을 사용하여 초기화 작업을 백그라운드 스레드에서 실행
-            await Task.Run(() =>
-            {
-                // ===============================================
-                // ⭐️ 초기화 로직을 여기에 삽입합니다. (데이터 로드, DB 연결 등)
-                // ===============================================
+            _host = StartUp.BuildHost(e.Args);
+            SplashScreenUpdate("호스트 빌드 완료.", 10);
 
-                // 예시: 3초 동안 초기화 작업 시뮬레이션
-                System.Threading.Thread.Sleep(3000);
+            SplashScreenUpdate("데이터베이스 연결 및 초기화...", 11);
+            await StartUp.InitDatabaseAsync(_host);
 
-                // 선택 사항: 스플래시 스크린의 텍스트 업데이트
-                // Telerik WPF는 UI 스레드가 아닌 곳에서의 업데이트를 지원하지 않을 수 있으므로, 
-                // Dispatcher.Invoke를 사용하거나, 이 업데이트를 생략하는 것이 안전합니다.
-                // Dispatcher.Invoke(() => RadSplashScreenManager.UpdateProgress("초기화 완료됨...", 99));
-            });
+            SplashScreenUpdate("데이터베이스 연결 및 초기화 완료", 20);
 
-            // 4. 모든 초기화가 완료되면 스플래시 스크린 닫기
-            // Close()는 반드시 UI 스레드에서 호출되어야 합니다.
-            // 현재 async void 메서드는 UI 스레드에서 실행되고 있으므로 바로 호출 가능합니다.
+            SplashScreenUpdate("어플리케이션 초기화 및 구동 시작", 21);
+
+            await InitializeApplicationAsync();
+
+            SplashScreenUpdate("어플리케이션 초기화 완료", 100);
             RadSplashScreenManager.Close();
 
             // 5. 메인 창 표시 (선택 사항)
@@ -91,6 +85,12 @@ namespace HCB.UI
             mainWindow.Show();
             //mainWindow.Activate();
             mainWindow.Focus();
+        }
+
+        private async Task InitializeApplicationAsync()
+        {
+            SplashScreenUpdate("백그라운드 서비스 시작", 30);
+            await _host.StartAsync().ConfigureAwait(false);
         }
 
         protected override void OnExit(ExitEventArgs e)

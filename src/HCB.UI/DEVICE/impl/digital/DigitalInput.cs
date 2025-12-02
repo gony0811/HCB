@@ -9,9 +9,9 @@ namespace HCB.UI
             IoType = IoType.DigitalInput;
         }
 
-        private double _value = 0.0;
+        private bool _value = false;
 
-        public double Value
+        public bool Value
         {
             get { return _value; }
 
@@ -20,6 +20,7 @@ namespace HCB.UI
                 if (_value != value)
                 {
                     _value = value;
+                    OnValueChanged(new ValueChangedEventArgs<bool>(_value, value));
                 }
             }
         }
