@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 using Serilog;
+using Telerik.Windows.Documents.Flow.FormatProviders.Html;
 
 namespace HCB.UI
 {
@@ -27,15 +28,13 @@ namespace HCB.UI
         [ObservableProperty] private int port;
         [ObservableProperty] private MotionDeviceType motionDeviceType;
         [ObservableProperty] public ObservableCollection<IAxis> motionList = new ObservableCollection<IAxis>();
-
+        private ILogger logger;
         private uint uDeviceId;
 
         public PowerPmacDevice(ILogger logger)
         {
-
+            this.logger = logger.ForContext<PowerPmacDevice>();
         }
-
-
 
         public Task Connect()
         {
@@ -83,8 +82,18 @@ namespace HCB.UI
             String[] strIP = new String[4];
             strIP = Ip.Split('.');
             uIPAddress = (Convert.ToUInt32(strIP[0]) << 24) | (Convert.ToUInt32(strIP[1]) << 16) | (Convert.ToUInt32(strIP[2]) << 8) | Convert.ToUInt32(strIP[3]);
-            uDeviceId = DTKPowerPmac.Instance.Open(uIPAddress, (uint)DTK_MODE_TYPE.DM_GPASCII);
-            
+
+            try
+            {
+                uDeviceId = DTKPowerPmac.Instance.Open(uIPAddress, (uint)DTK_MODE_TYPE.DM_GPASCII);
+            }
+            catch (Exception ex)
+            {
+                logger.Error("PowerPmacDevice Initialize Open Error: {0}", ex.Message);
+                throw;
+            }
+
+
             return Task.CompletedTask;
         }
 

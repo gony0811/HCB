@@ -70,6 +70,7 @@ namespace HCB.UI
             await InitializeApplicationAsync();
 
             SplashScreenUpdate("어플리케이션 초기화 완료", 100);
+            
             RadSplashScreenManager.Close();
 
             // 5. 메인 창 표시 (선택 사항)
@@ -83,14 +84,14 @@ namespace HCB.UI
             palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
 
             mainWindow.Show();
-            //mainWindow.Activate();
+            mainWindow.Activate();
             mainWindow.Focus();
         }
 
         private async Task InitializeApplicationAsync()
         {
             SplashScreenUpdate("백그라운드 서비스 시작", 30);
-            await _host.StartAsync().ConfigureAwait(false);
+            await _host.StartAsync();
         }
 
         protected override void OnExit(ExitEventArgs e)

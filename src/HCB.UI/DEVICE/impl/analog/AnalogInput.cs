@@ -20,8 +20,9 @@ namespace HCB.UI
             {
                 if (_value != value)
                 {                 
+                    var old = _value;
                     _value = value;
-                    OnValueChanged(new ValueChangedEventArgs<double>(_value, value));
+                    OnValueChanged(old, value);
                 }
             }
         }

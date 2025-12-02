@@ -16,12 +16,6 @@ namespace HCB.UI
         [ObservableProperty]
         private string _unit = "";
 
-        public delegate void ValueChangedEventHandler(object sender, ValueChangedEventArgs<double> e);
-        public event ValueChangedEventHandler? ValueChanged;
-
-        protected virtual void OnValueChanged(ValueChangedEventArgs<double> e)
-        {
-            ValueChanged?.Invoke(this, e);
-        }
+        // removed type-specific event - use base.ValueChanged
     }
 }

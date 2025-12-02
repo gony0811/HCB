@@ -54,7 +54,11 @@ namespace HCB.UI
 
                         await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken);
                     }
+
+                    await device.Disconnect();
                 }, stoppingToken);
+
+
             }
         }
     }

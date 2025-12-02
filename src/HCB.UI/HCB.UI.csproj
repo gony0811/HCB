@@ -119,6 +119,7 @@
   </Compile>
   <Compile Include="DEVICE\CommonType\IoType.cs" />
   <Compile Include="DEVICE\CommonType\ValueChangedEventArgs.cs" />
+  <Compile Include="DEVICE\Factory\IDeviceFactory.cs" />
   <Compile Include="DEVICE\Factory\IoDataFactory.cs" />
   <Compile Include="DEVICE\Interface\device\IMotionDevice.cs" />
   <Compile Include="DEVICE\Interface\IIoData.cs" />
@@ -156,7 +157,7 @@
   <Compile Include="SYSTEM\DB\Dto\SensorIoItemViewModel.cs" />
   <Compile Include="SYSTEM\DB\Service\UserService.cs" />
   <Compile Include="DEVICE\CommonType\MotionType.cs" />
-  <Compile Include="DEVICE\Core\DeviceFactory.cs" />
+  <Compile Include="DEVICE\Factory\DeviceFactory.cs" />
   <Compile Include="DEVICE\Core\DeviceManager.cs" />
   <Compile Include="DEVICE\Factory\MotionFactory.cs" />
   <Compile Include="DEVICE\Interface\IDevice.cs" />

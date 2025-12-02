@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using HCB.Data.Entity.Type;
+using System;
 
 namespace HCB.UI
 {
@@ -28,5 +29,13 @@ namespace HCB.UI
 
         [ObservableProperty]
         private IDevice? _device;
+
+        // Centralized value-changed event using object as the value type
+        public event EventHandler<ValueChangedEventArgs<object>>? ValueChanged;
+
+        protected virtual void OnValueChanged(object? oldValue, object newValue)
+        {
+            ValueChanged?.Invoke(this, new ValueChangedEventArgs<object>(oldValue, newValue));
+        }
     }
 }

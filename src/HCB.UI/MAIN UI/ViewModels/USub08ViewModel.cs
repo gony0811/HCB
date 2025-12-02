@@ -9,12 +9,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Telerik.Windows.Controls.GridView;
 using Telerik.Windows.Controls;
+using Serilog;
 
 namespace HCB.UI
 {
     [ViewModel(Lifetime.Singleton)]
     public partial class USub08ViewModel : ObservableObject
     {
+        private ILogger logger;
         private readonly DeviceManager deviceManager;
         private readonly DeviceDetailViewModelFactory deviceDetailViewModelFactory;
         [ObservableProperty] public ObservableCollection<IDevice> deviceList;
@@ -22,8 +24,9 @@ namespace HCB.UI
         [ObservableProperty] private IDevice selectedDevice;
         [ObservableProperty] private IDeviceDetailViewModel selectedDetailViewModel;
 
-        public USub08ViewModel(DeviceManager deviceManager, DeviceDetailViewModelFactory deviceDetailViewModelFactory)
+        public USub08ViewModel(ILogger logger, DeviceManager deviceManager, DeviceDetailViewModelFactory deviceDetailViewModelFactory)
         {
+            this.logger = logger.ForContext<USub08ViewModel>();
             this.deviceManager = deviceManager;
             this.deviceDetailViewModelFactory = deviceDetailViewModelFactory;
             DeviceList = deviceManager.Devices;
@@ -50,9 +53,6 @@ namespace HCB.UI
             modal.Owner = App.Current.MainWindow;
             bool? result = modal.ShowDialog();
 
-           
-            
-
             if (result == true)
             {
                 // 상세 설정 매핑
@@ -60,7 +60,7 @@ namespace HCB.UI
                 {
                     case DeviceType.MotionController:
                         var detail = vm.ExtraSetting as MotionDeviceDetailCreateVM;
-                        var motionDevice = new PowerPmacDevice
+                        var motionDevice = new PowerPmacDevice(logger)
                         {
                             Name = vm.Name,
                             DeviceType = vm.DeviceType,
@@ -77,7 +77,7 @@ namespace HCB.UI
                         break;
                     case DeviceType.IODevice:
                         var ioDetail = vm.ExtraSetting as IoDeviceDetailCreateVM;
-                        var ioDevice = new PmacIoDevice
+                        var ioDevice = new PmacIoDevice(logger)
                         {
                             Name = vm.Name,
                             DeviceType = vm.DeviceType,

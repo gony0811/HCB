@@ -17,6 +17,7 @@ namespace HCB.UI
 
             set
             {
+                var old = _value;
                 _value = value;
 
                 if (Device == null || !Device.IsConnected)
@@ -27,7 +28,7 @@ namespace HCB.UI
                 {
                     string command = string.Format("{0}{1:D4}={2}", Address, Index, value);
                     Device.SendCommand(command);
-                    OnValueChanged(new ValueChangedEventArgs<double>(_value, value));
+                    OnValueChanged(old, value);
                 }
             }
         }

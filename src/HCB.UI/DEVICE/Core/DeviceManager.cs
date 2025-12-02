@@ -19,12 +19,15 @@ namespace HCB.UI
     [Service(Lifetime.Singleton)]
     public class DeviceManager : ObservableObject
     {
-        private ILogger _logger; 
-        private readonly DeviceRepository deviceRepository;
-        public DeviceManager(ILogger logger, DeviceRepository deviceRepository)
+        private readonly ILogger _logger;
+        private readonly DeviceRepository _deviceRepository;
+        private readonly IDeviceFactory _deviceFactory; // 팩토리 주입
+
+        public DeviceManager(ILogger logger, DeviceRepository deviceRepository, IDeviceFactory deviceFactory)
         {
-            this._logger = logger.ForContext<DeviceManager>();
-            this.deviceRepository = deviceRepository;
+            _logger = logger.ForContext<DeviceManager>();
+            _deviceRepository = deviceRepository;
+            _deviceFactory = deviceFactory; // 주입받은 팩토리 할당
             _ = LoadFromDatabaseAsync();
         }
 
@@ -37,7 +40,7 @@ namespace HCB.UI
         public async Task LoadFromDatabaseAsync()
         {
             Clear();
-            var deviceEntities = await deviceRepository.ListAsync(
+            var deviceEntities = await _deviceRepository.ListAsync(
                             include: q => q
                                 .Include(d => d.MotionDeviceDetail)
                                     .ThenInclude(md => md.MotionList)
@@ -76,7 +79,7 @@ namespace HCB.UI
                     IsEnabled = device.IsEnabled,
                     Description = device.Description
                 };
-                Device result = await deviceRepository.AddAsync(entity);
+                Device result = await _deviceRepository.AddAsync(entity);
                 device.Id = result.Id;
 
 
@@ -88,7 +91,7 @@ namespace HCB.UI
                     MotionDeviceType = device.MotionDeviceType
                 };
 
-                MotionDeviceDetail detailResult = await deviceRepository.AddMotionDeviceDetail(detail);
+                MotionDeviceDetail detailResult = await _deviceRepository.AddMotionDeviceDetail(detail);
               
                 _deviceMap.Add(device.Name, device);
                 Devices.Add(device);
@@ -119,7 +122,7 @@ namespace HCB.UI
 					IsEnabled = device.IsEnabled,
 					Description = device.Description
 				};
-				Device result = await deviceRepository.AddAsync(entity);
+				Device result = await _deviceRepository.AddAsync(entity);
 				device.Id = result.Id;
 
 
@@ -131,7 +134,7 @@ namespace HCB.UI
 					IoDeviceType = device.IoDeviceType
 				};
 
-				IoDeviceDetail detailResult = await deviceRepository.AddIoDeviceDetail(detail);
+				IoDeviceDetail detailResult = await _deviceRepository.AddIoDeviceDetail(detail);
 
 				_deviceMap.Add(device.Name, device);
 				Devices.Add(device);
@@ -171,7 +174,8 @@ namespace HCB.UI
         }
         private IDevice CreateRuntimeDevice(Device entity)
         {
-            var device = DeviceFactory.Create(entity);
+            // 정적 호출 대신 주입받은 팩토리 인스턴스 사용
+            var device = _deviceFactory.Create(entity);
 
             // MotionController의 경우 추가 상세 매핑
             if (device is IMotionDevice motion && entity.MotionDeviceDetail != null)

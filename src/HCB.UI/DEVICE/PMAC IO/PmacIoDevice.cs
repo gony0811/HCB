@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace HCB.UI
 {
@@ -24,25 +25,46 @@ namespace HCB.UI
         [ObservableProperty] private IoDeviceType ioDeviceType;
         [ObservableProperty] public ObservableCollection<IIoData> ioDataList = new ObservableCollection<IIoData>();
 
+        private ILogger logger;
         private uint uDeviceId;
+
+        public PmacIoDevice()
+        {
+            this.logger = Serilog.Log.ForContext<PmacIoDevice>();
+        }
+
+        public PmacIoDevice(ILogger logger)
+        {
+            this.logger = logger.ForContext<PmacIoDevice>();
+        }
 
         public Task Connect()
         {
             Byte[] byCommand;
             UInt32 uRet;
-            uRet = DTKPowerPmac.Instance.Connect(uDeviceId);
 
-            if ((DTK_STATUS)uRet == DTK_STATUS.DS_Ok)
+            try
             {
-                byCommand = new Byte[255];
-                byCommand = System.Text.Encoding.GetEncoding("euc-kr").GetBytes("echo 3");
-                uRet = DTKPowerPmac.Instance.SendCommandA(uDeviceId, byCommand);
-                IsConnected = true;
+                uRet = DTKPowerPmac.Instance.Connect(uDeviceId);
+
+                if ((DTK_STATUS)uRet == DTK_STATUS.DS_Ok)
+                {
+                    byCommand = new Byte[255];
+                    byCommand = System.Text.Encoding.GetEncoding("euc-kr").GetBytes("echo 3");
+                    uRet = DTKPowerPmac.Instance.SendCommandA(uDeviceId, byCommand);
+                    IsConnected = true;
+                    this.logger.Information("Power PMAC IO Device Connected. IP: {Ip}", Ip);
+                }
+                else
+                {
+                    DTKPowerPmac.Instance.Close(uDeviceId);
+                    Id = int.MaxValue;
+                    IsConnected = false;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                DTKPowerPmac.Instance.Close(uDeviceId);
-                Id = int.MaxValue;
+                this.logger.Error(ex, "Power PMAC IO Device Connection Failed. IP: {Ip}", Ip);
                 IsConnected = false;
             }
 
@@ -71,7 +93,16 @@ namespace HCB.UI
             String[] strIP = new String[4];
             strIP = Ip.Split('.');
             uIPAddress = (Convert.ToUInt32(strIP[0]) << 24) | (Convert.ToUInt32(strIP[1]) << 16) | (Convert.ToUInt32(strIP[2]) << 8) | Convert.ToUInt32(strIP[3]);
-            uDeviceId = DTKPowerPmac.Instance.Open(uIPAddress, (uint)DTK_MODE_TYPE.DM_GPASCII);
+
+            try
+            {
+                uDeviceId = DTKPowerPmac.Instance.Open(uIPAddress, (uint)DTK_MODE_TYPE.DM_GPASCII);
+            }
+            catch (Exception ex)
+            {
+                this.logger.Error(ex, "Power PMAC IO Device Initialization Failed. IP: {Ip}", Ip);
+            }
+
 
             return Task.CompletedTask;
         }
@@ -89,7 +120,7 @@ namespace HCB.UI
 
                     var io = data as AbstractIoBase;
 
-                    strCommand = string.Format("{0}{1}", io.Address, io.Index);
+                    strCommand = string.Format("{0}{1:D4}", io.Address, io.Index);
 
                     strResponse = SendCommand<string>(strCommand).Result;
 
