@@ -12,7 +12,7 @@ namespace HCB.Data.Entity
 
         public double Speed { get; set; } = 0.0;
 
-        public double Location { get; set; } = 0.0;
+        public double Position { get; set; } = 0.0;
 
         public int MotionId { get; set; }
 

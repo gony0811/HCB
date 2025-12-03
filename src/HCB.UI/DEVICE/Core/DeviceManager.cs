@@ -289,7 +289,7 @@ namespace HCB.UI
                     Id = pos.Id,
                     Name = pos.Name,
                     Speed = pos.Speed,
-                    Location = pos.Location,
+                    Position = pos.Position,
                     ParentMotion = dm
                 });
             }

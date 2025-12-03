@@ -337,7 +337,7 @@ namespace HCB.Data
                 .HasDefaultValue(0.0);
 
 
-            builder.Property(p => p.Location)
+            builder.Property(p => p.Position)
                 .HasDefaultValue(0.0);
 
 

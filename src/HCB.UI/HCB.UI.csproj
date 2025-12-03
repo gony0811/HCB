@@ -132,6 +132,10 @@
   <Compile Include="DEVICE\impl\digital\DigitalInput.cs" />
   <Compile Include="DEVICE\impl\digital\DigitalOutput.cs" />
   <Compile Include="DEVICE\PMAC IO\PmacIoDevice.cs" />
+  <Compile Include="SEQUENCE\Extenstions\MotionExtensions.cs" />
+  <Compile Include="SEQUENCE\Interface\ISequence.cs" />
+  <Compile Include="SEQUENCE\Interface\ISequenceHelper.cs" />
+  <Compile Include="SEQUENCE\Helper\SequenceHelper.cs" />
   <Compile Include="SERVICE\DeviceService.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
   <Compile Include="SUB UI\SplashView\SplashView.xaml.cs" />
@@ -226,10 +230,6 @@
   
   <ItemGroup>
     <ProjectReference Include="..\HCB\HCB.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="SEQUENCE\" />
   </ItemGroup>
 
 </Project>

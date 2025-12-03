@@ -148,11 +148,12 @@ namespace HCB.UI
             throw new NotImplementedException();
         }
 
-        public IIoData FindMotionByName(string name)
+        public IIoData FindIoDataByName(string name)
         {
             return IoDataList.FirstOrDefault<IIoData>(io => io.Name == name);
         }
 
+        
 
         public Task SendCommand(string command)
         {
