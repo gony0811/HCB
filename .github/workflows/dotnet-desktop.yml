@@ -24,8 +24,13 @@ jobs:
         dotnet-version: 8.0.x
 
     # 3. NuGet 패키지 복원 (의존성 라이브러리 다운로드)
+    # 3. NuGet 패키지 복원 (환경 변수 연결 필수!)
     - name: Restore dependencies
       run: dotnet restore ./src/HCB.sln
+      env:
+        # 여기서 GitHub에 저장해둔 비밀키를 꺼내서 환경변수로 넣어줍니다.
+        TELERIK_USERNAME: ${{ secrets.TELERIK_USERNAME }}
+        TELERIK_PASSWORD: ${{ secrets.TELERIK_PASSWORD }}
 
     # 4. 빌드 수행 (Release 모드)
     # --no-restore: 앞 단계에서 했으므로 생략
