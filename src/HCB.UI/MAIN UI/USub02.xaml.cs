@@ -12,12 +12,14 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using HCB.IoC;
 
 namespace HCB.UI
 {
     /// <summary>
     /// USub02.xaml에 대한 상호 작용 논리
     /// </summary>
+    [View(Lifetime.Singleton)]
     public partial class USub02 : Page
     {
         public USub02()

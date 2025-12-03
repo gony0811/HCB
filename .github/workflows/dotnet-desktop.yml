@@ -1,0 +1,33 @@
+﻿name: .NET 8 WPF Build
+
+# 언제 실행될지 트리거 설정
+on:
+  push:
+    branches: [ "main", "master" ] # main 브랜치에 푸시될 때
+  pull_request:
+    branches: [ "main", "master" ] # PR이 올라왔을 때
+
+jobs:
+  build:
+    # WPF는 윈도우 환경에서만 빌드 가능하므로 windows-latest 사용
+    runs-on: windows-latest
+
+    steps:
+    # 1. 현재 저장소의 코드를 내려받음
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 2. .NET 8 SDK 설치
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    # 3. NuGet 패키지 복원 (의존성 라이브러리 다운로드)
+    - name: Restore dependencies
+      run: dotnet restore ./src/HCB.sln
+
+    # 4. 빌드 수행 (Release 모드)
+    # --no-restore: 앞 단계에서 했으므로 생략
+    - name: Build
+      run: dotnet build ./src/HCB.sln --configuration Release --no-restore
