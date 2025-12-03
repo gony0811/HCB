@@ -52,7 +52,7 @@ namespace HCB.UI
                 Id = e.Id,
                 Name = e.Name,
                 Speed = e.Speed,
-                Location = e.Location,
+                Position = e.Position,
                 ParentMotion = parent
             };
         }
@@ -121,7 +121,7 @@ namespace HCB.UI
                 Id = r.Id,
                 Name = r.Name,
                 Speed = r.Speed,
-                Location = r.Location,
+                Position = r.Position,
                 MotionId = r.ParentMotion.Id
             };
         }

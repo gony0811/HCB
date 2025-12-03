@@ -20,6 +20,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="PropertyTools.Wpf" Version="3.1.0" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
@@ -38,7 +39,25 @@
     <Generator>MSBuild:Compile</Generator>
     <SubType>Designer</SubType>
   </ApplicationDefinition>
+  <Page Include="MAIN UI\USub02.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\AlertModal\AlertModal.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\ConfirmModal\ConfirmModal.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\PromptModal\ParameterCreateWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\PromptModal\RecipeCreateWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\SplashView\SplashView.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\Title\TitleBar.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\USub08Tab\IoDeviceView.xaml">
@@ -132,16 +151,27 @@
   <Compile Include="DEVICE\impl\digital\DigitalInput.cs" />
   <Compile Include="DEVICE\impl\digital\DigitalOutput.cs" />
   <Compile Include="DEVICE\PMAC IO\PmacIoDevice.cs" />
+  <Compile Include="MAIN UI\USub02.xaml.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub02ViewModel.cs" />
   <Compile Include="SEQUENCE\Extenstions\MotionExtensions.cs" />
   <Compile Include="SEQUENCE\Interface\ISequence.cs" />
   <Compile Include="SEQUENCE\Interface\ISequenceHelper.cs" />
   <Compile Include="SEQUENCE\Helper\SequenceHelper.cs" />
   <Compile Include="SERVICE\DeviceService.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
+  <Compile Include="SUB UI\AlertModal\AlertModal.xaml.cs" />
+  <Compile Include="SUB UI\ConfirmModal\ConfirmModal.xaml.cs" />
+  <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
+  <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
+  <Compile Include="SUB UI\PromptModal\ParameterCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\SplashView\SplashView.xaml.cs" />
-  <Compile Include="SUB UI\USub08Tab\IoDataCreateVM.cs" />
-  <Compile Include="SUB UI\USub08Tab\IoDeviceDetatilViewModel.cs" />
+  <Compile Include="SUB UI\Title\TitleBar.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\IoDataCreateVM.cs" />
+  <Compile Include="SUB UI\ViewModels\IoDeviceDetatilViewModel.cs" />
   <Compile Include="SUB UI\USub08Tab\IoDeviceView.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\PromptDialogVM.cs" />
+  <Compile Include="SUB UI\ViewModels\RecipeCreateVM.cs" />
   <Compile Include="SYSTEM\DB\Service\AlarmService.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToBrushConverter.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToTextConvert.cs" />
@@ -193,28 +223,28 @@
   <Compile Include="SUB UI\Helper\NumericTextBox.cs" />
   <Compile Include="SUB UI\Helper\ValueTemplateSelector.cs" />
   <Compile Include="SUB UI\MotorStatusTable\MotorStatusTable.xaml.cs" />
-  <Compile Include="SUB UI\MotorStatusTable\MotorStatusTableViewModel.cs" />
+  <Compile Include="SUB UI\ViewModels\MotorStatusTableViewModel.cs" />
   <Compile Include="SUB UI\StateCell\IoPillToggle.xaml.cs" />
   <Compile Include="SUB UI\StateCell\MotorStateControl.xaml.cs" />
   <Compile Include="SUB UI\StateCell\StateCell.xaml.cs" />
-  <Compile Include="SUB UI\StateCell\StateCellVM.cs" />
+  <Compile Include="SUB UI\ViewModels\StateCellVM.cs" />
   <Compile Include="SUB UI\StateCell\Type.cs" />
   <Compile Include="SUB UI\TimeRange\TimeRange.xaml.cs" />
   <Compile Include="SUB UI\TimeRange\TimeRangeViewModel.cs" />
   <Compile Include="SUB UI\USub01Tab\AutoTab.xaml.cs" />
-  <Compile Include="SUB UI\USub01Tab\AutoTabViewModel.cs" />
+  <Compile Include="SUB UI\ViewModels\AutoTabViewModel.cs" />
   <Compile Include="SUB UI\USub01Tab\LoadingTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\ManualTab.xaml.cs" />
-  <Compile Include="SUB UI\USub01Tab\ManualTabViewModel.cs" />
+  <Compile Include="SUB UI\ViewModels\ManualTabViewModel.cs" />
   <Compile Include="SUB UI\USub01Tab\RunInformation.cs" />
   <Compile Include="SUB UI\USub01Tab\RunningStatus.cs" />
-  <Compile Include="SUB UI\USub08Tab\DeviceCreateVM.cs" />
+  <Compile Include="SUB UI\ViewModels\DeviceCreateVM.cs" />
   <Compile Include="SUB UI\USub08Tab\DeviceDetailTemplateSelector.cs" />
   <Compile Include="SUB UI\USub08Tab\DeviceDetailViewModelFactory.cs" />
-  <Compile Include="SUB UI\USub08Tab\MotionCreateVM.cs" />
-  <Compile Include="SUB UI\USub08Tab\MotionDeviceDetailViewModel.cs" />
+  <Compile Include="SUB UI\ViewModels\MotionCreateVM.cs" />
+  <Compile Include="SUB UI\ViewModels\MotionDeviceDetailViewModel.cs" />
   <Compile Include="SUB UI\USub08Tab\MotionDeviceView.xaml.cs" />
-  <Compile Include="SUB UI\USub08Tab\MotionParameterCreateVM.cs" />
+  <Compile Include="SUB UI\ViewModels\MotionParameterCreateVM.cs" />
   <Compile Include="SYSTEM\Logging\GridLogSink.cs" />
   <Compile Include="SYSTEM\Logging\TextBoxSink.cs" />
   <Compile Include="SYSTEM\Options\DataOptions.cs" />

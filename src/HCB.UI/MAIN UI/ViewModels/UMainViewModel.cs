@@ -45,11 +45,13 @@ namespace HCB.UI
             ILogger logger,
             LogRepository logRepository,
             USub01 uSub01, 
+            USub02 uSub02,
             USub08 uSub08,
             UserService userService, 
             NavigationViewModel navVM)
         {
             this.mainPage = uSub01;
+            this.parameterPage = uSub02;
             this.devicePage = uSub08;
             this.UserService = userService;
             this.NavVM = navVM;
@@ -97,7 +99,7 @@ namespace HCB.UI
                     logger.Information("애플리케이션 시작됨.");
                     break;
                 case "PARAMETER":
-                    //CurrentPage = App.Container.Resolve<USub02>();
+                    CurrentPage = parameterPage;
                     break;
                 case "USER":
                     //CurrentPage = App.Container.Resolve<USub03>();
