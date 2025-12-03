@@ -261,9 +261,5 @@
   <ItemGroup>
     <ProjectReference Include="..\HCB\HCB.csproj" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="packages\" />
-  </ItemGroup>
 
 </Project>
