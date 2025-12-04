@@ -26,7 +26,7 @@
     </Page.Resources>
 
     <Grid local:GridHelper.Rows="1*, 2*">
-        <telerik:GroupBox Header="Device" Foreground="White" FontSize="14" Style="{StaticResource GroupBoxStyle}">
+        <telerik:GroupBox Header="Device" Foreground="White" FontSize="14"  >
             <Grid local:GridHelper.Rows="1*, Auto" Grid.ColumnSpan="2" Grid.Row="0">
                 <telerik:RadGridView 
                     ItemsSource="{Binding DeviceList}"
@@ -40,7 +40,7 @@
                     ScrollViewer.CanContentScroll="True"
                     PreviewMouseRightButtonDown="DataGrid_PreviewMouseRightButtonDown"
                     Margin="10"
-                    Style="{StaticResource RadGridViewStyle}">
+                     >
 
                     <telerik:RadGridView.ContextMenu>
                         <ContextMenu 
@@ -61,11 +61,11 @@
                 </telerik:RadGridView>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="1">
-                    <telerik:RadButton Content="디바이스 생성" Command="{Binding DeviceCreateCommand}" Width="100" Height="40" Style="{StaticResource RadButtonStyle}" Margin="5"/>
+                    <telerik:RadButton Content="디바이스 생성" Command="{Binding DeviceCreateCommand}" Width="100" Height="40"  Margin="5"/>
                 </StackPanel>
             </Grid>
         </telerik:GroupBox>
-        <telerik:GroupBox Header="추가 정보" Grid.Row="1" Padding="10" Foreground="White" FontSize="14" Style="{StaticResource GroupBoxStyle}" Margin="5">
+        <telerik:GroupBox Header="추가 정보" Grid.Row="1" Padding="10" Foreground="White" FontSize="14"   Margin="5">
 
             <ContentControl
                 Content="{Binding SelectedDetailViewModel}"

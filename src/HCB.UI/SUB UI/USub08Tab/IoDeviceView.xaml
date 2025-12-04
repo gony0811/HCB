@@ -9,7 +9,7 @@
              d:DesignHeight="300" d:DesignWidth="300">
 
     <Grid local:GridHelper.Columns="1*" local:GridHelper.Rows="Auto, 1*, Auto">
-        <telerik:HighlightTextBlock Text="I/O Data" FontSize="20" Style="{StaticResource HighlightTextBlockStyle}" Margin="5"></telerik:HighlightTextBlock>
+        <telerik:HighlightTextBlock Text="I/O Data" FontSize="20"  Margin="5"></telerik:HighlightTextBlock>
         <telerik:RadGridView ItemsSource="{Binding Device.IoDataList}"         
                 SelectedItem="{Binding SelectedIoData}"
                 ShowGroupPanel="False"
@@ -21,7 +21,7 @@
               EnableRowVirtualization="True"
               ScrollViewer.CanContentScroll="True"
               Margin="5"
-              Style="{StaticResource RadGridViewStyle}">
+               >
             <telerik:RadGridView.Columns>
                 <telerik:GridViewDataColumn Header="Name" DataMemberBinding="{Binding Name}" Width="1*" />
                 <telerik:GridViewDataColumn Header="Io Data Type" DataMemberBinding="{Binding IoType}" Width="1*" />

@@ -30,7 +30,7 @@
             <!-- 커스텀 타이틀(창 타이틀과 동일 텍스트) -->
             <telerik:HighlightTextBlock Grid.Row="0"
                        Text="{Binding TitleText, RelativeSource={RelativeSource AncestorType=Window}}"
-                       Style="{StaticResource RadHighlightTextBlockStyle}"
+                        
                        TextAlignment="Center"
                        Foreground="White"
                        FontSize="18"
@@ -40,7 +40,7 @@
             <!-- 본문 -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <telerik:HighlightTextBlock Text="{Binding MessageText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            Style="{StaticResource RadHighlightTextBlockStyle}"
+                                             
                                             TextAlignment="Center"
                                             TextWrapping="Wrap"
                                             Foreground="White"

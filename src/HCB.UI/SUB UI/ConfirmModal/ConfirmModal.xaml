@@ -21,7 +21,7 @@
 
             <!-- 커스텀 타이틀(창 타이틀과 동일 텍스트) -->
             <telerik:HighlightTextBlock Grid.Row="0"
-                                        Style="{StaticResource HighlightTextBlockStyle}"
+                                        
                                         Text="{Binding TitleText, RelativeSource={RelativeSource AncestorType=Window}}"
                                         TextAlignment="Center"
                                         FontSize="18"
@@ -31,7 +31,7 @@
             <!-- 본문 -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <telerik:HighlightTextBlock Text="{Binding MessageText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            Style="{StaticResource HighlightTextBlockStyle}"
+                                            
                                             TextAlignment="Center"
                                             TextWrapping="Wrap"
                                             LineHeight="22"/>
@@ -39,10 +39,10 @@
 
             <!-- 버튼 -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                <telerik:RadButton Content="확인" Width="90" Height="36" Margin="0,0,8,0" Style="{StaticResource RadButtonStyle}"
+                <telerik:RadButton Content="확인" Width="90" Height="36" Margin="0,0,8,0"  
                      IsDefault="True"
                      Click="OnOkClick"/>
-                <telerik:RadButton Content="취소" Width="90" Height="36" Style="{StaticResource RadButtonStyle}" IsCancel="True"/>
+                <telerik:RadButton Content="취소" Width="90" Height="36"  IsCancel="True"/>
             </StackPanel>
         </Grid>
     </Border>

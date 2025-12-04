@@ -1,4 +1,4 @@
-﻿<Window x:Class="HCB.UI.UMain"
+﻿<telerik:RadWindow x:Class="HCB.UI.UMain"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,11 +6,10 @@
         xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
         xmlns:local="clr-namespace:HCB.UI"
         mc:Ignorable="d"
-        WindowStyle="ThreeDBorderWindow"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip" 
-        telerik:StyleManager.Theme="Windows11" Closed="Window_Closed">
-    <Window.Resources>
+         Closed="Window_Closed">
+    <telerik:RadWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/SYSTEM/COMMON/Styles/UMainStyle.xaml"></ResourceDictionary>
@@ -19,15 +18,15 @@
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
-    </Window.Resources>
+    </telerik:RadWindow.Resources>
 
-    <Grid Style="{StaticResource WindowBg}">
-         <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="Auto"/>
-    </Grid.RowDefinitions>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
         <Border Grid.Row="0">
             <Grid>
@@ -39,27 +38,27 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <telerik:RadButton Grid.Column="0" Content="LOGO" Width="150" Height="60" Margin="5" Style="{StaticResource RadButtonStyle}"/>
+                <telerik:RadButton Grid.Column="0" Content="LOGO" Width="150" Height="60" Margin="5"/>
                 <WrapPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center" Margin="3">
                     <StackPanel Orientation="Horizontal">
-                        <telerik:RadHighlightTextBlock  Text="THREAD :" Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                        <telerik:RadHighlightTextBlock x:Name="tbThread" Text="{Binding ThreadText}" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
+                        <telerik:RadHighlightTextBlock  Text="THREAD :" />
+                        <telerik:RadHighlightTextBlock x:Name="tbThread" Text="{Binding ThreadText}" VerticalAlignment="Center" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <telerik:RadHighlightTextBlock Text="TIME :" Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                        <telerik:RadHighlightTextBlock x:Name="tbTime" Text="{Binding TimeText}" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
+                        <telerik:RadHighlightTextBlock Text="TIME :" />
+                        <telerik:RadHighlightTextBlock x:Name="tbTime" Text="{Binding TimeText}" VerticalAlignment="Center"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <telerik:RadHighlightTextBlock Text="LOG IN LEVEL :" Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                        <telerik:RadHighlightTextBlock x:Name="tbUser"  Text="{Binding UserService.CurrentAuthority.Name, TargetNullValue=--, FallbackValue=--}" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
+                        <telerik:RadHighlightTextBlock Text="LOG IN LEVEL :"/>
+                        <telerik:RadHighlightTextBlock x:Name="tbUser"  Text="{Binding UserService.CurrentAuthority.Name, TargetNullValue=--, FallbackValue=--}" VerticalAlignment="Center" />
                     </StackPanel>
                 </WrapPanel>
 
-                <telerik:RadHighlightTextBlock  Grid.Column="3" x:Name="tbStatus" Text="{Binding StatusText}" FontSize="36" VerticalAlignment="Center" Width="Auto" TextAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
+                <telerik:RadHighlightTextBlock  Grid.Column="3" x:Name="tbStatus" Text="{Binding StatusText}" FontSize="36" VerticalAlignment="Center" Width="Auto" TextAlignment="Center" />
                 <WrapPanel Grid.Column="4" Orientation="Vertical" VerticalAlignment="Center" Margin="3">
-                    <telerik:RadHighlightTextBlock  x:Name="tbBuild" Text="{Binding BuildText}" TextAlignment="Right" Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                    <telerik:RadHighlightTextBlock  x:Name="tbDeveloper" Text="{Binding DeveloperText}" TextAlignment="Right" Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                    <telerik:RadHighlightTextBlock  x:Name="tbSerialNumber" Text="{Binding SerialNumberText}" TextAlignment="Right" Style="{StaticResource RadHighlightTextBlockStyle}"/>
+                    <telerik:RadHighlightTextBlock  x:Name="tbBuild" Text="{Binding BuildText}" TextAlignment="Right" />
+                    <telerik:RadHighlightTextBlock  x:Name="tbDeveloper" Text="{Binding DeveloperText}" TextAlignment="Right" />
+                    <telerik:RadHighlightTextBlock  x:Name="tbSerialNumber" Text="{Binding SerialNumberText}" TextAlignment="Right"/>
                 </WrapPanel>
             </Grid>
         </Border>
@@ -124,10 +123,10 @@
 
 
         <Grid Grid.Row="3">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="8">
                 <StackPanel.Resources>
                     <local:KeyEqualsConverter x:Key="KeyEquals"/>
@@ -171,7 +170,7 @@
                         CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
                         IsChecked="{Binding SelectedPageKey, Converter={StaticResource KeyEquals}, ConverterParameter=USER}"
                         IsEnabled="{Binding NavVM.UserEnabled}"
-                        Style="{StaticResource MenuBtn}">
+                        >
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <telerik:RadGlyph Glyph="&#xe801;" 
                   Width="24" Height="24" 
@@ -187,7 +186,7 @@
                             CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
                             IsChecked="{Binding SelectedPageKey, Converter={StaticResource KeyEquals}, ConverterParameter=LOG}"
                             IsEnabled="{Binding NavVM.LogEnabled}"
-                          Style="{StaticResource MenuBtn}">
+                          >
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <telerik:RadGlyph Glyph="&#xe924;" 
                   Width="24" Height="24" 
@@ -202,7 +201,7 @@
                         CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
                         IsChecked="{Binding SelectedPageKey, Converter={StaticResource KeyEquals}, ConverterParameter=ALARM}"
                         IsEnabled="{Binding NavVM.AlarmEnabled}"
-                          Style="{StaticResource MenuBtn}">
+                          >
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <telerik:RadGlyph Glyph="&#xe400;" 
                   Width="24" Height="24" 
@@ -218,7 +217,7 @@
                             CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
                             IsChecked="{Binding SelectedPageKey, Converter={StaticResource KeyEquals}, ConverterParameter=MOTION}"
                            IsEnabled="{Binding NavVM.MotionEnabled}"
-                          Style="{StaticResource MenuBtn}"
+                          
                           >
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <telerik:RadGlyph Glyph="&#xea17;"
@@ -235,7 +234,7 @@
                             CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
                             IsChecked="{Binding SelectedPageKey, Converter={StaticResource KeyEquals}, ConverterParameter=IO}"
                            IsEnabled="{Binding NavVM.IOEnabled}"
-                          Style="{StaticResource MenuBtn}">
+                          >
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <telerik:RadGlyph Glyph="&#xe934;" 
                   Width="24" Height="24" 
@@ -253,7 +252,7 @@
                          IsChecked="{Binding SelectedPageKey, Converter={StaticResource KeyEquals}, ConverterParameter=DEVICE}"
                          IsEnabled="{Binding NavVM.DeviceEnabled}"
                          Visibility="Visible"
-                         Style="{StaticResource MenuBtn}">
+                         >
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <!-- 아이콘 -->
                         <telerik:RadGlyph Glyph="&#xe13c;" Width="24" Height="24" Margin="0,0,0,5"/>
@@ -268,12 +267,12 @@
                 <telerik:RadButton x:Name="Exit" MinHeight="80" MinWidth="120" Command="{Binding ProgramExitCommand}">
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <telerik:RadGlyph Glyph="&#xe11c;" Width="24" Height="24" Margin="0,0,0,5"/>
-                        <telerik:HighlightTextBlock Text="종료" TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                        <telerik:HighlightTextBlock Text="종료" TextAlignment="Center" />
                     </StackPanel>
                 </telerik:RadButton>
             </StackPanel>
         </Grid>
 
 
-</Grid>
-</Window>
+    </Grid>
+</telerik:RadWindow>

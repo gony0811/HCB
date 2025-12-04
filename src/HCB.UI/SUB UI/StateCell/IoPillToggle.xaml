@@ -53,7 +53,7 @@
                                    FontWeight="SemiBold"
                                    FontSize="{Binding LabelFontSize, ElementName=root}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                    Style="{StaticResource HighlightTextBlockStyle}"/>
+                                                    />
                     </Border>
                 </Grid>
 

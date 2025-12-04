@@ -6,46 +6,48 @@
         xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
         xmlns:local="clr-namespace:HCB.UI"
         mc:Ignorable="d"
-        Title="{Binding Title}" ShowInTaskbar="False" ResizeMode="NoResize">
-    <Border Padding="16">
+                        
+         ResizeMode="NoResize">
+    
+    <Border Padding="15" Background="Transparent">
         <StackPanel>
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="파라미터 이름" Margin="0,0,0,6" Foreground="White"/>
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Value.Name, UpdateSourceTrigger=PropertyChanged}"/>
+            <telerik:HighlightTextBlock  Text="파라미터 이름" Margin="0,0,0,6" Foreground="White"/>
+            <telerik:HighlightTextBlock  Text="{Binding Value.Name, UpdateSourceTrigger=PropertyChanged}"/>
 
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="현재 값" Margin="0,0,0,6" />
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Value.Value, UpdateSourceTrigger=PropertyChanged}" 
+            <telerik:HighlightTextBlock  Text="현재 값" Margin="0,0,0,6" />
+            <telerik:HighlightTextBlock  Text="{Binding Value.Value, UpdateSourceTrigger=PropertyChanged}" 
                   local:NumericTextBox.IsEnabled="True"
                   local:NumericTextBox.AllowDecimal="True"
                   local:NumericTextBox.AllowNegative="True"/>
 
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="최소 값" Margin="0,0,0,6" />
+            <telerik:HighlightTextBlock  Text="최소 값" Margin="0,0,0,6" />
             <telerik:HighlightTextBlock Text="{Binding Value.Minimum, UpdateSourceTrigger=PropertyChanged}" 
                   local:NumericTextBox.IsEnabled="True"
                   local:NumericTextBox.AllowDecimal="True"
                   local:NumericTextBox.AllowNegative="True"/>
 
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="최대 값" Margin="0,0,0,6" />
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Value.Maximum, UpdateSourceTrigger=PropertyChanged}" 
+            <telerik:HighlightTextBlock  Text="최대 값" Margin="0,0,0,6" />
+            <telerik:HighlightTextBlock  Text="{Binding Value.Maximum, UpdateSourceTrigger=PropertyChanged}" 
                   local:NumericTextBox.IsEnabled="True"
                   local:NumericTextBox.AllowDecimal="True"
                   local:NumericTextBox.AllowNegative="True"/>
 
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="값 타입" Margin="12,12,0,6"/>
-            <telerik:RadComboBox Style="{StaticResource RadComboBoxStyle}" ItemsSource="{Binding ValueTypes}"
+            <telerik:HighlightTextBlock  Text="값 타입" Margin="12,12,0,6"/>
+            <telerik:RadComboBox   ItemsSource="{Binding ValueTypes}"
                    DisplayMemberPath="Name"
                    SelectedValuePath="Id"
                    SelectedValue="{Binding Value.ValueTypeId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
 
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="단위" Margin="12,12,0,6"/>
-            <telerik:RadComboBox Style="{StaticResource RadComboBoxStyle}" ItemsSource="{Binding Units}"
+            <telerik:HighlightTextBlock  Text="단위" Margin="12,12,0,6"/>
+            <telerik:RadComboBox   ItemsSource="{Binding Units}"
                    DisplayMemberPath="Name"
                    SelectedValuePath="Id"
                    SelectedValue="{Binding Value.UnitId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="저장" Width="80" Command="{Binding OkCommand}" Margin="0,0,5,0"></telerik:RadButton>
-                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="취소"  Width="80" Command="{Binding CancelCommand}"/>
+                <telerik:RadButton  Content="저장" Width="80" Command="{Binding OkCommand}" Margin="0,0,5,0"></telerik:RadButton>
+                <telerik:RadButton  Content="취소"  Width="80" Command="{Binding CancelCommand}"/>
             </StackPanel>
 
         </StackPanel>

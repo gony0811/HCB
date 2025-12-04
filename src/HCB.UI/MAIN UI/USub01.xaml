@@ -34,8 +34,8 @@
                FontSize="24"
                Grid.Column="0" 
                VerticalAlignment="Center" 
-               Margin="{StaticResource ToolbarButtonsMargin}"
-               Style="{StaticResource RadHighlightTextBlockStyle}"/>
+               
+               />
 
             <telerik:RadHighlightTextBlock x:Name="tbCurrentDevice"
                Text="{Binding CurrentDevice}"         
@@ -45,8 +45,8 @@
                Grid.Column="1" 
                HorizontalAlignment="Center"
                VerticalAlignment="Center" 
-               Margin="{StaticResource ToolbarButtonsMargin}"
-               Style="{StaticResource RadHighlightTextBlockStyle}"/>
+               
+               />
         </Grid>
 
         <!-- Tab Panel-->

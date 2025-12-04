@@ -8,7 +8,7 @@
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="Auto, 1*, Auto">
-        <telerik:HighlightTextBlock Text="Motion" FontSize="20" Style="{StaticResource HighlightTextBlockStyle}" Margin="5"></telerik:HighlightTextBlock>
+        <telerik:HighlightTextBlock Text="Motion" FontSize="20"  Margin="5"></telerik:HighlightTextBlock>
         <telerik:RadGridView ItemsSource="{Binding Device.MotionList}"
                   ShowGroupPanel="False"
                   SelectedItem="{Binding SelectedMotion}"
@@ -20,7 +20,7 @@
                 EnableRowVirtualization="True"
                 ScrollViewer.CanContentScroll="True"
                 Margin="5"
-                Style="{StaticResource RadGridViewStyle}">
+                 >
             <telerik:RadGridView.Columns>
                 <telerik:GridViewDataColumn Header="번호" DataMemberBinding="{Binding MotorNo}" Width="0.6*"/>
                 <telerik:GridViewDataColumn Header="이름" DataMemberBinding="{Binding Name}" Width="1*" />
@@ -47,7 +47,7 @@
                     EnableRowVirtualization="True"
                     ScrollViewer.CanContentScroll="True"
                     Margin="5"
-                    Style="{StaticResource RadGridViewStyle}">
+                     >
             <telerik:RadGridView.Columns>
                 <telerik:GridViewDataColumn Header="이름" DataMemberBinding="{Binding Name}" Width="1*" />
                 <telerik:GridViewDataColumn Header="값 타입" DataMemberBinding="{Binding ValueType}" Width="1*" />
@@ -56,7 +56,7 @@
             </telerik:RadGridView.Columns>
         </telerik:RadGridView>
         <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-            <telerik:RadButton Content="파라미터 생성" Command="{Binding MotionParameterCreateCommand}" Style="{StaticResource RadButtonStyle}" Margin="5"/>
+            <telerik:RadButton Content="파라미터 생성" Command="{Binding MotionParameterCreateCommand}"  Margin="5"/>
         </StackPanel>
     </Grid>
 </UserControl>

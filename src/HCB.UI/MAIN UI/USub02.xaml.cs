@@ -22,8 +22,9 @@ namespace HCB.UI
     [View(Lifetime.Singleton)]
     public partial class USub02 : Page
     {
-        public USub02()
+        public USub02(USub02ViewModel vm)
         {
+            this.DataContext = vm;
             InitializeComponent();
         }
     }

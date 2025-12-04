@@ -76,15 +76,16 @@ namespace HCB.UI
             // 5. 메인 창 표시 (선택 사항)
             // ③ 메인 윈도우 실행
             var mainWindow = _host.Services.GetRequiredService<UMain>();
-
-            FluentPalette.LoadPreset(FluentPalette.ColorVariation.Dark);
-            FluentPalette palette = FluentPalette.Palette;
+            StyleManager.ApplicationTheme = new Windows11Theme();
+            Windows11Palette.LoadPreset(Windows11Palette.ColorVariation.Dark);
+            //FluentPalette.LoadPreset(FluentPalette.ColorVariation.Dark);
+            //FluentPalette palette = FluentPalette.Palette;
             // 2. 원하는 색상으로 강조 색상 (Accent Color) 변경
             // 예: Telerik의 기본 파란색 대신 진한 주황색으로 변경
-            palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
-
+            //palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
+            Windows11Palette.Palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80);
             mainWindow.Show();
-            mainWindow.Activate();
+            //mainWindow.Activate();
             mainWindow.Focus();
         }
 

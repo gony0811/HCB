@@ -14,7 +14,7 @@
                 <telerik:MapRectangle Width="5" Height="24" Fill="#4F9CF9" RadiusX="2" RadiusY="2" Margin="12,0,8,0"/>
                 <telerik:HighlightTextBlock Text="{Binding Title, ElementName=root}"
                         FontSize="24" FontWeight="SemiBold"
-                        VerticalAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                        VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
     </Grid>
