@@ -1,12 +1,13 @@
 ﻿using Autofac;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using Telerik.Windows.Controls;
-using Serilog;
+using Telerik.Windows.Controls.Navigation;
 using Telerik.Windows.Controls.SplashScreen;
 
 namespace HCB.UI
@@ -82,10 +83,10 @@ namespace HCB.UI
             // 2. 원하는 색상으로 강조 색상 (Accent Color) 변경
             // 예: Telerik의 기본 파란색 대신 진한 주황색으로 변경
             palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
+            RadWindowInteropHelper.SetShowInTaskbar(mainWindow, true);
 
             mainWindow.Show();
-            mainWindow.Activate();
-            mainWindow.Focus();
+            //mainWindow.Activate();
         }
 
         private async Task InitializeApplicationAsync()

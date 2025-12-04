@@ -7,7 +7,7 @@ using Telerik.Windows.Controls;
 namespace HCB.UI
 {
     [View(Lifetime.Singleton)]
-    public partial class UMain : Window
+    public partial class UMain : RadWindow
     {
         public UMain(UMainViewModel vm)
         {        

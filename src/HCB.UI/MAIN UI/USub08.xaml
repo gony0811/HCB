@@ -6,7 +6,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:HCB.UI"
       mc:Ignorable="d" 
-      Title="USub08">
+      >
 
     <Page.Resources>
 
@@ -26,7 +26,7 @@
     </Page.Resources>
 
     <Grid local:GridHelper.Rows="1*, 2*">
-        <telerik:GroupBox Header="Device" Foreground="White" FontSize="14" Style="{StaticResource GroupBoxStyle}">
+        <telerik:GroupBox Header="Device" FontSize="14" Style="{StaticResource GroupBoxStyle}">
             <Grid local:GridHelper.Rows="1*, Auto" Grid.ColumnSpan="2" Grid.Row="0">
                 <telerik:RadGridView 
                     ItemsSource="{Binding DeviceList}"
