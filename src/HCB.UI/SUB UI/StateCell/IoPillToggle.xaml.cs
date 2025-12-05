@@ -77,12 +77,12 @@ namespace HCB.UI
         // pill 색/라벨 색
         public static readonly DependencyProperty PillOnBrushProperty =
             DependencyProperty.Register(nameof(PillOnBrush), typeof(Brush), typeof(IoPillToggle),
-                new PropertyMetadata((Brush)new BrushConverter().ConvertFromString("#2A3D5C"))); // ON 배경
+                new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
         public Brush PillOnBrush { get => (Brush)GetValue(PillOnBrushProperty); set => SetValue(PillOnBrushProperty, value); }
 
         public static readonly DependencyProperty PillOffBrushProperty =
             DependencyProperty.Register(nameof(PillOffBrush), typeof(Brush), typeof(IoPillToggle),
-                new PropertyMetadata((Brush)new BrushConverter().ConvertFromString("#1F2D47"))); // OFF 배경
+                new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
         public Brush PillOffBrush { get => (Brush)GetValue(PillOffBrushProperty); set => SetValue(PillOffBrushProperty, value); }
 
         public static readonly DependencyProperty LabelActiveBrushProperty =

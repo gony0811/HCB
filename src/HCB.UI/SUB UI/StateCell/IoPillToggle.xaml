@@ -10,6 +10,10 @@
              Width="150" Height="60" >
     <UserControl.Resources>
         <local:InverseBoolConverter x:Key="InvBool"/>
+        <DynamicResource ResourceKey="AccentBrush"
+                         x:Key="DefaultPillOnBrush"/>
+        <DynamicResource ResourceKey="ControlBackgroundBrush"
+                         x:Key="DefaultPillOffBrush"/>
     </UserControl.Resources>
 
     <!-- 버튼 전체가 토글 역할 -->
@@ -45,7 +49,7 @@
                               Grid.Column="2"
                               MinWidth="100" Height="50"
                               CornerRadius="5"
-                              Background="{Binding PillOffBrush, ElementName=root}"
+     
                               >
                         <telerik:HighlightTextBlock x:Name="lbl"
                                    Text="{Binding OffText, ElementName=root}"
@@ -66,7 +70,7 @@
                         <Setter TargetName="indicator" Property="BorderThickness" Value="0"/>
 
                         <!-- pill: On 색상 + 라벨 -->
-                        <Setter TargetName="pill" Property="Background" Value="{Binding PillOnBrush, ElementName=root}"/>
+                        <Setter TargetName="pill" Property="Background" Value="{Binding AccentBrush, ElementName=root}"/>
                         <Setter TargetName="lbl"  Property="Text"        Value="{Binding OnText, ElementName=root}"/>
                         <Setter TargetName="lbl"  Property="Foreground"  Value="{Binding LabelActiveBrush, ElementName=root}"/>
                     </Trigger>
@@ -78,7 +82,7 @@
                         <Setter TargetName="indicator" Property="BorderBrush" Value="{Binding IndicatorOffStroke, ElementName=root}"/>
                         <Setter TargetName="indicator" Property="BorderThickness" Value="2"/>
 
-                        <Setter TargetName="pill" Property="Background" Value="{Binding PillOffBrush, ElementName=root}"/>
+                        <Setter TargetName="pill" Property="Background" Value="{Binding PrimaryBrush, ElementName=root}"/>
                         <Setter TargetName="lbl"  Property="Text"        Value="{Binding OffText, ElementName=root}"/>
                         <Setter TargetName="lbl"  Property="Foreground"  Value="{Binding LabelInactiveBrush, ElementName=root}"/>
                     </Trigger>
