@@ -299,9 +299,12 @@
         </Setter>
     </Style>
 
-    <Style x:Key="Toggle.Switch" TargetType="telerik:RadToggleButton">
-        <Setter Property="Background" Value="{StaticResource Btn.Bg}"/>
-        <Setter Property="Foreground" Value="White"/>
+    <!-- 토글 스위치 스타일 
+    
+    
+    -->
+
+    <Style x:Key="Toggle.Switch" TargetType="telerik:RadToggleButton" BasedOn="{StaticResource {x:Type telerik:RadToggleButton}}">
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>

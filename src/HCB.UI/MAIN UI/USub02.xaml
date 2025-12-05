@@ -7,8 +7,8 @@
       xmlns:local="clr-namespace:HCB.UI"
       xmlns:uc="clr-namespace:HCB.UI"
       xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
-      mc:Ignorable="d" 
-      Title="USub02">
+      mc:Ignorable="d"
+     >
     <!-- 파라미터 화면 -->
     <Page.Resources>
         <ResourceDictionary>
@@ -195,14 +195,14 @@
                             <telerik:GridViewColumn Header="Name" Width="2*">
                                 <telerik:GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <telerik:HighlightTextBlock Text="{Binding Name}" FontSize="16" VerticalAlignment="Center"/>
+                                        <telerik:HighlightTextBlock Text="{Binding Name}" FontSize="16" VerticalAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
                                     </DataTemplate>
                                 </telerik:GridViewColumn.CellTemplate>
                             </telerik:GridViewColumn>
                             <telerik:GridViewColumn Header="Name" Width="2*">
                                 <telerik:GridViewColumn.CellEditTemplate>
                                     <DataTemplate>
-                                        <telerik:HighlightTextBlock Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" FontSize="16" VerticalAlignment="Center"/>
+                                        <telerik:HighlightTextBlock Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" FontSize="16" VerticalAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
                                     </DataTemplate>
                                 </telerik:GridViewColumn.CellEditTemplate>
                                 <telerik:GridViewColumn.CellStyle>

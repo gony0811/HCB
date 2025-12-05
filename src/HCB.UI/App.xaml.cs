@@ -1,12 +1,13 @@
 ﻿using Autofac;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using Telerik.Windows.Controls;
-using Serilog;
+using Telerik.Windows.Controls.Navigation;
 using Telerik.Windows.Controls.SplashScreen;
 
 namespace HCB.UI
@@ -76,17 +77,16 @@ namespace HCB.UI
             // 5. 메인 창 표시 (선택 사항)
             // ③ 메인 윈도우 실행
             var mainWindow = _host.Services.GetRequiredService<UMain>();
-            StyleManager.ApplicationTheme = new Windows11Theme();
-            Windows11Palette.LoadPreset(Windows11Palette.ColorVariation.Dark);
-            //FluentPalette.LoadPreset(FluentPalette.ColorVariation.Dark);
-            //FluentPalette palette = FluentPalette.Palette;
+
+            FluentPalette.LoadPreset(FluentPalette.ColorVariation.Dark);
+            FluentPalette palette = FluentPalette.Palette;
             // 2. 원하는 색상으로 강조 색상 (Accent Color) 변경
             // 예: Telerik의 기본 파란색 대신 진한 주황색으로 변경
-            //palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
-            Windows11Palette.Palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80);
+            palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
+            RadWindowInteropHelper.SetShowInTaskbar(mainWindow, true);
+
             mainWindow.Show();
             //mainWindow.Activate();
-            mainWindow.Focus();
         }
 
         private async Task InitializeApplicationAsync()

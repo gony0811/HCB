@@ -22,7 +22,7 @@
     <SolidColorBrush x:Key="Btn.Fg"           Color="#FFFFFFFF"/>
     <SolidColorBrush x:Key="Btn.DisabledBg"   Color="#141F35"/>
     <SolidColorBrush x:Key="Btn.DisabledFg"   Color="#80FFFFFF"/>
-    <SolidColorBrush x:Key="Brush.Panel"                 Color="#FF0B1628"/>
+    <SolidColorBrush x:Key="Brush.Panel"      Color="#FF0B1628"/>
     <!-- 기존 -->
     <SolidColorBrush x:Key="Border.Bg" Color="#385379"/>
     <SolidColorBrush x:Key="Palette.Dark.Blue"    Color="#1D2E4A"/>
