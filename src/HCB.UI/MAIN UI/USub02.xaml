@@ -30,13 +30,13 @@
         </Grid.RowDefinitions>
 
         <!-- 제목 -->
-        <telerik:HighlightTextBlock Text="파라미터 설정" 
+        <telerik:RadHighlightTextBlock Text="파라미터 설정" 
                                         FontSize="24" 
                                         FontWeight="SemiBold" 
                                         Grid.Column="0" 
                                         Grid.Row="0" 
                                         Margin="10"
-                                        Style="{StaticResource HighlightTextBlockStyle}"/>
+                                        Style="{StaticResource RadHighlightTextBlockStyle}"/>
 
         <!-- 좌측 디바이스 정보 리스트 -->
         <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="디바이스" Grid.Column="0" Grid.Row="1" Margin="10">

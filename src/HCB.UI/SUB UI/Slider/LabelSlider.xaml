@@ -1,0 +1,49 @@
+﻿<UserControl x:Class="HCB.UI.LabelSlider"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             x:Name="root"
+             MinWidth="70" MinHeight="140"
+             Background="Transparent"
+             mc:Ignorable="d">
+    <Grid Margin="8,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 상단 라벨 -->
+        <Label Grid.Row="0"
+           Content="{Binding TitleLabel, ElementName=root}"
+           FontWeight="Bold"
+           HorizontalAlignment="Center"/>
+
+        <!-- 세로 슬라이더 -->
+        <Slider Grid.Row="1"
+            x:Name="sliderX"
+            Orientation="Vertical"
+            Minimum="{Binding Minimum, ElementName=root}"
+            Maximum="{Binding Maximum, ElementName=root}"
+            Value="{Binding Value, ElementName=root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            TickPlacement="{Binding TickPlacement, ElementName=root}"
+            TickFrequency="{Binding TickFrequency, ElementName=root}"
+            IsSnapToTickEnabled="{Binding IsSnapToTickEnabled, ElementName=root}"
+            SmallChange="{Binding SmallChange, ElementName=root}"
+            LargeChange="{Binding LargeChange, ElementName=root}"
+            Margin="4"/>
+
+        <!-- 하단 값 입력 -->
+        <TextBox Grid.Row="2"
+             Width="{Binding TextBoxWidth, ElementName=root}"
+             TextAlignment="Right"
+             VerticalAlignment="Center"
+             Margin="0,2,0,0"
+             Text="{Binding Value, ElementName=root,
+                            Mode=TwoWay,
+                            UpdateSourceTrigger=PropertyChanged,
+                            StringFormat=F0}"/>
+    </Grid>
+</UserControl>
