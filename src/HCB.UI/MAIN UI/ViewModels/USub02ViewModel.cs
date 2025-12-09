@@ -120,5 +120,38 @@ namespace HCB.UI
                 _dialogService.ShowMessage("에러", ex.GetBaseException().Message);
             }
         }
+
+        [RelayCommand]
+        public async Task CreateParam()
+        {
+            if (SelectedRecipe == null) return;
+
+            try
+            {
+                var param = new ParameterCreateDto();
+                bool? result = await _dialogService.ShowEditDialog(param);
+
+                if (result != true) return;
+
+                var dto = new RecipeParamDto
+                {
+                    RecipeId = SelectedRecipe.Id,
+                    Name = param.Name,
+                    Value = param.Value,
+                    Minimum = param.Minimum,
+                    Maximum = param.Maximum,
+                    ValueType = param.ValueType,
+                    UnitType = param.UnitType,
+                    Description = param.Description
+                };
+
+                await _recipeService.AddRecipeParam(dto);
+                _dialogService.ShowMessage("저장", "저장되었습니다");
+            }catch(Exception e)
+            {
+                MessageBox.Show("저장 실패", "파라미터 저장 실패");
+            }
+
+        }
     }
 }

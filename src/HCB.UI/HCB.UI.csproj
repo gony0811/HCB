@@ -177,6 +177,7 @@
   <Compile Include="SUB UI\USub08Tab\IoDeviceView.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\PromptDialogVM.cs" />
   <Compile Include="SUB UI\ViewModels\RecipeCreateVM.cs" />
+  <Compile Include="SYSTEM\DB\Dto\ParameterCreateDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\RecipeCreateDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\RecipeDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\RecipeParamDto.cs" />

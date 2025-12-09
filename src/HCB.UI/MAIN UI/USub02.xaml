@@ -176,28 +176,23 @@
                                 </DataTemplate>
                             </telerik:GridViewColumn.CellTemplate>
                         </telerik:GridViewColumn>
-                        <telerik:GridViewColumn Header="Name" Width="2*">
-                            <telerik:GridViewColumn.CellEditTemplate>
-                                <DataTemplate>
-                                    <telerik:HighlightTextBlock Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" FontSize="16" VerticalAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                                </DataTemplate>
-                            </telerik:GridViewColumn.CellEditTemplate>
-                        </telerik:GridViewColumn>
-
-                        <telerik:GridViewColumn Header="Unit" Width="100">
+                        <telerik:GridViewColumn Header="Value" Width="2*">
                             <telerik:GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <telerik:HighlightTextBlock Text="{Binding Unit.Name}" FontSize="16" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Value}" />
                                 </DataTemplate>
                             </telerik:GridViewColumn.CellTemplate>
                         </telerik:GridViewColumn>
+
+                        <telerik:GridViewDataColumn Header="Unit"
+                            Width="100"
+                            DataMemberBinding="{Binding UnitType}" />
                     </telerik:RadGridView.Columns>
                 </telerik:RadGridView>
                 <StackPanel Grid.Row="1" HorizontalAlignment="Right" Margin="10">
                     <telerik:RadButton Content="생성" 
                                            Width="80" Height="30" 
-                                           Command="{Binding CreateParameterCommand}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=RecipeGrid}"
+                                           Command="{Binding CreateParamCommand}"
                                            Style="{StaticResource RadButtonStyle}">
                     </telerik:RadButton>
                 </StackPanel>
