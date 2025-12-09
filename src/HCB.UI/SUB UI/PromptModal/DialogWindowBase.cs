@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Windows;
 using System.Linq;
 using System.Reflection;
-using System.Windows;
+using Telerik.Windows.Controls;
 using Application = System.Windows.Application;
 
 namespace HCB.UI
 {
 
-    public abstract class DialogWindowBase : Window
+    public abstract class DialogWindowBase : RadWindow
     {
         private object _vm;
         private EventInfo _ev;
@@ -15,10 +16,9 @@ namespace HCB.UI
 
         protected DialogWindowBase()
         {
-            ShowInTaskbar = false;
-            ResizeMode = ResizeMode.NoResize;
+            this.ResizeMode = ResizeMode.NoResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            SizeToContent = SizeToContent.WidthAndHeight;
+            SizeToContent = true;
 
             DataContextChanged += (_, e) => { Detach(); Attach(e.NewValue); };
             Loaded += (_, __) =>

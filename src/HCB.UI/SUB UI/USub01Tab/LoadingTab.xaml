@@ -27,7 +27,7 @@
             <RowDefinition></RowDefinition>
         </Grid.RowDefinitions>
 
-        <telerik:GroupBox Header="D-Table" Margin="4" Style="{StaticResource GroupBoxStyle}">
+        <telerik:GroupBox Header="D-Table" FontSize="24" Margin="4" Style="{StaticResource GroupBoxStyle}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="AUTO"></ColumnDefinition>
@@ -95,7 +95,7 @@
             </Grid>
 
         </telerik:GroupBox>
-        <telerik:GroupBox  Header="W-Table" Grid.Row="1" Margin="4" Style="{StaticResource GroupBoxStyle}">
+        <telerik:GroupBox  Header="W-Table" FontSize="24" Grid.Row="1" Margin="4" Style="{StaticResource GroupBoxStyle}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"></ColumnDefinition>

@@ -37,7 +37,7 @@ namespace HCB.UI
             var vm = new IoDataCreateVM();
             var modal = new CreateModal
             {
-                Title = "Io Data Create",
+                Header = "Io Data Create",
                 DataContext = vm,
                 Width = 400,
                 Height = 800,

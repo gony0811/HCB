@@ -5,13 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
         xmlns:local="clr-namespace:HCB.UI"
-        Title="{Binding Title}" SizeToContent="WidthAndHeight"
+        Header="{Binding Title}" 
+        Style="{StaticResource RadWindowStyle}"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize" MinWidth="360">
+        MinWidth="360">
     <Border Padding="16">
         <StackPanel>
             <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="레시피 이름" Margin="0,0,0,6" />
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Value.Name, UpdateSourceTrigger=PropertyChanged}" />
+            <telerik:RadWatermarkTextBox Style="{StaticResource RadWatermarkTextBoxStyle}" Text="{Binding Value.Name, UpdateSourceTrigger=PropertyChanged}" />
 
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" >

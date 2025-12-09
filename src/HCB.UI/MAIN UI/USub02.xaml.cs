@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using HCB.IoC;
+using Serilog;
 
 namespace HCB.UI
 {
@@ -22,8 +23,15 @@ namespace HCB.UI
     [View(Lifetime.Singleton)]
     public partial class USub02 : Page
     {
-        public USub02()
+        private ILogger logger;
+        private readonly USub02ViewModel vm;
+
+        public USub02(ILogger logger, USub02ViewModel vm)
         {
+            this.logger = logger;
+            this.vm = vm;
+
+            this.DataContext = vm;
             InitializeComponent();
         }
     }

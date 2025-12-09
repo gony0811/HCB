@@ -18,6 +18,7 @@ namespace HCB.UI
         private LoadingTab loadingTab;
         private AutoTab autoTab;
         private ManualTab manualTab;
+        private USub02ViewModel recipeViewModel;
         #endregion
 
         [ObservableProperty] public UserControl currentTab;
@@ -26,14 +27,15 @@ namespace HCB.UI
 
 
 
-        public USub01ViewModel(LoadingTab loadingTab, AutoTab autoTab, ManualTab manualTab)
+        public USub01ViewModel(LoadingTab loadingTab, AutoTab autoTab, ManualTab manualTab, USub02ViewModel sub02ViewModel)
         {
             this.loadingTab = loadingTab;
             this.autoTab = autoTab;
             this.manualTab = manualTab;
-
+            this.recipeViewModel = sub02ViewModel;
             SetTab(selectedTabKey);
-            
+
+            CurrentDevice = this.recipeViewModel.SelectedRecipe.Name;
         }
 
         [RelayCommand]
