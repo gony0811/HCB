@@ -19,7 +19,7 @@
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         </ResourceDictionary>
     </Page.Resources>
-    <Border Style="{StaticResource Panel.Radius5}">
+    <Border>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"></ColumnDefinition>
