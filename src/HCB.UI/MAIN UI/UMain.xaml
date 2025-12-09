@@ -148,7 +148,7 @@
                   Width="24" Height="24" 
                   Margin="0,0,0,5" 
                   HorizontalAlignment="Center" />
-                        <TextBlock Text="메인" TextAlignment="Center"/>
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="메인" TextAlignment="Center"/>
                     </StackPanel>
                 </telerik:RadToggleButton>
 
@@ -164,7 +164,7 @@
                   Margin="0,0,0,5" 
                   HorizontalAlignment="Center"/>
 
-                        <TextBlock Text="파라미터" TextAlignment="Center"/>
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="파라미터" TextAlignment="Center"/>
                     </StackPanel>
                 </telerik:RadToggleButton>
 
@@ -196,7 +196,7 @@
                   Margin="0,0,0,5" 
                   HorizontalAlignment="Center"/>
 
-                        <TextBlock Text="로그" TextAlignment="Center"/>
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="로그" TextAlignment="Center"/>
                     </StackPanel>
                 </telerik:RadToggleButton>
                 <telerik:RadToggleButton Tag="ALARM"
@@ -229,7 +229,7 @@
                   HorizontalAlignment="Center"
                   Foreground="DodgerBlue"/>
 
-                        <TextBlock Text="모션" TextAlignment="Center"/>
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="모션" TextAlignment="Center"/>
                     </StackPanel>
                 </telerik:RadToggleButton>
                 <telerik:RadToggleButton Tag="IO"
@@ -245,7 +245,7 @@
                   HorizontalAlignment="Center"
                   Foreground="SteelBlue"/>
 
-                        <TextBlock Text="I/O" TextAlignment="Center"/>
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="I/O" TextAlignment="Center"/>
                     </StackPanel>
                 </telerik:RadToggleButton>
 
@@ -260,7 +260,7 @@
                         <!-- 아이콘 -->
                         <telerik:RadGlyph Glyph="&#xe13c;" Width="24" Height="24" Margin="0,0,0,5"/>
                         <!-- 텍스트 -->
-                        <TextBlock Text="Device" HorizontalAlignment="Center"/>
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Device" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </telerik:RadToggleButton>
 

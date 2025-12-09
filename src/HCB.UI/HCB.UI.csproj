@@ -42,10 +42,28 @@
   <Page Include="MAIN UI\USub02.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="MAIN UI\USub03.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\USub04.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\USub05.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\USub06.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\AlertModal\AlertModal.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\ConfirmModal\ConfirmModal.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\Pad\UNmumPad.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\Pad\UPasswordNPad.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\CreateModal\PromptModal.xaml">
@@ -55,6 +73,9 @@
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\PromptModal\RecipeCreateWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\Slider\LabelSlider.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\SplashView\SplashView.xaml">
@@ -155,7 +176,14 @@
   <Compile Include="DEVICE\impl\digital\DigitalOutput.cs" />
   <Compile Include="DEVICE\PMAC IO\PmacIoDevice.cs" />
   <Compile Include="MAIN UI\USub02.xaml.cs" />
+  <Compile Include="MAIN UI\USub03.xaml.cs" />
+  <Compile Include="MAIN UI\USub04.xaml.cs" />
+  <Compile Include="MAIN UI\USub05.xaml.cs" />
+  <Compile Include="MAIN UI\USub06.xaml.cs" />
   <Compile Include="MAIN UI\ViewModels\USub02ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub03ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub05ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub06ViewModel.cs" />
   <Compile Include="SEQUENCE\Extenstions\MotionExtensions.cs" />
   <Compile Include="SEQUENCE\Interface\ISequence.cs" />
   <Compile Include="SEQUENCE\Interface\ISequenceHelper.cs" />
@@ -165,9 +193,12 @@
   <Compile Include="SERVICE\RecipeService.cs" />
   <Compile Include="SUB UI\AlertModal\AlertModal.xaml.cs" />
   <Compile Include="SUB UI\ConfirmModal\ConfirmModal.xaml.cs" />
+  <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
+  <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
   <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
+  <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
   <Compile Include="SUB UI\PromptModal\ParameterCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\SplashView\SplashView.xaml.cs" />
@@ -255,6 +286,7 @@
   <Compile Include="SUB UI\USub08Tab\MotionDeviceView.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\MotionParameterCreateVM.cs" />
   <Compile Include="SYSTEM\Logging\GridLogSink.cs" />
+  <Compile Include="SYSTEM\Logging\LogMessage.cs" />
   <Compile Include="SYSTEM\Logging\TextBoxSink.cs" />
   <Compile Include="SYSTEM\Options\DataOptions.cs" />
 </ItemGroup>

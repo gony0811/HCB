@@ -6,6 +6,7 @@ using HCB.Data.Entity;
 using HCB.Data.Repository;
 using HCB.IoC;
 using Serilog;
+using Serilog.Events;
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;
@@ -94,20 +95,19 @@ namespace HCB.UI
             switch(key)
             {
                 case "MAIN":
-                    CurrentPage = mainPage;         
-                    logger.Information("애플리케이션 시작됨.");
+                    CurrentPage = mainPage;                            
                     break;
                 case "PARAMETER":
                     CurrentPage = parameterPage;
                     break;
                 case "USER":
-                    //CurrentPage = App.Container.Resolve<USub03>();
+                    CurrentPage = userPage;
                     break;
                 case "LOG":
-                    //CurrentPage = App.Container.Resolve<USub04>();
+                    CurrentPage = logPage;
                     break;
                 case "ALARM":
-                    //CurrentPage = App.Container.Resolve<USub05>();
+                    CurrentPage = alarmPage;
                     break;
                 case "MOTION":
                     //CurrentPage = App.Container.Resolve<USub06>();

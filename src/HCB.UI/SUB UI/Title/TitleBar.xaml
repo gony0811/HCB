@@ -6,17 +6,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:HCB.UI"
              mc:Ignorable="d" 
-             Style="{StaticResource CardDataFieldStretchedContentControl}"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <Border>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <!-- 왼쪽 포인트 바 -->
-                <telerik:MapRectangle Width="5" Height="24" RadiusX="2" RadiusY="2" Margin="12,0,8,0"/>
-                <telerik:HighlightTextBlock Text="{Binding Title, ElementName=root}"
+        <!-- 왼쪽 포인트 바 -->
+        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Title, ElementName=root}"
                         FontSize="24" FontWeight="SemiBold"
                         VerticalAlignment="Center"/>
-            </StackPanel>
-        </Border>
     </Grid>
 </UserControl>
