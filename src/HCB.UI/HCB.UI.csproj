@@ -48,6 +48,9 @@
   <Page Include="SUB UI\ConfirmModal\ConfirmModal.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\CreateModal\PromptModal.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\PromptModal\ParameterCreateWindow.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -157,10 +160,12 @@
   <Compile Include="SEQUENCE\Interface\ISequence.cs" />
   <Compile Include="SEQUENCE\Interface\ISequenceHelper.cs" />
   <Compile Include="SEQUENCE\Helper\SequenceHelper.cs" />
-  <Compile Include="SERVICE\DeviceService.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
+  <Compile Include="SERVICE\DialogService.cs" />
+  <Compile Include="SERVICE\RecipeService.cs" />
   <Compile Include="SUB UI\AlertModal\AlertModal.xaml.cs" />
   <Compile Include="SUB UI\ConfirmModal\ConfirmModal.xaml.cs" />
+  <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
   <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
@@ -172,6 +177,9 @@
   <Compile Include="SUB UI\USub08Tab\IoDeviceView.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\PromptDialogVM.cs" />
   <Compile Include="SUB UI\ViewModels\RecipeCreateVM.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RecipeCreateDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RecipeDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RecipeParamDto.cs" />
   <Compile Include="SYSTEM\DB\Service\AlarmService.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToBrushConverter.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToTextConvert.cs" />

@@ -35,7 +35,7 @@ namespace HCB.UI
             this.recipeViewModel = sub02ViewModel;
             SetTab(selectedTabKey);
 
-            CurrentDevice = this.recipeViewModel.SelectedRecipe.Name;
+            //CurrentDevice = this.recipeViewModel.SelectedRecipe.Name;
         }
 
         [RelayCommand]
