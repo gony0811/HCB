@@ -44,7 +44,7 @@ namespace HCB.UI
             var vm = new DeviceCreateVM();
             var modal = new CreateModal
             {              
-                Title = "Device Create",
+                Header = "Device Create",
                 DataContext = vm,
                 Width = 400,
                 Height = 800,

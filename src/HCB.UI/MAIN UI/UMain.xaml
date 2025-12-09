@@ -22,12 +22,13 @@
     </telerik:RadWindow.Resources>
 
     <Grid>
-         <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="Auto"/>
-    </Grid.RowDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
         <Border Grid.Row="0">
             <Grid>
@@ -64,11 +65,11 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1" Margin="{StaticResource SubPageMargin}">
+        <Grid Grid.Row="2" Margin="{StaticResource SubPageMargin}">
             <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden" JournalOwnership="OwnsJournal" Content="{Binding CurrentPage}"/>
         </Grid>
 
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
             <telerik:RadGridView ItemsSource="{Binding Logs}"
                          Height="200"
                          AutoGenerateColumns="False"
@@ -124,7 +125,7 @@
         </Grid>
 
 
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="4">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>

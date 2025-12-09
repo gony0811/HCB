@@ -49,13 +49,46 @@ namespace HCB.UI
         {
             _recipeRepo = recipeRepository;
             _parameterRepo = parameterRepository;
+
+            // 초기 레시피 로딩
+            this.GetAllRecipe().ConfigureAwait(false);
+
+
+            // 초기 활성 레시피 선택
+            _recipeRepo.ListAsync(
+                predicate: r => r.IsActive,
+                asNoTracking: true).ContinueWith(t =>
+            {
+                var active = t.Result.FirstOrDefault();
+                if (active != null)
+                    SelectedRecipe = active;
+            });
+
+            _ = LoadRecipeParamsAsync(SelectedRecipe);
         } 
 
         // SelectedRecipe 바뀌면 자동 로딩
-        partial void OnSelectedRecipeChanged(Recipe value)
+        async partial void OnSelectedRecipeChanged(Recipe value)
         {
             if (value == null) return;
             _ = LoadRecipeParamsAsync(value);
+
+            // 활성 레시피 변경 처리
+            await _recipeRepo.ListAsync(
+                predicate: r => r.Id != value.Id && r.IsActive,
+                asNoTracking: true).ContinueWith(async t =>
+            {
+                var active = t.Result.FirstOrDefault();
+                if (active != null)
+                {
+                    active.IsActive = false;
+                    await _recipeRepo.Update(active);
+                    value.IsActive = true;
+                    await _recipeRepo.Update(value);
+
+                    SelectedRecipe = value;
+                }
+            });
         }
 
         // 레시피 목록 로딩
@@ -86,11 +119,17 @@ namespace HCB.UI
             }
         }
 
+        public async Task GetRecipeParameter(CancellationToken ct)
+        {
+            var list = await _parameterRepo.ListAsync(q => q.RecipeId == SelectedRecipe.Id, ct: ct);
+
+        }
+
         [RelayCommand]
         public async Task ClickRecipe(Recipe recipe)
         {
             if (recipe == null) return;
-            await LoadRecipeParamsAsync(recipe).ConfigureAwait(false);
+            await LoadRecipeParamsAsync(recipe);
         }
         private bool CanClickRecipe(Recipe recipe) => recipe != null && !IsBusy;
 
@@ -100,7 +139,7 @@ namespace HCB.UI
             {
                 IsBusy = true;
                 RecipeParam.Clear();
-                var ps = await _recipeRepo.FindAsync(ct, recipe.Id).ConfigureAwait(false);
+                var ps = await _recipeRepo.FindAsync(ct, recipe.Id);
                 foreach (var p in ps.ParamList) RecipeParam.Add(p);
             }
             catch (Exception e)
@@ -116,15 +155,15 @@ namespace HCB.UI
         public async Task CreateRecipe(CancellationToken ct = default(CancellationToken))
         {
             var initial = new Recipe();
-            var result = await ShowRecipeDialogAsync(initial, "레시피 생성").ConfigureAwait(false);
+            var result = ShowRecipeDialog(initial, "레시피 생성");
             if (result == null) return;
 
             try
             {
-                await _recipeRepo.AddAsync(result, ct).ConfigureAwait(false);
-                await _recipeRepo.SaveAsync(ct).ConfigureAwait(false);
+                await _recipeRepo.AddAsync(result, ct);
+                await _recipeRepo.SaveAsync(ct);
                 AlertModal.Ask(GetOwnerWindow(), "저장", "저장되었습니다.");
-                await GetAllRecipe(ct).ConfigureAwait(false);
+                await GetAllRecipe(ct);
             }
             catch (DbUpdateException)
             {
@@ -140,7 +179,7 @@ namespace HCB.UI
 
             var initial = new Recipe { Id = recipe.Id };
 
-            var result = await ShowRecipeDialogAsync(initial, "레시피 복사").ConfigureAwait(false);
+            var result = ShowRecipeDialog(initial, "레시피 복사");
             if (result == null) return;
 
             try
@@ -214,65 +253,66 @@ namespace HCB.UI
 
         private bool CanDeleteRecipe(Recipe recipe) => !IsBusy && recipe != null;
 
-        //[RelayCommand]
-        //public async Task CreateParameter(Recipe recipe)
-        //{
-        //    if (recipe == null) return;
+        [RelayCommand]
+        public async Task CreateParameter(Recipe recipe)
+        {
+            if (recipe == null) return;
 
-        //    var initial = new RecipeParam();
-        //    var result = await ShowParameterDialogAsync(initial, "파라미터 생성").ConfigureAwait(false);
-        //    if (result == null) return;
+            var initial = new RecipeParam(recipeId:recipe.Id);
+            var result = ShowParameterDialog(initial, "파라미터 생성");
+            if (result == null) return;
 
-        //    try
-        //    {
-        //        NormalizeFK(result, recipeId: recipe.Id);
-        //        await _parameterRepo.AddAsync(result).ConfigureAwait(false);
-        //        await _parameterRepo.SaveAsync().ConfigureAwait(false);
-        //        AlertModal.Ask(GetOwnerWindow(), "저장", "저장되었습니다.");
-        //        await LoadRecipeParamsAsync(recipe).ConfigureAwait(false);
-        //    }
-        //    catch (DbUpdateException)
-        //    {
-        //        MessageBox.Show("저장 중 오류가 발생했습니다.", "저장 오류");
-        //    }
-        //}
+            try
+            {
+                //NormalizeFK(result, recipeId: recipe.Id);
+                
+                await _parameterRepo.AddAsync(result).ConfigureAwait(false);
+                await _parameterRepo.SaveAsync().ConfigureAwait(false);
+                AlertModal.Ask(GetOwnerWindow(), "저장", "저장되었습니다.");
+                await LoadRecipeParamsAsync(recipe).ConfigureAwait(false);
+            }
+            catch (DbUpdateException)
+            {
+                MessageBox.Show("저장 중 오류가 발생했습니다.", "저장 오류");
+            }
+        }
 
-        //[RelayCommand]
-        //public async Task UpdateParameter(RecipeParam param)
-        //{
-        //    if (param == null) return;
+        [RelayCommand]
+        public async Task UpdateParameter(RecipeParam param)
+        {
+            if (param == null) return;
 
-        //    var copy = new RecipeParam
-        //    {
-        //        Id = param.Id,
-        //        RecipeId = param.RecipeId,
-        //        Name = param.Name,
-        //        Value = param.Value,
-        //        Maximum = param.Maximum,
-        //        Minimum = param.Minimum,
-        //        ValueType = param.ValueType,
-        //        UnitType = param.UnitType,
-        //        Description = param.Description,
-        //    };
+            var copy = new RecipeParam
+            {
+                Id = param.Id,
+                RecipeId = param.RecipeId,
+                Name = param.Name,
+                Value = param.Value,
+                Maximum = param.Maximum,
+                Minimum = param.Minimum,
+                ValueType = param.ValueType,
+                UnitType = param.UnitType,
+                Description = param.Description,
+            };
 
-        //    //var result = await ShowParameterDialogAsync(copy, "파라미터 수정").ConfigureAwait(false);
-        //    if (result == null) return;
+            var result = ShowParameterDialog(copy, "파라미터 수정");
+            if (result == null) return;
 
-        //    try
-        //    {
-        //        //NormalizeFK(result, recipeId: param.RecipeId);
-        //        _parameterRepo.Update(result);
-        //        await _parameterRepo.SaveAsync().ConfigureAwait(false);
-        //        AlertModal.Ask(GetOwnerWindow(), "저장", "저장되었습니다.");
+            try
+            {
+                //NormalizeFK(result, recipeId: param.RecipeId);
+                await _parameterRepo.Update(result);
+                await _parameterRepo.SaveAsync().ConfigureAwait(false);
+                AlertModal.Ask(GetOwnerWindow(), "저장", "저장되었습니다.");
 
-        //        if (SelectedRecipe != null)
-        //            await LoadRecipeParamsAsync(SelectedRecipe).ConfigureAwait(false);
-        //    }
-        //    catch (DbUpdateException)
-        //    {
-        //        MessageBox.Show("저장 중 오류가 발생했습니다.", "저장 오류");
-        //    }
-        //}
+                if (SelectedRecipe != null)
+                    await LoadRecipeParamsAsync(SelectedRecipe).ConfigureAwait(false);
+            }
+            catch (DbUpdateException)
+            {
+                MessageBox.Show("저장 중 오류가 발생했습니다.", "저장 오류");
+            }
+        }
 
         // ── 활성 레시피 변경 ─────────────────────────────────────────────────────
 
@@ -313,25 +353,26 @@ namespace HCB.UI
 
         // ── 다이얼로그 헬퍼 ─────────────────────────────────────────────────────
 
-        //private async Task<RecipeParam> ShowParameterDialogAsync(RecipeParam initial, string title)
-        //{
-        //    var vm = new ParameterCreateVM(
-        //        title: title,
-        //        initial: initial,
-        //        units: Units,
-        //        valueTypes: ValueTypes);
+        private RecipeParam ShowParameterDialog(RecipeParam initial, string title)
+        {
+            var vm = new ParameterCreateVM()
+            {
+                Title = title,
+                Value = initial,
+                
+            };
 
-        //    var win = new ParameterCreateWindow
-        //    {
-        //        Owner = GetOwnerWindow(),
-        //        DataContext = vm
-        //    };
+            var win = new ParameterCreateWindow
+            {
+                Owner = GetOwnerWindow(),
+                DataContext = vm
+            };
 
-        //    var ok = win.ShowDialog() == true;
-        //    return ok ? vm.Value : null;
-        //}
+            var ok = win.ShowDialog() == true;
+            return ok ? vm.Value : null;
+        }
 
-        private async Task<Recipe> ShowRecipeDialogAsync(Recipe initial, string title)
+        private Recipe ShowRecipeDialog(Recipe initial, string title)
         {
             var vm = new RecipeCreateVM(
                 title: title,

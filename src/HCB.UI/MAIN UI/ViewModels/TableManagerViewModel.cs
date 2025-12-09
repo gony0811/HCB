@@ -19,7 +19,7 @@ namespace HCB.UI
 
         private List<string> dTableNameList = new List<string>()
         {
-            "Zone1 Vacuum","Zone2 Vacuum", "Zone3 Vacuum", "Zone4 Vacuum", "Zone5 Vacuum", "Zone6 Vacuum", "Zone7 Vacuum", "Zone8 Vacuum", "Zone9 Vacuum",
+            "DIE 1","DIE 2", "DIE 3", "DIE 4", "DIE 5", "DIE 6", "DIE 7", "DIE 8", "DIE 9",
         };
         public TableManagerViewModel()
         {

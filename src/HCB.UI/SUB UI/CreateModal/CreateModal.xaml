@@ -1,10 +1,10 @@
-﻿<Window x:Class="HCB.UI.CreateModal"
+﻿<telerik:RadWindow x:Class="HCB.UI.CreateModal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
-        xmlns:pt="clr-namespace:PropertyTools.Wpf;assembly=PropertyTools.Wpf"
+        Style="{StaticResource RadWindowStyle}"
         >
-    <Window.Resources>
+    <telerik:RadWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/SYSTEM/COMMON/Styles/UMainStyle.xaml"></ResourceDictionary>
@@ -13,7 +13,7 @@
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
-    </Window.Resources>
+    </telerik:RadWindow.Resources>
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -28,8 +28,8 @@
         </Grid.RowDefinitions>
 
         <!-- 공통 Device 정보 -->
-        <telerik:GroupBox Header="Device 기본정보" Grid.Row="0" Margin="0 0 0 10"  >
-            <telerik:RadPropertyGrid x:Name="MainGrid" Item="{Binding}" AutoGeneratePropertyDefinitions="True" LabelColumnWidth="100">
+        <telerik:GroupBox Header="Device 기본정보" Grid.Row="0" Margin="0 0 0 10" Style="{StaticResource GroupBoxStyle}">
+            <telerik:RadPropertyGrid x:Name="MainGrid" Item="{Binding}" AutoGeneratePropertyDefinitions="True" LabelColumnWidth="100" Style="{StaticResource RadPropertyGridStyle}">
               <!--  <telerik:RadPropertyGrid.PropertyDefinitions>
                     <telerik:PropertyDefinition Binding="{Binding Name}" DisplayName="Name" />
                     <telerik:PropertyDefinition Binding="{Binding DeviceType}" DisplayName="Device Type" />
@@ -41,21 +41,21 @@
         </telerik:GroupBox>
 
         <!-- 구분선 -->
-        <telerik:BorderContainer Grid.Row="1" Height="1" Background="#DDD" Margin="0 5"/>
+        <telerik:BorderContainer Grid.Row="1" Height="1" Background="#DDD" Margin="0 5" Style="{StaticResource BorderContainerStyle}"/>
 
         <!-- 타입별 상세 설정 -->
-        <telerik:GroupBox Header="타입별 상세설정" Grid.Row="2"  >
+        <telerik:GroupBox Header="타입별 상세설정" Grid.Row="2" Style="{StaticResource GroupBoxStyle}">
             <telerik:RadPropertyGrid x:Name="DetailGrid" Item="{Binding ExtraSetting}" 
                                      AutoGeneratePropertyDefinitions="True"                              
-                                     >
+                                     Style="{StaticResource RadPropertyGridStyle}">
                 
             </telerik:RadPropertyGrid>
         </telerik:GroupBox>
 
         <!-- 버튼 -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 10 0 0">
-            <telerik:RadButton Content="저장" Width="80" Height="35" Margin="4" Click="Save_Click"  />
-            <telerik:RadButton Content="취소" Width="80" Height="35" Margin="4" Click="Cancel_Click"  />
+            <telerik:RadButton Content="저장" Width="80" Height="35" Margin="4" Click="Save_Click" Style="{StaticResource RadButtonStyle}"/>
+            <telerik:RadButton Content="취소" Width="80" Height="35" Margin="4" Click="Cancel_Click" Style="{StaticResource RadButtonStyle}"/>
         </StackPanel>
     </Grid>
-</Window>
+</telerik:RadWindow>

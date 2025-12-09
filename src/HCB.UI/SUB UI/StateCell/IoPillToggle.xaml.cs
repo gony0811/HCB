@@ -56,12 +56,12 @@ namespace HCB.UI
         public string OffText { get => (string)GetValue(OffTextProperty); set => SetValue(OffTextProperty, value); }
 
         public static readonly DependencyProperty LabelFontSizeProperty =
-            DependencyProperty.Register(nameof(LabelFontSize), typeof(double), typeof(IoPillToggle), new PropertyMetadata(12.0));
+            DependencyProperty.Register(nameof(LabelFontSize), typeof(double), typeof(IoPillToggle), new PropertyMetadata(14.0));
         public double LabelFontSize { get => (double)GetValue(LabelFontSizeProperty); set => SetValue(LabelFontSizeProperty, value); }
 
         // 인디케이터 크기/색
         public static readonly DependencyProperty IndicatorSizeProperty =
-            DependencyProperty.Register(nameof(IndicatorSize), typeof(double), typeof(IoPillToggle), new PropertyMetadata(18.0));
+            DependencyProperty.Register(nameof(IndicatorSize), typeof(double), typeof(IoPillToggle), new PropertyMetadata(20.0));
         public double IndicatorSize { get => (double)GetValue(IndicatorSizeProperty); set => SetValue(IndicatorSizeProperty, value); }
 
         public static readonly DependencyProperty IndicatorOnFillProperty =
@@ -77,12 +77,12 @@ namespace HCB.UI
         // pill 색/라벨 색
         public static readonly DependencyProperty PillOnBrushProperty =
             DependencyProperty.Register(nameof(PillOnBrush), typeof(Brush), typeof(IoPillToggle),
-                new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+                new PropertyMetadata(Brushes.Transparent)); // ON 배경
         public Brush PillOnBrush { get => (Brush)GetValue(PillOnBrushProperty); set => SetValue(PillOnBrushProperty, value); }
 
         public static readonly DependencyProperty PillOffBrushProperty =
             DependencyProperty.Register(nameof(PillOffBrush), typeof(Brush), typeof(IoPillToggle),
-                new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+                new PropertyMetadata(Brushes.Transparent)); // OFF 배경
         public Brush PillOffBrush { get => (Brush)GetValue(PillOffBrushProperty); set => SetValue(PillOffBrushProperty, value); }
 
         public static readonly DependencyProperty LabelActiveBrushProperty =

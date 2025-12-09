@@ -28,7 +28,13 @@ namespace HCB.Data.Entity
 
         public Recipe? Recipe { get; set; }
 
-        
+        public RecipeParam() { }
+
+        public RecipeParam(int recipeId)
+        {
+            RecipeId = recipeId;
+        }
+
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             // 문자열을 숫자로 운영하신다면 파싱 후 비교(가능하면 decimal? 컬럼을 권장)

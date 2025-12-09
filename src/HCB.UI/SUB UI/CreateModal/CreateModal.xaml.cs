@@ -3,7 +3,7 @@ using Telerik.Windows.Controls;
 
 namespace HCB.UI
 {
-    public partial class CreateModal : Window
+    public partial class CreateModal : RadWindow
     {
         public CreateModal()
         {

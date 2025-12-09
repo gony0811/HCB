@@ -5,18 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
         xmlns:local="clr-namespace:HCB.UI"
-        Title="{Binding Title}" SizeToContent="WidthAndHeight"
+        Header="{Binding Title}" 
+        Style="{StaticResource RadWindowStyle}"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize" MinWidth="360" telerik:StyleManager.Theme="Windows11">
-    <Border Padding="16" telerik:StyleManager.Theme="Windows11">
+        MinWidth="360">
+    <Border Padding="16">
         <StackPanel>
-            <telerik:HighlightTextBlock telerik:StyleManager.Theme="Windows11" Text="레시피 이름" Margin="0,0,0,6" />
-            <telerik:RadWatermarkTextBox telerik:StyleManager.Theme="Windows11" Text="{Binding Value.Name, UpdateSourceTrigger=PropertyChanged}" />
+            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="레시피 이름" Margin="0,0,0,6" />
+            <telerik:RadWatermarkTextBox Style="{StaticResource RadWatermarkTextBoxStyle}" Text="{Binding Value.Name, UpdateSourceTrigger=PropertyChanged}" />
 
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" >
-                <telerik:RadButton telerik:StyleManager.Theme="Windows11" Content="취소" Width="80" Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
-                <telerik:RadButton telerik:StyleManager.Theme="Windows11" Content="생성"
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="취소" Width="80" Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="생성"
              Width="100"
              IsDefault="True"
              Command="{Binding OkCommand}"

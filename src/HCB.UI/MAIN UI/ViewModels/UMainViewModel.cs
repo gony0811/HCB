@@ -75,7 +75,7 @@ namespace HCB.UI
                 if (Logs.Count > 1000) Logs.RemoveAt(Logs.Count - 1);
 
                 try
-                {                     
+                {
                     await logRepository.AddAsync(log);
                 }
                 catch (Exception ex)
@@ -94,8 +94,7 @@ namespace HCB.UI
             switch(key)
             {
                 case "MAIN":
-                    CurrentPage = mainPage;
-
+                    CurrentPage = mainPage;         
                     logger.Information("애플리케이션 시작됨.");
                     break;
                 case "PARAMETER":
