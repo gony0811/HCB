@@ -9,6 +9,7 @@ using Serilog;
 using Serilog.Events;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows.Controls;
 
 namespace HCB.UI
@@ -67,13 +68,28 @@ namespace HCB.UI
 
         private void OnLogReceived(LogModel log)
         {
-            // UI 스레드에서 컬렉션 업데이트 (필수!)
+            // ==============================
+            // ① DB 로그(EF Core) 필터링
+            // ==============================
+
+            // SourceContext가 EFCore인 경우 저장하지 않음
+            if (log.SourceContext?.Contains("Microsoft.EntityFrameworkCore") == true)
+                return;
+
+            // 메시지가 명확하게 DBCommand 로그인 경우 저장하지 않음
+            if (log.Message.StartsWith("Executed DbCommand")
+                || log.Message.StartsWith("Executing DbCommand"))
+                return;
+
+            // ==========================================
+            // ② UI 업데이트 및 로그 저장
+            // ==========================================
             App.Current.Dispatcher.InvokeAsync(async () =>
             {
                 Logs.Insert(0, log);
 
-                // 로그가 너무 많이 쌓이면 메모리 관리 (예: 1000줄 유지)
-                if (Logs.Count > 1000) Logs.RemoveAt(Logs.Count - 1);
+                if (Logs.Count > 1000)
+                    Logs.RemoveAt(Logs.Count - 1);
 
                 try
                 {
@@ -81,7 +97,9 @@ namespace HCB.UI
                 }
                 catch (Exception ex)
                 {
-                    logger.Error("로그 저장 중 오류 발생: {ErrorMessage}", ex.Message);
+                    // 저장 실패 시 Serilog 호출 금지!!
+                    Debug.WriteLine(
+                        $"로그 저장 중 오류 발생: {ex.Message}");
                 }
             });
         }

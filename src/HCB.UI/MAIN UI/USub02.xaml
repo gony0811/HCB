@@ -73,12 +73,11 @@
                 <telerik:RadDockPanel Grid.Row="1" LastChildFill="True" Margin="0,4,0,0" Cursor="">
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                         <telerik:RadButton Content="생성" Style="{StaticResource RadButtonStyle}" Command="{Binding CreateRecipeCommand}" Width="50" Margin="0,0,6,0"/>
+                        <telerik:RadButton Content="수정" Style="{StaticResource RadButtonStyle}" Command="{Binding UpdateRecipeCommand}" Width="50" Margin="0,0,6,0"/>
                         <telerik:RadButton Content="복사" Margin="0,0,6,0" Width="50" Style="{StaticResource RadButtonStyle}"
-                                    Command="{Binding CopyRecipeCommand}" 
-                                    CommandParameter="{Binding SelectedRecipe, ElementName=RecipeGrid}"/>
+                                    Command="{Binding CopyRecipeCommand}" />
                         <telerik:RadButton Content="삭제" Width="50" Style="{StaticResource RadButtonStyle}"
-                                    Command="{Binding DeleteRecipeCommand}" 
-                                    CommandParameter="{Binding SelectedRecipe, ElementName=RecipeGrid}"/>
+                                    Command="{Binding DeleteRecipeCommand}" />
                     </StackPanel>
                 </telerik:RadDockPanel>
 
@@ -102,10 +101,10 @@
                               HorizontalAlignment="Stretch">
                     
                     <!-- 더블클릭 → VM.Command(SelectedDevice) -->
-                    <telerik:RadGridView.InputBindings>
-                        <MouseBinding MouseAction="LeftDoubleClick"
-                                      Command="{Binding DataContext.UseChangeCommand, ElementName=RecipeGrid}"/>
-                    </telerik:RadGridView.InputBindings>
+                    <telerik:EventToCommandBehavior.EventBindings>
+                        <telerik:EventBinding EventName="RowActivated" 
+                                                Command="{Binding DataContext.UseChangeCommand, ElementName=RecipeGrid}" />
+                    </telerik:EventToCommandBehavior.EventBindings>
 
                     <telerik:RadGridView.Columns>
                         <telerik:GridViewColumn Header="#" IsReadOnly="True" Width="90" MinWidth="80">
@@ -164,8 +163,7 @@
                                          Margin="0,8,0,0" Cursor="">
                     <telerik:RadGridView.InputBindings>
                         <MouseBinding MouseAction="LeftDoubleClick"
-                                           Command="{Binding DataContext.UpdateParameterCommand, ElementName=ParamGrid}"
-                                           CommandParameter="{Binding SelectedParam, ElementName=ParamGrid}"/>
+                                           Command="{Binding DataContext.UpdateParameterCommand, ElementName=ParamGrid}"/>
                     </telerik:RadGridView.InputBindings>
 
                     <telerik:RadGridView.Columns>
@@ -189,12 +187,21 @@
                             DataMemberBinding="{Binding UnitType}" />
                     </telerik:RadGridView.Columns>
                 </telerik:RadGridView>
-                <StackPanel Grid.Row="1" HorizontalAlignment="Right" Margin="10">
+                <StackPanel Grid.Row="1" HorizontalAlignment="Right" Margin="10" Orientation="Horizontal">
                     <telerik:RadButton Content="생성" 
-                                           Width="80" Height="30" 
+                                           Width="80" Height="30" Margin="4"
                                            Command="{Binding CreateParamCommand}"
-                                           Style="{StaticResource RadButtonStyle}">
-                    </telerik:RadButton>
+                                           Style="{StaticResource RadButtonStyle}"/>
+
+                    <telerik:RadButton Content="수정" 
+                                       Width="80" Height="30" Margin="4"
+                                       Command="{Binding UpdateParamCommand}"
+                                       Style="{StaticResource RadButtonStyle}"/>
+
+                    <telerik:RadButton Content="삭제" 
+                                       Width="80" Height="30" Margin="4"
+                                       Command="{Binding DeleteParamCommand}"
+                                       Style="{StaticResource RadButtonStyle}"/>
                 </StackPanel>
             </Grid>
 

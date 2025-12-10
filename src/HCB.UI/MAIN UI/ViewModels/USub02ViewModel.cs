@@ -50,7 +50,7 @@ namespace HCB.UI
             this._dialogService = dialogService;
             this._recipeService = recipeService;
             Recipes = _recipeService.RecipeList;
-        } 
+        }
 
         [RelayCommand]
         public async Task CreateRecipe(CancellationToken ct = default(CancellationToken))
@@ -63,15 +63,42 @@ namespace HCB.UI
 
             try
             {
-                
+
                 await _recipeService.AddRecipe(new RecipeDto { Name = recipe.Name, IsActive = recipe.IsActive });
 
                 _dialogService.ShowMessage("저장", "저장되었습니다");
             }
             catch (DbUpdateException ex)
             {
-                MessageBox.Show(ex.Message);
-                MessageBox.Show("저장 중 오류가 발생했습니다.", "저장 오류");
+                _dialogService.ShowMessage("저장 오류", "저장중 오류가 발생했습니다");
+            }
+        }
+
+        [RelayCommand]
+        public async Task UpdateRecipe()
+        {
+            if (SelectedRecipe == null) return;
+
+            var recipe = new RecipeCreateDto
+            {
+                Name = SelectedRecipe.Name,
+                IsActive = SelectedRecipe.IsActive
+            };
+
+            bool? result = await _dialogService.ShowEditDialog(recipe);
+
+            if (result != true) return;
+
+            try
+            {
+                SelectedRecipe.Name = recipe.Name;
+                SelectedRecipe.IsActive = recipe.IsActive;
+                await _recipeService.UpdateRecipe(SelectedRecipe);
+                _dialogService.ShowMessage("저장", "저장되었습니다");
+            }
+            catch (DbUpdateException ex)
+            {
+                _dialogService.ShowMessage("저장 오류", "저장중 오류가 발생했습니다");
             }
         }
 
@@ -80,14 +107,15 @@ namespace HCB.UI
         {
             if (SelectedRecipe != null)
             {
-                if(SelectedRecipe.IsActive)
+                if (SelectedRecipe.IsActive)
                 {
                     _dialogService.ShowMessage("경고", "사용중인 레시피는 삭제하실 수 없습니다");
                     return;
                 }
                 await _recipeService.DeleteRecipe(SelectedRecipe);
                 SelectedRecipe = null;
-            }else
+            }
+            else
             {
                 _dialogService.ShowMessage("레시피 선택 필요", "레시피를 선택해주세요");
             }
@@ -96,12 +124,19 @@ namespace HCB.UI
         [RelayCommand]
         public async Task CopyRecipe()
         {
-            if ( SelectedRecipe != null)
+            if (SelectedRecipe != null)
             {
-                bool result = _dialogService.ShowMessage("레시피 복사", "복사하시겠습니까?");
+                bool result = _dialogService.ShowConfirm("레시피 복사", "복사하시겠습니까?");
                 if (result)
                 {
-                    await _recipeService.CopyRecipe(SelectedRecipe);
+                    try
+                    {
+                        await _recipeService.CopyRecipe(SelectedRecipe);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        _dialogService.ShowMessage("중복 오류", "동일한 이름의 레시피가 존재합니다");
+                    }
                 }
             }
         }
@@ -110,12 +145,20 @@ namespace HCB.UI
         public async Task UseChange()
         {
             if (SelectedRecipe == null) return;
+
+            bool result = _dialogService.ShowConfirm("사용 레시피 변경", "사용할 레시피를 변경하시겠습니까?");
+            if (!result)
+            {
+                return;
+            }
+
             try
             {
                 SelectedRecipe.IsActive = true;
                 await _recipeService.UpdateRecipe(SelectedRecipe);
                 _dialogService.ShowMessage("변경", "사용 레시피가 변경되었습니다");
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 _dialogService.ShowMessage("에러", ex.GetBaseException().Message);
             }
@@ -147,11 +190,64 @@ namespace HCB.UI
 
                 await _recipeService.AddRecipeParam(dto);
                 _dialogService.ShowMessage("저장", "저장되었습니다");
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 MessageBox.Show("저장 실패", "파라미터 저장 실패");
             }
 
+        }
+
+        [RelayCommand]
+        public async Task UpdateParam()
+        {
+            if (SelectedParam == null) return;
+            try
+            {
+                var param = new ParameterCreateDto
+                {
+                    Name = SelectedParam.Name,
+                    Value = SelectedParam.Value,
+                    Minimum = SelectedParam.Minimum,
+                    Maximum = SelectedParam.Maximum,
+                    ValueType = SelectedParam.ValueType,
+                    UnitType = SelectedParam.UnitType,
+                    Description = SelectedParam.Description
+                };
+                bool? result = await _dialogService.ShowEditDialog(param);
+                if (result != true) return;
+                SelectedParam.Name = param.Name;
+                SelectedParam.Value = param.Value;
+                SelectedParam.Minimum = param.Minimum;
+                SelectedParam.Maximum = param.Maximum;
+                SelectedParam.ValueType = param.ValueType;
+                SelectedParam.UnitType = param.UnitType;
+                SelectedParam.Description = param.Description;
+                await _recipeService.UpdateRecipeParam(SelectedParam);
+                _dialogService.ShowMessage("저장", "저장되었습니다");
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("저장 실패", "파라미터 저장 실패");
+            }
+        }
+
+        [RelayCommand]
+        public async Task DeleteParam()
+        {
+            
+            if (SelectedParam != null)
+            {
+                bool result = _dialogService.ShowConfirm("파라미터 삭제", $"{SelectedParam.Name}을 삭제하시겠습니까?");
+                if (!result) return;
+
+                await _recipeService.DeleteRecipeParam(SelectedParam);
+                SelectedParam = null;
+            }
+            else
+            {
+                _dialogService.ShowMessage("파라미터 선택 필요", "파라미터를 선택해주세요");
+            }
         }
     }
 }

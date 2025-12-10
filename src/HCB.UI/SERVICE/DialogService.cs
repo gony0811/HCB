@@ -1,10 +1,12 @@
 ﻿using HCB.IoC;
+using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using Telerik.Windows.Controls;
 
 namespace HCB.UI
 {
@@ -26,9 +28,28 @@ namespace HCB.UI
             return Task.FromResult(modal.ShowDialog());
         }
 
-        public bool ShowMessage(string title, string content)
+        public void ShowMessage(string title, string content)
         {
-            return AlertModal.Ask(Owner, title, content);
+            RadWindow.Alert(new DialogParameters
+            {
+                Header = title,
+                Content = content
+            });
+        }
+
+        public bool ShowConfirm(string title, string content)
+        {
+            bool result = false;
+            RadWindow.Confirm(new DialogParameters
+            {
+                Header = title,
+                Content = content,
+                Closed = (s, e) =>
+                {
+                    result = e.DialogResult == true;
+                }
+            });
+            return result;
         }
 
         //public double? ShowEditNumDialog(double value, double minValue, double maxValue, double step = 1.0, bool allowDecimal = true)

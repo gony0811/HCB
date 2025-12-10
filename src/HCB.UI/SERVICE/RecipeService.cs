@@ -72,21 +72,14 @@ namespace HCB.UI
 
         public async Task UpdateRecipe(RecipeDto recipeDto)
         {
-            // 활성으로 바꾸려는 경우 → 기존 활성 먼저 끄기
             if (recipeDto.IsActive)
                 await DisableCurrentActiveRecipeAsync(recipeDto);
 
-            // 업데이트 저장
             var updatedEntity = await _recipeRepo.Update(recipeDto.ToEntity());
-            var updatedDto = new RecipeDto().ToDto(updatedEntity);
 
-            // 업데이트 후 활성 처리
-            if (updatedDto.IsActive)
-            {
-                updatedDto.IsActive = true;
-                await _recipeRepo.Update(updatedDto.ToEntity());
-                UseRecipe = updatedDto;
-            }
+            // 활성 레시피 설정
+            if (recipeDto.IsActive)
+                UseRecipe = recipeDto;
         }
         public async Task DeleteRecipe(RecipeDto recipeDto)
         {
@@ -129,10 +122,12 @@ namespace HCB.UI
 
         private async Task DisableCurrentActiveRecipeAsync(RecipeDto newRecipe)
         {
-            if (UseRecipe != null && UseRecipe.Id != newRecipe.Id && UseRecipe.IsActive)
+            var activeRecipe = RecipeList.FirstOrDefault(r => r.IsActive && r.Id != newRecipe.Id);
+
+            if (activeRecipe != null)
             {
-                UseRecipe.IsActive = false;
-                await _recipeRepo.Update(UseRecipe.ToEntity());
+                activeRecipe.IsActive = false; // 메모리 DTO 반영
+                await _recipeRepo.Update(activeRecipe.ToEntity()); // DB 반영
             }
         }
 

@@ -54,12 +54,6 @@
   <Page Include="MAIN UI\USub06.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
-  <Page Include="SUB UI\AlertModal\AlertModal.xaml">
-    <Generator>MSBuild:Compile</Generator>
-  </Page>
-  <Page Include="SUB UI\ConfirmModal\ConfirmModal.xaml">
-    <Generator>MSBuild:Compile</Generator>
-  </Page>
   <Page Include="SUB UI\Pad\UNmumPad.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -191,8 +185,6 @@
   <Compile Include="SERVICE\InterlockService.cs" />
   <Compile Include="SERVICE\DialogService.cs" />
   <Compile Include="SERVICE\RecipeService.cs" />
-  <Compile Include="SUB UI\AlertModal\AlertModal.xaml.cs" />
-  <Compile Include="SUB UI\ConfirmModal\ConfirmModal.xaml.cs" />
   <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
   <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
