@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
 
-namespace EMC
+namespace HCB.UI
 {
     public partial class USub07ViewModel : ObservableObject 
     {

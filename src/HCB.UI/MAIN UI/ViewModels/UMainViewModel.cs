@@ -50,6 +50,8 @@ namespace HCB.UI
             USub03 uSub03,
             USub04 uSub04,
             USub05 uSub05,
+            USub06 uSub06,
+            USub07 uSub07,
             USub08 uSub08,
             UserService userService, 
             NavigationViewModel navVM)
@@ -59,6 +61,8 @@ namespace HCB.UI
             this.userPage = uSub03;
             this.logPage = uSub04;
             this.alarmPage = uSub05;
+            this.motionPage = uSub06;
+            this.ioPage = uSub07;
             this.devicePage = uSub08;
             this.UserService = userService;
             this.NavVM = navVM;
@@ -116,10 +120,10 @@ namespace HCB.UI
                     CurrentPage = alarmPage;
                     break;
                 case "MOTION":
-                    //CurrentPage = App.Container.Resolve<USub06>();
+                    CurrentPage = motionPage;
                     break;
                 case "IO":
-                    //CurrentPage = App.Container.Resolve<USub07>();
+                    CurrentPage = ioPage;
                     break;
                 case "DEVICE":
                     CurrentPage = devicePage;

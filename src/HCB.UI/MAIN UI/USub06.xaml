@@ -121,7 +121,7 @@
 
                                         <!-- ✅ Row.Tag = DataGrid의 ViewModel -->
                                         <Setter Property="Tag"
-                    Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                    Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=telerik:RadGridView}}"/>
 
                                         <Setter Property="ContextMenu">
                                             <Setter.Value>

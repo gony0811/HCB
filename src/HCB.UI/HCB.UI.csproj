@@ -54,6 +54,9 @@
   <Page Include="MAIN UI\USub06.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="MAIN UI\USub07.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\AlertModal\AlertModal.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -177,10 +180,12 @@
   <Compile Include="MAIN UI\USub04.xaml.cs" />
   <Compile Include="MAIN UI\USub05.xaml.cs" />
   <Compile Include="MAIN UI\USub06.xaml.cs" />
+  <Compile Include="MAIN UI\USub07.xaml.cs" />
   <Compile Include="MAIN UI\ViewModels\USub02ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub03ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub05ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub06ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub07ViewModel.cs" />
   <Compile Include="SEQUENCE\Extenstions\MotionExtensions.cs" />
   <Compile Include="SEQUENCE\Interface\ISequence.cs" />
   <Compile Include="SEQUENCE\Interface\ISequenceHelper.cs" />
