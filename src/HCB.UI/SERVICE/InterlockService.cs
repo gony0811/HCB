@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using HCB.IoC;
 using Serilog;
 
+
 namespace HCB.UI
 {
     internal class InterlockService : BackgroundService
@@ -23,14 +24,10 @@ namespace HCB.UI
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var motion = _deviceManager.GetDevice<PowerPmacDevice>("PowerPMAC");
-
             try
             {
-                if (motion != null && !motion.IsConnected) 
-                    await motion.Connect();
-
-                _logger.Information("InterlockService ExecuteAsync");
+                
+                _logger.Information(new SysLog("InterlockService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "").ToString());
             }
             catch (Exception ex)
             {

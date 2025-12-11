@@ -186,6 +186,7 @@
   <Compile Include="MAIN UI\ViewModels\USub05ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub06ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub07ViewModel.cs" />
+  <Compile Include="SEQUENCE\Extenstions\IoExtensions.cs" />
   <Compile Include="SEQUENCE\Extenstions\MotionExtensions.cs" />
   <Compile Include="SEQUENCE\Interface\ISequence.cs" />
   <Compile Include="SEQUENCE\Interface\ISequenceHelper.cs" />
@@ -285,6 +286,7 @@
   <Compile Include="SYSTEM\Logging\LogMessage.cs" />
   <Compile Include="SYSTEM\Logging\TextBoxSink.cs" />
   <Compile Include="SYSTEM\Options\DataOptions.cs" />
+  <Compile Include="SYSTEM\SystemStatus.cs" />
 </ItemGroup>
   
   <ItemGroup>
@@ -297,6 +299,15 @@
   
   <ItemGroup>
     <ProjectReference Include="..\HCB\HCB.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="DEVICE\dll\PowerPmac32.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="DEVICE\dll\PowerPmac64.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

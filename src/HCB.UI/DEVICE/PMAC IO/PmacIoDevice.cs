@@ -58,7 +58,7 @@ namespace HCB.UI
                 else
                 {
                     DTKPowerPmac.Instance.Close(uDeviceId);
-                    Id = int.MaxValue;
+                    uDeviceId = int.MaxValue;
                     IsConnected = false;
                 }
             }
