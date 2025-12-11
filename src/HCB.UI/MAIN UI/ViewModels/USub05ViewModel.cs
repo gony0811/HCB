@@ -82,7 +82,7 @@ namespace HCB.UI
 
                 if (!toAdd.Any() && !toUpdate.Any())
                 {
-                    AlertModal.Ask(GetOwnerWindow(), "저장", "변경된 내용이 없습니다.");
+                    //AlertModal.Ask(GetOwnerWindow(), "저장", "변경된 내용이 없습니다.");
                     return;
                 }
 
@@ -98,11 +98,11 @@ namespace HCB.UI
                 foreach (var alarm in AlarmList)
                     alarm.IsModified = false;
 
-                AlertModal.Ask(GetOwnerWindow(), "저장", "저장되었습니다.");
+                //AlertModal.Ask(GetOwnerWindow(), "저장", "저장되었습니다.");
             }
             catch (Exception e)
             {
-                AlertModal.Ask(GetOwnerWindow(), "저장 실패", $"저장 중 오류 발생:\n{e.Message}");
+                //AlertModal.Ask(GetOwnerWindow(), "저장 실패", $"저장 중 오류 발생:\n{e.Message}");
             }
         }
 
@@ -121,11 +121,11 @@ namespace HCB.UI
 
                 SelectedAlarm = null;
                 SelectedAlarm = AlarmList.First(null);
-                AlertModal.Ask(GetOwnerWindow(), "되돌리기", "모든 변경사항이 취소되었습니다.");
+                //AlertModal.Ask(GetOwnerWindow(), "되돌리기", "모든 변경사항이 취소되었습니다.");
             }
             catch (Exception ex)
             {
-                AlertModal.Ask(GetOwnerWindow(), "오류", $"되돌리기 중 오류 발생:\n{ex.Message}");
+                //AlertModal.Ask(GetOwnerWindow(), "오류", $"되돌리기 중 오류 발생:\n{ex.Message}");
             }
         }
 

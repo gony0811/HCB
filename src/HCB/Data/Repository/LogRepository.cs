@@ -1,13 +1,14 @@
 ﻿using HCB.Data.Entity;
 using HCB.Data.Interface;
 using HCB.IoC;
+using Microsoft.EntityFrameworkCore;
 
 namespace HCB.Data.Repository
 {
     [Repository(Lifetime.Scoped)] // Convention 기반 등록
     public class LogRepository : DbRepository<LogModel, AppDb>
     {
-        public LogRepository(AppDb db) : base(db)
+        public LogRepository(IDbContextFactory<AppDb> factory, AppDb db) : base(factory, db)
         {
         }
 

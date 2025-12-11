@@ -13,7 +13,7 @@ namespace HCB.Data.Repository
         DbSet<MotionDeviceDetail> MotionDeviceDetailRepository;
         DbSet<IoDeviceDetail> IoDeviceDetailRepository;
 
-        public DeviceRepository(AppDb db) : base(db)
+        public DeviceRepository(IDbContextFactory<AppDb> factory, AppDb db) : base(factory, db)
         {
             MotionDeviceDetailRepository = db.Set<MotionDeviceDetail>();
             IoDeviceDetailRepository = db.Set<IoDeviceDetail>();

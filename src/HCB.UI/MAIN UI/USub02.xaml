@@ -73,12 +73,11 @@
                 <telerik:RadDockPanel Grid.Row="1" LastChildFill="True" Margin="0,4,0,0" Cursor="">
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                         <telerik:RadButton Content="생성" Style="{StaticResource RadButtonStyle}" Command="{Binding CreateRecipeCommand}" Width="50" Margin="0,0,6,0"/>
+                        <telerik:RadButton Content="수정" Style="{StaticResource RadButtonStyle}" Command="{Binding UpdateRecipeCommand}" Width="50" Margin="0,0,6,0"/>
                         <telerik:RadButton Content="복사" Margin="0,0,6,0" Width="50" Style="{StaticResource RadButtonStyle}"
-                                    Command="{Binding CopyRecipeCommand}" 
-                                    CommandParameter="{Binding SelectedItem, ElementName=RecipeGrid}"/>
+                                    Command="{Binding CopyRecipeCommand}" />
                         <telerik:RadButton Content="삭제" Width="50" Style="{StaticResource RadButtonStyle}"
-                                    Command="{Binding DeleteRecipeCommand}" 
-                                    CommandParameter="{Binding SelectedItem, ElementName=RecipeGrid}"/>
+                                    Command="{Binding DeleteRecipeCommand}" />
                     </StackPanel>
                 </telerik:RadDockPanel>
 
@@ -100,19 +99,12 @@
                               ColumnWidth="*"            
                               
                               HorizontalAlignment="Stretch">
-                    <i:Interaction.Triggers>
-                        <i:EventTrigger EventName="SelectionChanged">
-                            <i:InvokeCommandAction
-                                    Command="{Binding DataContext.ClickRecipeCommand, ElementName=RecipeGrid}"
-                                    CommandParameter="{Binding SelectedItem, ElementName=RecipeGrid}" />
-                        </i:EventTrigger>
-                    </i:Interaction.Triggers>
+                    
                     <!-- 더블클릭 → VM.Command(SelectedDevice) -->
-                    <telerik:RadGridView.InputBindings>
-                        <MouseBinding MouseAction="LeftDoubleClick"
-                                           Command="{Binding DataContext.ChangeUseRecipeCommand, ElementName=RecipeGrid}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=RecipeGrid}"/>
-                    </telerik:RadGridView.InputBindings>
+                    <telerik:EventToCommandBehavior.EventBindings>
+                        <telerik:EventBinding EventName="RowActivated" 
+                                                Command="{Binding DataContext.UseChangeCommand, ElementName=RecipeGrid}" />
+                    </telerik:EventToCommandBehavior.EventBindings>
 
                     <telerik:RadGridView.Columns>
                         <telerik:GridViewColumn Header="#" IsReadOnly="True" Width="90" MinWidth="80">
@@ -127,22 +119,24 @@
                             <telerik:GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <telerik:RadDockPanel LastChildFill="True">
-                                        <Border DockPanel.Dock="Right"
-                                                    CornerRadius="10"
-                                                    Padding="6,2"
-                                                    Margin="8,0,0,0"
-                                                    Background="#22008000"
-                                                    BorderBrush="#19E225"
-                                                    BorderThickness="1"
-                                                    Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
-                                            <telerik:HighlightTextBlock Text="사용중" FontSize="16" Foreground="#19E225" Style="{StaticResource HighlightTextBlockStyle}"/>
-                                        </Border>
+                                        
 
                                         <telerik:HighlightTextBlock Text="{Binding Name}"
                                                                         Style="{StaticResource HighlightTextBlockStyle}"
                                                                         FontSize="16"
                                                                         VerticalAlignment="Center"
                                                                         TextTrimming="CharacterEllipsis"/>
+                                        <Border DockPanel.Dock="Right"
+                                                Width="80"
+                                                CornerRadius="10"
+                                                Padding="6,2"
+                                                Margin="8,0,0,0"
+                                                Background="#22008000"
+                                                BorderBrush="#19E225"
+                                                BorderThickness="1"
+                                                Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
+                                            <telerik:HighlightTextBlock Text="사용중" FontSize="16" Foreground="#19E225" Style="{StaticResource HighlightTextBlockStyle}"/>
+                                        </Border>
                                     </telerik:RadDockPanel>
                                 </DataTemplate>
                             </telerik:GridViewColumn.CellTemplate>
@@ -161,16 +155,15 @@
                 <telerik:RadGridView x:Name="ParamGrid"
                                          ShowColumnHeaders="False"
                                          Grid.Row="0"
-                                         ItemsSource="{Binding RecipeParam}"
-                                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                                         ItemsSource="{Binding SelectedRecipe.ParamList}"
+                                         SelectedItem="{Binding SelectedParam, Mode=TwoWay}"
                                          Style="{StaticResource RadGridViewStyle}"
                                          FontSize="18"
                                          AutoGenerateColumns="False"
                                          Margin="0,8,0,0" Cursor="">
                     <telerik:RadGridView.InputBindings>
                         <MouseBinding MouseAction="LeftDoubleClick"
-                                           Command="{Binding DataContext.UpdateParameterCommand, ElementName=ParamGrid}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=ParamGrid}"/>
+                                           Command="{Binding DataContext.UpdateParameterCommand, ElementName=ParamGrid}"/>
                     </telerik:RadGridView.InputBindings>
 
                     <telerik:RadGridView.Columns>
@@ -181,30 +174,34 @@
                                 </DataTemplate>
                             </telerik:GridViewColumn.CellTemplate>
                         </telerik:GridViewColumn>
-                        <telerik:GridViewColumn Header="Name" Width="2*">
-                            <telerik:GridViewColumn.CellEditTemplate>
-                                <DataTemplate>
-                                    <telerik:HighlightTextBlock Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" FontSize="16" VerticalAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                                </DataTemplate>
-                            </telerik:GridViewColumn.CellEditTemplate>
-                        </telerik:GridViewColumn>
-
-                        <telerik:GridViewColumn Header="Unit" Width="100">
+                        <telerik:GridViewColumn Header="Value" Width="2*">
                             <telerik:GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <telerik:HighlightTextBlock Text="{Binding Unit.Name}" FontSize="16" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Value}" />
                                 </DataTemplate>
                             </telerik:GridViewColumn.CellTemplate>
                         </telerik:GridViewColumn>
+
+                        <telerik:GridViewDataColumn Header="Unit"
+                            Width="100"
+                            DataMemberBinding="{Binding UnitType}" />
                     </telerik:RadGridView.Columns>
                 </telerik:RadGridView>
-                <StackPanel Grid.Row="1" HorizontalAlignment="Right" Margin="10">
+                <StackPanel Grid.Row="1" HorizontalAlignment="Right" Margin="10" Orientation="Horizontal">
                     <telerik:RadButton Content="생성" 
-                                           Width="80" Height="30" 
-                                           Command="{Binding CreateParameterCommand}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=RecipeGrid}"
-                                           Style="{StaticResource RadButtonStyle}">
-                    </telerik:RadButton>
+                                           Width="80" Height="30" Margin="4"
+                                           Command="{Binding CreateParamCommand}"
+                                           Style="{StaticResource RadButtonStyle}"/>
+
+                    <telerik:RadButton Content="수정" 
+                                       Width="80" Height="30" Margin="4"
+                                       Command="{Binding UpdateParamCommand}"
+                                       Style="{StaticResource RadButtonStyle}"/>
+
+                    <telerik:RadButton Content="삭제" 
+                                       Width="80" Height="30" Margin="4"
+                                       Command="{Binding DeleteParamCommand}"
+                                       Style="{StaticResource RadButtonStyle}"/>
                 </StackPanel>
             </Grid>
 

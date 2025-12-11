@@ -9,7 +9,7 @@ namespace HCB.Data.Repository
     public class ScreenRepository : DbRepository<Screen, AppDb>
     {
         private AppDb _db;
-        public ScreenRepository(AppDb db) : base(db)
+        public ScreenRepository(IDbContextFactory<AppDb> factory, AppDb db) : base(factory, db)
         {
             _db = db;
         }

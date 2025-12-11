@@ -12,9 +12,6 @@ using Telerik.Windows.Controls.SplashScreen;
 
 namespace HCB.UI
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : Application
     {
         static public string Project = "EGGPLANT";
@@ -65,6 +62,8 @@ namespace HCB.UI
             await StartUp.InitDatabaseAsync(_host);
 
             SplashScreenUpdate("데이터베이스 연결 및 초기화 완료", 20);
+            var recipeService = _host.Services.GetRequiredService<RecipeService>();
+            await recipeService.Initialize();
 
             SplashScreenUpdate("어플리케이션 초기화 및 구동 시작", 21);
 

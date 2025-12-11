@@ -10,46 +10,46 @@ namespace HCB.Data.Repository
     public class RoleRepository : DbRepository<Role, AppDb>
     {
         private readonly AppDb db;
-        public RoleRepository(AppDb db) : base(db)
+        public RoleRepository(IDbContextFactory<AppDb> factory, AppDb db) : base(factory, db)
         {
             this.db = db;
         }
 
-        public async Task<Role> GetRoleAsync(string roleName, string password, CancellationToken ct = default(CancellationToken))
-        {
-            // EF Core 2.1은 Filtered Include/AsSplitQuery 미지원
-            // 1) 기본 Role + 관련 네비게이션 전부 로드
-            var role = await _set
-                .Where(r => r.IsActive && r.Name == roleName && r.Password == password)
-                .Include(r => r.ScreenAccesses)
-                    .ThenInclude(sa => sa.Screen)
-                .Include(r => r.ManageTargets)
-                    .ThenInclude(m => m.Target)
-                .AsNoTracking()
-                .SingleOrDefaultAsync(ct)
-                .ConfigureAwait(false);
+        //public async Task<Role> GetRoleAsync(string roleName, string password, CancellationToken ct = default(CancellationToken))
+        //{
+        //    // EF Core 2.1은 Filtered Include/AsSplitQuery 미지원
+        //    // 1) 기본 Role + 관련 네비게이션 전부 로드
+        //    var role = await _set
+        //        .Where(r => r.IsActive && r.Name == roleName && r.Password == password)
+        //        .Include(r => r.ScreenAccesses)
+        //            .ThenInclude(sa => sa.Screen)
+        //        .Include(r => r.ManageTargets)
+        //            .ThenInclude(m => m.Target)
+        //        .AsNoTracking()
+        //        .SingleOrDefaultAsync(ct)
+        //        .ConfigureAwait(false);
 
-            if (role == null) return null;
+        //    if (role == null) return null;
 
-            // 2) 메모리에서 필터링(Granted/CanManage만 남김, 비활성 Screen 제거)
-            if (role.ScreenAccesses != null)
-            {
-                role.ScreenAccesses = role.ScreenAccesses
-                    .Where(sa => sa.Granted
-                                   && sa.Screen != null
-                                   && sa.Screen.IsEnabled)
-                    .ToList();
-            }
+        //    // 2) 메모리에서 필터링(Granted/CanManage만 남김, 비활성 Screen 제거)
+        //    if (role.ScreenAccesses != null)
+        //    {
+        //        role.ScreenAccesses = role.ScreenAccesses
+        //            .Where(sa => sa.Granted
+        //                           && sa.Screen != null
+        //                           && sa.Screen.IsEnabled)
+        //            .ToList();
+        //    }
 
-            if (role.ManageTargets != null)
-            {
-                role.ManageTargets = role.ManageTargets
-                    .Where(m => m.CanManage && m.Target != null && m.Target.IsActive)
-                    .ToList();
-            }
+        //    if (role.ManageTargets != null)
+        //    {
+        //        role.ManageTargets = role.ManageTargets
+        //            .Where(m => m.CanManage && m.Target != null && m.Target.IsActive)
+        //            .ToList();
+        //    }
 
-            return role;
-        }
+        //    return role;
+        //}
 
         //public async Task<List<RoleScreensGroupDto>> GetManagedRolesScreensAsync(
         //    int managerRoleId,

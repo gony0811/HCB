@@ -32,15 +32,15 @@ namespace HCB.UI
                 if (dlg1.ShowDialog() != true) return; // 취소
                 var pw = dlg1.Password;
 
-                var result = await UserService.ChangeAuthority(authority, pw);
-                if (result)
-                {
-                    AlertModal.Ask(owner, "변경", "사용자가 변경되었습니다");
-                }
-                else
-                {
-                    AlertModal.Ask(owner, "인증 실패", "비밀번호가 틀렸습니다");
-                }
+                //var result = await UserService.ChangeAuthority(authority, pw);
+                //if (result)
+                //{
+                //    //AlertModal.Ask(owner, "변경", "사용자가 변경되었습니다");
+                //}
+                //else
+                //{
+                //    //AlertModal.Ask(owner, "인증 실패", "비밀번호가 틀렸습니다");
+                //}
             }
         }
 

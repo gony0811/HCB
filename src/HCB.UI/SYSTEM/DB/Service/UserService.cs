@@ -48,26 +48,26 @@ namespace HCB.UI
                 if (r.Name.Equals("OPERATOR") && CurrentAuthority == null)
                 {
                     CurrentAuthority = Authority.of(r);
-                    await ChangeAuthority(CurrentAuthority, "");
+                    //await ChangeAuthority(CurrentAuthority, "");
                 }
                 AuthorityList.Add(Authority.of(r));
             }
         }
 
-        public async Task<bool> ChangeAuthority(Authority authority, string password, CancellationToken ct = default)
-        {
-            var role = await roleRepository.GetRoleAsync(authority.Name, password, ct);
-            if (role is null) return false;
-            var allowedScreenCodes = role.ScreenAccesses
-                .Where(sa => sa.Screen != null && sa.Screen.IsEnabled)
-                .Select(sa => sa.Screen!.Code)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        //public async Task<bool> ChangeAuthority(Authority authority, string password, CancellationToken ct = default)
+        //{
+        //    var role = await roleRepository.GetRoleAsync(authority.Name, password, ct);
+        //    if (role is null) return false;
+        //    var allowedScreenCodes = role.ScreenAccesses
+        //        .Where(sa => sa.Screen != null && sa.Screen.IsEnabled)
+        //        .Select(sa => sa.Screen!.Code)
+        //        .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            CurrentAuthority = Authority.of(role);
-            NavVM.ApplyScreens(allowedScreenCodes);
-            //await ManagedScreen(CurrentAuthority.Id);
-            return true;
-        }
+        //    CurrentAuthority = Authority.of(role);
+        //    NavVM.ApplyScreens(allowedScreenCodes);
+        //    //await ManagedScreen(CurrentAuthority.Id);
+        //    return true;
+        //}
 
         // 관리하는 스크린 화면들
         //public async Task ManagedScreen(int managerRoleId, CancellationToken ct = default)

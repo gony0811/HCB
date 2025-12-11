@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HCB.Data.Repository
 {
-    [Service(Lifetime.Scoped)]
+    [Service(Lifetime.Transient)]
     public class RecipeRepository : DbRepository<Recipe, AppDb>
     {
         private readonly AppDb _db;
-        public RecipeRepository(AppDb db) : base(db)
+        public RecipeRepository(IDbContextFactory<AppDb> factory, AppDb db) : base(factory, db)
         {
             _db = db;
         }
