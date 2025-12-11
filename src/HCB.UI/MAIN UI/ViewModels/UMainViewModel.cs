@@ -77,6 +77,19 @@ namespace HCB.UI
 
         private void OnLogReceived(LogModel log)
         {
+            // ==============================
+            // ① DB 로그(EF Core) 필터링
+            // ==============================
+
+            // SourceContext가 EFCore인 경우 저장하지 않음
+            if (log.SourceContext?.Contains("Microsoft.EntityFrameworkCore") == true)
+                return;
+
+            // 메시지가 명확하게 DBCommand 로그인 경우 저장하지 않음
+            if (log.Message.StartsWith("Executed DbCommand")
+                || log.Message.StartsWith("Executing DbCommand"))
+                return;
+
             // UI 스레드에서 컬렉션 업데이트 (필수!)
             App.Current.Dispatcher.InvokeAsync(async () =>
             {

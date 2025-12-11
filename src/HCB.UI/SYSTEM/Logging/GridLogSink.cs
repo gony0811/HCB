@@ -26,6 +26,8 @@ namespace HCB.UI
                 return ""; // 없으면 빈 문자열
             }
 
+            
+
             // 2. 로그 모델 생성
             var log = new LogModel
             {

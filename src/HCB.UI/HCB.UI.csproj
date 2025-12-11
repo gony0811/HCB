@@ -57,10 +57,7 @@
   <Page Include="MAIN UI\USub07.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
-  <Page Include="SUB UI\AlertModal\AlertModal.xaml">
-    <Generator>MSBuild:Compile</Generator>
-  </Page>
-  <Page Include="SUB UI\ConfirmModal\ConfirmModal.xaml">
+  <Page Include="SUB UI\CreateModal\PromptModal.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\Pad\UNmumPad.xaml">
@@ -191,10 +188,8 @@
   <Compile Include="SEQUENCE\Interface\ISequence.cs" />
   <Compile Include="SEQUENCE\Interface\ISequenceHelper.cs" />
   <Compile Include="SEQUENCE\Helper\SequenceHelper.cs" />
-  <Compile Include="SERVICE\DeviceService.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
-  <Compile Include="SUB UI\AlertModal\AlertModal.xaml.cs" />
-  <Compile Include="SUB UI\ConfirmModal\ConfirmModal.xaml.cs" />
+  <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
   <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
   <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
@@ -209,6 +204,10 @@
   <Compile Include="SUB UI\USub08Tab\IoDeviceView.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\PromptDialogVM.cs" />
   <Compile Include="SUB UI\ViewModels\RecipeCreateVM.cs" />
+  <Compile Include="SYSTEM\DB\Dto\ParameterCreateDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RecipeCreateDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RecipeDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RecipeParamDto.cs" />
   <Compile Include="SYSTEM\DB\Service\AlarmService.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToBrushConverter.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToTextConvert.cs" />
@@ -226,6 +225,8 @@
   <Compile Include="SYSTEM\DB\Dto\RoleScreenDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\RoleScreensGroupVM.cs" />
   <Compile Include="SYSTEM\DB\Dto\SensorIoItemViewModel.cs" />
+  <Compile Include="SYSTEM\DB\Service\DialogService.cs" />
+  <Compile Include="SYSTEM\DB\Service\RecipeService.cs" />
   <Compile Include="SYSTEM\DB\Service\UserService.cs" />
   <Compile Include="DEVICE\CommonType\MotionType.cs" />
   <Compile Include="DEVICE\Factory\DeviceFactory.cs" />
