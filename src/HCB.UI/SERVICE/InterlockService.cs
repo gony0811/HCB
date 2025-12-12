@@ -15,11 +15,13 @@ namespace HCB.UI
     {
         private ILogger _logger;
         private DeviceManager _deviceManager;
+        private IOperationService _operationService;
 
-        public InterlockService(ILogger logger, DeviceManager deviceManager)
+        public InterlockService(ILogger logger, DeviceManager deviceManager, IOperationService operationService)
         {
             _logger = logger.ForContext<InterlockService>();
             _deviceManager = deviceManager;
+            _operationService = operationService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -27,7 +29,7 @@ namespace HCB.UI
             try
             {
                 
-                _logger.Information(new SysLog("InterlockService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "").ToString());
+                _logger.Information(new SysLog("InterlockService", _operationService.Status.Availability.ToString(), _operationService.Status.Run.ToString(), _operationService.Status.Alarm.ToString(), _operationService.Status.Operation.ToString(), "").ToString());
             }
             catch (Exception ex)
             {

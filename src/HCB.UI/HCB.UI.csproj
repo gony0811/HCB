@@ -188,7 +188,9 @@
   <Compile Include="SEQUENCE\Interface\ISequence.cs" />
   <Compile Include="SEQUENCE\Interface\ISequenceHelper.cs" />
   <Compile Include="SEQUENCE\Helper\SequenceHelper.cs" />
+  <Compile Include="SERVICE\Interface\IOperationService.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
+  <Compile Include="SERVICE\OperationService.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
   <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
   <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
