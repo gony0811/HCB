@@ -19,6 +19,9 @@ namespace HCB.UI
         private int _index;
 
         [ObservableProperty]
+        private UnitType _unit;
+
+        [ObservableProperty]
         private IoType _ioType;
 
         [ObservableProperty]

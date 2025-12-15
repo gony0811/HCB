@@ -77,6 +77,7 @@ namespace HCB.UI
                 Name = e.Name,
                 Address = e.Address,
                 Index = e.Index,
+                Unit = e.Unit,
                 Description = e.Description,
                 IsEnabled = e.IsEnabled,
                 Device = device,
@@ -90,6 +91,7 @@ namespace HCB.UI
                 Id = e.Id,
                 Name = e.Name,
                 Address = e.Address,
+                Unit = e.Unit,
                 Index = e.Index,
                 Description = e.Description,
                 IsEnabled = e.IsEnabled,
@@ -120,7 +122,24 @@ namespace HCB.UI
                 throw new NotImplementedException();
             }
 
-            
+        }
+
+        public static IoDataEntity ToEntity(IIoData io, int parentDeviceId)
+        {
+            if (io == null)
+                throw new ArgumentNullException(nameof(io));
+
+            return new IoDataEntity
+            {
+                Id = io.Id,
+                Name = io.Name,
+                Address = io.Address,
+                Index = io.Index,
+                IsEnabled = io.IsEnabled,
+                IoDataType = io.IoType,
+                Unit = io.Unit,
+                Description = io.Description,
+            };
         }
 
         private static IoDataEntity ToAnalogEntity(AbstractAnalog io)

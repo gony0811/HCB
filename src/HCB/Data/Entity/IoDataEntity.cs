@@ -19,7 +19,7 @@ namespace HCB.Data.Entity
 
         public IoType IoDataType { get; set; }
 
-        public string Unit { get; set; } = "";
+        public UnitType Unit { get; set; }
 
         public string Description { get; set; } = "";
 

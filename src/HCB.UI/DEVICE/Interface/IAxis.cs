@@ -1,4 +1,5 @@
 ﻿using HCB.Data.Entity;
+using HCB.Data.Entity.Type;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
@@ -30,6 +31,7 @@ namespace HCB.UI
         double EncoderCountPerUnit { get; set; }        // 모터의 단위당 엔코더 펄스 수
         double InpositionRange { get; set; }           // Inposition 허용 범위
 
+        UnitType Unit { get; set; }
         IMotionDevice Device { get; set; }      // 부모 디바이스
 
         ObservableCollection<DMotionParameter> ParameterList { get; set; }

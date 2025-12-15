@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using HCB.Data.Entity.Type;
 
 namespace HCB.UI
 {
@@ -14,7 +15,7 @@ namespace HCB.UI
         private double _minValue;
 
         [ObservableProperty]
-        private string _unit = "";
+        private UnitType _unit;
 
         // removed type-specific event - use base.ValueChanged
     }

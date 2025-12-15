@@ -318,6 +318,10 @@ namespace HCB.Data
             builder.Property(x => x.Unit)
                 .HasConversion<string>()
                 .IsRequired();
+
+            builder.Property(x => x.Unit)
+                .HasConversion<string>()   // Enum → string
+                .IsRequired();
         }
     }
 

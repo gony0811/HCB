@@ -8,20 +8,21 @@ namespace HCB.UI
     {
         [ObservableProperty] private string name;
         [ObservableProperty] private ValueType valueType = ValueType.String;
-        [ObservableProperty] private object value;
+        [ObservableProperty] private string value;
         [ObservableProperty] private UnitType unit;
 
         public MotionParameter ToEntity()
         {
+
             return new MotionParameter
             {
                 Name = this.Name,
-                BoolValue = this.ValueType == ValueType.Boolean ? (bool?)this.Value : null,
-                IntValue = this.ValueType == ValueType.Integer ? (int?)this.Value : null,
-                DoubleValue = (this.ValueType == ValueType.Double || this.ValueType == ValueType.Float) ? (double?)this.Value : null,
-                StringValue = this.ValueType == ValueType.String ? (string)this.Value : null,
+                BoolValue = ValueType == ValueType.Boolean ? bool.Parse(Value) : null,
+                IntValue = ValueType == ValueType.Integer ? int.Parse(Value) : null,
+                DoubleValue = (ValueType == ValueType.Double || ValueType == ValueType.Float) ? double.Parse(Value) : null,
+                StringValue = ValueType == ValueType.String ? Value : null,
                 ValueType = this.ValueType,
-                UnitType = this.Unit,
+                UnitType = this.Unit
             };
         }
 

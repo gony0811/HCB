@@ -67,10 +67,7 @@ namespace HCB.UI
                 Id = e.Id,
                 Name = e.Name,
                 ValueType = e.ValueType,
-                StringValue = e.StringValue,
-                IntValue = e.IntValue,
-                DoubleValue = e.DoubleValue,
-                BoolValue = e.BoolValue,
+                Value = e.Value(),
                 Unit = e.UnitType,
                 ParentMotion = parent
             };
@@ -128,18 +125,37 @@ namespace HCB.UI
 
         public static MotionParameter ToEntity(DMotionParameter r)
         {
-            return new MotionParameter
+            var result = new MotionParameter
             {
                 Id = r.Id,
                 Name = r.Name,
                 ValueType = r.ValueType,
-                StringValue = r.StringValue,
-                IntValue = r.IntValue,
-                DoubleValue = r.DoubleValue,
-                BoolValue = r.BoolValue,
                 UnitType = r.Unit,
                 MotionId = r.ParentMotion.Id
             };
+
+            switch (result.ValueType)
+            {
+                case ValueType.Boolean:
+                    result.BoolValue = bool.TryParse(r.Value?.ToString(), out var b) ? b : null;
+                    break;
+
+                case ValueType.Integer:
+                    result.IntValue = int.TryParse(r.Value?.ToString(), out var i) ? i : null;
+                    break;
+
+                case ValueType.String:
+                    result.StringValue = r.Value?.ToString();
+                    break;
+
+                case ValueType.Double:
+                case ValueType.Float:
+                    result.DoubleValue = double.TryParse(r.Value?.ToString(), out var d) ? d : null;
+                    break;
+            }
+
+
+            return result;
         }
     }
 }

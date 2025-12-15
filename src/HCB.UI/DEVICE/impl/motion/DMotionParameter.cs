@@ -9,11 +9,9 @@ namespace HCB.UI
         [ObservableProperty] private int id;
         [ObservableProperty] private string name;
         [ObservableProperty] private ValueType valueType;
-        [ObservableProperty] private string stringValue;
-        [ObservableProperty] private int? intValue;
-        [ObservableProperty] private double? doubleValue;
-        [ObservableProperty] private bool? boolValue;
+        [ObservableProperty] private string value;
         [ObservableProperty] private UnitType unit;
         [ObservableProperty] private IAxis parentMotion;
+        
     }
 }

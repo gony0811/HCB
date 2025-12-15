@@ -7,22 +7,31 @@
              xmlns:local="clr-namespace:HCB.UI"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300">
+
+    
+
     <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="Auto, 1*, Auto">
-        <telerik:HighlightTextBlock Text="Motion" FontSize="20"  Margin="5"></telerik:HighlightTextBlock>
-        <telerik:RadGridView ItemsSource="{Binding Device.MotionList}"
-                  ShowGroupPanel="False"
-                  SelectedItem="{Binding SelectedMotion}"
-                  Grid.Row="1"
-                  AutoGenerateColumns="False"
-                IsReadOnly="True"
-                VirtualizingPanel.IsVirtualizing="True"
-                VirtualizingPanel.VirtualizationMode="Recycling"
-                EnableRowVirtualization="True"
-                ScrollViewer.CanContentScroll="True"
-                Margin="5"
-                 >
+
+        <!-- === Left Title === -->
+        <telerik:HighlightTextBlock Text="Motion" FontSize="20" Margin="5" />
+
+        <!-- === MOTION LIST GRID === -->
+        <telerik:RadGridView 
+                            x:Name="MotionGrid"
+                            ItemsSource="{Binding Device.MotionList}"
+                             ShowGroupPanel="False"
+                             SelectedItem="{Binding SelectedMotion}"
+                             Grid.Row="1"
+                             AutoGenerateColumns="False"
+                             IsReadOnly="True"
+                             VirtualizingPanel.IsVirtualizing="True"
+                             VirtualizingPanel.VirtualizationMode="Recycling"
+                             EnableRowVirtualization="True"
+                             ScrollViewer.CanContentScroll="True"
+                             Margin="5">
+
             <telerik:RadGridView.Columns>
-                <telerik:GridViewDataColumn Header="번호" DataMemberBinding="{Binding MotorNo}" Width="0.6*"/>
+                <telerik:GridViewDataColumn Header="번호" DataMemberBinding="{Binding MotorNo}" Width="0.6*" />
                 <telerik:GridViewDataColumn Header="이름" DataMemberBinding="{Binding Name}" Width="1*" />
                 <telerik:GridViewDataColumn Header="모션 타입" DataMemberBinding="{Binding ControlType}" Width="1*" />
                 <telerik:GridViewDataColumn Header="최소 위치" DataMemberBinding="{Binding LimitMinPosition}" Width="1*" />
@@ -31,32 +40,61 @@
                 <telerik:GridViewDataColumn Header="최대 속도" DataMemberBinding="{Binding LimitMaxSpeed}" Width="1*" />
             </telerik:RadGridView.Columns>
         </telerik:RadGridView>
+
+        <!-- Bottom Left Buttons -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <telerik:RadButton Content="모션 생성" Command="{Binding MotionCreateCommand}" Margin="5"/>
+            <telerik:RadButton Content="모션 생성"
+                               Command="{Binding MotionCreateCommand}"
+                               Margin="5" />
+            <telerik:RadButton Content="모션 수정"
+                   Command="{Binding MotionUpdateCommand}"
+                   Margin="5" />
+            <telerik:RadButton Content="모션 삭제"
+                   Command="{Binding MotionCreateCommand}"
+                   Margin="5" />
         </StackPanel>
 
-        <telerik:HighlightTextBlock Text="Motion Paramter" Grid.Column="1" FontSize="20" Margin="5" ></telerik:HighlightTextBlock>
+        <!-- === Parameter Title === -->
+        <telerik:HighlightTextBlock Text="Motion Parameter"
+                                    Grid.Column="1"
+                                    FontSize="20"
+                                    Margin="5" />
+
+        <!-- === PARAMETER LIST GRID === -->
         <telerik:RadGridView ItemsSource="{Binding SelectedMotion.ParameterList}"
-                  Grid.Column="1"
-                    Grid.Row="1"
-                    ShowGroupPanel="False"
-                    AutoGenerateColumns="False"
-                    IsReadOnly="True"
-                    VirtualizingPanel.IsVirtualizing="True"
-                    VirtualizingPanel.VirtualizationMode="Recycling"
-                    EnableRowVirtualization="True"
-                    ScrollViewer.CanContentScroll="True"
-                    Margin="5"
-                     >
+                             SelectedItem="{Binding SelectedParam}"
+                             Grid.Column="1"
+                             Grid.Row="1"
+                             ShowGroupPanel="False"
+                             AutoGenerateColumns="False"
+                             IsReadOnly="True"
+                             VirtualizingPanel.IsVirtualizing="True"
+                             VirtualizingPanel.VirtualizationMode="Recycling"
+                             EnableRowVirtualization="True"
+                             ScrollViewer.CanContentScroll="True"
+                             Margin="5">
+
             <telerik:RadGridView.Columns>
                 <telerik:GridViewDataColumn Header="이름" DataMemberBinding="{Binding Name}" Width="1*" />
                 <telerik:GridViewDataColumn Header="값 타입" DataMemberBinding="{Binding ValueType}" Width="1*" />
                 <telerik:GridViewDataColumn Header="값" DataMemberBinding="{Binding Value}" Width="1*" />
                 <telerik:GridViewDataColumn Header="단위" DataMemberBinding="{Binding Unit}" Width="1*" />
             </telerik:RadGridView.Columns>
+
         </telerik:RadGridView>
+
+        <!-- Bottom Right Buttons -->
         <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-            <telerik:RadButton Content="파라미터 생성" Command="{Binding MotionParameterCreateCommand}"  Margin="5"/>
+            <telerik:RadButton Content="파라미터 생성"
+                               Command="{Binding MotionParameterCreateCommand}"
+                               Margin="5" />
+            <telerik:RadButton Content="파라미터 수정"
+                               Command="{Binding MotionParameterUpdateCommand}"
+                               Margin="5" />
+            <telerik:RadButton Content="파라미터 삭제"
+                               Command="{Binding MotionParameterDeleteCommand}"
+                               Margin="5" />
         </StackPanel>
+
     </Grid>
 </UserControl>

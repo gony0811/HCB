@@ -32,6 +32,8 @@
         </telerik:RadGridView>
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
             <telerik:RadButton Content="데이터 생성" Command="{Binding IoDataCreateCommand}" Margin="5"/>
+            <telerik:RadButton Content="데이터 수정" Command="{Binding IoDataUpdateCommand}" Margin="5"/>
+            <telerik:RadButton Content="데이터 삭제" Command="{Binding IoDataDeleteCommand}" Margin="5"/>
         </StackPanel>
     </Grid>
 </UserControl>

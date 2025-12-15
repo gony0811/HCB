@@ -28,6 +28,18 @@ namespace HCB.UI
             return Task.FromResult(modal.ShowDialog());
         }
 
+        public Task<bool?> ShowDetailEditModal(object vm, string header="Edit", int width=400, int height=800)
+        {
+            var modal = new CreateModal
+            {
+                Header = header,
+                DataContext = vm,
+                Width = width,
+                Height = height,
+            };
+            return Task.FromResult(modal.ShowDialog());
+        }
+
         public void ShowMessage(string title, string content)
         {
             RadWindow.Alert(new DialogParameters

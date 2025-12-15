@@ -31,6 +31,10 @@ namespace HCB.UI
         private ILogger logger;
         private uint uDeviceId;
 
+        public PowerPmacDevice()
+        {
+        }
+
         public PowerPmacDevice(ILogger logger)
         {
             this.logger = logger.ForContext<PowerPmacDevice>();

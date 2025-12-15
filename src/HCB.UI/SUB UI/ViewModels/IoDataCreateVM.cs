@@ -14,6 +14,7 @@ namespace HCB.UI
         [ObservableProperty] private string name;
         [ObservableProperty] private string address;
         [ObservableProperty] private int index;
+        [ObservableProperty] private UnitType unit;
         [ObservableProperty] private IoType ioType;
         [ObservableProperty] private string description;
 
@@ -25,6 +26,7 @@ namespace HCB.UI
                 Name = this.Name,
                 Address = this.Address,
                 Index = this.Index,
+                Unit = this.Unit,
                 IoDataType = this.IoType,
                 Description = this.Description,
             };

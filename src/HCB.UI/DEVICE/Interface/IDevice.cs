@@ -13,7 +13,6 @@ namespace HCB.UI
         bool IsConnected { get; set; }
         bool IsEnabled { get; set; }
         string Description { get; set; }
-            
 
         Task Initialize();
         Task Connect();

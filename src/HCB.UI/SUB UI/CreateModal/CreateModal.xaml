@@ -29,8 +29,13 @@
 
         <!-- 공통 Device 정보 -->
         <telerik:GroupBox Header="Device 기본정보" Grid.Row="0" Margin="0 0 0 10" Style="{StaticResource GroupBoxStyle}">
-            <telerik:RadPropertyGrid x:Name="MainGrid" Item="{Binding}" AutoGeneratePropertyDefinitions="True" LabelColumnWidth="100" Style="{StaticResource RadPropertyGridStyle}">
+            <telerik:RadPropertyGrid x:Name="MainGrid"
+                         Item="{Binding}"
+                         AutoGeneratePropertyDefinitions="True"
+                         AutoGeneratingPropertyDefinition="MainGrid_AutoGeneratingPropertyDefinition"
+                         Style="{StaticResource RadPropertyGridStyle}">
             </telerik:RadPropertyGrid>
+
         </telerik:GroupBox>
 
         <!-- 구분선 -->

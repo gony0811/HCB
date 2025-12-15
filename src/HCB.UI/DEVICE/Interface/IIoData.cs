@@ -12,8 +12,10 @@ namespace HCB.UI
         int Id { get; set; }
         string Name { get; set; }
 
+        int Index { get; set; }
+        string Address { get; set; }
         IoType IoType { get; set; }
-
+        UnitType Unit { get; set; }
         bool IsEnabled { get; set; }
 
         string Description { get; set; }
