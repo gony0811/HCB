@@ -1,0 +1,106 @@
+﻿<UserControl x:Class="HCB.UI.MotorStateControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:model="clr-namespace:HCB.UI"
+             xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+             xmlns:uc="clr-namespace:HCB.UI"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- styles/defaultresource.xaml을 병합하여 리소스 오류 방지 -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="Border">
+                <Setter Property="BorderBrush" Value="Black"></Setter>
+                <Setter Property="BorderThickness" Value="1"></Setter>
+                <Setter Property="Margin" Value="2"></Setter>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <!-- 헤더 + 리스트 -->
+    <Border>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition></RowDefinition>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0">
+                <TextBlock Text="{Binding Title}" TextAlignment="Center"></TextBlock>    
+            </Border>
+            
+            <Grid Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <!-- 센서 -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 값 -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 버튼 -->
+                    <RowDefinition/>
+                    <!-- 여백 -->
+                </Grid.RowDefinitions>
+
+                <!-- 1) 센서 리스트 -->
+                <ItemsControl Grid.Row="0"
+                                ItemsSource="{Binding MotorStates}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <!-- StateCellVM -> StateCell 컨트롤로 렌더링 -->
+                        <DataTemplate DataType="{x:Type uc:StateCell}">
+                            <uc:StateCell
+                                        Margin="2"
+                                        State="{Binding State}"
+                                        DotSize="14"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- 2) 값 영역 -->
+                <Grid Grid.Row="1" Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Margin="2">
+                        <StackPanel>
+                            <TextBlock Text="E-P" FontSize="12"/>
+                            <TextBlock Text="{Binding Ep}" FontSize="12" TextAlignment="Right"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1" Margin="2">
+                        <StackPanel>
+                            <TextBlock Text="C-P" FontSize="12"/>
+                            <TextBlock Text="{Binding Cp}" FontSize="12" TextAlignment="Right"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 3) 버튼 영역 -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0" Content="SERVO"
+                            Command="{Binding ServoCommand}"
+                            Margin="2" />
+                    <Button Grid.Column="1" Content="HOME"
+                            Command="{Binding HomeCommand}"
+                            Margin="2" />
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+        
+</UserControl>

@@ -1,0 +1,28 @@
+﻿<local:DialogWindowBase x:Class="HCB.UI.RecipeCreateWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+        xmlns:local="clr-namespace:HCB.UI"
+        Header="{Binding Title}" 
+        Style="{StaticResource RadWindowStyle}"
+        WindowStartupLocation="CenterOwner"
+        MinWidth="360">
+    <Border Padding="16">
+        <StackPanel>
+            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="레시피 이름" Margin="0,0,0,6" />
+            <telerik:RadWatermarkTextBox Style="{StaticResource RadWatermarkTextBoxStyle}" Text="{Binding Value.Name, UpdateSourceTrigger=PropertyChanged}" />
+
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" >
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="취소" Width="80" Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="생성"
+             Width="100"
+             IsDefault="True"
+             Command="{Binding OkCommand}"
+             IsEnabled="{Binding CanSave}" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</local:DialogWindowBase>
