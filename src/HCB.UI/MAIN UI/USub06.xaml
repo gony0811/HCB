@@ -39,52 +39,13 @@
                       Style="{StaticResource GroupBoxStyle}"
                       Grid.Column="0" Grid.Row="1" Grid.RowSpan="2"
                       Margin="10" Width="250">
-                <telerik:RadListBox Style="{StaticResource RadListBoxStyle}"
-                    ItemsSource="{Binding PowerPmacMotionList}"
-                    SelectedItem="{Binding SelectedMotion, Mode=TwoWay}"
-                    Background="{x:Null}"
-                    BorderThickness="0"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                    ScrollViewer.VerticalScrollBarVisibility="Auto"
-                    SelectionMode="Single">
-
-                    <!-- 컨테이너(아이템) 자체는 Stretch + 투명 배경으로 Hover 히트 누락 없게 -->
-                    <telerik:RadListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Margin" Value="4"/>
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                            <Setter Property="SnapsToDevicePixels" Value="True"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <ContentPresenter />
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </telerik:RadListBox.ItemContainerStyle>
-
-                    <!-- 버튼처럼 보이는 템플릿 -->
-                    <telerik:RadListBox.ItemTemplate>
-                        <DataTemplate >
-                            <ToggleButton              
-                                    Height="40"
-                                    FocusVisualStyle="{x:Null}"
-                                    IsChecked="{Binding
-                                        RelativeSource={RelativeSource AncestorType=ListBoxItem},
-                                        Path=IsSelected,
-                                        Mode=TwoWay,
-                                        UpdateSourceTrigger=PropertyChanged}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Name}"/>
-                                </StackPanel>
-                            </ToggleButton>
-                        </DataTemplate>
-                    </telerik:RadListBox.ItemTemplate>
-                </telerik:RadListBox>
+                <telerik:RadListBox
+                        ItemsSource="{Binding MotionList}"
+                        SelectedItem="{Binding SelectedMotion, Mode=TwoWay}"
+                        DisplayMemberPath="Name"
+                        BorderThickness="0"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"/>
             </telerik:GroupBox>
             <Border Grid.Column="1" Grid.Row="1">
                 <Grid>
@@ -114,37 +75,7 @@
                                 EnableColumnVirtualization="True"
                                 GridLinesVisibility="None">
 
-                                <telerik:RadGridView.RowStyle>
-                                    <Style TargetType="telerik:GridViewRow">
-                                        <!-- 우클릭 시 행 선택(이미 쓰시는 핸들러 유지) -->
-                                        <EventSetter Event="MouseRightButtonDown" Handler="DataGridRow_MouseRightButtonDown"/>
-
-                                        <!-- ✅ Row.Tag = DataGrid의 ViewModel -->
-                                        <Setter Property="Tag"
-                    Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=telerik:RadGridView}}"/>
-
-                                        <Setter Property="ContextMenu">
-                                            <Setter.Value>
-                                                <ContextMenu>
-                                                    <!-- 수정 -->
-                                                    <MenuItem Header="수정"
-                                  Command="{Binding PlacementTarget.Tag.PositionUpdateCommand,
-                                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                  CommandParameter="{Binding PlacementTarget.DataContext,
-                                                             RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                                    <!-- 삭제 -->
-                                                    <MenuItem Header="삭제"
-                                  Command="{Binding PlacementTarget.Tag.PositionDeleteCommand,
-                                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                  CommandParameter="{Binding PlacementTarget.DataContext,
-                                                             RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                                </ContextMenu>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </telerik:RadGridView.RowStyle>
-
-
+                                
                                 <telerik:RadGridView.Columns>
                                     <telerik:GridViewDataColumn Header="이름"
                                         DataMemberBinding="{Binding Name}"

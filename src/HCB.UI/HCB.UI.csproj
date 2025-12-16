@@ -195,6 +195,7 @@
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
   <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\NameViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
   <Compile Include="SUB UI\PromptModal\ParameterCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\SplashView\SplashView.xaml.cs" />

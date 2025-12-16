@@ -32,7 +32,18 @@ namespace HCB.UI
             };
         }
 
+        public UNmumPad(double current, double min, double max)
+            : this()
+        {
+            CurrentValue = FormatNumber(current);
+            MinimumValue = FormatNumber(min);
+            MaximumValue = FormatNumber(max);
+            Text = CurrentValue;
+        }
+
         // ===== 바인딩 프로퍼티 =====
+        public double ResultValue { get; private set; }
+
         private string _currentValue = "0";
         public string CurrentValue { get => _currentValue; set => Set(ref _currentValue, value); }
 
@@ -122,7 +133,10 @@ namespace HCB.UI
         {
             var v = ClampToRange(ParseOrZero(Text));
             Text = FormatNumber(v);
+
             CurrentValue = Text;
+            ResultValue = v;
+
             DialogResult = true;
             Close();
         }
