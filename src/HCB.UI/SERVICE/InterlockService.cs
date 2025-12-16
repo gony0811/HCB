@@ -15,18 +15,19 @@ namespace HCB.UI
     {
         private ILogger _logger;
         private DeviceManager _deviceManager;
+        private readonly ISequenceHelper _sequenceHelper;
 
-        public InterlockService(ILogger logger, DeviceManager deviceManager)
+        public InterlockService(ILogger logger, ISequenceHelper sequenceHelper, DeviceManager deviceManager)
         {
             _logger = logger.ForContext<InterlockService>();
             _deviceManager = deviceManager;
+            _sequenceHelper = sequenceHelper;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             try
             {
-                
                 _logger.Information(new SysLog("InterlockService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "").ToString());
             }
             catch (Exception ex)

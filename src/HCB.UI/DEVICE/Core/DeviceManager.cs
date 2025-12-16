@@ -313,6 +313,26 @@ namespace HCB.UI
                                 IoType = ioData.IoDataType,
                             });
                             break;
+                        case IoType.AnalogInput:
+                            io.IoDataList.Add(new AnalogInput
+                            {
+                                Id = ioData.Id,
+                                Name = ioData.Name,
+                                Address = ioData.Address,
+                                Index = ioData.Index,
+                                IoType = ioData.IoDataType,
+                            });
+                            break;
+                        case IoType.AnalogOutput:
+                            io.IoDataList.Add(new AnalogOutput
+                            {
+                                Id = ioData.Id,
+                                Name = ioData.Name,
+                                Address = ioData.Address,
+                                Index = ioData.Index,
+                                IoType = ioData.IoDataType,
+                            });
+                            break;
                     }
                 }
             }

@@ -44,6 +44,27 @@ namespace HCB.UI
             }
         }
 
+        public static async Task StopAllAsync(this ISequenceHelper helper, CancellationToken ct)
+        {
+            var pmac = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName);
+            var axes = pmac.MotionList;
+
+            // 1. 모든 축에 대해 동시에 정지 명령을 보냅니다.
+            var stopTasks = axes.Select(axis => axis.MoveStop());
+            await Task.WhenAll(stopTasks);
+
+            await helper.DelayAsync(100, ct); // Small delay to ensure the stop commands are processed
+
+            // 2. 모든 축이 멈출 때까지 동시에 기다립니다.
+            var waitTasks = axes.Select(axis => helper.WaitUntilAsync(
+                () => !axis.IsBusy,
+                3000,
+                ct,
+                $"Axis {axis.Name} Stop Timeout"
+            ));
+            await Task.WhenAll(waitTasks);
+        }
+
         public static async Task StopAsync(this ISequenceHelper helper, int axisId, CancellationToken ct)
         {
             var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(axisId);
