@@ -23,7 +23,7 @@ namespace HCB.UI
             this._deviceManager = deviceManager;
         }
 
-        public async Task InitializeAsync(CancellationToken cancellationToken)
+        public async Task InitializeAsync(CancellationToken token)
         {
             try
             {
@@ -58,7 +58,29 @@ namespace HCB.UI
                     // 안전상 일단 한번에 하나씩 홈 수행
                     if (!axis.IsHomeDone)
                     {
-                        await _sequenceHelper.HomeAsync(axis.Id, cancellationToken);
+                        await _sequenceHelper.HomeAsync(axis.Id, token);
+                    }
+                }
+
+                /// Head Picker 진공 해제, WTable/DTable 진공 해제, WTable 핀 다운을 동시에 수행
+                await Task.WhenAll(new List<Task>
+                {
+                    _sequenceHelper.HeadPickerVacuum(eOnOff.Off, token),
+                    _sequenceHelper.WTableVacuumAll(eOnOff.Off, token),
+                    _sequenceHelper.DTableVacuumAll(eOnOff.Off, token),
+                    _sequenceHelper.WTableLiftPin(eUpDown.Down, token)
+                });
+
+
+                /// 모든 축 대기 위치 이동
+                foreach (var axis in device.MotionList)
+                {
+                    // 홈이 안된 축은 홈 수행
+                    // 안전상 일단 한번에 하나씩 홈 수행
+                    if (!axis.IsBusy)
+                    {
+                        var position = axis.PositionList.FirstOrDefault(p => p.Name == "READY");
+                        await _sequenceHelper.AbsoluteMoveAsync(axis.Id, position.Speed, position.Position, token);
                     }
                 }
 

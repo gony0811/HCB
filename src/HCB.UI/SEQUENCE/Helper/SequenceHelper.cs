@@ -11,7 +11,7 @@ using ILogger = Serilog.ILogger;
 
 namespace HCB.UI
 {
-    [Helper(Lifetime.Singleton)]
+    [Service(Lifetime.Singleton)]
     public class SequenceHelper : ISequenceHelper
     {
         private ILogger logger;

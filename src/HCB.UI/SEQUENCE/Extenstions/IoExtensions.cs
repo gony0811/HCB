@@ -42,6 +42,9 @@ namespace HCB.UI
         public const string DI_HEADER_VAC_EJECTOR = "DI_HEADER_VAC_EJECTOR";// Header Picker Vacuum Ejector
         public const string DI_DTABLE_VAC_PRESSURE_SWITCH = "DI_DTABLE_VAC_PRESSURE_SWITCH";// D-Table Vacuum Pressure Switch
         public const string DI_WTABLE_VAC_PRESSURE_SWITCH = "DI_WTABLE_VAC_PRESSURE_SWITCH";// W-Table Vacuum Pressure Switch
+        public const string DI_WTABLE_LIFT_PIN_UP = "DI_WTABLE_LIFT_PIN_UP_SENSOR";          // W-Table Lift Pin Up
+        public const string DI_WTABLE_LIFT_PIN_DOWN = "DI_WTABLE_LIFT_PIN_DOWN_SENSOR";      // W-Table Lift Pin Down
+
         public const string DI_MAIN_CDA_PRESSURE_SWITCH_ALARM = "DI_MAIN_CDA_PRESSURE_SWITCH_ALARM";// Main CDA Pressure Switch Alarm
         public const string DI_MAIN_VAC_PRESSURE_SWITCH_1_ALARM = "DI_MAIN_VAC_PRESSURE_SWITCH_1_ALARM";// Main Vacuum Pressure Switch 1 Alarm
         public const string DI_MAIN_VAC_PRESSURE_SWITCH_2_ALARM = "DI_MAIN_VAC_PRESSURE_SWITCH_2_ALARM";// Main Vacuum Pressure Switch 2 Alarm
@@ -136,8 +139,9 @@ namespace HCB.UI
         /// <param name="onOff"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public static async Task HeadPickerVacuum(this ISequenceHelper helper, bool onOff, CancellationToken ct)
+        public static async Task HeadPickerVacuum(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
         {
+            var bOnOff = onOff == eOnOff.On ? true : false;
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
 
             if (device == null)
@@ -145,14 +149,14 @@ namespace HCB.UI
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
             }
 
-            device.SetDigital(DO_HEADER_EJECTOR_VAC_ON, onOff);
-            device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, !onOff);
+            device.SetDigital(DO_HEADER_EJECTOR_VAC_ON, bOnOff);
+            device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, !bOnOff);
 
             while (ct.IsCancellationRequested == false)
             {
                 await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
                 await helper.WaitUntilAsync(
-                    () => device.GetDigital(DI_HEADER_VAC_EJECTOR) == onOff,
+                    () => device.GetDigital(DI_HEADER_VAC_EJECTOR) == bOnOff,
                     3000,
                     ct,
                     $"{DO_HEADER_EJECTOR_VAC_ON} = {onOff} Timeout"
@@ -160,8 +164,17 @@ namespace HCB.UI
             }
         }
 
-        public static async Task DTableVacuum(this ISequenceHelper helper, int channel, bool onOff, CancellationToken ct)
+        public static async Task DTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
         {
+            for (int channel = 1; channel <= 9; channel++)
+            {
+                await helper.DTableVacuum(channel, onOff, ct);
+            }
+        }
+
+        public static async Task DTableVacuum(this ISequenceHelper helper, int channel, eOnOff onOff, CancellationToken ct)
+        {
+            var bOnOff = onOff == eOnOff.On ? true : false;
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
             if (device == null)
             {
@@ -170,13 +183,13 @@ namespace HCB.UI
             string doOn = $"DO_DTABLE_VAC_{channel}_ON";
             string doRelease = $"DO_DTABLE_VAC_{channel}_RELEASE";
             string diPressureSwitch = $"DI_DTABLE_VAC_PRESSURE_SWITCH";
-            device.SetDigital(doOn, onOff);
-            device.SetDigital(doRelease, !onOff);
+            device.SetDigital(doOn, bOnOff);
+            device.SetDigital(doRelease, !bOnOff);
             while (ct.IsCancellationRequested == false)
             {
                 await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
                 await helper.WaitUntilAsync(
-                    () => device.GetDigital(diPressureSwitch) == onOff,
+                    () => device.GetDigital(diPressureSwitch) == bOnOff,
                     3000,
                     ct,
                     $"{doOn} = {onOff} Timeout"
@@ -184,8 +197,17 @@ namespace HCB.UI
             }
         }
 
-        public static async Task WTableVacuum(this ISequenceHelper helper, int channel, bool onOff, CancellationToken ct)
+        public static async Task WTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
         {
+            for (int channel = 1; channel <= 5; channel++)
+            {
+                await helper.WTableVacuum(channel, onOff, ct);
+            }
+        }
+
+        public static async Task WTableVacuum(this ISequenceHelper helper, int channel, eOnOff onOff, CancellationToken ct)
+        {
+            var bOnOff = onOff == eOnOff.On ? true : false;
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
             if (device == null)
             {
@@ -196,14 +218,14 @@ namespace HCB.UI
             string doN2Blow = $"DO_WTABLE_N2_BLOW";
             string diPressureSwitch = $"DI_WTABLE_VAC_PRESSURE_SWITCH";
            
-            device.SetDigital(doOn, onOff);
-            device.SetDigital(doRelease, !onOff);
-            device.SetDigital(doN2Blow, !onOff); // N2 Blow is the opposite of Vacuum On/Off
+            device.SetDigital(doOn, bOnOff);
+            device.SetDigital(doRelease, !bOnOff);
+            device.SetDigital(doN2Blow, !bOnOff); // N2 Blow is the opposite of Vacuum On/Off
             while (ct.IsCancellationRequested == false)
             {
                 await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
                 await helper.WaitUntilAsync(
-                    () => device.GetDigital(diPressureSwitch) == onOff,
+                    () => device.GetDigital(diPressureSwitch) == bOnOff,
                     3000,
                     ct,
                     $"{doOn} = {onOff} Timeout"
@@ -213,21 +235,21 @@ namespace HCB.UI
             device.SetDigital(doN2Blow, false); // Ensure N2 Blow is turned off after operation
         }
 
-        public static async Task WTableLiftPin(this ISequenceHelper helper, bool upDown, CancellationToken ct)
+        public static async Task WTableLiftPin(this ISequenceHelper helper, eUpDown upDown, CancellationToken ct)
         {
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
             if (device == null)
             {
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
             }
-            device.SetDigital(DO_WTABLE_LIFT_PIN_UP, upDown);
-            device.SetDigital(DO_WTABLE_LIFT_PIN_DOWN, !upDown);
+            device.SetDigital(DO_WTABLE_LIFT_PIN_UP, upDown == eUpDown.Up? true : false);
+            device.SetDigital(DO_WTABLE_LIFT_PIN_DOWN, upDown == eUpDown.Down? true : false);
 
             while(ct.IsCancellationRequested == false)
             {
                 await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
                 await helper.WaitUntilAsync(
-                    () => device.GetDigital(DI_WTABLE_VAC_PRESSURE_SWITCH) == upDown,
+                    () => (device.GetDigital(DI_WTABLE_LIFT_PIN_UP) == (upDown == eUpDown.Up)) && (device.GetDigital(DI_WTABLE_LIFT_PIN_DOWN) == (upDown == eUpDown.Down)),
                     3000,
                     ct,
                     $"W-TABLE LIFT PIN UP/DOWN = {upDown} Timeout"
@@ -235,7 +257,7 @@ namespace HCB.UI
             }
         }
 
-        public static async Task StartLampOnOff(this ISequenceHelper helper, bool onOff, CancellationToken ct)
+        public static void StartLampOnOff(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
         {
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
 
@@ -244,7 +266,7 @@ namespace HCB.UI
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
             }
 
-            device.SetDigital(DO_START_SWITCH_LAMP, onOff);
+            device.SetDigital(DO_START_SWITCH_LAMP, onOff == eOnOff.On? true : false);
 
             //if (ready)
             //{

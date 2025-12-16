@@ -17,8 +17,11 @@ namespace HCB.UI
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
 
-        public InterlockService(ILogger logger)
+        public InterlockService(ILogger logger, ISequenceHelper sequenceHelper, DeviceManager deviceManager)
         {
+            _logger = logger.ForContext<InterlockService>();
+            _deviceManager = deviceManager;
+            _sequenceHelper = sequenceHelper;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
