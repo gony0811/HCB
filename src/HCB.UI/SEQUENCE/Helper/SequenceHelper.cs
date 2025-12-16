@@ -6,10 +6,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using HCB.IoC;
 using ILogger = Serilog.ILogger;
 
 namespace HCB.UI
 {
+    [Helper(Lifetime.Singleton)]
     public class SequenceHelper : ISequenceHelper
     {
         private ILogger logger;

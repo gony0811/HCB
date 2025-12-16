@@ -11,61 +11,20 @@ using HCB.Data.Entity.Type;
 
 namespace HCB.UI
 {
-    public class OperationService : BackgroundService, IOperationService
+    public class OperationService : BackgroundService
     {
         private ILogger _logger;
         private DeviceManager _deviceManager;
+        private readonly ISequenceHelper _sequenceHelper;
 
 
-        public OperationService(ILogger logger, DeviceManager deviceManager)
+        public OperationService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper)
         {
             _logger = logger.ForContext<OperationService>();
             _deviceManager = deviceManager;
+            _sequenceHelper = sequenceHelper;
         }
 
-        private EQStatus _eqStatus = new EQStatus();
-        public EQStatus Status => _eqStatus;
-
-        public event Action<Availability> AvailabilityChanged;
-        public event Action<AlarmLevel> AlarmChanged;
-        public event Action<RunStop> RunChanged;
-        public event Action<OperationMode> OperationModeChanged;
-
-        public void SetAvailability(Availability availability)
-        {
-            if (_eqStatus.Availability != availability)
-            {
-                _eqStatus.Availability = availability;
-                AvailabilityChanged?.Invoke(availability);
-            }
-        }
-
-        public void SetAlarm(AlarmLevel alarm)
-        {
-            if (_eqStatus.Alarm != alarm)
-            {
-                _eqStatus.Alarm = alarm;
-                AlarmChanged?.Invoke(alarm);
-            }
-        }
-
-        public void SetRun(RunStop run)
-        {
-            if (_eqStatus.Run != run)
-            {
-                _eqStatus.Run = run;
-                RunChanged?.Invoke(run);
-            }
-        }
-
-        public void SetOperationMode(OperationMode operation)
-        {
-            if (_eqStatus.Operation != operation)
-            {
-                _eqStatus.Operation = operation;
-                OperationModeChanged?.Invoke(operation);
-            }
-        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -80,38 +39,23 @@ namespace HCB.UI
 
                     foreach (var device in activeDevices)
                     {
-                        await device.RefreshStatus();
+                        if (device.IsEnabled && device.IsConnected)
+                            await device.RefreshStatus();
                     }
 
-                    // 2. Availability 체크: 모든 활성 디바이스가 연결되어 있어야 함
-                    bool allConnected = activeDevices.All(d => d.IsConnected);
-                    SetAvailability(allConnected ? Availability.Up : Availability.Down);
 
-                    // 3. Alarm 체크: 모션 디바이스의 축 에러 확인
-                    bool hasError = false;
-                    foreach (var device in activeDevices.OfType<IMotionDevice>())
+                    // 2. 장비 상태에 따른 로직 처리
+                    if (EQStatus.Alarm == AlarmLevel.HEAVY)
                     {
-                        // 각 축(Axis) 중 하나라도 에러가 있으면 시스템 에러로 간주
-                        if (device.MotionList.Any(axis => axis.IsError))
-                        {
-                            hasError = true;
-                            break;
-                        }
-                    }
+                        EQStatus.Run = RunStop.Stop;
+                        EQStatus.Operation = OperationMode.Manual;
+                        EQStatus.Availability = Availability.Down;
+                       
+                        /**** 모든 모션 축 정지 ****/
+                        await _sequenceHelper?.StopAllAsync(stoppingToken);
+                        _sequenceHelper?.SetTowerLamp(green: false, red: true, yellow: false, buzzer: true);
 
-                    // 에러 발생 시 HEAVY, 아니면 Normal (필요에 따라 Light 등 세분화 가능)
-                    SetAlarm(hasError ? AlarmLevel.HEAVY : AlarmLevel.Normal);
-
-                    // 4. 안전 인터락: 장비가 Down이거나 중대 알람 발생 시 Stop으로 강제 전환
-                    if (Status.Availability == Availability.Down || Status.Alarm == AlarmLevel.HEAVY)
-                    {
-                        // 이미 Stop 상태가 아니라면 Stop으로 변경
-                        if (Status.Run != RunStop.Stop)
-                        {
-                            SetRun(RunStop.Stop);
-                            _logger.Warning("System forced to STOP due to Availability: {Availability}, Alarm: {Alarm}", 
-                                Status.Availability, Status.Alarm);
-                        }
+                        _logger.Warning(new SysLog("OperationService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "Heavy Alarm Detected - Stopping Operation").ToString());
                     }
                 }
                 catch (Exception ex)

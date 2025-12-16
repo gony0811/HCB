@@ -24,6 +24,43 @@ namespace HCB.UI
             this.alarmHistoryRepository = alarmHistoryRepository;
         }
 
+        public async Task SetAlarm(string alarmCode)
+        {
+            var alarms = await this.GetAlarmList();
+
+            if (alarms == null) return;
+
+            var alarm = alarms.FirstOrDefault(a => a.Code == alarmCode);
+
+            if (alarm == null) return;
+
+            alarm.Status = AlarmStatus.SET;
+            await this.UpdateAlarm(alarm);
+
+            EQStatus.Alarm = alarm.Level;
+        }
+
+        public async Task ResetAlarm(string alarmCode)
+        {
+            var alarms = await this.GetAlarmList();
+            if (alarms == null) return;
+            var alarm = alarms.FirstOrDefault(a => a.Code == alarmCode);
+            if (alarm == null) return;
+            alarm.Status = AlarmStatus.RESET;
+            await this.UpdateAlarm(alarm);
+        }
+
+        public async Task ResetAllAlarms()
+        {
+            var alarms = await this.GetAlarmList();
+            if (alarms == null) return;
+            foreach (var alarm in alarms)
+            {
+                alarm.Status = AlarmStatus.RESET;
+            }
+            await this.UpdateAlarm(alarms);
+        }
+
         // 전체 알람 조회 ( 정렬 : 레벨순 ) 
         public async Task<IReadOnlyList<Alarm>> GetAlarmList(Sort sort = Sort.Ascending)
         {

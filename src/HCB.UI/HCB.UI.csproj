@@ -183,11 +183,15 @@
   <Compile Include="MAIN UI\ViewModels\USub05ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub06ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub07ViewModel.cs" />
+  <Compile Include="SEQUENCE\DTableSequece.cs" />
   <Compile Include="SEQUENCE\Extenstions\IoExtensions.cs" />
   <Compile Include="SEQUENCE\Extenstions\MotionExtensions.cs" />
   <Compile Include="SEQUENCE\Interface\ISequence.cs" />
   <Compile Include="SEQUENCE\Interface\ISequenceHelper.cs" />
   <Compile Include="SEQUENCE\Helper\SequenceHelper.cs" />
+  <Compile Include="SEQUENCE\MainSequence.cs" />
+  <Compile Include="SEQUENCE\PTableSequece.cs" />
+  <Compile Include="SEQUENCE\WTableSequece.cs" />
   <Compile Include="SERVICE\Interface\IOperationService.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
   <Compile Include="SERVICE\OperationService.cs" />
