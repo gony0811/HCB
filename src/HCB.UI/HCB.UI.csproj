@@ -60,9 +60,6 @@
   <Page Include="SUB UI\CreateModal\PromptModal.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
-  <Page Include="SUB UI\Pad\NumPadControl.xaml">
-    <Generator>MSBuild:Compile</Generator>
-  </Page>
   <Page Include="SUB UI\Pad\UNmumPad.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -199,7 +196,6 @@
   <Compile Include="SERVICE\InterlockService.cs" />
   <Compile Include="SERVICE\OperationService.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
-  <Compile Include="SUB UI\Pad\NumPadControl.xaml.cs" />
   <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
   <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />

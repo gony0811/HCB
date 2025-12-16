@@ -82,7 +82,7 @@
                                         Width="*"
                                         SortMemberPath="Name"/>
                                     <telerik:GridViewDataColumn Header="위치"
-                                        DataMemberBinding="{Binding Location, StringFormat=F3}"
+                                        DataMemberBinding="{Binding Position, StringFormat=F3}"
                                         Width="140"
                                         SortMemberPath="Location"/>
                                     <telerik:GridViewDataColumn Header="속도"
