@@ -270,6 +270,7 @@ namespace HCB.IoC
                          && t.IsClass
                          && !t.IsAbstract)
              .As<IHostedService>() // 호스트가 실행할 수 있게 IHostedService로 등록
+             .AsImplementedInterfaces() // IOperationService와 같은 인터페이스로도 등록
              .AsSelf()             // 필요하면 클래스 자체로도 접근 가능하게 등록
              .SingleInstance();    
         }

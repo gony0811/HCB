@@ -153,7 +153,44 @@ namespace HCB.UI
             return IoDataList.FirstOrDefault<IIoData>(io => io.Name == name);
         }
 
+
+        public void SetDigital(string name, bool bOnOff)
+        {
+            var ioData = (DigitalOutput)FindIoDataByName(name);
+            if (ioData != null)
+            {
+                ioData.Value = bOnOff;
+            }
+        }
+
+        public bool GetDigital(string name)
+        {
+            var ioData = (DigitalInput)FindIoDataByName(name);
+            if (ioData != null)
+            {
+                return ioData.Value;
+            }
+            return false;
+        }  
         
+        public double GetAnalog(string name)
+        {
+            var ioData = (AnalogInput)FindIoDataByName(name);
+            if (ioData != null)
+            {
+                return ioData.Value;
+            }
+            return 0.0;
+        }
+
+        public void SetAnalog(string name, double value)
+        {
+            var ioData = (AnalogOutput)FindIoDataByName(name);
+            if (ioData != null)
+            {
+                ioData.Value = value;
+            }
+        }
 
         public Task SendCommand(string command)
         {

@@ -183,12 +183,18 @@
   <Compile Include="MAIN UI\ViewModels\USub05ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub06ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub07ViewModel.cs" />
+  <Compile Include="SEQUENCE\DTableSequece.cs" />
   <Compile Include="SEQUENCE\Extenstions\IoExtensions.cs" />
   <Compile Include="SEQUENCE\Extenstions\MotionExtensions.cs" />
   <Compile Include="SEQUENCE\Interface\ISequence.cs" />
   <Compile Include="SEQUENCE\Interface\ISequenceHelper.cs" />
   <Compile Include="SEQUENCE\Helper\SequenceHelper.cs" />
+  <Compile Include="SEQUENCE\MainSequence.cs" />
+  <Compile Include="SEQUENCE\PTableSequece.cs" />
+  <Compile Include="SEQUENCE\WTableSequece.cs" />
+  <Compile Include="SERVICE\Interface\IOperationService.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
+  <Compile Include="SERVICE\OperationService.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
   <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
   <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
@@ -204,6 +210,7 @@
   <Compile Include="SUB UI\USub08Tab\IoDeviceView.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\PromptDialogVM.cs" />
   <Compile Include="SUB UI\ViewModels\RecipeCreateVM.cs" />
+  <Compile Include="SYSTEM\COMMON\Types\EnumTypes.cs" />
   <Compile Include="SYSTEM\DB\Dto\IODeviceUpdateDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\MotionControllerUpdateDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\ParameterCreateDto.cs" />
