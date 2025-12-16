@@ -60,6 +60,9 @@
   <Page Include="SUB UI\CreateModal\PromptModal.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\Pad\NumPadControl.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\Pad\UNmumPad.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -196,12 +199,12 @@
   <Compile Include="SERVICE\InterlockService.cs" />
   <Compile Include="SERVICE\OperationService.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
+  <Compile Include="SUB UI\Pad\NumPadControl.xaml.cs" />
   <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
   <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
   <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
-  <Compile Include="SUB UI\ViewModels\NameViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
   <Compile Include="SUB UI\PromptModal\ParameterCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\SplashView\SplashView.xaml.cs" />
@@ -319,6 +322,10 @@
     <None Include="DEVICE\dll\PowerPmac64.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="SUB UI\MotionPositionWizard\" />
   </ItemGroup>
 
 </Project>
