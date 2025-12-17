@@ -6,8 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Serilog;
 using HCB.IoC;
-using System.Threading;
 using HCB.Data.Entity.Type;
+using System.Windows.Threading;
+using System.Threading;
 
 namespace HCB.UI
 {
@@ -16,6 +17,7 @@ namespace HCB.UI
         private ILogger _logger;
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
+        private readonly Timer _timer;
 
 
         public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper)
@@ -23,28 +25,23 @@ namespace HCB.UI
             _logger = logger.ForContext<SequenceService>();
             _deviceManager = deviceManager;
             _sequenceHelper = sequenceHelper;
+
+            // 디바이스 데이터 폴링 타이머 설정 (100ms 주기)
+            _timer = new Timer(async _ => await DeviceDataPolling(CancellationToken.None), null, Timeout.Infinite, Timeout.Infinite);
         }
 
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            await DeviceAttatch();
+
+            _timer.Change(0, 100); // 100ms 주기로 타이머 시작
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    // 1. 모든 활성화된 디바이스 상태 갱신
-                    // (DeviceManager.Devices는 UI 스레드와 공유될 수 있으므로 주의가 필요하나, 
-                    //  일반적으로 읽기 작업은 문제되지 않습니다. 필요시 ToList()로 복사하여 사용)
-                    var activeDevices = _deviceManager.Devices.Where(d => d.IsEnabled).ToList();
-
-                    foreach (var device in activeDevices)
-                    {
-                        if (device.IsEnabled && device.IsConnected)
-                            await device.RefreshStatus();
-                    }
-
-
-
+                    await MainSequence();
                 }
                 catch (Exception ex)
                 {
@@ -59,7 +56,61 @@ namespace HCB.UI
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.Information("SequenceService is stopping.");
+
+            await DeviceDetatch();
+
             await base.StopAsync(cancellationToken);
+        }
+
+        private async Task DeviceDataPolling(CancellationToken ct)
+        {
+            try
+            {
+                var activeDevices = _deviceManager.Devices.Where(d => d.IsEnabled).ToList();
+                foreach (var device in activeDevices)
+                {
+                    if (device.IsEnabled && device.IsConnected)
+                        await device.RefreshStatus();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error during DeviceDataPolling");
+            }
+        }
+
+        private async Task DeviceAttatch()
+        {
+            try
+            {
+                var devices = _deviceManager.Devices.Where(d => d.IsEnabled).ToList();
+                foreach (var device in devices)
+                {
+                    if (device.IsEnabled && !device.IsConnected)
+                        await device.Connect();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error during DeviceAttatch");
+            }
+        }
+
+        private async Task DeviceDetatch()
+        {
+            try
+            {
+                var devices = _deviceManager.Devices.Where(d => d.IsConnected).ToList();
+                foreach (var device in devices)
+                {
+                    if (device.IsConnected)
+                        await device.Disconnect();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error during DeviceDetatch");
+            }
         }
     }
 }

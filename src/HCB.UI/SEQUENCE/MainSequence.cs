@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HCB.Data.Entity.Type;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 using Telerik.Windows.Controls.Diagrams.Primitives;
 
@@ -105,6 +106,11 @@ namespace HCB.UI
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             throw new NotImplementedException();
         }

@@ -249,7 +249,7 @@ namespace HCB.UI
             {
                 await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
                 await helper.WaitUntilAsync(
-                    () => (device.GetDigital(DI_WTABLE_LIFT_PIN_UP) == (upDown == eUpDown.Up)) && (device.GetDigital(DI_WTABLE_LIFT_PIN_DOWN) == (upDown == eUpDown.Down)),
+                    () => device.GetDigital(DI_WTABLE_LIFT_PIN_UP) == (upDown == eUpDown.Up) && device.GetDigital(DI_WTABLE_LIFT_PIN_DOWN) == (upDown == eUpDown.Down),
                     3000,
                     ct,
                     $"W-TABLE LIFT PIN UP/DOWN = {upDown} Timeout"
