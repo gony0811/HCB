@@ -12,7 +12,7 @@ namespace HCB.UI
 
         private double _value = 0.0;
 
-        public double Value
+        public override double Value
         {
             get { return _value; }
 

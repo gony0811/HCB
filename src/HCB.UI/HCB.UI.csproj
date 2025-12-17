@@ -194,7 +194,7 @@
   <Compile Include="SEQUENCE\WTableSequece.cs" />
   <Compile Include="SERVICE\Interface\IOperationService.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
-  <Compile Include="SERVICE\OperationService.cs" />
+  <Compile Include="SERVICE\SequenceService.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
   <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
   <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />

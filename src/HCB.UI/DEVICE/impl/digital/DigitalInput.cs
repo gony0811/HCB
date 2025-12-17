@@ -11,19 +11,9 @@ namespace HCB.UI
 
         private bool _value = false;
 
-        public bool Value
+        public override bool Value
         {
             get { return _value; }
-
-            set
-            {
-                if (_value != value)
-                {
-                    var old = _value;
-                    _value = value;
-                    OnValueChanged(old, value);
-                }
-            }
         }
     }
 }

@@ -6,10 +6,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using HCB.Data.Entity.Type;
 using Serilog;
+using Telerik.Windows.Controls.Diagrams.Primitives;
 
 namespace HCB.UI
 {
-    internal class MainSequence : ISequence
+    public partial class MainSequence : BackgroundService
     {
         private readonly ILogger _logger;
         private readonly ISequenceHelper _sequenceHelper;

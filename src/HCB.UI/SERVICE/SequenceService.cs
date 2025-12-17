@@ -11,16 +11,16 @@ using HCB.Data.Entity.Type;
 
 namespace HCB.UI
 {
-    public class OperationService : BackgroundService
+    public partial class SequenceService : BackgroundService
     {
         private ILogger _logger;
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
 
 
-        public OperationService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper)
+        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper)
         {
-            _logger = logger.ForContext<OperationService>();
+            _logger = logger.ForContext<SequenceService>();
             _deviceManager = deviceManager;
             _sequenceHelper = sequenceHelper;
         }
@@ -44,19 +44,7 @@ namespace HCB.UI
                     }
 
 
-                    // 2. 장비 상태에 따른 로직 처리
-                    if (EQStatus.Alarm == AlarmLevel.HEAVY)
-                    {
-                        EQStatus.Run = RunStop.Stop;
-                        EQStatus.Operation = OperationMode.Manual;
-                        EQStatus.Availability = Availability.Down;
-                       
-                        /**** 모든 모션 축 정지 ****/
-                        await _sequenceHelper?.StopAllAsync(stoppingToken);
-                        _sequenceHelper?.SetTowerLamp(green: false, red: true, yellow: false, buzzer: true);
 
-                        _logger.Warning(new SysLog("OperationService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "Heavy Alarm Detected - Stopping Operation").ToString());
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -66,6 +54,12 @@ namespace HCB.UI
                 // 100ms 주기로 반복 (시스템 요구사항에 따라 조절)
                 await Task.Delay(100, stoppingToken);
             }
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _logger.Information("SequenceService is stopping.");
+            await base.StopAsync(cancellationToken);
         }
     }
 }

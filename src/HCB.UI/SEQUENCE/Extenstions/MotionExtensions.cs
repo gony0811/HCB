@@ -13,12 +13,21 @@ namespace HCB.UI
     {
         public const string PowerPmacDeviceName = "PMAC";
 
-        public static async Task Servo(this ISequenceHelper helper, int axisId, bool ready, CancellationToken ct)
+        public const string D_Y = "D_Y";
+        public const string P_Y = "P_Y";
+        public const string W_Y = "W_Y";
+        public const string W_T = "W_T";
+        public const string H_X = "H_X";
+        public const string H_T = "H_T";
+        public const string H_Z = "H_Z";
+        public const string h_z = "h_z";
+
+        public static async Task Servo(this ISequenceHelper helper, int motorNo, bool ready, CancellationToken ct)
         {
-            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(axisId);
+            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(motorNo);
             if (axis == null)
             {
-                helper.Log(LogLevel.Critical, $"Axis with ID {axisId} not found.");
+                helper.Log(LogLevel.Critical, $"Axis with No. {motorNo} not found.");
             }
             if (ready)
             {
@@ -82,12 +91,12 @@ namespace HCB.UI
             );
         }
 
-        public static async Task HomeAsync(this ISequenceHelper helper, int axisId, CancellationToken ct)
+        public static async Task HomeAsync(this ISequenceHelper helper, int motorNo, CancellationToken ct)
         {
-            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(axisId);
+            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(motorNo);
             if (axis == null)
             {
-                helper.Log(LogLevel.Critical, $"Axis with ID {axisId} not found.");
+                helper.Log(LogLevel.Critical, $"Axis with ID {motorNo} not found.");
             }
             await axis.Home();
             await helper.DelayAsync(100, ct); // Small delay to ensure the home command is processed
@@ -99,14 +108,14 @@ namespace HCB.UI
             );
         }
 
-        public static async Task MoveAsync(this ISequenceHelper helper, int axisId, string positionName, CancellationToken ct)
+        public static async Task MoveAsync(this ISequenceHelper helper, int motorNo, string positionName, CancellationToken ct)
         {
-            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(axisId);
+            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(motorNo);
             var position = axis.PositionList.FirstOrDefault(p => p.Name == positionName);
 
             if (axis == null || position == null)
             {
-                helper.Log(LogLevel.Critical, $"Axis with ID {axisId} or Position {positionName} not found.");
+                helper.Log(LogLevel.Critical, $"Axis with ID {motorNo} or Position {positionName} not found.");
             }
 
             await axis.Move(MoveType.Absolute, jerk: 100, position.Speed, position.Position);
@@ -121,13 +130,13 @@ namespace HCB.UI
             );
         }
 
-        public static async Task AbsoluteMoveAsync(this ISequenceHelper helper, int axisId, double velocity, double position, CancellationToken ct)
+        public static async Task AbsoluteMoveAsync(this ISequenceHelper helper, int motorNo, double velocity, double position, CancellationToken ct)
         {
-            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(axisId);
+            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(motorNo);
 
             if (axis == null)
             {
-                helper.Log(LogLevel.Critical, $"Axis with ID {axisId} not found.");
+                helper.Log(LogLevel.Critical, $"Axis with No. {motorNo} not found.");
             }
 
             await axis.Move(MoveType.Absolute, jerk: 100, velocity, position);
@@ -142,13 +151,13 @@ namespace HCB.UI
             );
         }
 
-        public static async Task RelativeMoveAsync(this ISequenceHelper helper, int axisId, double velocity, double distance, CancellationToken ct)
+        public static async Task RelativeMoveAsync(this ISequenceHelper helper, int motorNo, double velocity, double distance, CancellationToken ct)
         {
-            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(axisId);
+            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(motorNo);
 
             if (axis == null)
             {
-                helper.Log(LogLevel.Critical, $"Axis with ID {axisId} not found.");
+                helper.Log(LogLevel.Critical, $"Axis with No {motorNo} not found.");
             }
 
             await axis.Move(MoveType.Relative, jerk: 100, velocity, distance);

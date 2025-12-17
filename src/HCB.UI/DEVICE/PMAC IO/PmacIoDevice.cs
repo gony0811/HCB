@@ -165,7 +165,7 @@ namespace HCB.UI
 
         public bool GetDigital(string name)
         {
-            var ioData = (DigitalInput)FindIoDataByName(name);
+            var ioData = (AbstractDigital)FindIoDataByName(name);
             if (ioData != null)
             {
                 return ioData.Value;
@@ -175,7 +175,7 @@ namespace HCB.UI
         
         public double GetAnalog(string name)
         {
-            var ioData = (AnalogInput)FindIoDataByName(name);
+            var ioData = (AbstractAnalog)FindIoDataByName(name);
             if (ioData != null)
             {
                 return ioData.Value;

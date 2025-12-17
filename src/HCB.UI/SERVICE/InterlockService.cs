@@ -1,12 +1,13 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using HCB.Data.Entity.Type;
+using HCB.IoC;
+using Microsoft.Extensions.Hosting;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using HCB.IoC;
-using Serilog;
 
 
 namespace HCB.UI
@@ -29,6 +30,21 @@ namespace HCB.UI
             try
             {
                 _logger.Information(new SysLog("InterlockService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "").ToString());
+
+
+                // 1. 알람 발생시 운전 정지 및 장비 다운 처리
+                if (EQStatus.Alarm == AlarmLevel.HEAVY)
+                {
+                    EQStatus.Run = RunStop.Stop;
+                    EQStatus.Operation = OperationMode.Manual;
+                    EQStatus.Availability = Availability.Down;
+
+                    /**** 모든 모션 축 정지 ****/
+                    await _sequenceHelper?.StopAllAsync(stoppingToken);
+                    _sequenceHelper?.SetTowerLamp(green: false, red: true, yellow: false, buzzer: true);
+
+                    _logger.Warning(new SysLog("OperationService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "Heavy Alarm Detected - Stopping Operation").ToString());
+                }
             }
             catch (Exception ex)
             {

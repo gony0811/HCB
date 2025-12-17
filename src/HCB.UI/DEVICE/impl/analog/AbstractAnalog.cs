@@ -18,5 +18,21 @@ namespace HCB.UI
         private UnitType _unit;
 
         // removed type-specific event - use base.ValueChanged
+
+        private double _value = 0.0;
+
+        public virtual double Value
+        {
+            get { return _value; }
+
+            set
+            {
+                if (_value != value)
+                {
+                    var old = _value;
+                    _value = value;
+                }
+            }
+        }
     }
 }
