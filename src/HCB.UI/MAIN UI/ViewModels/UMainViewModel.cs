@@ -31,7 +31,12 @@ namespace HCB.UI
 
         private UserService UserService;
 
+        #region Sub ViewModels
+
         private NavigationViewModel NavVM;
+        public SequenceServiceVM SequenceServiceVM { get; }
+        #endregion
+
 
         [ObservableProperty] public ObservableCollection<LogModel> logs = new();
 
@@ -54,6 +59,7 @@ namespace HCB.UI
             USub07 uSub07,
             USub08 uSub08,
             UserService userService, 
+            SequenceServiceVM sequenceServiceVM,
             NavigationViewModel navVM)
         {
             this.mainPage = uSub01;
@@ -65,6 +71,7 @@ namespace HCB.UI
             this.ioPage = uSub07;
             this.devicePage = uSub08;
             this.UserService = userService;
+            this.SequenceServiceVM = sequenceServiceVM;
             this.NavVM = navVM;
             this.logger = logger.ForContext<UMainViewModel>();
             this.logRepository = logRepository;
@@ -73,6 +80,8 @@ namespace HCB.UI
             GridLogSink.LogReceived += OnLogReceived;
 
             Navigate("Main");   
+
+            this.SequenceServiceVM.StatusMessage = "System Ready";
         }
 
         private void OnLogReceived(LogModel log)

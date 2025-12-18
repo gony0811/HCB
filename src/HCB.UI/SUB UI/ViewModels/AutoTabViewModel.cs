@@ -1,19 +1,31 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HCB.UI
 {
     [ViewModel(Lifetime.Scoped)]
     public partial class AutoTabViewModel : ObservableObject
     {
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
+        private readonly SequenceService _sequenceService;
+
         public RunInformation RunInformation { get; }
         public RunningStatus RunningStatus { get; }
 
-        public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus)
+        public AlarmService AlarmService { get; }
+
+
+        public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, SequenceService sequenceService, AlarmService alarmService)
         {
             RunInformation = runInformation;
             RunningStatus = runningStatus;
+            _sequenceService = sequenceService;
+            _cancellationTokenSource.TryReset();
+            AlarmService = alarmService;
         }
 
 
@@ -27,6 +39,31 @@ namespace HCB.UI
         public void Loading()
         {
             RunningStatus.LoadingTimeRange.StartTimer();
+        }
+
+        [RelayCommand]
+        public void MachineInit()
+        {
+            Task.Run(async () => { await this._sequenceService.MachineInitAsync(_cancellationTokenSource.Token); });
+        }
+
+        [RelayCommand]
+        public void MachineRun()
+        {
+            Task.Run(async () => { await this._sequenceService.MachineStartAsync(_cancellationTokenSource.Token); });
+        }
+
+        [RelayCommand]
+        public void MachineStop()
+        {
+            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource = new();
+        }
+
+        [RelayCommand]
+        public void MachineReset()
+        {
+            Task.Run(async () => await AlarmService.ResetAllAlarms());
         }
     }
 }

@@ -17,15 +17,17 @@ namespace HCB.UI
         private ILogger _logger;
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
+        private readonly SequenceServiceVM _sequenceServiceVM;
         private readonly Timer _timer;
 
+        private CancellationToken _stopToken = CancellationToken.None;
 
-        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper)
+        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, SequenceServiceVM sequenceServiceVM)
         {
             _logger = logger.ForContext<SequenceService>();
             _deviceManager = deviceManager;
             _sequenceHelper = sequenceHelper;
-
+            _sequenceServiceVM = sequenceServiceVM;
             // 디바이스 데이터 폴링 타이머 설정 (100ms 주기)
             _timer = new Timer(async _ => await DeviceDataPolling(CancellationToken.None), null, Timeout.Infinite, Timeout.Infinite);
         }
@@ -35,22 +37,7 @@ namespace HCB.UI
         {
             await DeviceAttatch();
 
-            _timer.Change(0, 100); // 100ms 주기로 타이머 시작
-
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                try
-                {
-                    await MainSequence();
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error(ex, "Error in OperationService ExecuteAsync loop");
-                }
-
-                // 100ms 주기로 반복 (시스템 요구사항에 따라 조절)
-                await Task.Delay(100, stoppingToken);
-            }
+            _timer.Change(0, 100); // 100ms 주기로 타이머 시작    s
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)

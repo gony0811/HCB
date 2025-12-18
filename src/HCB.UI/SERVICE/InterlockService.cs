@@ -1,6 +1,5 @@
 ﻿using HCB.Data.Entity.Type;
 using HCB.IoC;
-using HCB.UI.SERVICE.Extenstions;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;

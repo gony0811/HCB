@@ -1,4 +1,5 @@
 ﻿using HCB.Data.Entity.Type;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,45 +9,33 @@ using System.Threading.Tasks;
 
 namespace HCB.UI
 {
-    public partial class SequenceService
+    public partial class SequenceService : BackgroundService
     {
-        private int step = 0;
 
-        public async Task MainSequence()
+
+        public async Task MachineStartAsync(CancellationToken ct)
         {
             try
             {
-                switch(step)
-                {
-                    // Step 0: 장비 상태 초기화
-                    case 0:
-                        _logger.Debug("장비 상태 초기화");
-                        EQStatus.Availability = Availability.Up;
-                        EQStatus.Operation = OperationMode.Manual;
-                        EQStatus.Run = RunStop.Stop;
-                        EQStatus.Alarm = AlarmLevel.Normal;
-                        step++;
-                        break;
-                    case 1:
+                this._sequenceServiceVM.StatusMessage = "Auto Run Start";
 
-                        
+                await Task.Delay(3000, ct);
 
-                        break;
-                }
+                this._sequenceServiceVM.StatusMessage = "Auto Run Completed";
 
-                
             }
             catch (OperationCanceledException)
             {
-                _logger.Information("InitialSequenceAsync: 초기화 시퀀스가 취소되었습니다.");
+                _logger.Information("Auto Run Canceled");
 
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "InitialSequenceAsync: 초기화 시퀀스 중 오류 발생");
+                _logger.Error(ex, ex.Message);
                 throw;
             }
         }
+
     }
 }

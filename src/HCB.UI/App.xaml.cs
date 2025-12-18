@@ -91,7 +91,6 @@ namespace HCB.UI
         private async Task InitializeApplicationAsync()
         {
             SplashScreenUpdate("백그라운드 서비스 시작", 30);
-            await _host.StartAsync();
         }
 
         protected override void OnExit(ExitEventArgs e)

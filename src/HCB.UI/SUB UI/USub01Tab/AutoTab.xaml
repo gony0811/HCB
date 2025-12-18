@@ -198,10 +198,10 @@
                 </Grid>
             </telerik:GroupBox>
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="4" HorizontalAlignment="Center">
-                <Button Content="INITIAL" Width="120" Height="80"></Button>
-                <Button Content="START" Width="120" Height="80"></Button>
-                <Button Content="STOP" Width="120" Height="80"></Button>
-                <Button Content="RESET" Width="120" Height="80"></Button>
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineInitCommand}" Content="INITIAL" Width="120" Height="80"></telerik:RadButton>
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineRunCommand}" Content="START" Width="120" Height="80"/>
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineStopCommand}" Content="STOP" Width="120" Height="80"/>
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineResetCommand}" Content="RESET" Width="120" Height="80"/>
             </StackPanel>
             
         </Grid>
