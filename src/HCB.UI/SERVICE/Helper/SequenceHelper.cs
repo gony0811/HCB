@@ -21,10 +21,13 @@ namespace HCB.UI
             get { return deviceManager; }
         }
 
-        public SequenceHelper(ILogger logger, DeviceManager deviceManager)
+        public bool IsSimulation { get; private set; }
+
+        public SequenceHelper(ILogger logger, DeviceManager deviceManager, DataOptions dataOptions)
         {
             this.logger = logger.ForContext<SequenceHelper>();
             this.deviceManager = deviceManager;
+            this.IsSimulation = dataOptions.Simulation;
         }
 
         /// <summary>

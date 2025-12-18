@@ -13,5 +13,8 @@ namespace HCB.UI
     {
         [ObservableProperty]
         private string statusMessage;
+
+        [ObservableProperty]
+        private bool isMachineInitialized;
     }
 }

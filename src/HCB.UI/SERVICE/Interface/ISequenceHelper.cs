@@ -14,6 +14,8 @@ namespace HCB.UI
     {
         DeviceManager DeviceManager { get; }
 
+        bool IsSimulation { get; }
+
         // 공통 기능: 로그, 딜레이
         void Log(LogLevel logLevel, string message);
         Task DelayAsync(int ms, CancellationToken ct);

@@ -104,6 +104,7 @@ namespace HCB.UI
             {
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
             }
+
             device.SetDigital(name, bOnOff);
         }
 
@@ -183,8 +184,14 @@ namespace HCB.UI
             string doOn = $"DO_DTABLE_VAC_{channel}_ON";
             string doRelease = $"DO_DTABLE_VAC_{channel}_RELEASE";
             string diPressureSwitch = $"DI_DTABLE_VAC_PRESSURE_SWITCH";
-            device.SetDigital(doOn, bOnOff);
-            device.SetDigital(doRelease, !bOnOff);
+            device.SetDigital(doOn, bOnOff, helper.IsSimulation);
+            device.SetDigital(doRelease, !bOnOff, helper.IsSimulation);
+
+            if (helper.IsSimulation)
+            {
+                device.SetDigital(diPressureSwitch, bOnOff, helper.IsSimulation);
+            }
+
             while (ct.IsCancellationRequested == false)
             {
                 await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
@@ -218,9 +225,15 @@ namespace HCB.UI
             string doN2Blow = $"DO_WTABLE_N2_BLOW";
             string diPressureSwitch = $"DI_WTABLE_VAC_PRESSURE_SWITCH";
            
-            device.SetDigital(doOn, bOnOff);
-            device.SetDigital(doRelease, !bOnOff);
-            device.SetDigital(doN2Blow, !bOnOff); // N2 Blow is the opposite of Vacuum On/Off
+            device.SetDigital(doOn, bOnOff, helper.IsSimulation);
+            device.SetDigital(doRelease, !bOnOff, helper.IsSimulation);
+            device.SetDigital(doN2Blow, !bOnOff, helper.IsSimulation); // N2 Blow is the opposite of Vacuum On/Off
+
+            if (helper.IsSimulation)
+            {
+                device.SetDigital(diPressureSwitch, bOnOff, helper.IsSimulation);
+            }
+
             while (ct.IsCancellationRequested == false)
             {
                 await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
@@ -232,7 +245,7 @@ namespace HCB.UI
                 );
             }
 
-            device.SetDigital(doN2Blow, false); // Ensure N2 Blow is turned off after operation
+            device.SetDigital(doN2Blow, false, helper.IsSimulation); // Ensure N2 Blow is turned off after operation
         }
 
         public static async Task WTableLiftPin(this ISequenceHelper helper, eUpDown upDown, CancellationToken ct)
@@ -242,10 +255,16 @@ namespace HCB.UI
             {
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
             }
-            device.SetDigital(DO_WTABLE_LIFT_PIN_UP, upDown == eUpDown.Up? true : false);
-            device.SetDigital(DO_WTABLE_LIFT_PIN_DOWN, upDown == eUpDown.Down? true : false);
+            device.SetDigital(DO_WTABLE_LIFT_PIN_UP, upDown == eUpDown.Up? true : false, helper.IsSimulation);
+            device.SetDigital(DO_WTABLE_LIFT_PIN_DOWN, upDown == eUpDown.Down? true : false, helper.IsSimulation);
 
-            while(ct.IsCancellationRequested == false)
+            if (helper.IsSimulation)
+            {
+                device.SetDigital(DI_WTABLE_LIFT_PIN_UP, upDown == eUpDown.Up ? true : false, helper.IsSimulation);
+                device.SetDigital(DI_WTABLE_LIFT_PIN_DOWN, upDown == eUpDown.Down ? true : false, helper.IsSimulation);
+            }
+
+            while (ct.IsCancellationRequested == false)
             {
                 await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
                 await helper.WaitUntilAsync(
@@ -266,7 +285,7 @@ namespace HCB.UI
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
             }
 
-            device.SetDigital(DO_START_SWITCH_LAMP, onOff == eOnOff.On? true : false);
+            device.SetDigital(DO_START_SWITCH_LAMP, onOff == eOnOff.On? true : false, helper.IsSimulation);
 
             //if (ready)
             //{

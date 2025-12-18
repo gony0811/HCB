@@ -91,7 +91,14 @@ namespace HCB.UI
                 cmd = string.Format("#{0}K", MotorNo);
             }
 
-            return Device.SendCommand(cmd);
+            if (Device?.IsConnected == true && Device?.IsEnabled == true)
+            {
+                return Device.SendCommand(cmd);              
+            }
+            else
+            {
+                return Task.CompletedTask;
+            }     
         }
 
         public Task Move(MoveType moveType, double jerk, double velocity, double position)
@@ -107,13 +114,29 @@ namespace HCB.UI
         public Task MoveStop()
         {
             string cmd = string.Format("#{0:D}J/", MotorNo);
-            return Device.SendCommand(cmd);
+
+            if (Device?.IsConnected == true && Device?.IsEnabled == true)
+            {
+                return Device.SendCommand(cmd);
+            }
+            else
+            {
+                return Task.CompletedTask;
+            }
         }
 
         public Task EStop()
         {
             string cmd = string.Format("#{0:D}J/", MotorNo);
-            return Device.SendCommand(cmd);
+
+            if (Device?.IsConnected == true && Device?.IsEnabled == true)
+            {
+                return Device.SendCommand(cmd);
+            }
+            else
+            {
+                return Task.CompletedTask;
+            }
         }
     }
 }

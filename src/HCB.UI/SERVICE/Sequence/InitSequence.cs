@@ -15,7 +15,7 @@ namespace HCB.UI
     public partial class SequenceService : BackgroundService
     {
         public const string READY_POSITION = "READY";
-        public const string LOAD_POSITION = "LOAD";
+
 
         public async Task MachineInitAsync(CancellationToken ct)
         {

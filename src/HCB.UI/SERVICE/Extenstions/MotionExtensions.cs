@@ -29,6 +29,13 @@ namespace HCB.UI
             {
                 helper.Log(LogLevel.Critical, $"Axis with No. {motorNo} not found.");
             }
+
+            if (helper.IsSimulation)
+            {
+                helper.Log(LogLevel.Information, $"[Simulation] Axis {axis.Name} Servo {(ready ? "On" : "Off")}");
+                return;
+            }
+
             if (ready)
             {
                 await axis.ServoReady(ready);
@@ -58,6 +65,12 @@ namespace HCB.UI
             var pmac = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName);
             var axes = pmac.MotionList;
 
+            if (helper.IsSimulation)
+            {
+                helper.Log(LogLevel.Information, "[Simulation] Stopping all axes.");
+                return;
+            }
+
             // 1. 모든 축에 대해 동시에 정지 명령을 보냅니다.
             var stopTasks = axes.Select(axis => axis.MoveStop());
             await Task.WhenAll(stopTasks);
@@ -81,6 +94,13 @@ namespace HCB.UI
             {
                 helper.Log(LogLevel.Critical, $"Axis with ID {axisId} not found.");
             }
+
+            if (helper.IsSimulation)
+            {
+                helper.Log(LogLevel.Information, $"[Simulation] Stopping axis {axis.Name}.");
+                return;
+            }
+
             await axis.MoveStop();
             await helper.DelayAsync(100, ct); // Small delay to ensure the stop command is processed
             await helper.WaitUntilAsync(
@@ -98,6 +118,13 @@ namespace HCB.UI
             {
                 helper.Log(LogLevel.Critical, $"Axis with ID {motorNo} not found.");
             }
+
+            if (helper.IsSimulation)
+            {
+                helper.Log(LogLevel.Information, $"[Simulation] Homing axis {axis.Name}.");
+                return;
+            }
+
             await axis.Home();
             await helper.DelayAsync(100, ct); // Small delay to ensure the home command is processed
             await helper.WaitUntilAsync(
@@ -116,6 +143,12 @@ namespace HCB.UI
             if (axis == null || position == null)
             {
                 helper.Log(LogLevel.Critical, $"Axis with ID {motorNo} or Position {positionName} not found.");
+            }
+
+            if (helper.IsSimulation)
+            {
+                helper.Log(LogLevel.Information, $"[Simulation] Axis {axis.Name} Move to {positionName} at Speed {position.Speed}, Position {position.Position}");
+                return;
             }
 
             await axis.Move(MoveType.Absolute, jerk: 100, position.Speed, position.Position);
@@ -139,6 +172,12 @@ namespace HCB.UI
                 helper.Log(LogLevel.Critical, $"Axis with No. {motorNo} not found.");
             }
 
+            if (helper.IsSimulation)
+            {
+                helper.Log(LogLevel.Information, $"[Simulation] Axis {axis.Name} Absolute Move to Position {position} at Speed {velocity}");
+                return;
+            }
+
             await axis.Move(MoveType.Absolute, jerk: 100, velocity, position);
 
             await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
@@ -158,6 +197,12 @@ namespace HCB.UI
             if (axis == null)
             {
                 helper.Log(LogLevel.Critical, $"Axis with No {motorNo} not found.");
+            }
+
+            if (helper.IsSimulation)
+            {
+                helper.Log(LogLevel.Information, $"[Simulation] Axis {axis.Name} Relative Move by Distance {distance} at Speed {velocity}");
+                return;
             }
 
             await axis.Move(MoveType.Relative, jerk: 100, velocity, distance);

@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 
 namespace HCB.UI
 {
-    internal class DataOptions
+    public class DataOptions
     {
         internal const string Data = "Data";
 
         public string Db { get; set; } = string.Empty;
+
+        public bool Simulation { get; set; } = false;
     }
 
 }

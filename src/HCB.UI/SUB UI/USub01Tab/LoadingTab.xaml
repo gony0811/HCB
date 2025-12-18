@@ -36,7 +36,7 @@
                 </Grid.ColumnDefinitions>
                 <Grid>
                     <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <telerik:RadButton Grid.Row="0" Width="100" Height="80" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}">
+                        <telerik:RadButton Grid.Row="0" Width="100" Height="80" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" Command="{Binding DTableLoadingCommand}">
                             <telerik:HighlightTextBlock TextAlignment="Center" Margin="5">
                                 LOADING
                                 <LineBreak/> POS

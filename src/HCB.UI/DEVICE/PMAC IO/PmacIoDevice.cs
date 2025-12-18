@@ -109,6 +109,7 @@ namespace HCB.UI
 
         public Task RefreshStatus()
         {
+
             foreach (var data in IoDataList)
             {
                 // 여기서 각 io의 상태를 갱신하는 로직을 구현해야 합니다.
@@ -154,12 +155,19 @@ namespace HCB.UI
         }
 
 
-        public void SetDigital(string name, bool bOnOff)
+        public void SetDigital(string name, bool bOnOff, bool simulation = false)
         {
-            var ioData = (DigitalOutput)FindIoDataByName(name);
-            if (ioData != null)
+           
+            if (simulation == false)
             {
+                var ioData = (DigitalOutput)FindIoDataByName(name);
                 ioData.Value = bOnOff;
+            }
+            else // simulation == true
+            {
+                var simIoData = (AbstractDigital)FindIoDataByName(name);
+                simIoData.Value = bOnOff;
+                this.logger.Information("[Simulation] Set Digital IO: {Name} to {Value}", name, bOnOff);
             }
         }
 
@@ -183,12 +191,21 @@ namespace HCB.UI
             return 0.0;
         }
 
-        public void SetAnalog(string name, double value)
+        public void SetAnalog(string name, double value, bool simulation = false)
         {
-            var ioData = (AnalogOutput)FindIoDataByName(name);
-            if (ioData != null)
+            if (simulation == false)
             {
-                ioData.Value = value;
+                var ioData = (AnalogOutput)FindIoDataByName(name);
+                if (ioData != null)
+                {
+                    ioData.Value = value;
+                }
+            }
+            else // simulation == true
+            {
+                var simIoData = (AbstractAnalog)FindIoDataByName(name);
+                simIoData.Value = value;
+                this.logger.Information("[Simulation] Set Analog IO: {Name} to {Value}", name, value);
             }
         }
 
