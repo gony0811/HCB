@@ -42,6 +42,8 @@ namespace HCB.UI
                     MotionList.Add(axis); 
                 }
             }
+
+
         }
 
         #region Position CRUD

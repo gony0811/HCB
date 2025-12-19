@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using HCB.Data.Entity.Type;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +22,12 @@ namespace HCB.UI
         {
             try
             {
+                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Manual || EQStatus.Alarm == AlarmLevel.HEAVY)
+                {
+                    this._logger.Warning("MachineInitAsync를 실행할 수 없습니다: 시퀀스 서비스가 자동 대기 상태가 아닙니다.");
+                    return;
+                }
+                
                 this._logger.Debug("MachineInitAsync 시작");
 
                 await Init_PTable(ct);
@@ -39,6 +46,9 @@ namespace HCB.UI
                 _logger.Error(ex, "MachineInitAsync 중 오류 발생");
                 throw;
             }
+            finally
+            {
+            }
         }
 
         public async Task Init_PTable(CancellationToken ct)
@@ -46,6 +56,7 @@ namespace HCB.UI
             try
             {
                 this._logger.Debug("P-Table 초기화 시작");
+
                 var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
                 var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
                 // P Table 초기화 로직 구현

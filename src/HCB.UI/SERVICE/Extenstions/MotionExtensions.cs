@@ -143,6 +143,7 @@ namespace HCB.UI
             if (axis == null || position == null)
             {
                 helper.Log(LogLevel.Critical, $"Axis with ID {motorNo} or Position {positionName} not found.");
+                return;
             }
 
             if (helper.IsSimulation)
@@ -170,6 +171,7 @@ namespace HCB.UI
             if (axis == null)
             {
                 helper.Log(LogLevel.Critical, $"Axis with No. {motorNo} not found.");
+                return;
             }
 
             if (helper.IsSimulation)
@@ -197,6 +199,7 @@ namespace HCB.UI
             if (axis == null)
             {
                 helper.Log(LogLevel.Critical, $"Axis with No {motorNo} not found.");
+                return;
             }
 
             if (helper.IsSimulation)

@@ -12,12 +12,21 @@ namespace HCB.UI
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         private readonly SequenceService _sequenceService;
+        public readonly SequenceServiceVM _sequenceServiceVM;
 
         public RunInformation RunInformation { get; }
         public RunningStatus RunningStatus { get; }
 
         public AlarmService AlarmService { get; }
 
+        [ObservableProperty]
+        private bool isInitializing;
+
+        [ObservableProperty]
+        private bool isRunning;
+
+        [ObservableProperty]
+        private bool isStopping;
 
         public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, SequenceService sequenceService, AlarmService alarmService)
         {
@@ -27,7 +36,6 @@ namespace HCB.UI
             _cancellationTokenSource.TryReset();
             AlarmService = alarmService;
         }
-
 
         [RelayCommand]
         public void Running()
@@ -44,20 +52,30 @@ namespace HCB.UI
         [RelayCommand]
         public void MachineInit()
         {
-            Task.Run(async () => { await this._sequenceService.MachineInitAsync(_cancellationTokenSource.Token); });
+            Task.Run(async () => { 
+                IsInitializing = true;
+                await this._sequenceService.MachineInitAsync(_cancellationTokenSource.Token); 
+                IsInitializing = false;
+            });
         }
 
         [RelayCommand]
         public void MachineRun()
         {
-            Task.Run(async () => { await this._sequenceService.MachineStartAsync(_cancellationTokenSource.Token); });
+            Task.Run(async () => { 
+                IsRunning = true;
+                await this._sequenceService.MachineStartAsync(_cancellationTokenSource.Token); 
+                IsRunning = false;
+            });
         }
 
         [RelayCommand]
         public void MachineStop()
         {
+            IsStopping = true;
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource = new();
+            IsStopping = false;
         }
 
         [RelayCommand]

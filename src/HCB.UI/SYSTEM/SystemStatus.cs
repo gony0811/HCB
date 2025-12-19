@@ -27,8 +27,6 @@ namespace HCB.UI
         Auto
     }
 
-
-
     public class EQStatus
     {
         public static Availability Availability { get; internal set; } = Availability.Up;

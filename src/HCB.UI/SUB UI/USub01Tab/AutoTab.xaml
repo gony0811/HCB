@@ -198,10 +198,13 @@
                 </Grid>
             </telerik:GroupBox>
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="4" HorizontalAlignment="Center">
-                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineInitCommand}" Content="INITIAL" Width="120" Height="80"></telerik:RadButton>
-                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineRunCommand}" Content="START" Width="120" Height="80"/>
-                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineStopCommand}" Content="STOP" Width="120" Height="80"/>
-                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineResetCommand}" Content="RESET" Width="120" Height="80"/>
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineInitCommand}" Content="INITIAL" Width="120" Height="80" Margin="1"
+                 local:BlinkBehavior.IsBlinking="{Binding IsInitializing}"/>
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineRunCommand}" Content="START" Width="120" Height="80" Margin="1"
+                 local:BlinkBehavior.IsBlinking="{Binding IsRunning}"/>
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineStopCommand}" Content="STOP" Width="120" Height="80" Margin="1"
+                 local:BlinkBehavior.IsBlinking="{Binding IsStopping}"/>
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineResetCommand}" Content="RESET" Width="120" Height="80" Margin="1"/>
             </StackPanel>
             
         </Grid>

@@ -36,13 +36,14 @@
                 </Grid.ColumnDefinitions>
                 <Grid>
                     <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <telerik:RadButton Grid.Row="0" Width="100" Height="80" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" Command="{Binding DTableLoadingCommand}">
+                        <telerik:RadButton Grid.Row="0" Width="100" Height="80" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" Command="{Binding DTableLoadingCommand}" local:BlinkBehavior.IsBlinking="{Binding IsDTableLoading}">
                             <telerik:HighlightTextBlock TextAlignment="Center" Margin="5">
                                 LOADING
                                 <LineBreak/> POS
                             </telerik:HighlightTextBlock>
+                            
                         </telerik:RadButton>
-                        <telerik:RadButton Grid.Row="1" Width="100" Height="80"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}">
+                        <telerik:RadButton Grid.Row="1" Width="100" Height="80"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" local:BlinkBehavior.IsBlinking="{Binding IsDTableStandby}">
                             <telerik:HighlightTextBlock TextAlignment="Center" Margin="5">
                                 READY
                                 <LineBreak/> POS
@@ -103,13 +104,13 @@
                     <ColumnDefinition Width="Auto"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
                 <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <telerik:RadButton Grid.Row="0" Height="80" Width="100"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}">
+                    <telerik:RadButton Grid.Row="0" Height="80" Width="100"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" local:BlinkBehavior.IsBlinking="{Binding IsWTableLoading}">
                         <telerik:HighlightTextBlock TextAlignment="Center" Margin="5">
                             LOADING
                             <LineBreak/> POS
                         </telerik:HighlightTextBlock>
                     </telerik:RadButton>
-                    <telerik:RadButton Grid.Row="1" Height="80" Width="100" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}">
+                    <telerik:RadButton Grid.Row="1" Height="80" Width="100" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" local:BlinkBehavior.IsBlinking="{Binding IsWTableStandby}">
                         <telerik:HighlightTextBlock TextAlignment="Center" Margin="5">
                             WORKING
                             <LineBreak/> POS

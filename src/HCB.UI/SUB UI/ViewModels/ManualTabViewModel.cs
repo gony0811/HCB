@@ -1,19 +1,27 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
+using System.Threading.Tasks;
+using Serilog;
+using System.Threading;
 
 namespace HCB.UI
 {
     [ViewModel(Lifetime.Scoped)]
     public partial class ManualTabViewModel : ObservableObject
     {
+        private readonly ILogger _logger;
+        private readonly SequenceHelper _sequenceHelper;
+        private readonly SequenceService _sequenceService;
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         // D-Table
         [ObservableProperty]
         private DieAxisTableViewModel dyAxisTable = new DieAxisTableViewModel("D-Y Axis");
 
         [ObservableProperty]
-        private MotorStatusTableViewModel dyMotorStatusTable= new MotorStatusTableViewModel("Die DY");
+        private MotorStatusTableViewModel dyMotorStatusTable = new MotorStatusTableViewModel("Die DY");
 
-        
+
         // P-Table
         [ObservableProperty]
         private DieAxisTableViewModel pyAxisTable = new DieAxisTableViewModel("P-Y Axis");
@@ -22,7 +30,7 @@ namespace HCB.UI
         private MotorStatusTableViewModel pyMotorStatusTable = new MotorStatusTableViewModel("P-Y");
 
 
-        
+
         // B-Head
         [ObservableProperty] private DieAxisTableViewModel bxAxisTable = new DieAxisTableViewModel("B-X Axis");
         [ObservableProperty] private MotorStatusTableViewModel bxMotorStatusTable = new MotorStatusTableViewModel("B-X");
@@ -43,8 +51,19 @@ namespace HCB.UI
         [ObservableProperty] private MotorStatusTableViewModel wtMotorStatusTable = new MotorStatusTableViewModel("W-T");
 
 
+        [ObservableProperty] private bool isDieLoading;
+        [ObservableProperty] private bool isWaferLoading;
 
-        public ManualTabViewModel()
+        [ObservableProperty] private bool isDieStandby;
+        [ObservableProperty] private bool isWaferStandby;
+        public ManualTabViewModel(ILogger logger, SequenceHelper sequenceHelper)
+        {
+            _logger = logger.ForContext<ManualTabViewModel>();
+            _sequenceHelper = sequenceHelper;
+            Initialize();
+        }
+
+        private void Initialize()
         {
             DyAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
             DyAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
@@ -72,7 +91,28 @@ namespace HCB.UI
 
             WtAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
             WtAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
+        }
 
+        [RelayCommand]
+        public void DTableLoading()
+        {
+            Task.Run(async () =>
+            {
+                IsDieLoading = true;
+                await this._sequenceService.DTableLoading(_cancellationTokenSource.Token);
+                IsDieLoading = false;
+            });
+        }
+
+        [RelayCommand]
+        public void WTableLoading()
+        {
+            Task.Run(async () =>
+            {
+                IsWaferLoading = true;
+                await this._sequenceService.WTableLoading(_cancellationTokenSource.Token);
+                IsWaferLoading = false;
+            });
         }
     }
 }

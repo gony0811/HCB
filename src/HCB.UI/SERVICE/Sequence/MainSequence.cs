@@ -17,12 +17,15 @@ namespace HCB.UI
         {
             try
             {
-                this._sequenceServiceVM.StatusMessage = "Auto Run Start";
+                _logger.Information("Auto Run Start");
+
+                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Manual || EQStatus.Alarm == AlarmLevel.HEAVY)
+                {
+                    _logger.Warning("Cannot execute MachineStartAsync: Sequence Service is not in Auto Standby Status.");
+                    return;
+                }
 
                 await Task.Delay(3000, ct);
-
-                this._sequenceServiceVM.StatusMessage = "Auto Run Completed";
-
             }
             catch (OperationCanceledException)
             {
@@ -34,6 +37,10 @@ namespace HCB.UI
             {
                 _logger.Error(ex, ex.Message);
                 throw;
+            }
+            finally
+            {
+                _logger.Information("Auto Run End");
             }
         }
 

@@ -35,12 +35,15 @@ namespace HCB.UI
             Clear();
 
             var deviceEntities = await _deviceRepository.ListAsync(
-                include: q => q
+                include: query => query
                     .Include(d => d.MotionDeviceDetail)
                         .ThenInclude(md => md.MotionList)
-                            .ThenInclude(m => m.ParameterList)
+                            .ThenInclude(m => m.PositionList) // MotionEntity의 PositionList를 포함
+                    .Include(d => d.MotionDeviceDetail)
+                        .ThenInclude(md => md.MotionList)
+                            .ThenInclude(m => m.ParameterList) // MotionEntity의 ParameterList도 포함
                     .Include(d => d.IoDeviceDetail)
-                        .ThenInclude(id => id.IoDataList)
+                        .ThenInclude(iod => iod.IoDataList)                            
             );
 
             foreach (var entity in deviceEntities)
@@ -355,18 +358,36 @@ namespace HCB.UI
                 Device = runtime
             };
 
-            foreach (var p in m.ParameterList)
+            if (m.PositionList != null)
             {
-                
-                dm.ParameterList.Add(new DMotionParameter
+                foreach (var pos in m.PositionList)
                 {
-                    Id = p.Id,
-                    Name = p.Name,
-                    ValueType = p.ValueType,
-                    Value = p.Value(),
-                    Unit = p.UnitType,
-                    ParentMotion = dm
-                });
+                    dm.PositionList.Add(new DMotionPosition
+                    {
+                        Id = pos.Id,
+                        Name = pos.Name,
+                        Speed = pos.Speed,
+                        Position = pos.Position,
+                        ParentMotion = dm
+                    });
+                }
+            }
+
+            if (m.ParameterList != null)
+            {
+                foreach (var p in m.ParameterList)
+                {
+
+                    dm.ParameterList.Add(new DMotionParameter
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        ValueType = p.ValueType,
+                        Value = p.Value(),
+                        Unit = p.UnitType,
+                        ParentMotion = dm
+                    });
+                }
             }
 
             return dm;

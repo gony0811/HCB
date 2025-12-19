@@ -193,7 +193,9 @@
   <Compile Include="SERVICE\Sequence\InitSequence.cs" />
   <Compile Include="SERVICE\Sequence\MainSequence.cs" />
   <Compile Include="SERVICE\Sequence\ManualSequence.cs" />
+  <Compile Include="SERVICE\Sequence\SequenceEventHandler.cs" />
   <Compile Include="SERVICE\ViewModels\SequenceServiceVM.cs" />
+  <Compile Include="SUB UI\Behavior\BlinkBehavior.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
   <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
   <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
@@ -317,10 +319,6 @@
     <None Include="DEVICE\dll\PowerPmac64.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="SUB UI\MotionPositionWizard\" />
   </ItemGroup>
 
 </Project>

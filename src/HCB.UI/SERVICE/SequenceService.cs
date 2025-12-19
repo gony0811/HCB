@@ -21,7 +21,6 @@ namespace HCB.UI
         private readonly Timer _timer;
         private readonly bool _simulation;
 
-
         private CancellationToken _stopToken = CancellationToken.None;
 
         public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, SequenceServiceVM sequenceServiceVM)

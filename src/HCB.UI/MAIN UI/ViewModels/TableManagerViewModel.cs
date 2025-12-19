@@ -19,6 +19,11 @@ namespace HCB.UI
         private CancellationTokenSource _cancellationTokenSource = new();
         private readonly SequenceService _sequenceService;
 
+        [ObservableProperty] private bool isDTableLoading;
+        [ObservableProperty] private bool isDTableStandby;
+
+        [ObservableProperty] private bool isWTableLoading;
+        [ObservableProperty] private bool isWTableStandby;
         // D-Table 정보
         [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> dTableList = new ObservableCollection<SensorIoItemViewModel>();
