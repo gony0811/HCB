@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Telerik.Windows.Controls;
+using Telerik.Windows.Controls.ColorEditor.Pad;
 
 namespace HCB.UI
 {
@@ -64,11 +65,19 @@ namespace HCB.UI
             return result;
         }
 
-        //public double? ShowEditNumDialog(double value, double minValue, double maxValue, double step = 1.0, bool allowDecimal = true)
-        //{
-        //    var modal = new UNmumPad(value, minValue, maxValue, step, allowDecimal);
-        //    return modal.ShowDialogAndGetResult();
-        //}
+        public double? ShowEditNumDialog(double value, double minValue, double maxValue)
+        {
+            var modal = new UNmumPad(value, minValue, maxValue)
+            {
+                Owner = GetOwnerWindow()
+            };
+
+            bool? result = modal.ShowDialog();
+
+            if (result == false) return null;
+            
+            return modal.ResultValue;    
+        }
 
         private static Window GetOwnerWindow()
         {
