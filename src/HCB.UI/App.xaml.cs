@@ -58,16 +58,18 @@ namespace HCB.UI
             _host = StartUp.BuildHost(e.Args);
             SplashScreenUpdate("호스트 빌드 완료.", 10);
 
-            SplashScreenUpdate("데이터베이스 연결 및 초기화...", 11);
+            SplashScreenUpdate("어플리케이션 초기화 및 구동 시작", 15);
+
+            await InitializeApplicationAsync();
+
+            SplashScreenUpdate("데이터베이스 연결 및 초기화...", 20);
             await StartUp.InitDatabaseAsync(_host);
 
-            SplashScreenUpdate("데이터베이스 연결 및 초기화 완료", 20);
+            SplashScreenUpdate("데이터베이스 연결 및 초기화 완료", 30);
             var recipeService = _host.Services.GetRequiredService<RecipeService>();
             await recipeService.Initialize();
 
-            SplashScreenUpdate("어플리케이션 초기화 및 구동 시작", 21);
 
-            await InitializeApplicationAsync();
 
             SplashScreenUpdate("어플리케이션 초기화 완료", 100);
             
@@ -91,6 +93,7 @@ namespace HCB.UI
         private async Task InitializeApplicationAsync()
         {
             SplashScreenUpdate("백그라운드 서비스 시작", 30);
+            await _host.StartAsync();
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -102,7 +105,7 @@ namespace HCB.UI
 
             using (_host)
             {
-                _host.StopAsync().GetAwaiter().GetResult();
+                _host.StopAsync();
             }
                 try { _mutex?.ReleaseMutex(); } catch { /* ignore */ }
             _mutex?.Dispose();

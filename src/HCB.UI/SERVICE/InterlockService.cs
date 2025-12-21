@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace HCB.UI
 {
+    [Service(Lifetime.Singleton)]
     internal class InterlockService : BackgroundService
     {
         private ILogger _logger;

@@ -38,6 +38,18 @@ namespace HCB.UI
         }
 
         [RelayCommand]
+        public void Loaded()
+        {
+            EQStatus.Operation = OperationMode.Auto;
+        }
+
+        [RelayCommand]      
+        public void Unloaded() 
+        {
+            EQStatus.Operation = OperationMode.Manual;
+        }
+
+        [RelayCommand]
         public void Running()
         {
             RunningStatus.RunningTimeRange.StartTimer();

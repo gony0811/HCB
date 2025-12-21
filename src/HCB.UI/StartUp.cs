@@ -53,8 +53,8 @@ namespace HCB.UI
                         return opt;
                     });
 
-                    services.AddHostedService<SequenceService>();
-                    services.AddHostedService<InterlockService>();
+                    //services.AddHostedService<SequenceService>();
+                    //services.AddHostedService<InterlockService>();
 
                     // ---------- EF DbContext Factory ----------
                     services.AddDbContextFactory<AppDb>((sp, options) =>

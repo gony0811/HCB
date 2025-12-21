@@ -80,8 +80,6 @@ namespace HCB.UI
             GridLogSink.LogReceived += OnLogReceived;
 
             Navigate("Main");   
-
-            this.SequenceServiceVM.StatusMessage = "System Ready";
         }
 
         private void OnLogReceived(LogModel log)

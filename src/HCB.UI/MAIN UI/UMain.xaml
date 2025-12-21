@@ -8,7 +8,8 @@
         mc:Ignorable="d"                
         Style="{StaticResource RadWindowStyle}"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="CanResizeWithGrip" 
+        ResizeMode="CanResize"
+        Header="HCB"
         Closed="Window_Closed">
     <telerik:RadWindow.Resources>
         <ResourceDictionary>
@@ -18,6 +19,187 @@
                     <Thickness x:Key="SubPageMargin">10</Thickness>
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
+            <!-- 사각형 램프 템플릿들 -->
+            <Style x:Key="AvailabilityRectLampStyle" TargetType="ContentControl">
+                <Setter Property="Width" Value="130"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContentControl">
+                            <Border x:Name="LampBorder"
+                              CornerRadius="4"
+                              Background="Gray"
+                              BorderBrush="#66000000"
+                              BorderThickness="1.5"
+                              Padding="8,2">
+                                <TextBlock x:Name="LampText"
+                                     Text="UNAVAILABLE"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"
+                                     Foreground="White"
+                                     FontWeight="Bold"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.Availability}" Value="Up">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="LimeGreen"/>
+                                    <Setter TargetName="LampText" Property="Text" Value="UP"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.Availability}" Value="Down">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="Red"/>
+                                    <Setter TargetName="LampText" Property="Text" Value="DOWN"/>
+                                </DataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Run/Stop 스타일에 Pause 상태 점멸(블링킹) 추가 -->
+            <Style x:Key="RunStopRectLampStyle" TargetType="ContentControl">
+                <Setter Property="Width" Value="130"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContentControl">
+                            <Border x:Name="LampBorder"
+                        CornerRadius="4"
+                        Background="IndianRed"
+                        BorderBrush="#66000000"
+                        BorderThickness="1.5"
+                        Padding="8,2"
+                        Opacity="1">
+                                <TextBlock x:Name="LampText"
+                               Text="STOP"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Foreground="White"
+                               FontWeight="Bold"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.RunStop}" Value="Ready">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="Indigo"/>
+                                    <Setter TargetName="LampText" Property="Text" Value="RUN"/>
+                                    <Setter TargetName="LampBorder" Property="Opacity" Value="1"/>
+                                    <DataTrigger.EnterActions>
+                                        <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
+                                    </DataTrigger.EnterActions>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.RunStop}" Value="Run">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="LimeGreen"/>
+                                    <Setter TargetName="LampText" Property="Text" Value="RUN"/>
+                                    <Setter TargetName="LampBorder" Property="Opacity" Value="1"/>
+                                    <DataTrigger.EnterActions>
+                                        <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
+                                    </DataTrigger.EnterActions>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.RunStop}" Value="Stop">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="IndianRed"/>
+                                    <Setter TargetName="LampText" Property="Text" Value="STOP"/>
+                                    <Setter TargetName="LampBorder" Property="Opacity" Value="1"/>
+                                    <DataTrigger.EnterActions>
+                                        <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
+                                    </DataTrigger.EnterActions>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.RunStop}" Value="Pause">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="IndianRed"/>
+                                    <Setter TargetName="LampText" Property="Text" Value="PAUSE"/>
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard x:Name="PauseBlinkStoryboard">
+                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                <DoubleAnimation Storyboard.TargetName="LampBorder"
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     From="1" To="0.3"
+                                                     Duration="0:0:0.5"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="LampBorder"
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     To="1"
+                                                     Duration="0:0:0"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="AlarmRectLampStyle" TargetType="ContentControl">
+                <Setter Property="Width" Value="130"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContentControl">
+                            <Border x:Name="LampBorder"
+                              CornerRadius="4"
+                              Background="SteelBlue"
+                              BorderBrush="#66000000"
+                              BorderThickness="1.5"
+                              Padding="8,2">
+                                <TextBlock x:Name="LampText"
+                                     Text="NORMAL"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"
+                                     Foreground="White"
+                                     FontWeight="Bold"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.AlarmLevel}" Value="Normal">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="LightGreen"/>
+                                    <Setter TargetName="LampText" Property="Text" Value="NORMAL"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.AlarmLevel}" Value="Light">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="SteelBlue"/>
+                                    <Setter TargetName="LampText" Property="Text" Value="WARNING"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.AlarmLevel}" Value="Heavy">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="Red"/>
+                                    <Setter TargetName="LampText" Property="Text" Value="ALERT"/>
+                                </DataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="OperationModeRectLampStyle" TargetType="ContentControl">
+                <Setter Property="Width" Value="130"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContentControl">
+                            <Border x:Name="LampBorder"
+                              CornerRadius="4"
+                              Background="Gray"
+                              BorderBrush="#66000000"
+                              BorderThickness="1.5"
+                              Padding="8,2">
+                                <TextBlock x:Name="LampText"
+                                     Text="MANUAL"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"
+                                     Foreground="White"
+                                     FontWeight="Bold"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.OperationMode}" Value="Auto">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="LimeGreen"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.OperationMode}" Value="Manual">
+                                    <Setter TargetName="LampBorder" Property="Background" Value="DodgerBlue"/>
+                                </DataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </telerik:RadWindow.Resources>
 
@@ -35,17 +217,44 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <telerik:RadButton Grid.Column="0" Content="LOGO" Width="150" Height="60" Margin="5" Style="{StaticResource RadButtonStyle}"/>
-                <WrapPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center" Width="300" Margin="3">
-                    <StackPanel Orientation="Horizontal">
-                        <telerik:RadHighlightTextBlock  Text="THREAD :" Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                        <telerik:RadHighlightTextBlock x:Name="tbThread" Text="{Binding ThreadText}" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                    </StackPanel>
+                <telerik:RadButton Grid.Column="0" Content="HCB" Width="150" Height="60" Margin="5" Style="{StaticResource RadButtonStyle}"/>
+
+
+                <!-- 상태 램프 영역 -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <UniformGrid Rows="1" Columns="4" VerticalAlignment="Center" Margin="10,0,0,0">
+                        <!-- Availability Lamp -->
+                        <StackPanel Orientation="Vertical" Margin="8,0" VerticalAlignment="Center">
+                            <telerik:RadHighlightTextBlock Text="Availability" TextAlignment="Left" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}" Margin="0,0,6,0"/>
+                            <ContentControl Style="{StaticResource AvailabilityRectLampStyle}"/>
+                        </StackPanel>
+
+                        <!-- Run/Stop Lamp -->
+                        <StackPanel Orientation="Vertical" Margin="8,0" VerticalAlignment="Center">
+                            <telerik:RadHighlightTextBlock Text="Run/Stop" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}" Margin="0,0,6,0"/>
+                            <ContentControl Style="{StaticResource RunStopRectLampStyle}"/>
+                        </StackPanel>
+
+                        <!-- Alarm Lamp -->
+                        <StackPanel Orientation="Vertical" Margin="8,0" VerticalAlignment="Center">
+                            <telerik:RadHighlightTextBlock Text="Alarm" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}" Margin="0,0,6,0"/>
+                            <ContentControl Style="{StaticResource AlarmRectLampStyle}"/>
+                        </StackPanel>
+
+                        <!-- OperationMode Lamp -->
+                        <StackPanel Orientation="Vertical" Margin="8,0" VerticalAlignment="Center">
+                            <telerik:RadHighlightTextBlock Text="OperationMode" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}" Margin="0,0,6,0"/>
+                            <ContentControl Style="{StaticResource OperationModeRectLampStyle}"/>
+                        </StackPanel>
+                    </UniformGrid>
+                </StackPanel>
+
+                <WrapPanel Grid.Column="4" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="3" Width="200">
                     <StackPanel Orientation="Horizontal">
                         <telerik:RadHighlightTextBlock Text="TIME :" Style="{StaticResource RadHighlightTextBlockStyle}"/>
                         <telerik:RadHighlightTextBlock x:Name="tbTime" Text="{Binding TimeText}" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
@@ -54,13 +263,8 @@
                         <telerik:RadHighlightTextBlock Text="LOG IN LEVEL :" Style="{StaticResource RadHighlightTextBlockStyle}"/>
                         <telerik:RadHighlightTextBlock x:Name="tbUser"  Text="{Binding UserService.CurrentAuthority.Name, TargetNullValue=--, FallbackValue=--}" VerticalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
                     </StackPanel>
-                </WrapPanel>
-
-                <telerik:RadHighlightTextBlock  Grid.Column="2" x:Name="tbStatus" Text="{Binding SequenceServiceVM.StatusMessage}" FontSize="36" VerticalAlignment="Center" Width="800" TextAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                <WrapPanel Grid.Column="3" Orientation="Vertical" VerticalAlignment="Center" Margin="3">
                     <telerik:RadHighlightTextBlock  x:Name="tbBuild" Text="{Binding BuildText}" TextAlignment="Right" Style="{StaticResource RadHighlightTextBlockStyle}"/>
                     <telerik:RadHighlightTextBlock  x:Name="tbDeveloper" Text="{Binding DeveloperText}" TextAlignment="Right" Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                    <telerik:RadHighlightTextBlock  x:Name="tbSerialNumber" Text="{Binding SerialNumberText}" TextAlignment="Right" Style="{StaticResource RadHighlightTextBlockStyle}"/>
                 </WrapPanel>
             </Grid>
         </Border>

@@ -44,7 +44,8 @@ namespace HCB.UI
             SelectedTabKey = viewName;
             switch (viewName)
             {
-                case "LOADING": CurrentTab = loadingTab; break;
+                case "LOADING": 
+                    CurrentTab = loadingTab; break;
                 case "AUTO": CurrentTab = autoTab; break;
                 case "MANUAL": CurrentTab = manualTab; break;
                 //case "STEP": CurrentTab = App.Container.Resolve<StepTab>(); break;
