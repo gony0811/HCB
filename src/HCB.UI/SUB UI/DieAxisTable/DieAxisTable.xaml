@@ -14,8 +14,8 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <GroupBox Header="{Binding TableName}"
-          Style="{StaticResource GroupBox.CenterHeader}"
+    <telerik:GroupBox Header="{Binding TableName}"
+          Style="{StaticResource GroupBoxStyle}"
           Margin="4">
 
         <telerik:RadGridView ItemsSource="{Binding Rows}"
@@ -28,7 +28,7 @@
                 <telerik:GridViewDataColumn Header="Save" Width="80">
                     <telerik:GridViewDataColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="저장"
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="저장"
                                 Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" />
                         </DataTemplate>
@@ -36,18 +36,18 @@
                 </telerik:GridViewDataColumn>
 
                 <telerik:GridViewDataColumn Header="Name" DataContext="{Binding Name}" Width="*" />
-                <telerik:GridViewDataColumn Header="Pos"
+                <telerik:GridViewDataColumn Header="POS"
                     DataContext="{Binding Position, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     Width="100" />
 
-                <telerik:GridViewDataColumn Header="Spd"
+                <telerik:GridViewDataColumn Header="SPD"
                     DataContext="{Binding Speed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     Width="100" />
 
                 <telerik:GridViewDataColumn Header="Move" Width="80">
                     <telerik:GridViewDataColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="이동"
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="이동"
                                 Command="{Binding DataContext.MoveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" />
                         </DataTemplate>
@@ -55,6 +55,6 @@
                 </telerik:GridViewDataColumn>
             </telerik:RadGridView.Columns>
         </telerik:RadGridView>
-    </GroupBox>
+    </telerik:GroupBox>
 
 </UserControl>

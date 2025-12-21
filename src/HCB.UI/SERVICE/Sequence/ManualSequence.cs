@@ -23,20 +23,20 @@ namespace HCB.UI
                 }
 
                 _logger.Information("Die Loading Start");
-               
+
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
                 var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // D Table Y축 (예시)
                 var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); // H Table X축 (예시)
                 var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 (예시)
 
-                if (d_y == null) throw new Exception("D Table Y axis not found in motion device.");           
+                if (d_y == null) throw new Exception("D Table Y axis not found in motion device.");
                 if (H_X == null) throw new Exception("H Table X axis not found in motion device.");
                 if (H_Z == null) throw new Exception("H Table Z axis not found in motion device.");
 
                 await _sequenceHelper.MoveAsync(H_Z.MotorNo, LOAD_POSITION, ct);
 
-                await Task.Run(async () => 
+                await Task.Run(async () =>
                 {
                     await _sequenceHelper.MoveAsync(H_X.MotorNo, LOAD_POSITION, ct);
                     await _sequenceHelper.MoveAsync(d_y.MotorNo, LOAD_POSITION, ct);
@@ -46,7 +46,7 @@ namespace HCB.UI
                 await Task.Delay(3000, ct);
             }
             catch (OperationCanceledException)
-            {              
+            {
                 _logger.Information("Die Loading Canceled");
             }
             catch (Exception ex)
@@ -106,6 +106,53 @@ namespace HCB.UI
                 _logger.Information("Wafer Loading End");
             }
         }
-        
+
+        private bool CheckDiePresentOnDTable()
+        {
+            // Implement the logic to check if the die is present on the D-Table.
+            // This could involve reading a sensor value or a status flag from the hardware.
+            // Throw an exception or return a boolean value based on the check.
+
+            var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+
+            return this._sequenceHelper.GetDigital(IoExtensions.DI_DTABLE_VAC_PRESSURE_SWITCH);
+        }
+
+        public async Task DiePickup(CancellationToken ct)
+        {
+            try
+            {
+                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Alarm == AlarmLevel.HEAVY)
+                {
+                    _logger.Warning("Cannot execute DiePickup: Sequence Service can not execute die pickup sequence");
+                    return;
+                }
+
+                // Check die is present on D-Table
+                if ()
+
+                _logger.Information("Die Pickup Start");
+                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // D Table Y축 (예시)
+                var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); // H Table Z축 (예시)
+                var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 (예시)
+
+                if (d_y == null) throw new Exception("D Table Y axis not found in motion device.");
+                await _sequenceHelper.MoveAsync(d_y.MotorNo, "PICKUP", ct);
+                await Task.Delay(3000, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("Die Pickup Canceled");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, ex.Message);
+            }
+            finally
+            {
+                _logger.Information("Die Pickup End");
+            }
+        }
     }
 }

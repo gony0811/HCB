@@ -18,7 +18,7 @@
 
     <Grid local:GridHelper.Columns="1*, 1*, 1*, 1*, 1*, 1*, 1*" local:GridHelper.Rows="1*, 1*">
         <Border Style="{StaticResource Cell}" Grid.RowSpan="2">
-            <TextBlock Text="{Binding TableName}"
+            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding TableName}"
                        FontSize="{Binding FontSize, ElementName=root}"
                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Border>
@@ -53,15 +53,15 @@
 
         <Border Style="{StaticResource Cell}" Grid.Column="5" Grid.Row="0">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="ENC: "
+                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="ENC: "
                            FontSize="{Binding FontSize, ElementName=root}"/>
-                <TextBlock Text="{Binding Enc}"
+                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" MinWidth="100" Text="{Binding Enc}"
                            FontSize="{Binding FontSize, ElementName=root}"/>
             </StackPanel>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="6" Grid.Row="0">
-            <Button Content="SERVO ON"
+            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="SERVO ON"
                     FontSize="{Binding FontSize, ElementName=root}"/>
         </Border>
 
@@ -86,15 +86,15 @@
         <Border Style="{StaticResource Cell}" Grid.Column="4" Grid.Row="1"/>
         <Border Style="{StaticResource Cell}" Grid.Column="5" Grid.Row="1">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Pos: "
+                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="POS: "
                            FontSize="{Binding FontSize, ElementName=root}"/>
-                <TextBlock Text="{Binding Pos}"
+                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" MinWidth="100" Text="{Binding Pos}"
                            FontSize="{Binding FontSize, ElementName=root}"/>
             </StackPanel>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="6" Grid.Row="1">
-            <Button Content="HOME 실행"
+            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="HOME 실행"
                     FontSize="{Binding FontSize, ElementName=root}"/>
         </Border>
 
