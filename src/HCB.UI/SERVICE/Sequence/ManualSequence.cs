@@ -118,6 +118,13 @@ namespace HCB.UI
             return this._sequenceHelper.GetDigital(IoExtensions.DI_DTABLE_VAC_PRESSURE_SWITCH);
         }
 
+        private bool CheckHeadPickerVacuum()
+        {
+            var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+
+            return this._sequenceHelper.GetDigital(IoExtensions.DI_HEADER_VAC_EJECTOR);
+        }
+
         public async Task DiePickup(CancellationToken ct)
         {
             try
@@ -125,11 +132,28 @@ namespace HCB.UI
                 if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Alarm == AlarmLevel.HEAVY)
                 {
                     _logger.Warning("Cannot execute DiePickup: Sequence Service can not execute die pickup sequence");
-                    return;
+                    // Alarm 정의 필요
+                    throw new Exception("ALARM");
                 }
 
-                // Check die is present on D-Table
-                if ()
+                // 현재 D-Table에 die가 하나라도 존재하는지 확인
+                // 진공 압력 On 여부 확인
+                if (!CheckDiePresentOnDTable())
+                {
+                    _logger.Error("D-Table에 DIE가 하나이상 존재하지 않습니다.");
+                    // Alarm 정의 필요
+                    throw new Exception("ALARM");
+                }
+
+                // 현재 Head의 picker에 die가 존재한다면 알람 발생
+                if (CheckHeadPickerVacuum())
+                {
+                    _logger.Error("Head가 이미 Picking 중입니다.");
+                    // Alarm 정의 필요
+                    throw new Exception("ALARM");
+                }
+
+
 
                 _logger.Information("Die Pickup Start");
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
