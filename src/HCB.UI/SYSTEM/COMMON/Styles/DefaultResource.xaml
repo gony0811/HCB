@@ -662,7 +662,7 @@
         <Setter Property="Foreground" Value="#E6FFFFFF"/>
     </Style>
 
-    <!-- UserControl.Resources 안의 Style 부분(수정된 부분만 발췌) -->
+    <!-- StepLampStyle - State 트리거를 enum으로 정확히 매칭 -->
     <Style x:Key="StepLampStyle" TargetType="local:StepLamp">
         <Setter Property="Width" Value="24"/>
         <Setter Property="Height" Value="24"/>
@@ -670,57 +670,60 @@
             <Setter.Value>
                 <ControlTemplate TargetType="local:StepLamp">
                     <Border x:Name="LampBorder"
-                        CornerRadius="1"
-                        Background="IndianRed"
-                        BorderBrush="#66000000"
-                        BorderThickness="0.1"
-                        Padding="4,1"
-                        Opacity="1">
-                    </Border>
+                             Width="{TemplateBinding Width}"
+                             Height="{TemplateBinding Height}"
+                             CornerRadius="1"
+                             Background="{TemplateBinding Background}" 
+                             BorderBrush="#66000000"
+                             BorderThickness="0.1"
+                             Padding="4,1"
+                             Opacity="1"/>
                     <ControlTemplate.Triggers>
-                        <!-- 이제 트리거는 템플릿 부모의 State 값을 참고합니다 -->
-                        <DataTrigger Binding="{Binding State, RelativeSource={RelativeSource TemplatedParent}}" Value="Idle">
-                            <Setter TargetName="LampBorder" Property="Background" Value="Indigo"/>
+                        <Trigger  Property="State" Value="{x:Static local:StepState.Idle}">
+                            <Setter TargetName="LampBorder" Property="Background" Value="Gray"/>
                             <Setter TargetName="LampBorder" Property="Opacity" Value="1"/>
-                            <DataTrigger.EnterActions>
+                            <Trigger.EnterActions>
                                 <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
-                            </DataTrigger.EnterActions>
-                        </DataTrigger>
+                            </Trigger.EnterActions>
+                        </Trigger>
 
-                        <DataTrigger Binding="{Binding State, RelativeSource={RelativeSource TemplatedParent}}" Value="InProcess">
-                            <Setter TargetName="LampBorder" Property="Background" Value="IndianRed"/>
-                            <DataTrigger.EnterActions>
+                        <!-- InProcess -> InProgress, enum으로 변경 -->
+                        <Trigger Property="State" Value="{x:Static local:StepState.InProgress}">
+                            <Setter TargetName="LampBorder" Property="Background" Value="OrangeRed"/>
+                            <Trigger.EnterActions>
                                 <BeginStoryboard x:Name="PauseBlinkStoryboard">
                                     <Storyboard RepeatBehavior="Forever" AutoReverse="True">
                                         <DoubleAnimation Storyboard.TargetName="LampBorder"
-                              Storyboard.TargetProperty="Opacity"
-                              From="1" To="0.3"
-                              Duration="0:0:0.5"/>
+                                   Storyboard.TargetProperty="Opacity"
+                                   From="1" To="0.3"
+                                   Duration="0:0:0.5"/>
                                     </Storyboard>
                                 </BeginStoryboard>
-                            </DataTrigger.EnterActions>
-                            <DataTrigger.ExitActions>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
                                 <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetName="LampBorder"
-                              Storyboard.TargetProperty="Opacity"
-                              To="1"
-                              Duration="0:0:0"/>
+                                   Storyboard.TargetProperty="Opacity"
+                                   To="1"
+                                   Duration="0:0:0"/>
                                     </Storyboard>
                                 </BeginStoryboard>
-                            </DataTrigger.ExitActions>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding State, RelativeSource={RelativeSource TemplatedParent}}" Value="Completed">
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <Trigger Property="State" Value="{x:Static local:StepState.Completed}">
                             <Setter TargetName="LampBorder" Property="Background" Value="LimeGreen"/>
                             <Setter TargetName="LampBorder" Property="Opacity" Value="1"/>
-                            <DataTrigger.EnterActions>
+                            <Trigger.EnterActions>
                                 <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
-                            </DataTrigger.EnterActions>
-                        </DataTrigger>
+                            </Trigger.EnterActions>
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
+
 </ResourceDictionary>

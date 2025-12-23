@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using HCB.Data.Entity.Type;
@@ -99,6 +101,57 @@ namespace HCB.UI
             StepWaferMicroAlignCompleted = StepState.Idle;
             StepWaferMicroAlignElapsedTime = "00:00:00";
 
+        }
+        
+        public async Task MeasureStepWaferCenterMove(CancellationToken ct)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            while (true)
+            {        
+                this.StepWaferCenterMoveElapsedTime = string.Format("{0:hh\\:mm\\:ss}", stopwatch.Elapsed);
+
+                if (ct.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                await Task.Delay(10);
+            }
+        }
+
+        public async Task MeasureStepWaferMacroAlign(CancellationToken ct)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            while (true)
+            {
+                this.StepWaferMacroAlignElapsedTime = string.Format("{0:hh\\:mm\\:ss}", stopwatch.Elapsed);
+
+                if (StepWaferMacroAlignCompleted == StepState.Completed)
+                {
+                    break;
+                }
+
+                await Task.Delay(10);
+            }
+        }
+
+        public async Task MeasureStepWaferMicroAlign(CancellationToken ct)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            while (true)
+            {
+                this.StepWaferMicroAlignElapsedTime = string.Format("{0:hh\\:mm\\:ss}", stopwatch.Elapsed);
+
+                if (StepWaferMicroAlignCompleted == StepState.Completed)
+                {
+                    break;
+                }
+
+                await Task.Delay(10);
+            }
         }
     }
 }

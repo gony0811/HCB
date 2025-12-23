@@ -44,15 +44,21 @@
                 <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="STEP PROCESS" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="4">
                     <StackPanel Orientation="Vertical">
                         <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                            <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted }" Margin="{StaticResource ControlMargin}"/>
+                            <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
                             <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Move Wafer Center" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
-                            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="50" Margin="{StaticResource ControlMargin}"/>
+                            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                         </WrapPanel>
 
                         <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                            <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferMacroAlignCompleted }" Margin="{StaticResource ControlMargin}"/>
+                            <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferMacroAlignCompleted}" Margin="{StaticResource ControlMargin}"/>
                             <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Wafer Macro Align" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
-                            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferMacroAlignElapsedTime}" Width="50" Margin="{StaticResource ControlMargin}"/>
+                            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferMacroAlignElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                        </WrapPanel>
+
+                        <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                            <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferMicroAlignCompleted }" Margin="{StaticResource ControlMargin}"/>
+                            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Wafer Micro Align" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferMicroAlignElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                         </WrapPanel>
                     </StackPanel>
                     
@@ -63,7 +69,7 @@
                         <telerik:HighlightTextBlock Text="START" Margin="{StaticResource ControlMargin}"/>
                     </telerik:RadButton>
 
-                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding StepStartCommand}">
+                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding StepStopCommand}">
                         <telerik:HighlightTextBlock Text="STOP" Margin="{StaticResource ControlMargin}"/>
                     </telerik:RadButton>
                 </StackPanel>

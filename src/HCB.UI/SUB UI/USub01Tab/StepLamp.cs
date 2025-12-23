@@ -14,11 +14,11 @@ namespace HCB.UI
 
         // State: 외부에서 바인딩할 속성 (enum/string/boolean 등 어떤 타입도 가능)
         public static readonly DependencyProperty StateProperty =
-            DependencyProperty.Register(nameof(State), typeof(object), typeof(StepLamp), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(State), typeof(StepState), typeof(StepLamp), new PropertyMetadata(StepState.Idle));
 
-        public object State
+        public StepState State
         {
-            get => GetValue(StateProperty);
+            get => (StepState)GetValue(StateProperty);
             set => SetValue(StateProperty, value);
         }
     }
