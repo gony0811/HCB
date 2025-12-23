@@ -20,17 +20,17 @@ namespace HCB.UI
     {
 
         private readonly AlarmService _alarmService;
-
+        private readonly DialogService _dialogService;
 
         [ObservableProperty] private ObservableCollection<AlarmDto> alarmList = new ObservableCollection<AlarmDto>();
 
         [ObservableProperty] private AlarmDto selectedAlarm;
 
         [ObservableProperty] private bool isBusy;
-        public USub05ViewModel(AlarmService alarmService)
+        public USub05ViewModel(AlarmService alarmService, DialogService dialogService)
         {
             _alarmService = alarmService;
-
+            _dialogService = dialogService;
             Initialize();
         }
 
@@ -98,11 +98,12 @@ namespace HCB.UI
                 foreach (var alarm in AlarmList)
                     alarm.IsModified = false;
 
-                //AlertModal.Ask(GetOwnerWindow(), "저장", "저장되었습니다.");
+                _dialogService.ShowMessage("저장", "알람이 저장되었습니다");
             }
             catch (Exception e)
             {
-                //AlertModal.Ask(GetOwnerWindow(), "저장 실패", $"저장 중 오류 발생:\n{e.Message}");
+
+                _dialogService.ShowMessage("저장 실패", $"저장 중 오류가 발생: \n{e.Message}");
             }
         }
 
@@ -121,27 +122,14 @@ namespace HCB.UI
 
                 SelectedAlarm = null;
                 SelectedAlarm = AlarmList.First(null);
-                //AlertModal.Ask(GetOwnerWindow(), "되돌리기", "모든 변경사항이 취소되었습니다.");
+
+                _dialogService.ShowMessage("되돌리기", "모든 변경사항이 취소되었습니다");
             }
             catch (Exception ex)
             {
-                //AlertModal.Ask(GetOwnerWindow(), "오류", $"되돌리기 중 오류 발생:\n{ex.Message}");
+                _dialogService.ShowMessage("오류", $"되돌리기 중 오류 발생:\n{ex.Message}");
             }
         }
 
-
-        //private static void CommitPendingEdits(IList<Alarm> items)
-        //{
-        //    var view = CollectionViewSource.GetDefaultView(items);
-        //    if (view is IEditableCollectionView v)
-        //    {
-        //        if (v.IsEditingItem) v.CommitEdit();
-        //        if (v.IsAddingNew) v.CommitNew();
-        //    }
-        //}
-
-        private static Window? GetOwnerWindow() =>
-            Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
-            ?? Application.Current?.MainWindow;
     }
 }

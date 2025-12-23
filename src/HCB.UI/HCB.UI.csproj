@@ -13,6 +13,7 @@
     <PackageReference Include="Autofac" Version="9.0.0" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="devexpress.wpf.controls" Version="23.1.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.11">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -58,6 +59,12 @@
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\CreateModal\PromptModal.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\MotionPositionWizard\MotionWizardWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\Pad\NumPadControl.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\Pad\UNmumPad.xaml">
@@ -196,11 +203,14 @@
   <Compile Include="SERVICE\InterlockService.cs" />
   <Compile Include="SERVICE\OperationService.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
+  <Compile Include="SUB UI\MotionPositionWizard\MotionWizardWindow.xaml.cs" />
+  <Compile Include="SUB UI\Pad\NumPadControl.xaml.cs" />
   <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
   <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
   <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\MotionWizardViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
   <Compile Include="SUB UI\PromptModal\ParameterCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\SplashView\SplashView.xaml.cs" />
@@ -318,10 +328,6 @@
     <None Include="DEVICE\dll\PowerPmac64.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="SUB UI\MotionPositionWizard\" />
   </ItemGroup>
 
 </Project>
