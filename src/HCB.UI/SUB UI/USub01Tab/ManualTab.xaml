@@ -41,7 +41,7 @@
                 </telerik:GroupBox>
             </Grid>
         </telerik:RadTabItem>
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="B-TABLE">
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="B-HEAD">
             <Grid local:GridHelper.Rows="Auto, Auto" local:GridHelper.Columns="1*, 1*, 1*">
                 
                 <local:DieAxisTable DataContext="{Binding BxAxisTable}" Grid.Column="0"></local:DieAxisTable>

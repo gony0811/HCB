@@ -56,28 +56,28 @@ namespace HCB.UI
             
             try
             {
-                var wizard = new MotionWizardWindow
-                {
-                    Owner = DialogService.GetOwnerWindow()
-                };
-                if (Application.Current.Dispatcher.CheckAccess())
-                {
-                    if (wizard.ShowDialog() == true)
-                    {
-                        return;
-                    }
-                }
-                else
-                {
-                    // UI 스레드에서 ShowDialog()를 호출하도록 처리
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        if (wizard.ShowDialog() == true)
-                        {
-                            // ... (결과 처리) ...
-                        }
-                    });
-                }
+                //var wizard = new MotionWizardWindow
+                //{
+                //    Owner = DialogService.GetOwnerWindow()
+                //};
+                //if (Application.Current.Dispatcher.CheckAccess())
+                //{
+                //    if (wizard.ShowDialog() == true)
+                //    {
+                //        return;
+                //    }
+                //}
+                //else
+                //{
+                //    // UI 스레드에서 ShowDialog()를 호출하도록 처리
+                //    Application.Current.Dispatcher.Invoke(() =>
+                //    {
+                //        if (wizard.ShowDialog() == true)
+                //        {
+                //            // ... (결과 처리) ...
+                //        }
+                //    });
+                //}
             }catch(Exception e)
             {
                

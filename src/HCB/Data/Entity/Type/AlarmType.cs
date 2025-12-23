@@ -2,7 +2,6 @@
 {
     public enum AlarmLevel
     {
-        NO_ALARM = 0,
         LIGHT = 1,      // 설비 가동은 하지만 추후 문제가 발생할 가능성이 있는 경우 발생시
         HEAVY = 2,      // 즉시 설비 가동을 중지해야하는 중대한 문제 발생시
     }

@@ -17,7 +17,7 @@ namespace HCB.UI
         {
             try
             {
-                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Auto || EQStatus.Alarm == AlarmLevel.HEAVY)
+                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Auto || EQStatus.Alarm == AlarmState.HEAVY)
                 {
                     _logger.Warning("Cannot execute DTableLoading: Sequence Service is not in Manual Standby Status.");
                     return;
@@ -65,7 +65,7 @@ namespace HCB.UI
         {
             try
             {
-                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Auto || EQStatus.Alarm == AlarmLevel.HEAVY)
+                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Auto || EQStatus.Alarm == AlarmState.HEAVY)
                 {
                     _logger.Warning("Cannot execute WTableLoading: Sequence Service is not in Manual Standby Status.");
                     return;
@@ -137,7 +137,7 @@ namespace HCB.UI
         {
             try
             {
-                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Alarm == AlarmLevel.HEAVY)
+                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Alarm == AlarmState.HEAVY)
                 {
                     _logger.Warning("Cannot execute DiePickup: Sequence Service can not execute die pickup sequence");
                     // Alarm 정의 필요

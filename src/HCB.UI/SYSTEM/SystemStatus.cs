@@ -37,7 +37,7 @@ namespace HCB.UI
     public class EQStatus
     {
         public static Availability Availability { get; set; } = Availability.Up;
-        public static AlarmLevel Alarm { get; set; } = AlarmLevel.NO_ALARM;
+        public static AlarmState Alarm { get; set; } = AlarmState.NO_ALARM;
         public static RunStop Run { get; set; } = RunStop.Ready;
         public static OperationMode Operation { get; set; } = OperationMode.Manual;
     }

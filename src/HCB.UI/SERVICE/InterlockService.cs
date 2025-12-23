@@ -34,7 +34,7 @@ namespace HCB.UI
 
 
                 // 1. 알람 발생시 운전 정지 및 장비 다운 처리
-                if (EQStatus.Alarm == AlarmLevel.HEAVY)
+                if (EQStatus.Alarm == AlarmState.HEAVY)
                 {
                     EQStatus.Run = RunStop.Stop;
                     EQStatus.Operation = OperationMode.Manual;

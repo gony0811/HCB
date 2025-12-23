@@ -19,7 +19,7 @@ namespace HCB.UI
             {
                 _logger.Information("Auto Run Start");
 
-                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Manual || EQStatus.Alarm == AlarmLevel.HEAVY)
+                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Manual || EQStatus.Alarm == AlarmState.HEAVY)
                 {
                     _logger.Warning("Cannot execute MachineStartAsync: Sequence Service is not in Auto Standby Status.");
                     return;

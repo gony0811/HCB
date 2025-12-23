@@ -37,9 +37,29 @@ namespace HCB.UI
             alarm.Status = AlarmStatus.SET;
             await this.UpdateAlarm(alarm);
 
-            EQStatus.Alarm = alarm.Level;
+            if (alarm.Level == AlarmLevel.HEAVY)
+            {
+                EQStatus.Alarm = AlarmState.LIGHT;
+            }
+            else if (alarm.Level == AlarmLevel.LIGHT)
+            {
+                EQStatus.Alarm = AlarmState.LIGHT;
+            }
+            else
+            {
+                EQStatus.Alarm = AlarmState.NO_ALARM;
+            }
+
+            
         }
 
+        /// <summary>
+        /// 알람을 하나만 리셋하는 경우가 있을까?
+        /// </summary>
+        /// <param name="alarmCode"></param>
+        /// <returns></returns>
+
+        //deprecated
         public async Task ResetAlarm(string alarmCode)
         {
             var alarms = await this.GetAlarmList();
@@ -48,6 +68,11 @@ namespace HCB.UI
             if (alarm == null) return;
             alarm.Status = AlarmStatus.RESET;
             await this.UpdateAlarm(alarm);
+
+            if (alarms.Count == 0)
+            {
+                EQStatus.Alarm = AlarmState.NO_ALARM;
+            }
         }
 
         public async Task ResetAllAlarms()
@@ -58,7 +83,10 @@ namespace HCB.UI
             {
                 alarm.Status = AlarmStatus.RESET;
             }
+
             await this.UpdateAlarm(alarms);
+
+            EQStatus.Alarm = AlarmState.NO_ALARM;
         }
 
         // 전체 알람 조회 ( 정렬 : 레벨순 ) 

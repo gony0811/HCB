@@ -21,7 +21,7 @@ namespace HCB.UI
         private RunStop runStop;
 
         [ObservableProperty]
-        private AlarmLevel alarmLevel;
+        private AlarmState alarm;
 
         [ObservableProperty]
         private Availability availability;
@@ -33,14 +33,14 @@ namespace HCB.UI
         {
             IsMachineInitialized = false;
             RunStop = RunStop.Stop;
-            AlarmLevel = AlarmLevel.NO_ALARM;
+            Alarm = AlarmState.NO_ALARM;
             Availability = Availability.Up;
             OperationMode = OperationMode.Manual;
 
             sequenceService.StatusChanged += (s, e) =>
             {
                 RunStop = e.RunStop;
-                AlarmLevel = e.AlarmLevel;
+                Alarm = e.Alarm;
                 Availability = e.Availability;
                 OperationMode = e.Mode;
             };

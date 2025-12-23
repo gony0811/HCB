@@ -53,8 +53,10 @@ namespace HCB.UI
         {
             AlarmDto alarm = new AlarmDto
             {
+                Name = "Undefined Alarm",
+                Code = "E0000",
                 Enabled = true,
-                Level = AlarmLevel.Light,
+                Level = AlarmLevel.LIGHT,
                 IsModified = true
             };
 
@@ -121,7 +123,12 @@ namespace HCB.UI
                     AlarmList.Add(dto);
 
                 SelectedAlarm = null;
-                SelectedAlarm = AlarmList.First(null);
+
+                if (AlarmList.Count > 0)
+                {
+                    SelectedAlarm = AlarmList.First();
+                }
+                
 
                 _dialogService.ShowMessage("되돌리기", "모든 변경사항이 취소되었습니다");
             }

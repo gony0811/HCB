@@ -22,7 +22,7 @@ namespace HCB.UI
         {
             try
             {
-                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Manual || EQStatus.Alarm == AlarmLevel.HEAVY)
+                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Manual || EQStatus.Alarm == AlarmState.HEAVY)
                 {
                     this._logger.Warning("MachineInitAsync를 실행할 수 없습니다: 시퀀스 서비스가 자동 대기 상태가 아닙니다.");
                     return;

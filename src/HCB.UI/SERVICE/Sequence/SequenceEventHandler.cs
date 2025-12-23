@@ -14,14 +14,14 @@ namespace HCB.UI
         public OperationMode Mode { get; private set; }
         public Availability Availability { get; private set; }
         public RunStop RunStop { get; private set; }
-        public AlarmLevel AlarmLevel { get; private set; }
+        public AlarmState Alarm { get; private set; }
 
-        public StatusChangedEventArgs(OperationMode mode, Availability availability, RunStop runStop, AlarmLevel alarmLevel)
+        public StatusChangedEventArgs(OperationMode mode, Availability availability, RunStop runStop, AlarmState alarmState)
         {
             Mode = mode;
             Availability = availability;
             RunStop = runStop;
-            AlarmLevel = alarmLevel;
+            Alarm = alarmState;
 
         }
     }
