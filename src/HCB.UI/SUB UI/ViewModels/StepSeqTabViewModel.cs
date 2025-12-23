@@ -6,9 +6,11 @@ namespace HCB.UI
     [ViewModel(Lifetime.Singleton)]
     public class StepSeqTabViewModel : ObservableObject
     {
-        public StepSeqTabViewModel() 
+        public SequenceServiceVM SequenceServiceVM { get; }
+        public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM) 
         {
-            
+            this.SequenceServiceVM = sequenceServiceVM;
+
         }
     }
 }

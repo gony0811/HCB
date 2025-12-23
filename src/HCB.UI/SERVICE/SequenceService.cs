@@ -18,18 +18,18 @@ namespace HCB.UI
         private ILogger _logger;
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
-        //private readonly SequenceServiceVM _sequenceServiceVM;
+        private readonly SequenceServiceVM _sequenceServiceVM;
         private readonly Timer _timer;
         private readonly bool _simulation;
 
         private CancellationToken _stopToken = CancellationToken.None;
 
-        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions)
+        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, SequenceServiceVM sequenceServiceVM)
         {
             _logger = logger.ForContext<SequenceService>();
             _deviceManager = deviceManager;
             _sequenceHelper = sequenceHelper;
-            //_sequenceServiceVM = sequenceServiceVM;
+            _sequenceServiceVM = sequenceServiceVM;
             _simulation = dataOptions.Simulation;
             // 디바이스 데이터 폴링 타이머 설정 (100ms 주기)
             _timer = new Timer(async _ => await DeviceDataPolling(CancellationToken.None), null, Timeout.Infinite, Timeout.Infinite);
