@@ -12,7 +12,7 @@ namespace HCB.UI
         [ObservableProperty] private string name;
         [ObservableProperty] private string description;
         [ObservableProperty] private string action;
-        [ObservableProperty] private AlarmLevel level = AlarmLevel.Light;
+        [ObservableProperty] private AlarmLevel level = AlarmLevel.LIGHT;
         [ObservableProperty] private AlarmStatus status = AlarmStatus.RESET;
         [ObservableProperty] private bool enabled = true;
         [ObservableProperty] private DateTime? lastRaisedAt;

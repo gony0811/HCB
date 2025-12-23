@@ -421,7 +421,7 @@ namespace HCB.Data
             e.Property(x => x.Level)
                 .HasConversion<int>()
                 .HasColumnType("INTEGER")
-                .HasDefaultValue(AlarmLevel.Light);
+                .HasDefaultValue(AlarmLevel.LIGHT);
 
             e.Property(x => x.Status)
                 .HasConversion<int>()

@@ -33,7 +33,7 @@ namespace HCB.UI
         {
             IsMachineInitialized = false;
             RunStop = RunStop.Stop;
-            AlarmLevel = AlarmLevel.Normal;
+            AlarmLevel = AlarmLevel.NO_ALARM;
             Availability = Availability.Up;
             OperationMode = OperationMode.Manual;
 

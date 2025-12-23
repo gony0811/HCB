@@ -8,6 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using Telerik.Windows.Controls;
+using Telerik.Windows.Documents.Flow.FormatProviders.Html;
 
 namespace HCB.UI
 {
@@ -18,6 +20,7 @@ namespace HCB.UI
         private LoadingTab loadingTab;
         private AutoTab autoTab;
         private ManualTab manualTab;
+        private StepSeqTab stepSeqTab;
         private USub02ViewModel recipeViewModel;
         #endregion
 
@@ -27,11 +30,12 @@ namespace HCB.UI
 
 
 
-        public USub01ViewModel(LoadingTab loadingTab, AutoTab autoTab, ManualTab manualTab, USub02ViewModel sub02ViewModel)
+        public USub01ViewModel(LoadingTab loadingTab, AutoTab autoTab, ManualTab manualTab, StepSeqTab stepSeqTab, USub02ViewModel sub02ViewModel)
         {
             this.loadingTab = loadingTab;
             this.autoTab = autoTab;
             this.manualTab = manualTab;
+            this.stepSeqTab = stepSeqTab;
             this.recipeViewModel = sub02ViewModel;
             SetTab(selectedTabKey);
 
@@ -48,7 +52,7 @@ namespace HCB.UI
                     CurrentTab = loadingTab; break;
                 case "AUTO": CurrentTab = autoTab; break;
                 case "MANUAL": CurrentTab = manualTab; break;
-                //case "STEP": CurrentTab = App.Container.Resolve<StepTab>(); break;
+                case "STEP": CurrentTab = stepSeqTab; break;
                 //case "VISION": CurrentTab = App.Container.Resolve<LoadingTab>(); break;
                 //case "CALIBRATION": CurrentTab = App.Container.Resolve<LoadingTab>(); break;
             }

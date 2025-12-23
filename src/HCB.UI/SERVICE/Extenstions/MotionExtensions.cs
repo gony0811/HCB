@@ -6,21 +6,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Telerik.Windows.Documents.Fixed.Model.Data;
 
 namespace HCB.UI
 {
-    public static class MotionExtensions
+    public static partial class MotionExtensions
     {
-        public const string PowerPmacDeviceName = "PMAC";
 
-        public const string D_Y = "D_Y";
-        public const string P_Y = "P_Y";
-        public const string W_Y = "W_Y";
-        public const string W_T = "W_T";
-        public const string H_X = "H_X";
-        public const string H_T = "H_T";
-        public const string H_Z = "H_Z";
-        public const string h_z = "h_z";
 
         public static async Task Servo(this ISequenceHelper helper, int motorNo, bool ready, CancellationToken ct)
         {
@@ -152,6 +144,32 @@ namespace HCB.UI
                 return;
             }
 
+            await axis.Move(MoveType.Absolute, jerk: 100, position.Speed, position.Position);
+
+            await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
+
+            await helper.WaitUntilAsync(
+                () => axis.InPosition,
+                10000,
+                ct,
+                $"Axis {axis.Name} Move to {positionName} Timeout"
+            );
+        }
+
+        public static async Task MoveAsync(this ISequenceHelper helper, string motorName, string positionName, CancellationToken ct)
+        {
+            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByName(motorName);
+            var position = axis.PositionList.FirstOrDefault(p => p.Name == positionName);
+            if (axis == null || position == null)
+            {
+                helper.Log(LogLevel.Critical, $"Axis with Name {motorName} or Position {positionName} not found.");
+                return;
+            }
+            if (helper.IsSimulation)
+            {
+                helper.Log(LogLevel.Information, $"[Simulation] Axis {axis.Name} Move to {positionName} at Speed {position.Speed}, Position {position.Position}");
+                return;
+            }
             await axis.Move(MoveType.Absolute, jerk: 100, position.Speed, position.Position);
 
             await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed

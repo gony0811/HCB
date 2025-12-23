@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -125,7 +126,14 @@ namespace HCB.UI
             return this._sequenceHelper.GetDigital(IoExtensions.DI_HEADER_VAC_EJECTOR);
         }
 
-        public async Task DiePickup(CancellationToken ct)
+
+        /// <summary>
+        /// Die 픽업 시퀀스
+        /// </summary>
+        /// <param name="index">Die가 위치한 위치 인덱스 (1 ~ 9)</param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task DiePickup(int index, CancellationToken ct)
         {
             try
             {
@@ -153,17 +161,33 @@ namespace HCB.UI
                     throw new Exception("ALARM");
                 }
 
-
-
                 _logger.Information("Die Pickup Start");
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // D Table Y축 (예시)
-                var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); // H Table Z축 (예시)
-                var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 (예시)
 
-                if (d_y == null) throw new Exception("D Table Y axis not found in motion device.");
-                await _sequenceHelper.MoveAsync(d_y.MotorNo, "PICKUP", ct);
-                await Task.Delay(3000, ct);
+                // Picking 대상 Die가 위치한 Y 축 이동
+                var diePositionName = $"DIE_{index}_PICK";
+
+                if (_sequenceHelper.GetDigital(IoExtensions.DO_DTABLE_VAC_1_ON) == false)
+                {
+                    _logger.Error("D-Table {0}번에 DIE가 존재하지 않습니다.");
+                    // Alarm 정의 필요
+                    throw new Exception("ALARM");
+                }
+
+                var device = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+                await _sequenceHelper.MoveAsync(MotionExtensions.D_Y, diePositionName, ct);
+
+                await Task.WhenAll(
+                    _sequenceHelper.MoveAsync(MotionExtensions.H_Z, MotionExtensions.READY_POSITION, ct),
+                    _sequenceHelper.MoveAsync(MotionExtensions.h_z, MotionExtensions.READY_POSITION, ct)
+                );
+
+
+
+                await Task.WhenAll(
+                    _sequenceHelper.MoveAsync(MotionExtensions.H_X, diePositionName, ct),
+                    _sequenceHelper.MoveAsync(MotionExtensions.D_Y, diePositionName, ct)
+                );   
             }
             catch (OperationCanceledException)
             {

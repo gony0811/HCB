@@ -21,12 +21,23 @@ namespace HCB.UI
 
         private readonly AlarmService _alarmService;
 
+        [ObservableProperty] public string alarmName;
 
-        [ObservableProperty] private ObservableCollection<AlarmDto> alarmList = new ObservableCollection<AlarmDto>();
+        [ObservableProperty] public bool enabled;
 
-        [ObservableProperty] private AlarmDto selectedAlarm;
+        [ObservableProperty] public string alarmCode;
 
-        [ObservableProperty] private bool isBusy;
+        [ObservableProperty] public AlarmLevel alarmLevel;
+
+        [ObservableProperty] public string description;
+
+        [ObservableProperty] public string action;
+
+        [ObservableProperty] public ObservableCollection<AlarmDto> alarmList = new ObservableCollection<AlarmDto>();
+
+        [ObservableProperty] public AlarmDto selectedAlarm;
+
+        [ObservableProperty] public bool isBusy;
         public USub05ViewModel(AlarmService alarmService)
         {
             _alarmService = alarmService;
@@ -53,9 +64,11 @@ namespace HCB.UI
         {
             AlarmDto alarm = new AlarmDto
             {
-                Enabled = true,
-                Level = AlarmLevel.Light,
-                IsModified = true
+                Name = "New alarm",
+                Code = "E0000",
+                Enabled = Enabled,
+                Status = AlarmStatus.RESET,
+                Level = AlarmLevel.LIGHT,
             };
 
             AlarmList.Add(alarm);

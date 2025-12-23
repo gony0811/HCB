@@ -81,6 +81,9 @@
   <Page Include="SUB UI\Title\TitleBar.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\USub01Tab\StepSeqTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub08Tab\IoDeviceView.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -184,6 +187,7 @@
   <Compile Include="MAIN UI\ViewModels\USub06ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub07ViewModel.cs" />
   <Compile Include="SERVICE\Extenstions\IoExtensions.cs" />
+  <Compile Include="SERVICE\Extenstions\MotionConstants.cs" />
   <Compile Include="SERVICE\Extenstions\MotionExtensions.cs" />
   <Compile Include="SERVICE\Interface\ISequenceHelper.cs" />
   <Compile Include="SERVICE\Helper\SequenceHelper.cs" />
@@ -202,6 +206,7 @@
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
   <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
   <Compile Include="SUB UI\PromptModal\ParameterCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\SplashView\SplashView.xaml.cs" />

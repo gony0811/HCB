@@ -27,10 +27,17 @@ namespace HCB.UI
         Auto
     }
 
+    public enum AlarmState
+    {
+        NO_ALARM,
+        LIGHT,
+        HEAVY
+    }
+
     public class EQStatus
     {
         public static Availability Availability { get; set; } = Availability.Up;
-        public static AlarmLevel Alarm { get; set; } = AlarmLevel.Normal;
+        public static AlarmLevel Alarm { get; set; } = AlarmLevel.NO_ALARM;
         public static RunStop Run { get; set; } = RunStop.Ready;
         public static OperationMode Operation { get; set; } = OperationMode.Manual;
     }
