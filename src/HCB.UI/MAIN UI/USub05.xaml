@@ -13,10 +13,9 @@
       Title="에러 목록">
     <Page.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/SYSTEM/Common/Styles/DefaultResource.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-            <CollectionViewSource x:Key="AlarmsSource" Source="{Binding AlarmList}" />
+            <CollectionViewSource x:Key="AlarmsSource"
+                                    Source="{Binding DataContext.AlarmList,
+                                             RelativeSource={RelativeSource AncestorType=Page}}" />
             <CompositeCollection x:Key="AlamsWithAdder">
                 <CollectionContainer Collection="{Binding Source={StaticResource AlarmsSource}}" />
                 <sys:String>__ADD__</sys:String>
@@ -32,7 +31,7 @@
         </ResourceDictionary>
     </Page.Resources>
     <!-- 에러 리스트 화면 -->
-    <Border Style="{StaticResource Panel.Radius5}">
+    <Border>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="0.65*"/>
@@ -51,53 +50,39 @@
                     <RowDefinition Height="Auto"></RowDefinition>
                 </Grid.RowDefinitions>
                 <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="알람 목록">
-                    <telerik:RadGridView
-                            x:Name="AlarmGrid"
-                            Style="{StaticResource RadGridViewStyle}"
-                            ShowGroupPanel="False"
-                            FontSize="18"
-                            ItemsSource="{Binding Source={StaticResource AlamsWithAdder}}"
-                            SelectedItem="{Binding SelectedAlarm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            AutoGenerateColumns="False"
-                            IsReadOnly="True"
-                            VirtualizingPanel.IsVirtualizing="True"
-                            VirtualizingPanel.VirtualizationMode="Recycling"
-                            EnableRowVirtualization="True"
-                            ScrollViewer.CanContentScroll="True"
-                            CanUserSortColumns="False">
-
-                        <telerik:RadGridView.Columns>
-                            <telerik:GridViewDataColumn Header="코드" DataMemberBinding="{Binding DataContext.AlarmCode}" Width="100" IsReadOnly="True"/>
-                            <telerik:GridViewDataColumn Header="알람 내용" DataMemberBinding="{Binding DataContext.AlarmName}" Width="2*"/>
-                        </telerik:RadGridView.Columns>
-
-                        <telerik:RadGridView.RowStyle>
-                            <Style TargetType="telerik:GridViewRow">
-                                <Setter Property="Focusable" Value="False"/>
-                                <Style.Triggers>
-                                    <!-- 아이템이 문자열 "__ADD__"이면 플러스 행으로 렌더 -->
-                                    <DataTrigger Binding="{Binding}" Value="__ADD__">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="telerik:GridViewRow">
-                                                    <Border Background="Transparent" Padding="6">
-                                                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="➕  새 알람 추가"
-                                                                HorizontalAlignment="Center"
-                                                                Padding="12,6"
-                                                                Focusable="False"   
-                                                                Command="{Binding DataContext.CreateAlarmCommand,
-                                                                  RelativeSource={RelativeSource AncestorType=telerik:RadGridView}}"/>
-                                                    </Border>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <!-- 클릭 시 행 선택이 바뀌지 않도록(대부분 케이스에서 충분) -->
-                                        <Setter Property="IsHitTestVisible" Value="True"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </telerik:RadGridView.RowStyle>
-                    </telerik:RadGridView>
+                    <Grid Margin="0,8,8,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <telerik:RadGridView
+                                x:Name="AlarmGrid"
+                                Style="{StaticResource RadGridViewStyle}"
+                                ShowGroupPanel="False"
+                                FontSize="18"
+                                ItemsSource="{Binding AlarmList}"
+                                SelectedItem="{Binding SelectedAlarm, Mode=TwoWay}"
+                                AutoGenerateColumns="False"
+                                IsReadOnly="True"
+                                VirtualizingPanel.IsVirtualizing="True"
+                                VirtualizingPanel.VirtualizationMode="Recycling"
+                                EnableRowVirtualization="True"
+                                ScrollViewer.CanContentScroll="True"
+                                Margin="0,8,8,0"
+                                CanUserSortColumns="False">
+                            <telerik:RadGridView.Columns>
+                                <telerik:GridViewDataColumn Header="코드" DataMemberBinding="{Binding Code}" Width="100"/>
+                                <telerik:GridViewDataColumn Header="알람 내용" DataMemberBinding="{Binding Name}" Width="2*"/>
+                            </telerik:RadGridView.Columns>
+                        </telerik:RadGridView>
+                        <Button Grid.Row="1"
+                                Content="+ 알람 생성"
+                                Command="{Binding CreateAlarmCommand}"
+                                Height="45"
+                                Margin="0,2,0,0"
+                                HorizontalContentAlignment="Center"/>
+                    </Grid>
+                    
                 </telerik:GroupBox>
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                     <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="되돌리기" Width="90" Height="30" Command="{Binding DiscardCommand}" />
@@ -115,14 +100,14 @@
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0" CornerRadius="5" Padding="12">
                             <StackPanel HorizontalAlignment="Left">
-                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Alarm Code"/>
-                                <telerik:RadWatermarkTextBox Style="{StaticResource RadWatermarkTextBoxStyle}" MinWidth="100" Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></telerik:RadWatermarkTextBox>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Code"/>
+                                <telerik:RadWatermarkTextBox Style="{StaticResource RadWatermarkTextBoxStyle}" Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></telerik:RadWatermarkTextBox>
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="1" Background="{StaticResource Brush.Panel}" CornerRadius="5" Padding="12">
+                        <Border Grid.Column="1" CornerRadius="5" Padding="12">
                             <StackPanel HorizontalAlignment="Left">
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="알람 내용"/>
-                                <telerik:RadWatermarkTextBox Style="{StaticResource RadWatermarkTextBoxStyle}" Text="{Binding DataContext.AlarmName, UpdateSourceTrigger=PropertyChanged}" Width="300" />
+                                <telerik:RadWatermarkTextBox Style="{StaticResource RadWatermarkTextBoxStyle}" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="300" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="2" CornerRadius="5" Padding="12">
@@ -130,7 +115,7 @@
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="레벨"/>
                                 <telerik:RadComboBox
                                     ItemsSource="{Binding Source={StaticResource AlarmLevelValues}}"
-                                    SelectedItem="{Binding Level}"
+                                    SelectedItem="{Binding Level, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     Width="160" Height="28" Style="{StaticResource RadComboBoxStyle}">
                                 </telerik:RadComboBox>
                             </StackPanel>
@@ -138,19 +123,19 @@
                     </Grid>
                     <StackPanel>
                             <TextBlock Text="사용 여부" Foreground="#E6FFFFFF"/>
-                        <CheckBox IsChecked="{Binding DataContext.Enabled}"></CheckBox>
+                            <CheckBox IsChecked="{Binding Enabled}"></CheckBox>
                     </StackPanel>
 
-                        <Border Background="{StaticResource Brush.Panel}" CornerRadius="5" Padding="12">
+                        <Border  CornerRadius="5" Padding="12">
                         <StackPanel HorizontalAlignment="Stretch">
-                            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="원인" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                            <telerik:RadWatermarkTextBox Text="{Binding DataContext.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource RadWatermarkTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"/>
+                            <TextBlock Text="원인" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"/>
                         </StackPanel>
                     </Border>
-                    <Border Background="{StaticResource Brush.Panel}" CornerRadius="5" Padding="12">
+                    <Border CornerRadius="5" Padding="12">
                         <StackPanel HorizontalAlignment="Stretch">
-                            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="해결 방법" FontWeight="SemiBold" Margin="0,12,0,4"/>
-                            <telerik:RadWatermarkTextBox Text="{Binding DataContext.Action, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource RadWatermarkTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="160"/>
+                            <TextBlock Text="해결 방법" FontWeight="SemiBold" Margin="0,12,0,4"/>
+                            <TextBox Text="{Binding Action, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="160"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

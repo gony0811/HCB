@@ -1,0 +1,103 @@
+﻿<UserControl x:Class="HCB.UI.NumPadControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/Common/Styles/NumPadStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border Style="{StaticResource MainPanel}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.35*"/>
+                <ColumnDefinition Width="0.65*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- INFO -->
+            <StackPanel Grid.Column="0" Margin="12" VerticalAlignment="Bottom">
+                <TextBlock Text="Current Value" Style="{StaticResource Tb}"/>
+                <TextBox Text="{Binding CurrentValue, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                         Style="{StaticResource ValueInfoBox}"/>
+
+                <TextBlock Text="Maximum Value" Style="{StaticResource Tb}"/>
+                <TextBox Text="{Binding MaximumValue, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                         Style="{StaticResource ValueInfoBox}"/>
+
+                <TextBlock Text="Minimum Value" Style="{StaticResource Tb}"/>
+                <TextBox Text="{Binding MinimumValue, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                         Style="{StaticResource ValueInfoBox}"/>
+            </StackPanel>
+
+            <!-- INPUT -->
+            <Grid Grid.Column="1" Margin="0,0,10,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="8"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBox Grid.Row="0"
+                         Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                         Style="{StaticResource ValueInfoBox}"
+                         FontSize="26"
+                         FontWeight="Bold"
+                         HorizontalContentAlignment="Right"
+                         Padding="8"/>
+
+                <!-- KEYPAD -->
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Row="0" Grid.Column="0" Content="7" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="0" Grid.Column="1" Content="8" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="0" Grid.Column="2" Content="9" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="0" Grid.Column="3" Content="C" Style="{StaticResource CommandButton}" Click="OnClearAll"/>
+
+                    <Button Grid.Row="1" Grid.Column="0" Content="4" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="1" Grid.Column="1" Content="5" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="1" Grid.Column="2" Content="6" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="1" Grid.Column="3" Content="⌫" Style="{StaticResource CommandButton}" Click="OnBackspace"/>
+
+                    <Button Grid.Row="2" Grid.Column="0" Content="1" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="2" Grid.Column="1" Content="2" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="2" Grid.Column="2" Content="3" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="2" Grid.Column="3" Content="−" Style="{StaticResource CommandButton}" Click="OnDecrement"/>
+
+                    <Button Grid.Row="3" Grid.Column="1" Content="0" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="3" Grid.Column="2" Content="." Style="{StaticResource CommandButton}" Click="OnDot"/>
+                    <Button Grid.Row="3" Grid.Column="3" Content="＋" Style="{StaticResource CommandButton}" Click="OnIncrement"/>
+
+                    <Button Grid.Row="4" Grid.Column="2"
+                            Content="Apply"
+                            Background="Green"
+                            Command="{Binding ApplyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding Value, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+
+                    <Button Grid.Row="4" Grid.Column="3"
+                            Content="Cancel"
+                            Background="Red"
+                            Command="{Binding CancelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

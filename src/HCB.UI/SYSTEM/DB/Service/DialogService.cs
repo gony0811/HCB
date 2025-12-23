@@ -79,7 +79,7 @@ namespace HCB.UI
             return modal.ResultValue;    
         }
 
-        private static Window GetOwnerWindow()
+        public static Window GetOwnerWindow()
         {
             var w = Application.Current != null
                 ? Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive) ?? Application.Current.MainWindow

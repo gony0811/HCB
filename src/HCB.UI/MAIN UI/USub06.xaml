@@ -64,7 +64,6 @@
                                 x:Name="PositionDataGrid"
                                 Style="{StaticResource RadGridViewStyle}"
                                 ItemsSource="{Binding SelectedMotion.PositionList}"
-                                SelectedItem="{Binding SelectedPosition, Mode=TwoWay}"
                                 FontSize="16"
                                 ShowGroupPanel="False"
                                 AutoGenerateColumns="False"

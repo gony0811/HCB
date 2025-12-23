@@ -4,6 +4,7 @@ using HCB.Data.Entity;
 using HCB.Data.Entity.Type;
 using HCB.Data.Repository;
 using HCB.IoC;
+using Microsoft.EntityFrameworkCore.Migrations;
 using SharpDX;
 using System;
 using System.Collections.ObjectModel;
@@ -48,53 +49,40 @@ namespace HCB.UI
 
         #region Position CRUD
         [RelayCommand]
-        public async Task PositionCreate()
+        public void PositionCreate()
         {
-            if(SelectedMotion == null) dialogService.ShowMessage("경고", "모션을 선택해주세요");
-
-            var position = new DMotionPosition();
-
-            bool? result = await dialogService.ShowEditDialog(position);
-            if (result == false) return;
+            // ... (생략) ...
 
             
             try
             {
-                var entity = new MotionPosition()
+                var wizard = new MotionWizardWindow
                 {
-                    MotionId = SelectedMotion.Id,
-                    Name = position.Name,
-                    Position = position.Position,
-                    Speed = position.Speed
+                    Owner = DialogService.GetOwnerWindow()
                 };
-
-                entity = await positionRepository.AddAsync(entity);
-                position.Id = entity.Id;
-                SelectedMotion.PositionList.Add(position);
-            }
-            catch(Exception e)
+                if (Application.Current.Dispatcher.CheckAccess())
+                {
+                    if (wizard.ShowDialog() == true)
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    // UI 스레드에서 ShowDialog()를 호출하도록 처리
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        if (wizard.ShowDialog() == true)
+                        {
+                            // ... (결과 처리) ...
+                        }
+                    });
+                }
+            }catch(Exception e)
             {
-                dialogService.ShowMessage("오류", $"저장중 에러 발생:\n {e}");
+               
             }
             
-
-
-            //bool? step1 = await dialogService.ShowEditDialog(name);
-
-            //if (step1 == false) return;
-
-            //double? result = dialogService.ShowEditNumDialog(0, SelectedMotion.LimitMinPosition, SelectedMotion.LimitMaxPosition);
-            //double? result = dialogService.ShowEditNumDialog(0, SelectedMotion.LimitMinPosition, SelectedMotion.LimitMaxSpeed);
-            //if (result == null) return;
-
-            //new DMotionPosition
-            //{
-            //    Name = name.Name,
-            //    Position = result.Value,
-            //    Speed = 
-            //};
-
-            //SelectedMotion.PositionList.Add();
         }
         #endregion
     }
