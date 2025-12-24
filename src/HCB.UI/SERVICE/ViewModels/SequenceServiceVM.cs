@@ -16,13 +16,13 @@ namespace HCB.UI
         Idle,
         InProgress,
         Completed,
+        Aborted,
+        Failed
     }
 
     [ViewModel(Lifetime.Singleton)]
     public partial class SequenceServiceVM : ObservableObject
     {
-
-
         /// <summary>
         /// 설비 초기화 여부 확인
         /// 설비를 초기화 해야 Auto 모드로 진입 가능
@@ -69,23 +69,13 @@ namespace HCB.UI
 
         /// <summary>
         /// SEMI-AUTO SEQUENCE : WAFER ALIGN 
-        /// STEP 2: Wafer Macro Align
+        /// STEP 2: Wafer Align
         /// Wafer Macro Align 완료 여부
         /// </summary>
         [ObservableProperty]
-        private StepState stepWaferMacroAlignCompleted;
+        private StepState stepWaferAlignCompleted;
         [ObservableProperty]
-        private string stepWaferMacroAlignElapsedTime;
-
-        /// <summary>
-        /// SEMI-AUTO SEQUENCE : WAFER ALIGN 
-        /// STEP 3 : Wafer Micro Align
-        /// Wafer Micro Align 완료 여부
-        /// </summary>
-        [ObservableProperty]
-        private StepState stepWaferMicroAlignCompleted;
-        [ObservableProperty]
-        private string stepWaferMicroAlignElapsedTime;
+        private string stepWaferAlignElapsedTime;
 
         /// <summary>
         /// SEMI-AUTO SEQUENCE : DIE ALIGN & PICUP
@@ -98,31 +88,75 @@ namespace HCB.UI
 
         /// <summary>
         /// SEMI-AUTO SEQUENCE : DIE ALIGN & PICUP
-        /// STEP 1 : Die macro Align
+        /// STEP 2 : Die Carrier Align
         /// </summary>
         [ObservableProperty]
-        private StepState stepDTableMacroAlignCompleted;
+        private StepState stepDieCarrierAlignCompleted;
         [ObservableProperty]
-        private string stepDTableMacroAlignElapsedTime;
+        private string stepDieCarrierAlignElapsedTime;
 
         /// <summary>
         /// SEMI-AUTO SEQUENCE : DIE ALIGN & PICUP
-        /// STEP 1 : Die micro Align
-        /// </summary>
-        [ObservableProperty]
-        private StepState stepDTableMicroAlignCompleted;
-        [ObservableProperty]
-        private string stepDTableMicroAlignElapsedTime;
-
-        /// <summary>
-        /// SEMI-AUTO SEQUENCE : DIE ALIGN & PICUP
-        /// STEP 1 : Die pickup
+        /// STEP 3 : Die pickup
         /// </summary>
         [ObservableProperty]
         private StepState stepDiePickUpCompleted;
         [ObservableProperty]
         private string stepDiePickUpElapsedTime;
 
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : FIDUCIAL MARK ALIGN
+        /// STEP 1 : Move to P-Table Center Position
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepMovePTableCenterCompleted;
+        [ObservableProperty]
+        private string stepMovePTableCenterElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : FIDUCIAL MARK ALIGN
+        /// STEP 2 : Left Fiducial Mark Align
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepLeftFiducialMarkAlignCompleted;
+        [ObservableProperty]
+        private string stepLeftFiducialMarkAlignElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : FIDUCIAL MARK ALIGN
+        /// STEP 3 : Right Fiducial Mark Align
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepRightFiducialMarkAlignCompleted;
+        [ObservableProperty]
+        private string stepRightFiducialMarkAlignElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : FIDUCIAL MARK ALIGN
+        /// STEP 4 : Calculate Fiducial Mark Position
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepCalculateFiducialMarkPositionCompleted;
+        [ObservableProperty]
+        private string stepCalculateFiducialMarkPositionElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : DIE MARK ALIGN
+        /// STEP 5 : Left Die Mark Detect
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepLeftDieMarkDetectCompleted;
+        [ObservableProperty]
+        private string stepLeftDieMarkDetectElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : DIE MARK ALIGN
+        /// STEP 6 : Right Die Mark Detect
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepRightDieMarkDetectCompleted;
+        [ObservableProperty]
+        private string stepRightDieMarkDetectElapsedTime;
 
         public SequenceServiceVM()
         {
@@ -132,64 +166,114 @@ namespace HCB.UI
             Availability = Availability.Up;
             OperationMode = OperationMode.Manual;
 
+        }
+
+        public void InitializeAllSteps()
+        {
             StepWaferCenterMoveCompleted = StepState.Idle;
             StepWaferCenterMoveElapsedTime = "00:00:00";
-            StepWaferMacroAlignCompleted = StepState.Idle;
-            StepWaferMacroAlignElapsedTime = "00:00:00";
-            StepWaferMicroAlignCompleted = StepState.Idle;
-            StepWaferMicroAlignElapsedTime = "00:00:00";
+            StepWaferAlignCompleted = StepState.Idle;
+            StepWaferAlignElapsedTime = "00:00:00";
+            StepDTableCenterPositionMoveCompleted = StepState.Idle;
+            StepDTableCenterPositionMoveElapsedTime = "00:00:00";
+            StepDieCarrierAlignCompleted = StepState.Idle;
+            StepDieCarrierAlignElapsedTime = "00:00:00";
+            StepDiePickUpCompleted = StepState.Idle;
+            StepDiePickUpElapsedTime = "00:00:00";
+            StepMovePTableCenterCompleted = StepState.Idle;
+            StepMovePTableCenterElapsedTime = "00:00:00";
+            StepLeftFiducialMarkAlignCompleted = StepState.Idle;
+            StepLeftFiducialMarkAlignElapsedTime = "00:00:00";
+            StepRightFiducialMarkAlignCompleted = StepState.Idle;
+            StepRightFiducialMarkAlignElapsedTime = "00:00:00";
+            StepCalculateFiducialMarkPositionCompleted = StepState.Idle;
+            StepCalculateFiducialMarkPositionElapsedTime = "00:00:00";
+            StepLeftDieMarkDetectCompleted = StepState.Idle;
+            StepLeftDieMarkDetectElapsedTime = "00:00:00";
 
+            StepRightDieMarkDetectCompleted = StepState.Idle;
+            StepRightDieMarkDetectElapsedTime = "00:00:00";
         }
-        
-        public async Task MeasureStepWaferCenterMove(CancellationToken ct)
+
+        public async Task MeasureElapsedTime(Action<string> setElapsedTimeAction, CancellationToken ct)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            while (true)
-            {        
-                this.StepWaferCenterMoveElapsedTime = string.Format("{0:hh\\:mm\\:ss}", stopwatch.Elapsed);
-
-                if (ct.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                await Task.Delay(10);
-            }
-        }
-
-        public async Task MeasureStepWaferMacroAlign(CancellationToken ct)
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            while (true)
+            var stopwatch = Stopwatch.StartNew();
+            try
             {
-                this.StepWaferMacroAlignElapsedTime = string.Format("{0:hh\\:mm\\:ss}", stopwatch.Elapsed);
-
-                if (StepWaferMacroAlignCompleted == StepState.Completed)
+                while (!ct.IsCancellationRequested)
                 {
-                    break;
+                    setElapsedTimeAction(stopwatch.Elapsed.ToString(@"hh\:mm\:ss"));
+                    await Task.Delay(10, ct);
                 }
-
-                await Task.Delay(10);
             }
-        }
-
-        public async Task MeasureStepWaferMicroAlign(CancellationToken ct)
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            while (true)
+            catch (TaskCanceledException)
             {
-                this.StepWaferMicroAlignElapsedTime = string.Format("{0:hh\\:mm\\:ss}", stopwatch.Elapsed);
-
-                if (StepWaferMicroAlignCompleted == StepState.Completed)
-                {
-                    break;
-                }
-
-                await Task.Delay(10);
+                // 작업 취소는 정상적인 동작입니다.
+            }
+            finally
+            {
+                stopwatch.Stop();
             }
         }
+
+        public Task MeasureElapsedStepWaferCenterMove(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepWaferCenterMoveElapsedTime = elapsed, ct);
+        }
+
+        public Task MeasureElapsedStepWaferAlign(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepWaferAlignElapsedTime = elapsed, ct);
+        }
+
+        public Task MeasureElapsedStepDTableCenterPositionMove(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepDTableCenterPositionMoveElapsedTime = elapsed, ct);
+        }
+
+        public Task MeasureElapsedStepDieCarrierAlign(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepDieCarrierAlignElapsedTime = elapsed, ct);
+        }
+
+
+        public Task MeasureElapsedStepDiePickUp(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepDiePickUpElapsedTime = elapsed, ct);
+        }
+
+        public Task MeasureElapsedStepMovePTableCenter(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepMovePTableCenterElapsedTime = elapsed, ct);
+        }
+
+        public Task MeasureElapsedStepLeftFiducialMarkAlign(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepLeftFiducialMarkAlignElapsedTime = elapsed, ct);
+        }
+
+
+        public Task MeasureElapsedStepRightFiducialMarkAlign(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepRightFiducialMarkAlignElapsedTime = elapsed, ct);
+        }
+
+
+        public Task MeasureElapsedStepCalculateFiducialMarkPosition(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepCalculateFiducialMarkPositionElapsedTime = elapsed, ct);
+        }
+
+        public Task MeasureElapsedStepLeftDieMarkDetect(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepLeftDieMarkDetectElapsedTime = elapsed, ct);
+        }
+
+
+        public Task MeasureElapsedStepRightDieMarkDetect(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepRightDieMarkDetectElapsedTime = elapsed, ct);
+        }
+
     }
 }

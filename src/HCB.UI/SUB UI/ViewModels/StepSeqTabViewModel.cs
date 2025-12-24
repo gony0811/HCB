@@ -25,6 +25,14 @@ namespace HCB.UI
         {
             cts = new CancellationTokenSource();
             await SequenceService.StepMoveWaferCenter(cts.Token);
+
+            await SequenceService.StepWaferAlign(cts.Token);
+        }
+
+        [RelayCommand]  
+        private void StepStop()
+        {
+            cts?.Cancel();
         }
     }
 }
