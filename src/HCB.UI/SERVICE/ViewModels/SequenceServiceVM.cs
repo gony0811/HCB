@@ -58,7 +58,8 @@ namespace HCB.UI
 
 
         /// <summary>
-        /// STEP 1 : Wafer Align
+        /// SEMI-AUTO SEQUENCE : WAFER ALIGN
+        /// STEP 1 : Wafer Center Move
         /// Wafer Center Move 완료 여부
         /// </summary>
         [ObservableProperty]
@@ -67,7 +68,8 @@ namespace HCB.UI
         private string stepWaferCenterMoveElapsedTime;
 
         /// <summary>
-        /// STEP 1: Wafer Align
+        /// SEMI-AUTO SEQUENCE : WAFER ALIGN 
+        /// STEP 2: Wafer Macro Align
         /// Wafer Macro Align 완료 여부
         /// </summary>
         [ObservableProperty]
@@ -76,14 +78,50 @@ namespace HCB.UI
         private string stepWaferMacroAlignElapsedTime;
 
         /// <summary>
-        /// STEP 1 : Wafer Align
+        /// SEMI-AUTO SEQUENCE : WAFER ALIGN 
+        /// STEP 3 : Wafer Micro Align
         /// Wafer Micro Align 완료 여부
         /// </summary>
         [ObservableProperty]
         private StepState stepWaferMicroAlignCompleted;
-
         [ObservableProperty]
         private string stepWaferMicroAlignElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : DIE ALIGN & PICUP
+        /// STEP 1 : Die Center Position Move
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepDTableCenterPositionMoveCompleted;
+        [ObservableProperty]
+        private string stepDTableCenterPositionMoveElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : DIE ALIGN & PICUP
+        /// STEP 1 : Die macro Align
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepDTableMacroAlignCompleted;
+        [ObservableProperty]
+        private string stepDTableMacroAlignElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : DIE ALIGN & PICUP
+        /// STEP 1 : Die micro Align
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepDTableMicroAlignCompleted;
+        [ObservableProperty]
+        private string stepDTableMicroAlignElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : DIE ALIGN & PICUP
+        /// STEP 1 : Die pickup
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepDiePickUpCompleted;
+        [ObservableProperty]
+        private string stepDiePickUpElapsedTime;
 
 
         public SequenceServiceVM()
