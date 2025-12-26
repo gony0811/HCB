@@ -158,6 +158,51 @@ namespace HCB.UI
         [ObservableProperty]
         private string stepRightDieMarkDetectElapsedTime;
 
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : DIE MARK ALIGN
+        /// STEP 7 : Die Alignment Complete
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepDieAlignmentCompleted;
+        [ObservableProperty]
+        private string stepDieAlignmentElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : W-TABLE BONDING
+        /// STEP 1 : Move Bonding Position
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepMoveBondingPositionCompleted;
+        [ObservableProperty]
+        private string stepMoveBondingPositionElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : W-TABLE BONDING
+        /// STEP 1 : Move Bonding Position
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepWaferLogicMarkDetectingCompleted;
+        [ObservableProperty]
+        private string stepWaferLogicMarkDetectingElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : W-TABLE BONDING
+        /// STEP 2 : Die Final Align
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepDieFinalAlignCompleted;
+        [ObservableProperty]
+        private string stepDieFinalAlignElapsedTime;
+
+        /// <summary>
+        /// SEMI-AUTO SEQUENCE : W-TABLE BONDING
+        /// STEP 3 : Move Bonding Position
+        /// </summary>
+        [ObservableProperty]
+        private StepState stepBodingProcessCompleted;
+        [ObservableProperty]
+        private string stepBodingProcessElapsedTime;
+
         public SequenceServiceVM()
         {
             IsMachineInitialized = false;
@@ -170,16 +215,22 @@ namespace HCB.UI
 
         public void InitializeAllSteps()
         {
+            /// SEMI-AUTO SEQUENCE : WAFER ALIGN
             StepWaferCenterMoveCompleted = StepState.Idle;
             StepWaferCenterMoveElapsedTime = "00:00:00";
             StepWaferAlignCompleted = StepState.Idle;
             StepWaferAlignElapsedTime = "00:00:00";
+
+
+            /// SEMI-AUTO SEQUENCE : DIE ALIGN & PICUP
             StepDTableCenterPositionMoveCompleted = StepState.Idle;
             StepDTableCenterPositionMoveElapsedTime = "00:00:00";
             StepDieCarrierAlignCompleted = StepState.Idle;
             StepDieCarrierAlignElapsedTime = "00:00:00";
             StepDiePickUpCompleted = StepState.Idle;
             StepDiePickUpElapsedTime = "00:00:00";
+
+            /// SEMI-AUTO SEQUENCE : FIDUCIAL MARK ALIGN
             StepMovePTableCenterCompleted = StepState.Idle;
             StepMovePTableCenterElapsedTime = "00:00:00";
             StepLeftFiducialMarkAlignCompleted = StepState.Idle;
@@ -190,9 +241,20 @@ namespace HCB.UI
             StepCalculateFiducialMarkPositionElapsedTime = "00:00:00";
             StepLeftDieMarkDetectCompleted = StepState.Idle;
             StepLeftDieMarkDetectElapsedTime = "00:00:00";
-
             StepRightDieMarkDetectCompleted = StepState.Idle;
             StepRightDieMarkDetectElapsedTime = "00:00:00";
+            StepDieAlignmentCompleted = StepState.Idle;
+            StepDieAlignmentElapsedTime = "00:00:00";
+
+            /// SEMI-AUTO SEQUENCE : W-TABLE BONDING
+            StepMoveBondingPositionCompleted = StepState.Idle;
+            StepMoveBondingPositionElapsedTime = "00:00:00";
+            StepWaferLogicMarkDetectingCompleted = StepState.Idle;
+            StepWaferLogicMarkDetectingElapsedTime = "00:00:00";
+            StepDieFinalAlignCompleted = StepState.Idle;
+            StepDieFinalAlignElapsedTime = "00:00:00";
+            StepBodingProcessCompleted = StepState.Idle;
+            StepBodingProcessElapsedTime = "00:00:00";
         }
 
         public async Task MeasureElapsedTime(Action<string> setElapsedTimeAction, CancellationToken ct)

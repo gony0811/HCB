@@ -21,16 +21,15 @@ namespace HCB.UI
         }
 
         [RelayCommand]
-        private async Task StepStart()
+        private async Task Step1Start()
         {
             cts = new CancellationTokenSource();
             await SequenceService.StepMoveWaferCenter(cts.Token);
-
             await SequenceService.StepWaferAlign(cts.Token);
         }
 
         [RelayCommand]  
-        private void StepStop()
+        private void Step1Stop()
         {
             cts?.Cancel();
         }
