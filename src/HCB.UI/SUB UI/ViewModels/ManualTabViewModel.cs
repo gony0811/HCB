@@ -18,37 +18,26 @@ namespace HCB.UI
         [ObservableProperty]
         private DieAxisTableViewModel dyAxisTable = new DieAxisTableViewModel("D-Y Axis");
 
-        [ObservableProperty]
-        private MotorStatusTableViewModel dyMotorStatusTable = new MotorStatusTableViewModel("Die DY");
-
 
         // P-Table
         [ObservableProperty]
         private DieAxisTableViewModel pyAxisTable = new DieAxisTableViewModel("P-Y Axis");
 
-        [ObservableProperty]
-        private MotorStatusTableViewModel pyMotorStatusTable = new MotorStatusTableViewModel("P-Y");
-
 
 
         // B-Head
         [ObservableProperty] private DieAxisTableViewModel bxAxisTable = new DieAxisTableViewModel("B-X Axis");
-        [ObservableProperty] private MotorStatusTableViewModel bxMotorStatusTable = new MotorStatusTableViewModel("B-X");
 
 
         [ObservableProperty] private DieAxisTableViewModel bz1AxisTable = new DieAxisTableViewModel("B-Z1 Axis");
-        [ObservableProperty] private MotorStatusTableViewModel bz1MotorStatusTable = new MotorStatusTableViewModel("B-Z1");
 
         [ObservableProperty] private DieAxisTableViewModel bz2AxisTable = new DieAxisTableViewModel("B-Z2 Axis");
 
-        [ObservableProperty] private MotorStatusTableViewModel bz2MotorStatusTable = new MotorStatusTableViewModel("B-Z2");
 
         // W-Table
         [ObservableProperty] private DieAxisTableViewModel wyAxisTable = new DieAxisTableViewModel("W-Y Axis");
-        [ObservableProperty] private MotorStatusTableViewModel wyMotorStatusTable = new MotorStatusTableViewModel("W-Y");
 
         [ObservableProperty] private DieAxisTableViewModel wtAxisTable = new DieAxisTableViewModel("W-T Axis");
-        [ObservableProperty] private MotorStatusTableViewModel wtMotorStatusTable = new MotorStatusTableViewModel("W-T");
 
 
         [ObservableProperty] private bool isDieLoading;

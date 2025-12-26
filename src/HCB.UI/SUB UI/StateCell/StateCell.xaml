@@ -8,54 +8,26 @@
              x:Name="root"
              Background="Transparent">
 
-    <UserControl.Resources>
-        <!-- 상태 점 스타일 -->
-        <Style x:Key="DotStyle" TargetType="Ellipse">
-            <Setter Property="Width"  Value="{Binding DotSize, ElementName=root}"/>
-            <Setter Property="Height" Value="{Binding DotSize, ElementName=root}"/>
-            <Setter Property="Fill"   Value="#7F8C8D"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
+    <StackPanel Orientation="Horizontal"
+                Margin="6">
 
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding State, ElementName=root}" Value="Normal">
-                    <Setter Property="Fill" Value="#2ECC71"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding State, ElementName=root}" Value="Warning">
-                    <Setter Property="Fill" Value="#F4D03F"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding State, ElementName=root}" Value="Error">
-                    <Setter Property="Fill" Value="#E74C3C"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding State, ElementName=root}" Value="Offline">
-                    <Setter Property="Fill" Value="#95A5A6"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-    </UserControl.Resources>
+        <Ellipse Width="14"
+                 Height="14"
+                 Margin="0,0,6,0">
+            <Ellipse.Style>
+                <Style TargetType="Ellipse">
+                    <Setter Property="Fill" Value="#444"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsOn, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                     Value="True">
+                            <Setter Property="Fill" Value="#00E676"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Ellipse.Style>
+        </Ellipse>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="6"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- ● 점 -->
-            <Ellipse Grid.Column="0" Style="{StaticResource DotStyle}"/>
-
-            <!-- ● 라벨 -->
-            <TextBlock Grid.Column="2"
-                       VerticalAlignment="Center"
-                       FontSize="{Binding FontSize, ElementName=root}"  
-                       FontWeight="SemiBold"
-                       Foreground="{Binding TextBrush, ElementName=root}"
-                       TextTrimming="CharacterEllipsis"
-                       Text="{Binding Label, ElementName=root}" />
-        </Grid>
-    </Grid>
+        <TextBlock Text="{Binding Label, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                   Foreground="White"/>
+    </StackPanel>
 </UserControl>

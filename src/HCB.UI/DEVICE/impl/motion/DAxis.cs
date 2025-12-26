@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Entity;
 using HCB.Data.Entity.Type;
 using System;
@@ -7,6 +8,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace HCB.UI
 {
@@ -31,44 +33,85 @@ namespace HCB.UI
         [ObservableProperty] public ObservableCollection<DMotionParameter> parameterList = new ObservableCollection<DMotionParameter>();
         [ObservableProperty] public ObservableCollection<DMotionPosition> positionList = new ObservableCollection<DMotionPosition>();
 
-        public bool IsEnabled { get; set; }
-        public bool IsBusy { get; set; }
-        public bool IsError { get; set; }
-        public bool InPosition { get; set; }
-        public bool IsHome { get; set; }
-        public bool IsPlusLimit { get; set; }
-        public bool IsMinusLimit { get; set; }
-        public bool IsMotionDone { get; set; }
-        public bool IsHomeDone { get; set; }
-        public double CurrentSpeed { get; set; }
-        public double CommandPosition { get; set; }
-        public double CurrentPosition { get; set; }
+        [ObservableProperty] private bool isEnabled;
+        [ObservableProperty] private bool isBusy;
+        [ObservableProperty] private bool isError;
+        [ObservableProperty] private bool inPosition;
+        [ObservableProperty] private bool isHome;
+        [ObservableProperty] private bool isPlusLimit;
+        [ObservableProperty] private bool isMinusLimit;
+        [ObservableProperty] private bool isMotionDone;
+        [ObservableProperty] private bool isHomeDone;
+        [ObservableProperty] private double currentSpeed;
+        [ObservableProperty] private double commandPosition;
+        [ObservableProperty] private double currentPosition;
 
+
+        [RelayCommand]
         public async Task Home()
         {
-            string cmd = string.Format("ENABLE PLC {0:D}", HommingProgramNumber);
-            await Device.SendCommand(cmd);
-
-            Stopwatch timeout = new Stopwatch();
-
-            timeout.Start();
-
-            while (true)
+            try
             {
-                await Task.Delay(100);
+                string cmd = string.Format("ENABLE PLC {0:D}", HommingProgramNumber);
+                await Device.SendCommand(cmd);
 
-                if (IsHomeDone)
-                {
-                    return;
-                }
-                else if (timeout.ElapsedMilliseconds > HomeTimeout)
-                {
-                    cmd = string.Format("DISABLE PLC {0:D}", HommingProgramNumber);
-                    await Device.SendCommand(cmd);
-                    await MoveStop();
+                Stopwatch timeout = new Stopwatch();
 
-                    return;
+                timeout.Start();
+
+                while (true)
+                {
+                    await Task.Delay(100);
+
+                    if (IsHomeDone)
+                    {
+                        return;
+                    }
+                    else if (timeout.ElapsedMilliseconds > HomeTimeout)
+                    {
+                        cmd = string.Format("DISABLE PLC {0:D}", HommingProgramNumber);
+                        await Device.SendCommand(cmd);
+                        await MoveStop();
+
+                        return;
+                    }
                 }
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show($"에러: \n {e.Message}");
+            }
+            
+        }
+
+
+        [RelayCommand]
+        public async Task ServoOn()
+        {
+            if (Device?.IsConnected != true || Device?.IsEnabled != true)
+            {
+                return;
+            }
+
+            // 2. 현재 상태에 따른 명령 생성 및 사전 처리
+            string command = IsEnabled
+                ? $"#{MotorNo}J/"  // Servo On -> Off 시퀀스
+                : $"#{MotorNo}K";   // Servo Off -> On 시퀀스
+
+            if (IsEnabled)
+            {
+                IsHomeDone = false; 
+            }
+
+            try
+            {
+                await Device.SendCommand(command);
+            }
+            catch (Exception ex)
+            {
+                // 로그 기록 및 사용자 알림 (예시)
+                // logger.LogError(ex, "Servo Command 전송 실패");
+                // dialogService.ShowMessage("통신 에러", ex.Message);
             }
         }
 
@@ -138,5 +181,6 @@ namespace HCB.UI
                 return Task.CompletedTask;
             }
         }
+
     }
 }

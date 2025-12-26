@@ -24,31 +24,20 @@
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="1" Grid.Row="0">
-            <local:StateCell Label="HOME" 
-                             State="{Binding HomeState}"
-                             DotSize="{Binding FontSize}"
-                             FontSize="{Binding FontSize, ElementName=root}"/>
+            <local:StateCell Label="HOME" IsOn="False"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="2" Grid.Row="0">
             <local:StateCell Label="RDY" 
-                             State="{Binding RdyState}"
-                             DotSize="{Binding FontSize}"
-                             FontSize="{Binding FontSize, ElementName=root}"/>
+                             IsOn="False"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="3" Grid.Row="0">
-            <local:StateCell Label="ALM" 
-                             State="{Binding AlmState}"
-                             DotSize="{Binding FontSize}"
-                             FontSize="{Binding FontSize, ElementName=root}"/>
+            <local:StateCell Label="ALM" IsOn="False"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="4" Grid.Row="0">
-            <local:StateCell Label="INPO" 
-                             State="{Binding InpoState}"
-                             DotSize="{Binding FontSize}"
-                             FontSize="{Binding FontSize, ElementName=root}"/>
+            <local:StateCell Label="INPO" IsOn="False"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="5" Grid.Row="0">
@@ -66,21 +55,15 @@
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="1" Grid.Row="1">
-            <local:StateCell Label="N-LMT" 
-                             State="{Binding NlmtState}"
-                             FontSize="{Binding FontSize, ElementName=root}"/>
+            <local:StateCell Label="N-LMT" IsOn="False"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="2" Grid.Row="1">
-            <local:StateCell Label="ORG" 
-                             State="{Binding OrgState}"
-                             FontSize="{Binding FontSize, ElementName=root}"/>
+            <local:StateCell Label="ORG" IsOn="False"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="3" Grid.Row="1">
-            <local:StateCell Label="P-LMT" 
-                             State="{Binding PlmtState}"
-                             FontSize="{Binding FontSize, ElementName=root}"/>
+            <local:StateCell Label="P-LMT" IsOn="False"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="4" Grid.Row="1"/>

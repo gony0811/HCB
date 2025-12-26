@@ -64,17 +64,27 @@
                                 x:Name="PositionDataGrid"
                                 Style="{StaticResource RadGridViewStyle}"
                                 ItemsSource="{Binding SelectedMotion.PositionList}"
+                                SelectedItem="{Binding SelectedPosition, Mode=TwoWay}"
                                 FontSize="16"
                                 ShowGroupPanel="False"
                                 AutoGenerateColumns="False"
                                 IsReadOnly="True"
                                 CanUserDeleteRows="False"
                                 SelectionMode="Single"
-                                EnableRowVirtualization="True"
-                                EnableColumnVirtualization="True"
                                 GridLinesVisibility="None">
+                                <telerik:RadGridView.ContextMenu>
+                                    <ContextMenu DataContext="{Binding Path=PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
 
-                                
+                                        <MenuItem Header="수정"
+                                                  Command="{Binding PositionUpdateCommand}"
+                                                  CommandParameter="{Binding Path=PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+
+                                        <MenuItem Header="삭제"
+                                                  Command="{Binding PositionDeleteCommand}"
+                                                  CommandParameter="{Binding Path=PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    </ContextMenu>
+                                </telerik:RadGridView.ContextMenu>
+
                                 <telerik:RadGridView.Columns>
                                     <telerik:GridViewDataColumn Header="이름"
                                         DataMemberBinding="{Binding Name}"
@@ -105,62 +115,13 @@
 
                         <!-- 모터 상태 관리 -->
                         <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 관리" Grid.Row="0" Margin="10">
-                            <uc:MotorStateControl x:Name="MotorState"></uc:MotorStateControl>
+                            <local:MotorStateControl DataContext="{Binding SelectedMotion}" />
                         </telerik:GroupBox>
 
                         <!-- 모터 조작 -->
                         <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="조작" Grid.Row="1" Margin="10">
                             <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="0.7*"></ColumnDefinition>
-                                    <ColumnDefinition Width="0.3*"></ColumnDefinition>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <StackPanel Orientation="Horizontal" Margin="10">
-                                        <TextBox  Style="{StaticResource TextBox.Rounded.Panel}" Width="150" Margin="5,0,0,0"></TextBox>
-                                        <TextBlock Text="um" Margin="5,0,0,0"></TextBlock>
-                                    </StackPanel>
-
-                                    <!-- 조작 버튼 -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="0.3*"></ColumnDefinition>
-                                            <ColumnDefinition Width="0.4*"></ColumnDefinition>
-                                            <ColumnDefinition Width="0.3*"></ColumnDefinition>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"></RowDefinition>
-                                            <RowDefinition Height="Auto"></RowDefinition>
-                                            <RowDefinition Height="Auto"></RowDefinition>
-                                            <RowDefinition Height="Auto"></RowDefinition>
-                                        </Grid.RowDefinitions>
-                                        <Button Content="-1um" Grid.Column="0" Grid.Row="0" Margin="2" MinHeight="40"/>
-
-                                        <Button Content="-0.1um" Grid.Column="0" Grid.Row="1" Margin="2" />
-                                        <Button Content="-0.01um" Grid.Column="0" Grid.Row="2" Margin="2" />
-                                        <telerik:RadButton Style="{StaticResource Button.Circle.WithRing}" 
-                                                Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" 
-                                                Width="100" Height="100"></telerik:RadButton>
-
-                                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="1um" Grid.Column="2" Grid.Row="0" Margin="2" MinHeight="40"/>
-
-                                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="0.1um" Grid.Column="2" Grid.Row="1" Margin="2" />
-                                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="0.01um" Grid.Column="2" Grid.Row="2" Margin="2" />
-                                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="정지" Background="Red" Grid.Column="1" Grid.Row="2" Margin="2"/>
-                                    </Grid>
-                                </StackPanel>
-
-
-                                <Grid Grid.Column="1" VerticalAlignment="Top">
-                                    <!-- Speed -->
-                                    <uc:LabelSlider TitleLabel="속도" 
-                                                    Minimum="1" Maximum="100"
-                                                    Height="230"
-                                                    TickFrequency="1"
-                                                    IsSnapToTickEnabled="True"
-                                                    Value="{Binding Speed}"/>
-                                </Grid>
+                                <local:MotionMoveController DataContext="{Binding MotionMoveVM}"/>
                             </Grid>
                         </telerik:GroupBox>
                     </Grid>

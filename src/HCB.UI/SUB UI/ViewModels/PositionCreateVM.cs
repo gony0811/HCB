@@ -1,25 +1,27 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using HCB.Data.Entity;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace HCB.UI
 {
-    public partial class DMotionPosition : ObservableObject
+    public partial class PositionCreateVM : ObservableObject
     {
-        [ObservableProperty] private int id;
         [ObservableProperty] private string name;
-        [ObservableProperty] private double speed;
         [ObservableProperty] private double position;
-        [ObservableProperty] private IAxis parentMotion;
+        [ObservableProperty] private double speed;
 
-        public MotionPosition ToEntity()
+        public MotionPosition ToEntity(int motionId)
         {
             return new MotionPosition
             {
-                Id = this.Id,
-                MotionId = ParentMotion.Id,
                 Name = this.Name,
                 Position = this.Position,
                 Speed = this.Speed,
+                MotionId = motionId
             };
         }
     }

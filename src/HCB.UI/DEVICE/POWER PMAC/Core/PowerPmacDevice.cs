@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using HCB.Data.Entity.Type;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -8,9 +9,9 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
-using Serilog;
+using Telerik.Windows.Documents.Fixed.Model.Data;
 using Telerik.Windows.Documents.Flow.FormatProviders.Html;
+using static System.Net.WebRequestMethods;
 
 namespace HCB.UI
 {
@@ -28,6 +29,7 @@ namespace HCB.UI
         [ObservableProperty] private int port;
         [ObservableProperty] private MotionDeviceType motionDeviceType;
         [ObservableProperty] public ObservableCollection<IAxis> motionList = new ObservableCollection<IAxis>();
+        
         private ILogger logger;
         private uint uDeviceId;
 

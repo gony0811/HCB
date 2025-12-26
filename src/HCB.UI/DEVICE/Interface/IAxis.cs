@@ -37,6 +37,8 @@ namespace HCB.UI
         ObservableCollection<DMotionParameter> ParameterList { get; set; }
         ObservableCollection<DMotionPosition> PositionList { get; set; }
 
+        Task ServoOn();
+
         Task ServoReady(bool ready);    // 서보 온
 
         Task Move(MoveType moveType, double jerk, double velocity, double position);
