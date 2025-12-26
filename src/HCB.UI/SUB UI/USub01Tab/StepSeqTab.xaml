@@ -81,9 +81,9 @@
                             </WrapPanel>
 
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDTableAlignCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDieCarrierAlignCompleted}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Die Carrier Align" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDTableAlignElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDieCarrierAlignElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
 
 
@@ -143,9 +143,9 @@
                             </WrapPanel>
 
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepRightDieMarkDetectCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDieAlignmentCompleted}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Die Alignment" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepRightDieMarkDetectElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDieAlignmentElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                         </StackPanel>
 
@@ -165,24 +165,24 @@
                     <WrapPanel Orientation="Vertical">
                         <StackPanel Orientation="Vertical">
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDTableCenterPositionMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepMoveBondingPositionCompleted}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Move Bonding Position" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDTableCenterPositionMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepMoveBondingPositionElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDTableCenterPositionMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferLogicMarkDetectingCompleted}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Detecting Wafer Mark" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDTableCenterPositionMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferLogicMarkDetectingElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDTableCenterPositionMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDieFinalAlignCompleted}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Die Final Align" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDTableCenterPositionMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDieFinalAlignElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepBondingProcessCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepBodingProcessCompleted}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Bonding Process" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepStepBondingProcessMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepBodingProcessElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                         </StackPanel>
 

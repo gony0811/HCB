@@ -337,5 +337,30 @@ namespace HCB.UI
             return MeasureElapsedTime(elapsed => StepRightDieMarkDetectElapsedTime = elapsed, ct);
         }
 
+        public Task MeasureElapsedStepDieAlignment(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepDieAlignmentElapsedTime = elapsed, ct);
+        }
+
+        public Task MeasureElapsedStepMoveBondingPosition(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepMoveBondingPositionElapsedTime = elapsed, ct);
+        }
+
+        public Task MeasureElapsedStepWaferLogicMarkDetecting(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepWaferLogicMarkDetectingElapsedTime = elapsed, ct);
+        }
+
+        public Task MeasureElapsedStepDieFinalAlign(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepDieFinalAlignElapsedTime = elapsed, ct);
+        }
+
+        public Task MeasureElapsedStepBodingProcess(CancellationToken ct)
+        {
+            return MeasureElapsedTime(elapsed => StepBodingProcessElapsedTime = elapsed, ct);
+        }
+
     }
 }
