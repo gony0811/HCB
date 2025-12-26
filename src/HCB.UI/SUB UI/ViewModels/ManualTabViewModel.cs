@@ -4,6 +4,8 @@ using HCB.IoC;
 using System.Threading.Tasks;
 using Serilog;
 using System.Threading;
+using System.Linq;
+using System;
 
 namespace HCB.UI
 {
@@ -14,72 +16,61 @@ namespace HCB.UI
         private readonly SequenceHelper _sequenceHelper;
         private readonly SequenceService _sequenceService;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private DeviceManager deviceManager;
+
         // D-Table
         [ObservableProperty]
-        private DieAxisTableViewModel dyAxisTable = new DieAxisTableViewModel("D-Y Axis");
+        private IAxis? dyAxis = new DAxis { Name = "D-Y Axis" };
 
-
-        // P-Table
         [ObservableProperty]
-        private DieAxisTableViewModel pyAxisTable = new DieAxisTableViewModel("P-Y Axis");
+        private IAxis? pyAxis = new DAxis { Name = "P-Y Axis" };
 
 
+        [ObservableProperty]
+        private IAxis? bxAxis = new DAxis { Name = "B-X Axis" };
 
-        // B-Head
-        [ObservableProperty] private DieAxisTableViewModel bxAxisTable = new DieAxisTableViewModel("B-X Axis");
+        [ObservableProperty]
+        private IAxis? bz1Axis = new DAxis { Name = "B-Z1 Axis" };
 
+        [ObservableProperty]
+        private IAxis? bz2Axis = new DAxis { Name = "B-Z2 Axis" };
 
-        [ObservableProperty] private DieAxisTableViewModel bz1AxisTable = new DieAxisTableViewModel("B-Z1 Axis");
+        [ObservableProperty]
+        private IAxis? wyAxis = new DAxis { Name = "W-Y Axis" };
 
-        [ObservableProperty] private DieAxisTableViewModel bz2AxisTable = new DieAxisTableViewModel("B-Z2 Axis");
-
-
-        // W-Table
-        [ObservableProperty] private DieAxisTableViewModel wyAxisTable = new DieAxisTableViewModel("W-Y Axis");
-
-        [ObservableProperty] private DieAxisTableViewModel wtAxisTable = new DieAxisTableViewModel("W-T Axis");
-
+        [ObservableProperty]
+        private IAxis? wtAxis = new DAxis { Name = "W-T Axis" };
 
         [ObservableProperty] private bool isDieLoading;
         [ObservableProperty] private bool isWaferLoading;
 
         [ObservableProperty] private bool isDieStandby;
         [ObservableProperty] private bool isWaferStandby;
-        public ManualTabViewModel(ILogger logger, SequenceHelper sequenceHelper)
+        public ManualTabViewModel(ILogger logger, SequenceHelper sequenceHelper, DeviceManager deviceManager)
         {
             _logger = logger.ForContext<ManualTabViewModel>();
             _sequenceHelper = sequenceHelper;
+            this.deviceManager = deviceManager;
             Initialize();
         }
 
         private void Initialize()
         {
-            DyAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            DyAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
+            try
+            {
+                IMotionDevice pmac = deviceManager.GetDevice<IMotionDevice>("Pmac");
+                DyAxis = pmac.MotionList.FirstOrDefault(x => x.Name == "D-Y Axis");
+                PyAxis = pmac.MotionList.FirstOrDefault(x => x.Name == "P-Y Axis");
+                BxAxis = pmac.MotionList.FirstOrDefault(x => x.Name == "B-X Axis");
+                Bz1Axis = pmac.MotionList.FirstOrDefault(x => x.Name == "B-Z1 Axis");
+                Bz2Axis = pmac.MotionList.FirstOrDefault(x => x.Name == "B-Z2 Axis");
+                WyAxis = pmac.MotionList.FirstOrDefault(x => x.Name == "W-Y Axis");
+                WtAxis = pmac.MotionList.FirstOrDefault(x => x.Name == "W-T Axis");
+            }
+            catch(Exception e)
+            {
 
-
-            PyAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            PyAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
-
-
-            BxAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            BxAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
-
-
-            Bz1AxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            Bz1AxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
-
-
-            Bz2AxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            Bz2AxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
-
-
-            WyAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            WyAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
-
-
-            WtAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            WtAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
+            }
         }
 
         [RelayCommand]
