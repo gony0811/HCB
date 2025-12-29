@@ -88,6 +88,7 @@ namespace HCB.UI
         [RelayCommand]
         public async Task ServoOn()
         {
+            MessageBox.Show($"{Name} 서보온");
             if (Device?.IsConnected != true || Device?.IsEnabled != true)
             {
                 return;
@@ -151,7 +152,21 @@ namespace HCB.UI
 
         public Task JogMove(JogMoveType moveType, double jogSpeed)
         {
-            throw new NotImplementedException();
+            string cmd = $"{Name}, {moveType.ToString()}, JogSpeed: {jogSpeed}";
+            // Todo: 현재 테스트 용도로 MessageBox 사용중 실사용시 삭제
+            MessageBox.Show(cmd);
+            try
+            {
+                if (Device?.IsConnected == true && Device?.IsEnabled == true)
+                {
+                    return Device.SendCommand(cmd);
+                }
+            }
+            catch(Exception e)
+            {
+                
+            }
+            return Task.CompletedTask;
         }
 
         public Task MoveStop()

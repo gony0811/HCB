@@ -55,6 +55,14 @@ namespace HCB.UI
             MotionMoveVM.Axis = SelectedMotion;
 
         }
+        partial void OnSelectedMotionChanged(IAxis oldValue, IAxis newValue)
+        {
+            // 이전 축 정지 (안전)
+            //oldValue?.MoveStop();
+
+            // 새 축 연결
+            MotionMoveVM.Axis = newValue;
+        }
 
         public void Dispose()
         {

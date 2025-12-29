@@ -54,7 +54,7 @@ namespace HCB.UI
 
         [RelayCommand]
         public async Task JogStop()
-        {
+        { 
             if (Axis == null) return;
             try
             {

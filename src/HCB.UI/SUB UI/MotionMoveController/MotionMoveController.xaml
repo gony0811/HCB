@@ -76,7 +76,7 @@
                             <!-- 떼는 순간 -->
                             <i:EventTrigger EventName="PreviewMouseLeftButtonUp">
                                 <i:InvokeCommandAction
-                                    Command="{Binding JogMinusCommand}" />
+                                    Command="{Binding JogStopCommand}" />
                             </i:EventTrigger>
 
                             <!-- 버튼 밖으로 벗어났을 때 (중요) -->
