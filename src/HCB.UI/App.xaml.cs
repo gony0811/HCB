@@ -65,9 +65,12 @@ namespace HCB.UI
             SplashScreenUpdate("데이터베이스 연결 및 초기화...", 20);
             await StartUp.InitDatabaseAsync(_host);
 
-            SplashScreenUpdate("데이터베이스 연결 및 초기화 완료", 30);
             var recipeService = _host.Services.GetRequiredService<RecipeService>();
             await recipeService.Initialize();
+
+            var userService = _host.Services.GetRequiredService<UserService>();
+            await userService.InitializeAsync();
+            SplashScreenUpdate("데이터베이스 연결 및 초기화 완료", 30);
 
 
 

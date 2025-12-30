@@ -60,11 +60,13 @@ namespace HCB.UI
         {
             // TODO: 필요 시 유효성 검사(길이/정책 등)
             DialogResult = true;   // 모달 종료 + true 반환
+            this.Close();
         }
 
         private void OnCancel(object sender, RoutedEventArgs e)
         {
             DialogResult = false;  // 모달 종료 + false 반환
+            this.Close();
         }
     }
 }

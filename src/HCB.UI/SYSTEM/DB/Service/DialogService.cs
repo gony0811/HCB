@@ -1,90 +1,87 @@
 ﻿using HCB.IoC;
-using SharpDX;
-using System;
-using System.Collections.Generic;
+using HCB.UI;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Telerik.Windows.Controls;
-using Telerik.Windows.Controls.ColorEditor.Pad;
 
-namespace HCB.UI
+[Service(Lifetime.Singleton)]
+public class DialogService
 {
-    [Service(Lifetime.Singleton)]
-    public class DialogService
+    public DialogService() { }
+
+    public Task<bool?> ShowEditDialog(object vm)
     {
-        private Window Owner;
-        public DialogService()
+        var currentOwner = GetOwnerWindow(); 
+        var modal = new PromptModal
         {
-            Owner = GetOwnerWindow();
-        }
+            DataContext = vm,
+            Owner = currentOwner,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        return Task.FromResult(modal.ShowDialog());
+    }
 
-        public Task<bool?> ShowEditDialog(object vm)
+    public Task<bool?> ShowDetailEditModal(object vm, string header = "Edit", int width = 400, int height = 800)
+    {
+        var currentOwner = GetOwnerWindow();
+        var modal = new CreateModal
         {
-            var modal = new PromptModal
-            {
-                DataContext = vm
-            };
-            return Task.FromResult(modal.ShowDialog());
-        }
+            Header = header,
+            DataContext = vm,
+            Width = width,
+            Height = height,
+            Owner = currentOwner,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        return Task.FromResult(modal.ShowDialog());
+    }
 
-        public Task<bool?> ShowDetailEditModal(object vm, string header="Edit", int width=400, int height=800)
+    public void ShowMessage(string title, string content)
+    {
+        RadWindow.Alert(new DialogParameters
         {
-            var modal = new CreateModal
-            {
-                Header = header,
-                DataContext = vm,
-                Width = width,
-                Height = height,
-            };
-            return Task.FromResult(modal.ShowDialog());
-        }
+            Header = title,
+            Content = content,
+            Owner = GetOwnerWindow(), // 실시간 Owner 주입
+        });
+    }
 
-        public void ShowMessage(string title, string content)
+    public bool ShowConfirm(string title, string content)
+    {
+        bool result = false;
+        RadWindow.Confirm(new DialogParameters
         {
-            RadWindow.Alert(new DialogParameters
-            {
-                Header = title,
-                Content = content
-            });
-        }
+            Header = title,
+            Content = content,
+            Owner = GetOwnerWindow(),
+            Closed = (s, e) => { result = e.DialogResult == true; }
+        });
+        return result;
+    }
 
-        public bool ShowConfirm(string title, string content)
+    public double? ShowEditNumDialog(double value, double minValue, double maxValue)
+    {
+        var currentOwner = GetOwnerWindow();
+        var modal = new UNmumPad(value, minValue, maxValue)
         {
-            bool result = false;
-            RadWindow.Confirm(new DialogParameters
-            {
-                Header = title,
-                Content = content,
-                Closed = (s, e) =>
-                {
-                    result = e.DialogResult == true;
-                }
-            });
-            return result;
-        }
+            Owner = currentOwner,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner 
+        };
 
-        public double? ShowEditNumDialog(double value, double minValue, double maxValue)
-        {
-            var modal = new UNmumPad(value, minValue, maxValue)
-            {
-                Owner = GetOwnerWindow()
-            };
+        if (modal.ShowDialog() == false) return null;
+        return modal.ResultValue;
+    }
 
-            bool? result = modal.ShowDialog();
+    // static 메서드를 활용해 현재 가장 적절한 윈도우를 찾음
+    public static Window GetOwnerWindow()
+    {
+        // 1. 현재 포커스가 있는 윈도우
+        var activeWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive);
 
-            if (result == false) return null;
-            
-            return modal.ResultValue;    
-        }
-
-        public static Window GetOwnerWindow()
-        {
-            var w = Application.Current != null
-                ? Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive) ?? Application.Current.MainWindow
-                : null;
-            return w;
-        }
+        // 2. 없으면 메인 윈도우, 그것도 없으면 리스트의 마지막 윈도우
+        return activeWindow
+               ?? Application.Current.MainWindow
+               ?? Application.Current.Windows.OfType<Window>().LastOrDefault();
     }
 }

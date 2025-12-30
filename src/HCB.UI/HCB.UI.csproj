@@ -226,6 +226,7 @@
   <Compile Include="SUB UI\ViewModels\PositionCreateVM.cs" />
   <Compile Include="SUB UI\ViewModels\PromptDialogVM.cs" />
   <Compile Include="SUB UI\ViewModels\RecipeCreateVM.cs" />
+  <Compile Include="SUB UI\ViewModels\RoleScreenVM.cs" />
   <Compile Include="SUB UI\ViewModels\StepSeqTabViewModel.cs" />
   <Compile Include="SYSTEM\COMMON\Types\EnumTypes.cs" />
   <Compile Include="SYSTEM\DB\Dto\IODeviceUpdateDto.cs" />

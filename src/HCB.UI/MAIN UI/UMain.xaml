@@ -424,7 +424,7 @@
                             CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
                             IsChecked="{Binding SelectedPageKey, Converter={StaticResource KeyEquals}, ConverterParameter=MOTION}"
                            IsEnabled="{Binding NavVM.MotionEnabled}"
-                          Style="{StaticResource MenuBtn}"
+                                         Style="{StaticResource MenuBtn}"
                           >
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <telerik:RadGlyph Glyph="&#xea17;"
@@ -457,8 +457,7 @@
                          Command="{Binding NavigateCommand}"
                          CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
                          IsChecked="{Binding SelectedPageKey, Converter={StaticResource KeyEquals}, ConverterParameter=DEVICE}"
-                         IsEnabled="{Binding NavVM.DeviceEnabled}"
-                         Visibility="Visible"
+                         Visibility="{Binding NavVM.DeviceEnabled}"
                          Style="{StaticResource MenuBtn}">
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <!-- 아이콘 -->

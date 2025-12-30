@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace HCB.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -47,6 +47,24 @@ namespace HCB.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Device", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Logs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Timestamp = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                    ThreadId = table.Column<int>(type: "INTEGER", nullable: false),
+                    SourceContext = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Level = table.Column<string>(type: "TEXT", maxLength: 16, nullable: true),
+                    Message = table.Column<string>(type: "TEXT", nullable: false),
+                    Exception = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Logs", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -117,6 +135,26 @@ namespace HCB.Migrations
                         name: "FK_AlarmHistories_Alarms_AlarmId",
                         column: x => x.AlarmId,
                         principalTable: "Alarms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "IoDeviceDetail",
+                columns: table => new
+                {
+                    DeviceId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Ip = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
+                    Port = table.Column<int>(type: "INTEGER", nullable: false),
+                    IoDeviceType = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IoDeviceDetail", x => x.DeviceId);
+                    table.ForeignKey(
+                        name: "FK_IoDeviceDetail_Device_DeviceId",
+                        column: x => x.DeviceId,
+                        principalTable: "Device",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -196,13 +234,15 @@ namespace HCB.Migrations
                 name: "RoleScreenAccess",
                 columns: table => new
                 {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
                     RoleId = table.Column<int>(type: "INTEGER", nullable: false),
                     ScreenId = table.Column<int>(type: "INTEGER", nullable: false),
                     Granted = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RoleScreenAccess", x => new { x.RoleId, x.ScreenId });
+                    table.PrimaryKey("PK_RoleScreenAccess", x => x.Id);
                     table.ForeignKey(
                         name: "FK_RoleScreenAccess_Roles_RoleId",
                         column: x => x.RoleId,
@@ -214,6 +254,32 @@ namespace HCB.Migrations
                         column: x => x.ScreenId,
                         principalTable: "Screens",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "IoData",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Address = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Index = table.Column<int>(type: "INTEGER", nullable: false),
+                    IoDataType = table.Column<string>(type: "TEXT", nullable: false),
+                    Unit = table.Column<string>(type: "TEXT", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ParentDeviceId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IoData", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_IoData_IoDeviceDetail_ParentDeviceId",
+                        column: x => x.ParentDeviceId,
+                        principalTable: "IoDeviceDetail",
+                        principalColumn: "DeviceId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -278,7 +344,7 @@ namespace HCB.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Speed = table.Column<double>(type: "REAL", nullable: false, defaultValue: 0.0),
-                    Location = table.Column<double>(type: "REAL", nullable: false, defaultValue: 0.0),
+                    Position = table.Column<double>(type: "REAL", nullable: false, defaultValue: 0.0),
                     MotionId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
@@ -317,6 +383,17 @@ namespace HCB.Migrations
                 name: "IX_Alarms_Name",
                 table: "Alarms",
                 column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_IoData_ParentDeviceId",
+                table: "IoData",
+                column: "ParentDeviceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Logs_Timestamp",
+                table: "Logs",
+                column: "Timestamp",
+                descending: new bool[0]);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Motion_ParentDeviceId",
@@ -363,14 +440,15 @@ namespace HCB.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_RoleScreenAccess_RoleId",
-                table: "RoleScreenAccess",
-                column: "RoleId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_RoleScreenAccess_ScreenId",
                 table: "RoleScreenAccess",
                 column: "ScreenId");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_RoleScreen_Pair",
+                table: "RoleScreenAccess",
+                columns: new[] { "RoleId", "ScreenId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Screens_Code",
@@ -384,6 +462,12 @@ namespace HCB.Migrations
         {
             migrationBuilder.DropTable(
                 name: "AlarmHistories");
+
+            migrationBuilder.DropTable(
+                name: "IoData");
+
+            migrationBuilder.DropTable(
+                name: "Logs");
 
             migrationBuilder.DropTable(
                 name: "MotionParameter");
@@ -402,6 +486,9 @@ namespace HCB.Migrations
 
             migrationBuilder.DropTable(
                 name: "Alarms");
+
+            migrationBuilder.DropTable(
+                name: "IoDeviceDetail");
 
             migrationBuilder.DropTable(
                 name: "Motion");

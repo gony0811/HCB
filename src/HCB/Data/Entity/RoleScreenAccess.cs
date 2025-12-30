@@ -1,7 +1,9 @@
 ﻿
+using HCB.Data.Interface;
+
 namespace HCB.Data.Entity
 {
-    public class RoleScreenAccess
+    public class RoleScreenAccess: IEntity
     {
         public int RoleId { get; set; }
         public int ScreenId { get; set; }

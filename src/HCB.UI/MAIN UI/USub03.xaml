@@ -47,110 +47,91 @@
                                  Margin="10"
                                  Style="{StaticResource RadHighlightTextBlockStyle}"/>
 
-        <Border Grid.Column="0" Grid.Row="1" BorderBrush="#0767B3" BorderThickness="1" CornerRadius="5" Margin="10" Width="250">
-
+        <telerik:GroupBox Header="사용자 선택"
+                            Style="{StaticResource GroupBoxStyle}"
+                            Grid.Column="0" Grid.Row="1" 
+                            Margin="10" Width="250">
             <StackPanel>
+                <Button Content="작업자" 
+                        Command="{Binding LoginCommand}" 
+                        CommandParameter="OPERATOR" 
+                        Margin="4" Height="40"/>
 
-                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text=" 사용자 선택"
-                                  FontSize="16"
-                                  FontWeight="SemiBold"/>
+                <Button Content="엔지니어" 
+                        Command="{Binding LoginCommand}" 
+                        CommandParameter="ENGINEER" 
+                        Margin="4" Height="40"/>
 
-                <ItemsControl ItemsSource="{Binding UserService.AuthorityList,
-                         diag:PresentationTraceSources.TraceLevel=High}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="{Binding Name}"
-                                     Margin="10" Height="40" MinWidth="110"
-                                     Command="{Binding DataContext.ChangeUserCommand,
-                                             RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                     CommandParameter="{Binding}" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <Button Content="관리자" 
+                        Command="{Binding LoginCommand}" 
+                        CommandParameter="ADMIN" 
+                        Margin="4" Height="40"/>
+
+                <Button Content="서비스 엔지니어" 
+                        Command="{Binding LoginCommand}" 
+                        CommandParameter="SERVICE_ENGINEER" 
+                        Margin="4" Height="40"/>
             </StackPanel>
-        </Border>
+
+        </telerik:GroupBox>
+
 
         <Border Grid.Column="1" Grid.Row="1">
-            <Grid Margin="12">
-                <Grid.RowDefinitions>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
-                </Grid.RowDefinitions>
-                <!-- 화면 접근 설정 -->
-                <ItemsControl ItemsSource="{Binding UserService.Groups}" Grid.Row="0"
-                               ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                               ScrollViewer.VerticalScrollBarVisibility="Disabled">
+            <StackPanel Orientation="Horizontal">
+                <telerik:GroupBox Header="접근 권한 ( 작업자 )"
+                                  Visibility="{Binding OperatorGrant}"
+                                  Style="{StaticResource GroupBoxStyle}"
+                                  Grid.Column="0" Grid.Row="1" Grid.RowSpan="2"
+                                  Margin="10" Width="330">
+                    <StackPanel>
+                        <telerik:RadGridView
+                                Style="{StaticResource RadGridViewStyle}"
+                                ItemsSource="{Binding OperatorScreens}"
+                                FontSize="16"
+                                ShowGroupPanel="False"
+                                AutoGenerateColumns="False"
+                                CanUserDeleteRows="False"
+                                SelectionMode="Single"
+                                GridLinesVisibility="None">
 
+                            <telerik:RadGridView.Columns>
+                                <telerik:GridViewDataColumn Header="이름" DataMemberBinding="{Binding ScreenName}" Width="1*" IsReadOnly="True"/>
+                                <telerik:GridViewDataColumn Header="접근" DataMemberBinding="{Binding Granted}" Width="1*"/>
+                            </telerik:RadGridView.Columns>
+                        </telerik:RadGridView>
 
-                    <!-- 가로 한 줄 -->
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
+                        <Button Content="저장" Command="{Binding SaveOpScreenCommand}" HorizontalAlignment="Right" Width="100" Margin="4"> </Button>
+                    </StackPanel>
+                    
+                    
 
-                    <!-- 그룹(Expander) 카드 간격/정렬 -->
-                    <ItemsControl.ItemContainerStyle>
-                        <Style TargetType="ContentPresenter">
-                            <Setter Property="Margin" Value="8,0,8,0"/>
-                            <Setter Property="VerticalAlignment" Value="Stretch"/>
-                        </Style>
-                    </ItemsControl.ItemContainerStyle>
+                </telerik:GroupBox>
+                <telerik:GroupBox Header="접근 권한 ( 엔지니어 )"
+                                  Style="{StaticResource GroupBoxStyle}"
+                                  Visibility="{Binding EngineerGrant}"
+                                  Grid.Column="0" Grid.Row="1" Grid.RowSpan="2"
+                                  Margin="10" Width="330">
+                    <StackPanel>
+                        <telerik:RadGridView
+                                Style="{StaticResource RadGridViewStyle}"
+                                ItemsSource="{Binding EngineerScreens}"
+                                FontSize="16"
+                                ShowGroupPanel="False"
+                                AutoGenerateColumns="False"
+                                CanUserDeleteRows="False"
+                                SelectionMode="Single"
+                                GridLinesVisibility="None">
 
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type local:RoleScreensGroupVM}">
-                            <!-- 고정(또는 Min) 너비를 주면 카드처럼 정렬이 깔끔합니다 -->
-                            <Border BorderBrush="White" BorderThickness="1" CornerRadius="6" Padding="6" Margin="0,0,0,8">
-                                <Expander IsExpanded="True" Width="320">
-                                    <Expander.Header>
-                                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding RoleName}" FontWeight="Bold" FontSize="14"/>
-                                    </Expander.Header>
+                            <telerik:RadGridView.Columns>
+                                <telerik:GridViewDataColumn Header="이름" DataMemberBinding="{Binding ScreenName}" Width="1*" IsReadOnly="True"/>
+                                <telerik:GridViewDataColumn Header="접근" DataMemberBinding="{Binding Granted}" Width="1*"/>
+                            </telerik:RadGridView.Columns>
+                        </telerik:RadGridView>
+                        <Button Content="저장" Command="{Binding SaveENGScreenCommand}" HorizontalAlignment="Right" Width="100" Margin="4"></Button>
+                    </StackPanel>
+                </telerik:GroupBox>
 
-                                    <!-- 각 그룹 내부는 기존처럼 세로 목록 -->
-                                    <ItemsControl ItemsSource="{Binding Screens}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate DataType="{x:Type local:ScreenItemVM}">
-                                                <Grid Margin="4,2">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Name}" VerticalAlignment="Center" />
-
-                                                    <Button Grid.Column="1"
-                                                         Style="{x:Null}"             
-                                                         Command="{Binding ToggleCommand}"
-                                                         IsEnabled="{Binding CanToggle}"
-                                                         Background="Transparent"
-                                                         BorderThickness="0"
-                                                         Padding="0"
-                                                         Focusable="False">
-                                                        <Border Margin="8,0"
-                                                             CornerRadius="8"
-                                                             Padding="8,2"
-                                                             Cursor="Hand"
-                                                             Background="{Binding Granted, Converter={StaticResource BoolToBrush},
-                                                                  ConverterParameter='#4CAF50|#BDBDBD'}">
-                                                            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Granted, Converter={StaticResource BoolToText},
-                                                                  ConverterParameter='ON|OFF'}" FontWeight="SemiBold"/>
-                                                        </Border>
-                                                    </Button>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </Expander>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <StackPanel Orientation="Horizontal">
-                </StackPanel>
-            </Grid>
+            </StackPanel>
         </Border>
     </Grid>
 </Page>

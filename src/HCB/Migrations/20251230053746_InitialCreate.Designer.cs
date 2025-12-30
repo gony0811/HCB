@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HCB.Migrations
 {
     [DbContext(typeof(AppDb))]
-    [Migration("20251128045147_20251128_Add_ThreadId_LogTable")]
-    partial class _20251128_Add_ThreadId_LogTable
+    [Migration("20251230053746_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -135,6 +135,71 @@ namespace HCB.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Device", (string)null);
+                });
+
+            modelBuilder.Entity("HCB.Data.Entity.IoDataEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Index")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("IoDataType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ParentDeviceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentDeviceId");
+
+                    b.ToTable("IoData", (string)null);
+                });
+
+            modelBuilder.Entity("HCB.Data.Entity.IoDeviceDetail", b =>
+                {
+                    b.Property<int>("DeviceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("IoDeviceType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Ip")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Port")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("DeviceId");
+
+                    b.ToTable("IoDeviceDetail");
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.LogModel", b =>
@@ -284,11 +349,6 @@ namespace HCB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<double>("Location")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("REAL")
-                        .HasDefaultValue(0.0);
-
                     b.Property<int>("MotionId")
                         .HasColumnType("INTEGER");
 
@@ -296,6 +356,11 @@ namespace HCB.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<double>("Position")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(0.0);
 
                     b.Property<double>("Speed")
                         .ValueGeneratedOnAdd()
@@ -450,24 +515,29 @@ namespace HCB.Migrations
 
             modelBuilder.Entity("HCB.Data.Entity.RoleScreenAccess", b =>
                 {
-                    b.Property<int>("RoleId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ScreenId")
-                        .HasColumnType("INTEGER");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasAnnotation("Sqlite:Autoincrement", true);
 
                     b.Property<bool>("Granted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(true);
 
-                    b.HasKey("RoleId", "ScreenId");
+                    b.Property<int>("RoleId")
+                        .HasColumnType("INTEGER");
 
-                    b.HasIndex("RoleId")
-                        .HasDatabaseName("IX_RoleScreenAccess_RoleId");
+                    b.Property<int>("ScreenId")
+                        .HasColumnType("INTEGER");
 
-                    b.HasIndex("ScreenId")
-                        .HasDatabaseName("IX_RoleScreenAccess_ScreenId");
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScreenId");
+
+                    b.HasIndex("RoleId", "ScreenId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RoleScreen_Pair");
 
                     b.ToTable("RoleScreenAccess", (string)null);
                 });
@@ -517,6 +587,28 @@ namespace HCB.Migrations
                         .HasForeignKey("AlarmId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HCB.Data.Entity.IoDataEntity", b =>
+                {
+                    b.HasOne("HCB.Data.Entity.IoDeviceDetail", "ParentDeviceEntity")
+                        .WithMany("IoDataList")
+                        .HasForeignKey("ParentDeviceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParentDeviceEntity");
+                });
+
+            modelBuilder.Entity("HCB.Data.Entity.IoDeviceDetail", b =>
+                {
+                    b.HasOne("HCB.Data.Entity.Device", "Device")
+                        .WithOne("IoDeviceDetail")
+                        .HasForeignKey("HCB.Data.Entity.IoDeviceDetail", "DeviceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Device");
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.MotionDeviceDetail", b =>
@@ -614,7 +706,14 @@ namespace HCB.Migrations
 
             modelBuilder.Entity("HCB.Data.Entity.Device", b =>
                 {
+                    b.Navigation("IoDeviceDetail");
+
                     b.Navigation("MotionDeviceDetail");
+                });
+
+            modelBuilder.Entity("HCB.Data.Entity.IoDeviceDetail", b =>
+                {
+                    b.Navigation("IoDataList");
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.MotionDeviceDetail", b =>

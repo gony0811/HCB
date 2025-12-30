@@ -2,6 +2,7 @@
 using HCB.Data.Entity;
 using HCB.Data.Repository;
 using HCB.IoC;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.ObjectModel;
@@ -17,75 +18,77 @@ namespace HCB.UI
     {
         private readonly RoleRepository roleRepository;
         private readonly ScreenRepository screenRepository;
+        private readonly RoleScreenRepository roleScreenRepository;
 
         //private readonly ScreenService _screenService;
         public ObservableCollection<Authority> AuthorityList { get; } = new ObservableCollection<Authority>();
 
         public ObservableCollection<RoleScreensGroupVM> Groups { get; } = new ObservableCollection<RoleScreensGroupVM>();
 
-        [ObservableProperty]
-        private Authority currentAuthority;
+        [ObservableProperty] private Authority currentAuthority;
 
         public NavigationViewModel NavVM { get; }
 
         public UserService(
             RoleRepository rp,
             ScreenRepository sr,
-            NavigationViewModel navigationViewModel)
+            NavigationViewModel navigationViewModel, 
+            RoleScreenRepository roleScreenRepository)
         {
             roleRepository = rp;
             screenRepository = sr;
             NavVM = navigationViewModel;
+            this.roleScreenRepository = roleScreenRepository;
+            
         }
 
         public async Task InitializeAsync()
         {
-            var roles = await roleRepository.ListAsync();      // 사용 가능한 권한 리스트 불러오기
-
-            AuthorityList.Clear();
-            foreach (var r in roles)
+            try
             {
-                if (r.Name.Equals("OPERATOR") && CurrentAuthority == null)
-                {
-                    CurrentAuthority = Authority.of(r);
-                    //await ChangeAuthority(CurrentAuthority, "");
-                }
-                AuthorityList.Add(Authority.of(r));
+                var roles = await roleRepository.ListAsync();
+                var role = roles.FirstOrDefault(r => r.Name == "OPERATOR");
+                CurrentAuthority = Authority.of(role);
+                await LoadRoleScreen();
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+        public async Task<bool> Login(string username, string pwd, CancellationToken ct = default)
+        {
+            try
+            {
+                var entity = await roleRepository.ListAsync(x => x.Name == username);
+                var role = entity.FirstOrDefault();
+                if (role is null) throw new Exception("Role not found");
+                if (role.Password != pwd) throw new Exception("Invalid password");
+                CurrentAuthority = Authority.of(role);
+                await LoadRoleScreen();
+                return true;
+            }
+            catch (Exception ex)
+            {
+
+                return false;
             }
         }
 
-        //public async Task<bool> ChangeAuthority(Authority authority, string password, CancellationToken ct = default)
-        //{
-        //    var role = await roleRepository.GetRoleAsync(authority.Name, password, ct);
-        //    if (role is null) return false;
-        //    var allowedScreenCodes = role.ScreenAccesses
-        //        .Where(sa => sa.Screen != null && sa.Screen.IsEnabled)
-        //        .Select(sa => sa.Screen!.Code)
-        //        .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        //    CurrentAuthority = Authority.of(role);
-        //    NavVM.ApplyScreens(allowedScreenCodes);
-        //    //await ManagedScreen(CurrentAuthority.Id);
-        //    return true;
-        //}
-
-        // 관리하는 스크린 화면들
-        //public async Task ManagedScreen(int managerRoleId, CancellationToken ct = default)
-        //{
-        //    Groups.Clear();
-        //    try
-        //    {
-        //        var data = await roleRepository.GetManagedRolesScreensAsync(managerRoleId, onlyEnabled: true, ct);
-        //        foreach (var g in data) Groups.Add(new RoleScreensGroupVM(managerRoleId, screenRepository, g));
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        MessageBox.Show(e.Message);
-        //    }
-
-
-        //}
+        public async Task LoadRoleScreen()
+        {
+            if (CurrentAuthority == null) return;
+            var groups = await roleScreenRepository.ListAsync(predicate: x=> x.RoleId == CurrentAuthority.Id, include: query => query.Include(d => d.Screen));
+            NavVM.MainEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "MAIN")?.Granted ?? false;
+            NavVM.ParameterEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "PARAMETER")?.Granted ?? false;
+            NavVM.UserEnabled= groups.FirstOrDefault(groups => groups.Screen.Code == "USER")?.Granted ?? false;
+            NavVM.LogEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "LOG")?.Granted ?? false;
+            NavVM.AlarmEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "ALARM")?.Granted ?? false;
+            NavVM.MotionEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "MOTION")?.Granted ?? false;
+            NavVM.IOEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "IO")?.Granted ?? false;
+            NavVM.DeviceEnabled = CurrentAuthority.Name == "SERVICE_ENGINEER" ? Visibility.Visible : Visibility.Collapsed;
+        }
     }
 
-
 }
+

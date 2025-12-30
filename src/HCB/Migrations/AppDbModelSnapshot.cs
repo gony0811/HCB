@@ -512,24 +512,29 @@ namespace HCB.Migrations
 
             modelBuilder.Entity("HCB.Data.Entity.RoleScreenAccess", b =>
                 {
-                    b.Property<int>("RoleId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ScreenId")
-                        .HasColumnType("INTEGER");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasAnnotation("Sqlite:Autoincrement", true);
 
                     b.Property<bool>("Granted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(true);
 
-                    b.HasKey("RoleId", "ScreenId");
+                    b.Property<int>("RoleId")
+                        .HasColumnType("INTEGER");
 
-                    b.HasIndex("RoleId")
-                        .HasDatabaseName("IX_RoleScreenAccess_RoleId");
+                    b.Property<int>("ScreenId")
+                        .HasColumnType("INTEGER");
 
-                    b.HasIndex("ScreenId")
-                        .HasDatabaseName("IX_RoleScreenAccess_ScreenId");
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScreenId");
+
+                    b.HasIndex("RoleId", "ScreenId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RoleScreen_Pair");
 
                     b.ToTable("RoleScreenAccess", (string)null);
                 });

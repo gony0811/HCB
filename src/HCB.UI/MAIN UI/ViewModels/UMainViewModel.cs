@@ -29,11 +29,11 @@ namespace HCB.UI
         private Page ioPage;
         private Page devicePage;
 
-        private UserService UserService;
+        public UserService UserService { get; }
 
         #region Sub ViewModels
 
-        private NavigationViewModel NavVM;
+        public NavigationViewModel NavVM { get; }
         public SequenceServiceVM SequenceServiceVM { get; }
         #endregion
 

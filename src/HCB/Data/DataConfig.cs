@@ -66,10 +66,18 @@ namespace HCB.Data
         public void Configure(EntityTypeBuilder<RoleScreenAccess> b)
         {
             b.ToTable("RoleScreenAccess");
-            b.HasKey(x => new { x.RoleId, x.ScreenId });
+
+            b.HasKey(x => x.Id);
+
+            b.Property(x => x.Id)
+             .ValueGeneratedOnAdd()
+             .HasAnnotation("Sqlite:Autoincrement", true);
+
+            b.HasIndex(x => new { x.RoleId, x.ScreenId })
+             .IsUnique()
+             .HasDatabaseName("UX_RoleScreen_Pair");
+
             b.Property(x => x.Granted).HasDefaultValue(true);
-            b.HasIndex(x => x.RoleId).HasName("IX_RoleScreenAccess_RoleId");
-            b.HasIndex(x => x.ScreenId).HasName("IX_RoleScreenAccess_ScreenId");
         }
     }
 
