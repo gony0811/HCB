@@ -1,8 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HCB.IoC;
 
 namespace HCB.UI
 {
+    [ViewModel(Lifetime.Transient)]
     public partial class MotorStatusTableViewModel : ObservableObject
     {
         public string TableName { get; set; }

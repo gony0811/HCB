@@ -6,7 +6,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:HCB.UI"
              mc:Ignorable="d" >
-    
+
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -35,16 +35,14 @@
     </UserControl.Resources>
     <telerik:RadTabControl Style="{StaticResource RadTabControlStyle}">
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="D-TABLE">
-            <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="Auto, Auto, Auto">
+            <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="Auto, Auto">
                 <local:PositionTable DataContext="{Binding DyAxisTable}"></local:PositionTable>
 
-                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 표시"
-                          Margin="4"
-                          Grid.Row="1">
-                    <local:MotorStatusTable DataContext="{Binding DyMotorStatusTable}" Margin="5"/>
+                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 표시" Margin="4" Grid.Row="1">
+                    <local:MotorStatusTable DataContext="{Binding DyMotorStatusTable}"/>
                 </telerik:GroupBox>
             </Grid>
-            
+
         </telerik:RadTabItem>
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="P-TABLE">
             <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="Auto, Auto">
@@ -58,22 +56,28 @@
             </Grid>
         </telerik:RadTabItem>
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="B-HEAD">
-            <Grid local:GridHelper.Rows="Auto, Auto" local:GridHelper.Columns="1*, 1*, 1*">
+            <Grid local:GridHelper.Rows="Auto, Auto" local:GridHelper.Columns="1*, 1*">
+                
+                <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0">
+                    <local:PositionTable DataContext="{Binding BxAxisTable}"/>
+                    <local:MotorStatusTable DataContext="{Binding BxMotorStatusTable}" Margin="4 0 4 0" />
+                </StackPanel>
 
-                <local:PositionTable DataContext="{Binding BxAxisTable}" Grid.Column="0"></local:PositionTable>
-                <local:PositionTable DataContext="{Binding Bz1AxisTable}" Grid.Column="1"></local:PositionTable>
-                <local:PositionTable DataContext="{Binding Bz2AxisTable}" Grid.Column="2"></local:PositionTable>
+                <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="1">
+                    <local:PositionTable DataContext="{Binding BtAxisTable}"/>
+                    <local:MotorStatusTable DataContext="{Binding BtMotorStatusTable}" Margin="4 0 4 0"/>
+                </StackPanel>
 
-                <telerik:GroupBox Header="모터 상태 표시"
-                          Style="{StaticResource GroupBoxStyle}"
-                          Margin="4"
-                          Grid.Row="1" Grid.ColumnSpan="3">
-                    <Grid local:GridHelper.Columns="1*, 1*, 1*">
-                        <local:MotorStatusTable DataContext="{Binding BxMotorStatusTable}" Margin="4 0 4 0" />
-                        <local:MotorStatusTable DataContext="{Binding Bz1MotorStatusTable}" Grid.Column="1" Margin="4 0 4 0"/>
-                        <local:MotorStatusTable DataContext="{Binding Bz2MotorStatusTable}" Grid.Column="2" Margin="4 0 4 0"/>
-                    </Grid>
-                </telerik:GroupBox>
+                <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="0">
+                    <local:PositionTable DataContext="{Binding Bz1AxisTable}" />
+                    <local:MotorStatusTable DataContext="{Binding Bz1MotorStatusTable}" Margin="4 0 4 0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="1">
+                    <local:PositionTable DataContext="{Binding Bz2AxisTable}" />
+                    <local:MotorStatusTable DataContext="{Binding Bz2MotorStatusTable}" Margin="4 0 4 0"/>
+                </StackPanel>
+                    
             </Grid>
         </telerik:RadTabItem>
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="W-TABLE">

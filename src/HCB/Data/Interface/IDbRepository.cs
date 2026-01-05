@@ -15,17 +15,17 @@ namespace HCB.Data.Interface
 
         // 목록 조회(필터/정렬/페이징)
         Task<IReadOnlyList<T>> ListAsync(
-            Expression<Func<T, bool>> predicate = null,
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
+            Expression<Func<T, bool>>? predicate = null,
+            Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
             int? skip = null,
             int? take = null,
             bool asNoTracking = true,
-            Func<IQueryable<T>, IQueryable<T>> include = null,
+            Func<IQueryable<T>, IQueryable<T>>? include = null,
             CancellationToken ct = default(CancellationToken));
 
         // 단순 카운트
         Task<int> CountAsync(
-            Expression<Func<T, bool>> predicate = null,
+            Expression<Func<T, bool>>? predicate = null,
             CancellationToken ct = default(CancellationToken));
 
         // 쓰기

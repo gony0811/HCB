@@ -12,7 +12,6 @@ namespace HCB.UI
         /// 이전 값입니다.
         /// </summary>
         public T? OldValue { get; }
-
         /// <summary>
         /// 새로운 값입니다.
         /// </summary>

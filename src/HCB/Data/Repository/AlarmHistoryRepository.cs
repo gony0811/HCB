@@ -13,7 +13,7 @@ namespace HCB.Data.Repository
     {
         public AlarmHistoryRepository(
             IDbContextFactory<AppDb> factory,
-            AppDb trackingContext = null)         // trackingContext는 optional
+            AppDb? trackingContext = null)         // trackingContext는 optional
             : base(factory, trackingContext)
         {
         }

@@ -4,51 +4,73 @@ using HCB.IoC;
 using System.Threading.Tasks;
 using Serilog;
 using System.Threading;
+using System.Drawing.Printing;
+using System;
 
 namespace HCB.UI
 {
     [ViewModel(Lifetime.Scoped)]
     public partial class ManualTabViewModel : ObservableObject
     {
-        private readonly ILogger _logger;
-        private readonly SequenceHelper _sequenceHelper;
-        private readonly SequenceService _sequenceService;
+        private ILogger _logger;
+        private SequenceService _sequenceService;
+        private DeviceManager _deviceManager;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
         // D-Table
         [ObservableProperty]
-        private PositionTableViewModel dyAxisTable = new PositionTableViewModel("D-Y Axis");
+        private PositionTableViewModel dyAxisTable;
 
         [ObservableProperty]
-        private MotorStatusTableViewModel dyMotorStatusTable = new MotorStatusTableViewModel("Die DY");
+        private MotorStatusTableViewModel dyMotorStatusTable;
 
 
         // P-Table
         [ObservableProperty]
-        private PositionTableViewModel pyAxisTable = new PositionTableViewModel("P-Y Axis");
+        private PositionTableViewModel pyAxisTable;
 
         [ObservableProperty]
-        private MotorStatusTableViewModel pyMotorStatusTable = new MotorStatusTableViewModel("P-Y");
+        private MotorStatusTableViewModel pyMotorStatusTable;
 
 
 
         // B-Head
-        [ObservableProperty] private PositionTableViewModel bxAxisTable = new PositionTableViewModel("B-X Axis");
-        [ObservableProperty] private MotorStatusTableViewModel bxMotorStatusTable = new MotorStatusTableViewModel("B-X");
+        [ObservableProperty]
+        private PositionTableViewModel bxAxisTable;
+
+        [ObservableProperty]
+        private MotorStatusTableViewModel bxMotorStatusTable;
 
 
-        [ObservableProperty] private PositionTableViewModel bz1AxisTable = new PositionTableViewModel("B-Z1 Axis");
-        [ObservableProperty] private MotorStatusTableViewModel bz1MotorStatusTable = new MotorStatusTableViewModel("B-Z1");
+        [ObservableProperty]
+        private PositionTableViewModel bz1AxisTable;
 
-        [ObservableProperty] private PositionTableViewModel bz2AxisTable = new PositionTableViewModel("B-Z2 Axis");
+        [ObservableProperty]
+        private MotorStatusTableViewModel bz1MotorStatusTable;
 
-        [ObservableProperty] private MotorStatusTableViewModel bz2MotorStatusTable = new MotorStatusTableViewModel("B-Z2");
+        [ObservableProperty]
+        private PositionTableViewModel bz2AxisTable;
 
+        [ObservableProperty]
+        private MotorStatusTableViewModel bz2MotorStatusTable;
+
+        [ObservableProperty]
+        private PositionTableViewModel btAxisTable;
+
+        [ObservableProperty]
+        private MotorStatusTableViewModel btMotorStatusTable;
         // W-Table
-        [ObservableProperty] private PositionTableViewModel wyAxisTable = new PositionTableViewModel("W-Y Axis");
-        [ObservableProperty] private MotorStatusTableViewModel wyMotorStatusTable = new MotorStatusTableViewModel("W-Y");
+        [ObservableProperty]
+        private PositionTableViewModel wyAxisTable;
 
-        [ObservableProperty] private PositionTableViewModel wtAxisTable = new PositionTableViewModel("W-T Axis");
-        [ObservableProperty] private MotorStatusTableViewModel wtMotorStatusTable = new MotorStatusTableViewModel("W-T");
+        [ObservableProperty]
+        private MotorStatusTableViewModel wyMotorStatusTable;
+
+        [ObservableProperty]
+        private PositionTableViewModel wtAxisTable;
+
+        [ObservableProperty]
+        private MotorStatusTableViewModel wtMotorStatusTable;
 
 
         [ObservableProperty] private bool isDieLoading;
@@ -56,42 +78,97 @@ namespace HCB.UI
 
         [ObservableProperty] private bool isDieStandby;
         [ObservableProperty] private bool isWaferStandby;
-        public ManualTabViewModel(ILogger logger, SequenceHelper sequenceHelper)
+
+        // 생성자에서 IoC로부터 팩토리 함수 주입
+        public ManualTabViewModel(
+            ILogger logger,
+            DeviceManager deviceManager,
+            SequenceService sequenceService,
+            Func<string, PositionTableViewModel> positionFactory,
+            Func<string, MotorStatusTableViewModel> motorStatusFactory)
         {
             _logger = logger.ForContext<ManualTabViewModel>();
-            _sequenceHelper = sequenceHelper;
+            _deviceManager = deviceManager;
+            _sequenceService = sequenceService;
+
+            // PositionTableViewModel 및 MotorStatusTableViewModel 인스턴스를 팩토리로 생성
+            dyAxisTable = positionFactory("D-Y Axis");
+            dyMotorStatusTable = motorStatusFactory("Die DY");
+
+            pyAxisTable = positionFactory("P-Y Axis");
+            pyMotorStatusTable = motorStatusFactory("P-Y");
+
+            bxAxisTable = positionFactory("B-X Axis");
+            bxMotorStatusTable = motorStatusFactory("B-X");
+
+            bz1AxisTable = positionFactory("B-Z1 Axis");
+            bz1MotorStatusTable = motorStatusFactory("B-Z1");
+
+            bz2AxisTable = positionFactory("B-Z2 Axis");
+            bz2MotorStatusTable = motorStatusFactory("B-Z2");
+
+            btAxisTable = positionFactory("B-T Axis");
+            btMotorStatusTable = motorStatusFactory("B-T");
+
+            wyAxisTable = positionFactory("W-Y Axis");
+            wyMotorStatusTable = motorStatusFactory("W-Y");
+
+            wtAxisTable = positionFactory("W-T Axis");
+            wtMotorStatusTable = motorStatusFactory("W-T");
+
             Initialize();
         }
 
         private void Initialize()
         {
-            DyAxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
-            DyAxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
-            DyAxisTable.AddRow(new PositionTableRowModel("TEST POSITION", 10.0, 100));
+            var DYMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.D_Y);
+            var PYMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.P_Y);
+            var BXMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_X);
+            var BZ1Motion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_Z);
+            var BZ2Motion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.h_z);
+            var WYMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.W_Y);
+            var WTMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.W_T);
+            var BTMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_T);
 
+            foreach (var DY in DYMotion.PositionList)
+            {
+                DyAxisTable.AddRow(new PositionTableRowModel(DY.Name, DY.Position, DY.Speed));
+            }
 
-            PyAxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
-            PyAxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
+            foreach (var PY in PYMotion.PositionList)
+            {
+                PyAxisTable.AddRow(new PositionTableRowModel(PY.Name, PY.Position, PY.Speed));
+            }
 
+            foreach (var BX in BXMotion.PositionList)
+            {
+                BxAxisTable.AddRow(new PositionTableRowModel(BX.Name, BX.Position, BX.Speed));
+            }
 
-            BxAxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
-            BxAxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
+            foreach (var BT in BTMotion.PositionList)
+            {
+                BtAxisTable.AddRow(new PositionTableRowModel(BT.Name, BT.Position, BT.Speed));
+            }
 
+            foreach (var BZ1 in BZ1Motion.PositionList)
+            {
+                Bz1AxisTable.AddRow(new PositionTableRowModel(BZ1.Name, BZ1.Position, BZ1.Speed));
+            }
 
-            Bz1AxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
-            Bz1AxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
+            foreach (var BZ2 in BZ2Motion.PositionList)
+            {
+                Bz2AxisTable.AddRow(new PositionTableRowModel(BZ2.Name, BZ2.Position, BZ2.Speed));
+            }
 
+            foreach (var WY in WYMotion.PositionList)
+            {
+                WyAxisTable.AddRow(new PositionTableRowModel(WY.Name, WY.Position, WY.Speed));
+            }
 
-            Bz2AxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
-            Bz2AxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
-
-
-            WyAxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
-            WyAxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
-
-
-            WtAxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
-            WtAxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
+            foreach (var WT in WTMotion.PositionList)
+            {
+                WtAxisTable.AddRow(new PositionTableRowModel(WT.Name, WT.Position, WT.Speed));
+            }
         }
 
         [RelayCommand]

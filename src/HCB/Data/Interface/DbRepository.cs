@@ -17,13 +17,13 @@ namespace HCB.Data.Interface
         private readonly IDbContextFactory<TContext> _factory;
 
         // 선택적: ChangeTracker 이벤트/HasChanges 등에 사용할 추적용 컨텍스트
-        protected readonly TContext _trackingContext;
+        protected readonly TContext? _trackingContext;
 
-        public event EventHandler ChangeTrackerChanged;
+        public event EventHandler? ChangeTrackerChanged;
 
         protected DbRepository(
             IDbContextFactory<TContext> factory,
-            TContext trackingContext = null)
+            TContext? trackingContext = null)
         {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
             _trackingContext = trackingContext;
@@ -65,12 +65,12 @@ namespace HCB.Data.Interface
         // LIST
         // ============================================================
         public async Task<IReadOnlyList<TEntity>> ListAsync(
-            Expression<Func<TEntity, bool>> predicate = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
+            Expression<Func<TEntity, bool>>? predicate = null,
+            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
             int? skip = null,
             int? take = null,
             bool asNoTracking = true,
-            Func<IQueryable<TEntity>, IQueryable<TEntity>> include = null,
+            Func<IQueryable<TEntity>, IQueryable<TEntity>>? include = null,
             CancellationToken ct = default)
         {
             using var db = CreateDb();

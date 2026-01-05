@@ -43,7 +43,7 @@ namespace HCB.Data.Repository
             }
         }
 
-        public async Task<Recipe> CloneAsync(int sourceRecipeId, string newName = null, CancellationToken ct = default(CancellationToken))
+        public async Task<Recipe> CloneAsync(int sourceRecipeId, string? newName = null, CancellationToken ct = default(CancellationToken))
         {
             
             using (var tx = _db.Database.BeginTransaction())
