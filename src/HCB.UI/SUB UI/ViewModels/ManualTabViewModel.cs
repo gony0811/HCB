@@ -67,6 +67,7 @@ namespace HCB.UI
         {
             DyAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
             DyAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
+            DyAxisTable.AddRow(new DieAxisRowModel("TEST POSITION", 10.0, 100));
 
 
             PyAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));

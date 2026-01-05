@@ -10,7 +10,24 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
+                <!--
+                예시 A: 리소스가 같은 어셈블리(프로젝트)에 있고 프로젝트 내 경로가
+                "SYSTEM/COMMON/Styles/DefaultResource.xaml" 인 경우:
+                -->
+                <!-- 상대 패스 형태 (같은 어셈블리) -->
+                <!-- <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/> -->
+
+                <!--
+                예시 B: 리소스가 다른 어셈블리(예: 어셈블리 이름이 'SYSTEM')에 있는 경우,
+                pack URI 또는 assembly;component 형식을 사용해야 합니다:
+                -->
+                <!-- 다른 어셈블리에 있는 리소스 -->
+                <!-- <ResourceDictionary Source="/SYSTEM;component/COMMON/Styles/DefaultResource.xaml"/> -->
+
+                <!--
+                예시 C: pack URI 명시적 사용 예시:
+                -->
+                <!-- <ResourceDictionary Source="pack://application:,,,/SYSTEM;component/COMMON/Styles/DefaultResource.xaml"/> -->
             </ResourceDictionary.MergedDictionaries>
             <Style TargetType="local:MotorStatusTable">
                 <Setter Property="FontSize" Value="10"></Setter>

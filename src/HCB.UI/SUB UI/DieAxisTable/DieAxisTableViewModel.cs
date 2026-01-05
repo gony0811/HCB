@@ -50,5 +50,5 @@ namespace HCB.UI
             Position = position;
             Speed = speed;
         }
-    }
+    }  
 }
