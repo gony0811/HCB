@@ -3,48 +3,53 @@ using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using Serilog;
 
 namespace HCB.UI
 {
-    public partial class DieAxisTableViewModel : ObservableObject
+    public partial class PositionTableViewModel : ObservableObject
     {
+        private readonly ILogger logger;
+
         [ObservableProperty]
         private string tableName;
 
         [ObservableProperty]
-        public ObservableCollection<DieAxisRowModel> rows = new ObservableCollection<DieAxisRowModel>();
+        public ObservableCollection<PositionTableRowModel> rows = new ObservableCollection<PositionTableRowModel>();
 
-        public DieAxisTableViewModel(string tableName)
+        public PositionTableViewModel(ILogger logger, string tableName)
         {
+            this.logger = logger;
             this.TableName = tableName;
         }
 
-        public void AddRow(DieAxisRowModel row)
+        public void AddRow(PositionTableRowModel row)
         {
             Rows.Add(row);
         }
 
         [RelayCommand]
-        public void Save(DieAxisRowModel row)
+        public void Save(PositionTableRowModel row)
         {
+            
             MessageBox.Show($"[{row.Name}] 저장 완료\nPos={row.Position}, Spd={row.Speed}");
         }
 
         [RelayCommand]
-        private void Move(DieAxisRowModel row)
+        private void Move(PositionTableRowModel row)
         {
             MessageBox.Show($"[{row.Name}] 위치로 이동 실행!");
         }
     }
 
-    public partial class DieAxisRowModel : ObservableObject
+    public partial class PositionTableRowModel : ObservableObject
     {
         
         [ObservableProperty] public string name;
         [ObservableProperty] public double position;
         [ObservableProperty] public double speed;
 
-        public DieAxisRowModel(string name, double position, double speed)
+        public PositionTableRowModel(string name, double position, double speed)
         {
             Name = name;
             Position = position;

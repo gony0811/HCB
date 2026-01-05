@@ -3,9 +3,9 @@ using System.Windows.Controls;
 
 namespace HCB.UI
 {
-    public partial class DieAxisTable : UserControl
+    public partial class PositionTable : UserControl
     {
-        public DieAxisTable()
+        public PositionTable()
         {
             InitializeComponent();
         }

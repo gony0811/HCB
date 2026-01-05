@@ -16,7 +16,7 @@ namespace HCB.UI
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         // D-Table
         [ObservableProperty]
-        private DieAxisTableViewModel dyAxisTable = new DieAxisTableViewModel("D-Y Axis");
+        private PositionTableViewModel dyAxisTable = new PositionTableViewModel("D-Y Axis");
 
         [ObservableProperty]
         private MotorStatusTableViewModel dyMotorStatusTable = new MotorStatusTableViewModel("Die DY");
@@ -24,7 +24,7 @@ namespace HCB.UI
 
         // P-Table
         [ObservableProperty]
-        private DieAxisTableViewModel pyAxisTable = new DieAxisTableViewModel("P-Y Axis");
+        private PositionTableViewModel pyAxisTable = new PositionTableViewModel("P-Y Axis");
 
         [ObservableProperty]
         private MotorStatusTableViewModel pyMotorStatusTable = new MotorStatusTableViewModel("P-Y");
@@ -32,22 +32,22 @@ namespace HCB.UI
 
 
         // B-Head
-        [ObservableProperty] private DieAxisTableViewModel bxAxisTable = new DieAxisTableViewModel("B-X Axis");
+        [ObservableProperty] private PositionTableViewModel bxAxisTable = new PositionTableViewModel("B-X Axis");
         [ObservableProperty] private MotorStatusTableViewModel bxMotorStatusTable = new MotorStatusTableViewModel("B-X");
 
 
-        [ObservableProperty] private DieAxisTableViewModel bz1AxisTable = new DieAxisTableViewModel("B-Z1 Axis");
+        [ObservableProperty] private PositionTableViewModel bz1AxisTable = new PositionTableViewModel("B-Z1 Axis");
         [ObservableProperty] private MotorStatusTableViewModel bz1MotorStatusTable = new MotorStatusTableViewModel("B-Z1");
 
-        [ObservableProperty] private DieAxisTableViewModel bz2AxisTable = new DieAxisTableViewModel("B-Z2 Axis");
+        [ObservableProperty] private PositionTableViewModel bz2AxisTable = new PositionTableViewModel("B-Z2 Axis");
 
         [ObservableProperty] private MotorStatusTableViewModel bz2MotorStatusTable = new MotorStatusTableViewModel("B-Z2");
 
         // W-Table
-        [ObservableProperty] private DieAxisTableViewModel wyAxisTable = new DieAxisTableViewModel("W-Y Axis");
+        [ObservableProperty] private PositionTableViewModel wyAxisTable = new PositionTableViewModel("W-Y Axis");
         [ObservableProperty] private MotorStatusTableViewModel wyMotorStatusTable = new MotorStatusTableViewModel("W-Y");
 
-        [ObservableProperty] private DieAxisTableViewModel wtAxisTable = new DieAxisTableViewModel("W-T Axis");
+        [ObservableProperty] private PositionTableViewModel wtAxisTable = new PositionTableViewModel("W-T Axis");
         [ObservableProperty] private MotorStatusTableViewModel wtMotorStatusTable = new MotorStatusTableViewModel("W-T");
 
 
@@ -65,33 +65,33 @@ namespace HCB.UI
 
         private void Initialize()
         {
-            DyAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            DyAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
-            DyAxisTable.AddRow(new DieAxisRowModel("TEST POSITION", 10.0, 100));
+            DyAxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
+            DyAxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
+            DyAxisTable.AddRow(new PositionTableRowModel("TEST POSITION", 10.0, 100));
 
 
-            PyAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            PyAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
+            PyAxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
+            PyAxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
 
 
-            BxAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            BxAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
+            BxAxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
+            BxAxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
 
 
-            Bz1AxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            Bz1AxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
+            Bz1AxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
+            Bz1AxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
 
 
-            Bz2AxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            Bz2AxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
+            Bz2AxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
+            Bz2AxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
 
 
-            WyAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            WyAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
+            WyAxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
+            WyAxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
 
 
-            WtAxisTable.AddRow(new DieAxisRowModel("READY POSITION", 10.0, 100));
-            WtAxisTable.AddRow(new DieAxisRowModel("WORKING POSITION", 10.0, 100));
+            WtAxisTable.AddRow(new PositionTableRowModel("READY POSITION", 10.0, 100));
+            WtAxisTable.AddRow(new PositionTableRowModel("WORKING POSITION", 10.0, 100));
         }
 
         [RelayCommand]

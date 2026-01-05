@@ -121,7 +121,7 @@
   <Page Include="SUB UI\CreateModal\CreateModal.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
-  <Page Include="SUB UI\DieAxisTable\DieAxisTable.xaml">
+  <Page Include="SUB UI\PositionTable\PositionTable.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\MotorStatusTable\MotorStatusTable.xaml">
@@ -273,8 +273,8 @@
   </Compile>
   <Compile Include="StartUp.cs" />
   <Compile Include="SUB UI\CreateModal\CreateModal.xaml.cs" />
-  <Compile Include="SUB UI\DieAxisTable\DieAxisTable.xaml.cs" />
-  <Compile Include="SUB UI\DieAxisTable\DieAxisTableViewModel.cs" />
+  <Compile Include="SUB UI\PositionTable\PositionTable.xaml.cs" />
+  <Compile Include="SUB UI\PositionTable\PositionTableViewModel.cs" />
   <Compile Include="SUB UI\Helper\GridHelper.cs" />
   <Compile Include="SUB UI\Helper\NumericTextBox.cs" />
   <Compile Include="SUB UI\Helper\ValueTemplateSelector.cs" />
