@@ -9,36 +9,41 @@
     <telerik:RadTabControl Style="{StaticResource RadTabControlStyle}">
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="D-TABLE">
             <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="*, Auto">
-                <telerik:RadGridView
-                        Style="{StaticResource RadGridViewStyle}"
-                        ItemsSource="{Binding DyAxis.PositionList}"
-                        FontSize="16"
-                        ShowGroupPanel="False"
-                        AutoGenerateColumns="False"
-                        IsReadOnly="True"
-                        CanUserDeleteRows="False"
-                        SelectionMode="Single"
-                        GridLinesVisibility="None">
+                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="D-Y"
+                          Margin="5"
+                          Grid.Row="0" Grid.Column="0">
+                    <StackPanel Orientation="Vertical" Margin="5">
+                        <telerik:RadGridView
+                                             Style="{StaticResource RadGridViewStyle}"
+                                             ItemsSource="{Binding DyAxis.PositionList}"
+                                             FontSize="16"
+                                             ShowGroupPanel="False"
+                                             AutoGenerateColumns="False"
+                                             IsReadOnly="True"
+                                             CanUserDeleteRows="False"
+                                             SelectionMode="Single"
+                                             GridLinesVisibility="None"
+                                             Margin="5">
+
+                            <telerik:RadGridView.Columns>
+                                <telerik:GridViewDataColumn Header="이름"
+                                DataMemberBinding="{Binding Name}"
+                                Width="*"
+                                SortMemberPath="Name"/>
+                                <telerik:GridViewDataColumn Header="위치"
+                                DataMemberBinding="{Binding Position, StringFormat=F3}"
+                                Width="140"
+                                SortMemberPath="Location"/>
+                                <telerik:GridViewDataColumn Header="속도"
+                                DataMemberBinding="{Binding Speed, StringFormat=F2}"
+                                Width="120"
+                                SortMemberPath="Speed"/>
+                            </telerik:RadGridView.Columns>
+                        </telerik:RadGridView>
+
+                        <local:MotorStateControl DataContext="{Binding DyAxis}" Margin="5"/>
+                    </StackPanel>
                     
-                    <telerik:RadGridView.Columns>
-                        <telerik:GridViewDataColumn Header="이름"
-                                                    DataMemberBinding="{Binding Name}"
-                                                    Width="*"
-                                                    SortMemberPath="Name"/>
-                        <telerik:GridViewDataColumn Header="위치"
-                                                    DataMemberBinding="{Binding Position, StringFormat=F3}"
-                                                    Width="140"
-                                                    SortMemberPath="Location"/>
-                        <telerik:GridViewDataColumn Header="속도"
-                                                    DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                                                    Width="120"
-                                                    SortMemberPath="Speed"/>
-                    </telerik:RadGridView.Columns>
-                </telerik:RadGridView>
-                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 표시"
-                          Margin="4"
-                          Grid.Row="1">
-                    <local:MotorStateControl DataContext="{Binding DyAxis}"/>
                 </telerik:GroupBox>
             </Grid>
             

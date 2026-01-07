@@ -13,6 +13,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HCB.UI
 {
+    /// 2026.01.07 deprecated
+    /// 
+
     [ViewModel(Lifetime.Transient)]
     public partial class PositionTableViewModel : ObservableObject
     {
