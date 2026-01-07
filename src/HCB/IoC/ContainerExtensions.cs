@@ -89,25 +89,30 @@ namespace HCB.IoC
         private static bool MatchAttrLifetime<TAttr>(Type t, Lifetime target) where TAttr : Attribute
         {
             if (!t.IsClass || t.IsAbstract) return false;
-            var attr = (TAttr)t.GetCustomAttributes(typeof(TAttr), false).FirstOrDefault();
+            var attr = (TAttr?)t.GetCustomAttributes(typeof(TAttr), false).FirstOrDefault();
             if (attr == null) return false;
 
             // 모든 마커가 동일한 프로퍼티 이름(Lifetime)을 사용한다는 전제
             var prop = typeof(TAttr).GetProperty(nameof(ServiceAttribute.Lifetime));
-            var value = prop != null ? (Lifetime)prop.GetValue(attr) : Lifetime.Scoped;
+            var value = prop != null ? (Lifetime?)prop.GetValue(attr) : Lifetime.Scoped;
             return value == target;
         }
 
         private static void RegisterByName(ContainerBuilder b, Assembly[] assemblies, string suffix, Bind bind)
         {
-            ApplyBind(
+            var rb = ApplyBind(
                 b.RegisterAssemblyTypes(assemblies)
                  .Where(t => t.IsClass
                              && !t.IsAbstract
                              && t.Name.EndsWith(suffix)
-                             && !typeof(IHostedService).IsAssignableFrom(t)), // <--- [Name] 등록 시 IHostedService 제외
-                bind
-            ).InstancePerLifetimeScope();
+                             && !typeof(IHostedService).IsAssignableFrom(t)),
+                bind);
+
+            // ViewModel 접미사인 경우는 매번 새 인스턴스가 필요하므로 InstancePerDependency 사용
+            if (suffix == "ViewModel")
+                rb.InstancePerDependency();
+            else
+                rb.InstancePerLifetimeScope();
         }
 
         // ---------- View 전용 처리 ----------
@@ -173,7 +178,7 @@ namespace HCB.IoC
             };
         }
 
-        private static Type FindMatchingViewModelType(Type viewType, Type[] allTypes)
+        private static Type? FindMatchingViewModelType(Type viewType, Type[] allTypes)
         {
             var viewName = viewType.Name;
             var vmName = viewName.EndsWith("View")
@@ -198,8 +203,15 @@ namespace HCB.IoC
 
         private static Type[] SafeGetTypes(Assembly a)
         {
-            try { return a.GetTypes(); }
-            catch (ReflectionTypeLoadException ex) { return ex.Types.Where(t => t != null).ToArray(); }
+            try
+            {
+                return a.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                // ex.Types는 Type?[] 이므로 OfType<Type>()로 null을 제거하고 Type[]를 얻는다.
+                return ex.Types.OfType<Type>().ToArray();
+            }
         }
         private static void RegisterInterfaceContractsByAttribute<TAttr>(
             ContainerBuilder b, Assembly[] assemblies, Lifetime defaultLifetime = Lifetime.Scoped)
@@ -244,7 +256,7 @@ namespace HCB.IoC
 
         private static Lifetime? GetLifetimeFromAttr<TAttr>(MemberInfo t) where TAttr : Attribute
         {
-            var attr = (TAttr)t.GetCustomAttributes(typeof(TAttr), false).FirstOrDefault();
+            var attr = (TAttr?)t.GetCustomAttributes(typeof(TAttr), false).FirstOrDefault();
             if (attr == null) return null;
 
             var prop = typeof(TAttr).GetProperty(nameof(ServiceAttribute.Lifetime));

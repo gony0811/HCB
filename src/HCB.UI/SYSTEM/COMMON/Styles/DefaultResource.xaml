@@ -5,7 +5,17 @@
                     xmlns:local="clr-namespace:HCB.UI">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="/SYSTEM/COMMON/Styles/Palette.xaml"/>
+
+        <ResourceDictionary>
+            <Thickness x:Key="TabItemMargin">1</Thickness>
+        </ResourceDictionary>
+        <ResourceDictionary>
+            <Thickness x:Key="ControlMargin">5 5 0 0</Thickness>
+        </ResourceDictionary>
+
     </ResourceDictionary.MergedDictionaries>
+    
+   
     
     <Style TargetType="TextBlock">
         <Setter Property="Foreground" Value="White"/>
@@ -113,7 +123,7 @@
     </Style>
 
     <!-- ComboBox 기본 스타일 -->
-    <Style TargetType="ComboBox" x:Key="RoundedComboBox">
+    <Style TargetType="telerik:RadComboBox" x:Key="RoundedComboBox">
         <Setter Property="Background" Value="{StaticResource Btn.Bg}"/>
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="BorderBrush" Value="{StaticResource Btn.Bg}"/>
@@ -123,7 +133,7 @@
         <Setter Property="SnapsToDevicePixels" Value="True"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ComboBox">
+                <ControlTemplate TargetType="telerik:RadComboBox">
                     <Grid>
                         <Border x:Name="Border"
                             Background="{TemplateBinding Background}"
@@ -145,7 +155,7 @@
                                           ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                           ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"/>
 
-                            <ToggleButton Grid.Column="1"
+                            <telerik:RadToggleButton Grid.Column="1"
                                       x:Name="DropDownToggle"
                                       Focusable="False"
                                       IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
@@ -163,7 +173,7 @@
                                       Fill="White"
                                       Width="8" Height="5"/>
                                 </Grid>
-                            </ToggleButton>
+                            </telerik:RadToggleButton>
                         </Grid>
 
                         <!-- Popup 내부 수정 -->
@@ -637,7 +647,7 @@
     <Style x:Key="Cell" TargetType="Border">
         <Setter Property="BorderBrush" Value="#3C4A52"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="Padding" Value="4,2"/>
     </Style>
     <!-- 헤더 셀 -->
     <Style x:Key="HeaderCell" TargetType="Border" BasedOn="{StaticResource Cell}">
@@ -650,6 +660,70 @@
     </Style>
     <Style x:Key="ValueText" TargetType="TextBlock">
         <Setter Property="Foreground" Value="#E6FFFFFF"/>
+    </Style>
+
+    <!-- StepLampStyle - State 트리거를 enum으로 정확히 매칭 -->
+    <Style x:Key="StepLampStyle" TargetType="local:StepLamp">
+        <Setter Property="Width" Value="24"/>
+        <Setter Property="Height" Value="24"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:StepLamp">
+                    <Border x:Name="LampBorder"
+                             Width="{TemplateBinding Width}"
+                             Height="{TemplateBinding Height}"
+                             CornerRadius="1"
+                             Background="{TemplateBinding Background}" 
+                             BorderBrush="#66000000"
+                             BorderThickness="0.1"
+                             Padding="4,1"
+                             Opacity="1"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger  Property="State" Value="{x:Static local:StepState.Idle}">
+                            <Setter TargetName="LampBorder" Property="Background" Value="Gray"/>
+                            <Setter TargetName="LampBorder" Property="Opacity" Value="1"/>
+                            <Trigger.EnterActions>
+                                <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
+                            </Trigger.EnterActions>
+                        </Trigger>
+
+                        <!-- InProcess -> InProgress, enum으로 변경 -->
+                        <Trigger Property="State" Value="{x:Static local:StepState.InProgress}">
+                            <Setter TargetName="LampBorder" Property="Background" Value="OrangeRed"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard x:Name="PauseBlinkStoryboard">
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <DoubleAnimation Storyboard.TargetName="LampBorder"
+                                   Storyboard.TargetProperty="Opacity"
+                                   From="1" To="0.3"
+                                   Duration="0:0:0.5"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="LampBorder"
+                                   Storyboard.TargetProperty="Opacity"
+                                   To="1"
+                                   Duration="0:0:0"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <Trigger Property="State" Value="{x:Static local:StepState.Completed}">
+                            <Setter TargetName="LampBorder" Property="Background" Value="LimeGreen"/>
+                            <Setter TargetName="LampBorder" Property="Opacity" Value="1"/>
+                            <Trigger.EnterActions>
+                                <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
+                            </Trigger.EnterActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 </ResourceDictionary>

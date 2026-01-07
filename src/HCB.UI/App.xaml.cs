@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -15,8 +16,8 @@ namespace HCB.UI
     public partial class App : Application
     {
         static public string Project = "EGGPLANT";
-        private IHost _host;
-        private Mutex _mutex;
+        private IHost? _host;
+        private Mutex? _mutex;
 
         public App()
         {
@@ -95,12 +96,28 @@ namespace HCB.UI
 
         private async Task InitializeApplicationAsync()
         {
+            // _host가 null일 경우 명확한 예외를 던져 CS8602 경고 제거
+            if (_host is null)
+            {
+                throw new InvalidOperationException("호스트가 초기화되지 않았습니다. StartUp.BuildHost가 null을 반환했습니다.");
+            }
+
             SplashScreenUpdate("백그라운드 서비스 시작", 30);
             await _host.StartAsync();
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
+            if (_host is null)
+            {
+                throw new InvalidOperationException("호스트가 초기화되지 않았습니다. StartUp.BuildHost가 null을 반환했습니다.");
+            }
+
+            if (_mutex is null)
+            {
+                throw new InvalidOperationException("뮤텍스가 초기화되지 않았습니다.");
+            }
+
             using (_mutex)
             {
                 _mutex.ReleaseMutex();

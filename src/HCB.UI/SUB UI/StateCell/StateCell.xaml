@@ -27,7 +27,16 @@
             </Ellipse.Style>
         </Ellipse>
 
-        <TextBlock Text="{Binding Label, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                   Foreground="White"/>
-    </StackPanel>
+            <!-- ● 라벨 -->
+            <telerik:HighlightTextBlock
+                       Grid.Column="2"
+                       Style="{StaticResource HighlightTextBlockStyle}"
+                       VerticalAlignment="Center"
+                       FontSize="{Binding FontSize, ElementName=root}"  
+                       FontWeight="SemiBold"
+                       Foreground="{Binding TextBrush, ElementName=root}"
+                       TextTrimming="CharacterEllipsis"
+                       Text="{Binding Label, ElementName=root}" />
+        </Grid>
+    </Grid>
 </UserControl>

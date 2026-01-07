@@ -7,6 +7,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>HCB.UI</RootNamespace>
     <EnableDefaultItems>False</EnableDefaultItems>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -125,7 +126,7 @@
   <Page Include="SUB UI\CreateModal\CreateModal.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
-  <Page Include="SUB UI\DieAxisTable\DieAxisTable.xaml">
+  <Page Include="SUB UI\PositionTable\PositionTable.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\MotorStatusTable\MotorStatusTable.xaml">
@@ -205,6 +206,7 @@
   <Compile Include="SERVICE\Sequence\MainSequence.cs" />
   <Compile Include="SERVICE\Sequence\ManualSequence.cs" />
   <Compile Include="SERVICE\Sequence\SequenceEventHandler.cs" />
+  <Compile Include="SERVICE\Sequence\StepSequence.cs" />
   <Compile Include="SERVICE\ViewModels\SequenceServiceVM.cs" />
   <Compile Include="SUB UI\Behavior\BlinkBehavior.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
@@ -214,6 +216,7 @@
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
   <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\StepLamp.cs" />
   <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\MotionMoveVM.cs" />
   <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
@@ -282,8 +285,8 @@
   </Compile>
   <Compile Include="StartUp.cs" />
   <Compile Include="SUB UI\CreateModal\CreateModal.xaml.cs" />
-  <Compile Include="SUB UI\DieAxisTable\DieAxisTable.xaml.cs" />
-  <Compile Include="SUB UI\DieAxisTable\DieAxisTableViewModel.cs" />
+  <Compile Include="SUB UI\PositionTable\PositionTable.xaml.cs" />
+  <Compile Include="SUB UI\PositionTable\PositionTableViewModel.cs" />
   <Compile Include="SUB UI\Helper\GridHelper.cs" />
   <Compile Include="SUB UI\Helper\NumericTextBox.cs" />
   <Compile Include="SUB UI\Helper\ValueTemplateSelector.cs" />
