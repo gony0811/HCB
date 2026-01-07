@@ -431,11 +431,6 @@ namespace HCB.Data
                 .HasColumnType("INTEGER")
                 .HasDefaultValue(AlarmLevel.LIGHT);
 
-            e.Property(x => x.Status)
-                .HasConversion<int>()
-                .HasColumnType("INTEGER")
-                .HasDefaultValue(AlarmStatus.RESET);
-
             e.Property(x => x.Enable)
                 .HasConversion<int>()
                 .HasColumnType("INTEGER")
@@ -449,35 +444,37 @@ namespace HCB.Data
         }
     }
 
-    public sealed class AlarmHistoryConfig : IEntityTypeConfiguration<AlarmHistory>
+    public class AlarmHistoryConfig : IEntityTypeConfiguration<AlarmHistory>
     {
         public void Configure(EntityTypeBuilder<AlarmHistory> e)
         {
-            e.ToTable("AlarmHistories");
+            e.ToTable("AlarmHistory");
+
             e.HasKey(x => x.Id);
 
-            e.Property(x => x.AlarmId).IsRequired();
-
-            // enum -> int 저장
-            e.Property(x => x.Level)
-                .HasConversion<int>()
-                .HasColumnType("INTEGER");
-
-            e.Property(x => x.Status)
-                .HasConversion<int>()
-                .HasColumnType("INTEGER");
-
-            e.Property(x => x.UpdateTime)
-                .HasColumnType("TEXT")
+            // =============================
+            // Properties
+            // =============================
+            e.Property(x => x.AlarmId)
                 .IsRequired();
 
-            e.HasIndex(x => x.UpdateTime);
-            e.HasIndex(x => new { x.AlarmId, x.UpdateTime });
+            e.Property(x => x.Status)
+                .IsRequired();
 
-            e.HasOne<Alarm>()
-                .WithMany()
+            e.Property(x => x.CreateAt)
+                .IsRequired();
+
+            e.Property(x => x.ResetTime)
+                .IsRequired(false);
+
+            e.Property(x => x.AcknowledgeTime)
+                .IsRequired(false);
+
+            e.HasOne(x => x.Alarm)
+                .WithMany() // Alarm.Histories 컬렉션이 없다면
                 .HasForeignKey(x => x.AlarmId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict); // ⭐ 이력은 삭제되지 않도록
+
         }
     }
 

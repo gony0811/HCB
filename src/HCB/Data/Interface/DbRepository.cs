@@ -61,6 +61,16 @@ namespace HCB.Data.Interface
             return await db.Set<TEntity>().FindAsync(keyValues, ct);
         }
 
+        public async Task<TEntity?> FindAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            CancellationToken ct = default)
+        {
+            using var db = CreateDb();
+            return await db.Set<TEntity>()
+                           .AsNoTracking()
+                           .FirstOrDefaultAsync(predicate, ct);
+        }
+
         // ============================================================
         // LIST
         // ============================================================

@@ -20,7 +20,6 @@ namespace HCB.Migrations
                     Code = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", maxLength: 128, nullable: false),
                     Level = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 1),
-                    Status = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 0),
                     Enable = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 1),
                     Description = table.Column<string>(type: "TEXT", maxLength: 512, nullable: true),
                     Action = table.Column<string>(type: "TEXT", maxLength: 512, nullable: true),
@@ -118,25 +117,26 @@ namespace HCB.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AlarmHistories",
+                name: "AlarmHistory",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     AlarmId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Level = table.Column<int>(type: "INTEGER", nullable: false),
                     Status = table.Column<int>(type: "INTEGER", nullable: false),
-                    UpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    CreateAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ResetTime = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    AcknowledgeTime = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AlarmHistories", x => x.Id);
+                    table.PrimaryKey("PK_AlarmHistory", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AlarmHistories_Alarms_AlarmId",
+                        name: "FK_AlarmHistory_Alarms_AlarmId",
                         column: x => x.AlarmId,
                         principalTable: "Alarms",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -359,14 +359,9 @@ namespace HCB.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_AlarmHistories_AlarmId_UpdateTime",
-                table: "AlarmHistories",
-                columns: new[] { "AlarmId", "UpdateTime" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AlarmHistories_UpdateTime",
-                table: "AlarmHistories",
-                column: "UpdateTime");
+                name: "IX_AlarmHistory_AlarmId",
+                table: "AlarmHistory",
+                column: "AlarmId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Alarms_Code",
@@ -461,7 +456,7 @@ namespace HCB.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "AlarmHistories");
+                name: "AlarmHistory");
 
             migrationBuilder.DropTable(
                 name: "IoData");

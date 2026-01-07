@@ -1,38 +1,53 @@
-﻿using HCB.Data.Entity;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using HCB.Data.Entity;
 using HCB.Data.Entity.Type;
 using System;
 
 namespace HCB.UI
 {
-    public sealed class AlarmHistoryDto
+    public sealed partial class AlarmHistoryDto : ObservableObject
     {
-        public long Id { get; set; }
-        public int AlarmId { get; set; }
-        public AlarmLevel Level { get; set; }
-        public AlarmStatus Status { get; set; }
-        public DateTime UpdateTime { get; set; }
+        public int Id { get; set; } // 히스토리 아이디
 
-        private AlarmHistoryDto()
+        public string Code { get; set; }
+
+        public string Name { get; set; }
+
+        [ObservableProperty]
+        private AlarmLevel level;
+
+        [ObservableProperty]
+        private AlarmStatus status;
+
+        [ObservableProperty]
+        private DateTime createDate;
+
+        [ObservableProperty]
+        private TimeSpan? createTime;
+
+        [ObservableProperty]
+        private DateTime? acknowledgeTime;
+
+        [ObservableProperty]
+        private DateTime? resetTime;
+
+
+        public AlarmHistoryDto()
         {
         }
-        private AlarmHistoryDto(long id, int alarmId, AlarmLevel level, AlarmStatus status, DateTime updateTime)
-        {
-            Id = id;
-            AlarmId = alarmId;
-            Level = level;
-            Status = status;
-            UpdateTime = updateTime;
-        }
 
-        public static AlarmHistoryDto of(AlarmHistory history)
+        public static AlarmHistoryDto ToDTO(AlarmHistory history)
         {
             return new AlarmHistoryDto
             {
                 Id = history.Id,
-                AlarmId = history.AlarmId,
-                Level = history.Level,
+                Name = history.Alarm.Name,
+                Level = history.Alarm.Level,
                 Status = history.Status,
-                UpdateTime = history.UpdateTime
+                CreateDate = history.CreateAt.Date,
+                CreateTime = history.CreateAt.TimeOfDay,
+                AcknowledgeTime = history.AcknowledgeTime,
+                ResetTime = history.ResetTime
             };
         }
     }

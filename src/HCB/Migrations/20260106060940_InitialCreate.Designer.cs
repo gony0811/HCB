@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HCB.Migrations
 {
     [DbContext(typeof(AppDb))]
-    [Migration("20251230053746_InitialCreate")]
+    [Migration("20260106060940_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -57,11 +57,6 @@ namespace HCB.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(0);
-
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
@@ -80,25 +75,26 @@ namespace HCB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("AcknowledgeTime")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("AlarmId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Level")
-                        .HasColumnType("INTEGER");
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ResetTime")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("UpdateTime")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UpdateTime");
+                    b.HasIndex("AlarmId");
 
-                    b.HasIndex("AlarmId", "UpdateTime");
-
-                    b.ToTable("AlarmHistories", (string)null);
+                    b.ToTable("AlarmHistory", (string)null);
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.Device", b =>
@@ -582,11 +578,13 @@ namespace HCB.Migrations
 
             modelBuilder.Entity("HCB.Data.Entity.AlarmHistory", b =>
                 {
-                    b.HasOne("HCB.Data.Entity.Alarm", null)
+                    b.HasOne("HCB.Data.Entity.Alarm", "Alarm")
                         .WithMany()
                         .HasForeignKey("AlarmId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Alarm");
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.IoDataEntity", b =>

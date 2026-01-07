@@ -35,10 +35,12 @@
                                          Style="{StaticResource RadHighlightTextBlockStyle}"/>
             </Border>
 
-            <telerik:RadGridView Grid.Column="0" Grid.Row="1" 
-                      ItemsSource="{Binding ErrorList}"
-                      SelectedItem="{Binding SelectedError, Mode=TwoWay}"
+            <Grid Grid.Column="0" Grid.Row="1" local:GridHelper.Rows="1*, Auto">
+                <telerik:RadGridView
+                      ItemsSource="{Binding AlarmHistoryList}"
+                      SelectedItem="{Binding SelectedHistory, Mode=TwoWay}"
                       Style="{StaticResource RadGridViewStyle}"
+                        ShowGroupPanel="False"
                       AutoGenerateColumns="False"   
                       IsReadOnly="True"
                       VirtualizingPanel.IsVirtualizing="True"
@@ -46,17 +48,28 @@
                       EnableRowVirtualization="True"
                       ScrollViewer.CanContentScroll="True"
                       Margin="10">
-                <telerik:RadGridView.Columns>
-                    <telerik:GridViewDataColumn Header="순번" DataMemberBinding="{Binding Id}" Width="1*" IsReadOnly="True"/>
-                    <telerik:GridViewDataColumn Header="에러 번호" DataMemberBinding="{Binding ErrorContents}" Width="1*"/>
-                    <telerik:GridViewDataColumn Header="에러 내용" DataMemberBinding="{Binding ErrorContents}" Width="4*"/>
-                    <telerik:GridViewDataColumn Header="발생 날짜" DataMemberBinding="{Binding ErrorContents}" Width="1*"/>
-                    <telerik:GridViewDataColumn Header="발생 시각" DataMemberBinding="{Binding ErrorContents}" Width="1*"/>
-                    <telerik:GridViewDataColumn Header="해제 시각" DataMemberBinding="{Binding ErrorContents}" Width="1*"/>
-                    <telerik:GridViewDataColumn Header="조치 시간" DataMemberBinding="{Binding ErrorContents}" Width="1*"/>
-                </telerik:RadGridView.Columns>
-            </telerik:RadGridView>
-
+                    <telerik:RadGridView.Columns>
+                        <telerik:GridViewDataColumn Header="에러 번호" DataMemberBinding="{Binding Code}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="에러 내용" DataMemberBinding="{Binding Name}" Width="4*"/>
+                        <telerik:GridViewDataColumn Header="레벨" DataMemberBinding="{Binding Level}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="상태" DataMemberBinding="{Binding Status}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="발생 날짜" DataMemberBinding="{Binding CreateDate}" DataFormatString="{} {0:yyyy-MM-dd}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="발생 시각" DataMemberBinding="{Binding CreateTime}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="해제 시각" DataMemberBinding="{Binding ResetTime}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="조치 시간" DataMemberBinding="{Binding AcknowledgeTime}" Width="1*"/>
+                    </telerik:RadGridView.Columns>
+                </telerik:RadGridView>
+                <telerik:RadDataPager Grid.Row="1"
+                                      Margin="10,0,10,10"
+                                      DisplayMode="FirstLastPreviousNextNumeric"
+                                      IsTotalItemCountFixed="False"
+                                      PageSize="{Binding PageSize}"
+                                      ItemCount="{Binding TotalCount}"
+                                      PageIndex="{Binding CurrentPageIndex, Mode=TwoWay}" />
+            </Grid>
+            
+            
+            
             <!-- 오른쪽 검색 패널 -->
             <Grid Grid.Column="1" Grid.Row="1" Margin="8">
                 <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="검색" Padding="8">
@@ -78,22 +91,28 @@
                     SelectedDate="{Binding BeginDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     Margin="0,2"/>
 
-                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Grid.Row="1" Grid.Column="0" Text="End" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Grid.Row="1" Grid.Column="0" Text="End" VerticalAlignment="Center"             Margin="0,8,8,0"/>
                         <DatePicker Grid.Row="1" Grid.Column="1"
-                    SelectedDate="{Binding EndDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    Margin="0,8,0,2"/>
+                                    SelectedDate="{Binding EndDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Margin="0,8,0,2"/>
 
                         <telerik:RadButton Style="{StaticResource RadButtonStyle}" Grid.Row="2" Grid.ColumnSpan="2"
-                    Content="검색"
-                    Margin="0,12,0,0"
-                    HorizontalAlignment="Stretch"
-                    Command="{Binding SearchErrorsCommand}"/>
+                                            Content="검색"
+                                            Margin="0,12,0,0"
+                                            HorizontalAlignment="Stretch"
+                                            Command="{Binding SearchErrorsCommand}"/>
 
                         <telerik:RadButton Style="{StaticResource RadButtonStyle}" Grid.Row="3" Grid.ColumnSpan="2"
-                    Content="SAVE AS *.XLS FILE"
-                    Margin="0,12,0,0"
-                    HorizontalAlignment="Stretch"
-                    Command="{Binding SaveExcelCommand}"/>
+                                            Content="알람 히스토리 생성"
+                                            Margin="0,12,0,0"
+                                            HorizontalAlignment="Stretch"
+                                            Command="{Binding HistoryCreateCommand}"/>
+                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Grid.Row="4" Grid.ColumnSpan="2"
+                                            Content="All Reset"
+                                            Margin="0,12,0,0"
+                                            HorizontalAlignment="Stretch"
+                                            Command="{Binding AllResetCommand}"/>
+                        
                     </Grid>
                 </telerik:GroupBox>
             </Grid>

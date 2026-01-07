@@ -11,7 +11,6 @@ namespace HCB.Data.Entity
         public string? Name { get; set; } // 알람 이름
 
         public AlarmLevel Level { get; set; } // 알람 레벨
-        public AlarmStatus Status { get; set; } // 알람 상태
         public AlarmEnable Enable { get; set; } // 알람 사용 여부
         public string? Description { get; set; } // 알람 발생 원인 설명
         public string? Action { get; set; } // 알람 발생 시 조치 방법

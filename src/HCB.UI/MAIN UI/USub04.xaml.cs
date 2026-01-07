@@ -3,12 +3,13 @@ using System.Windows.Controls;
 
 namespace HCB.UI
 {
-    [View(Lifetime.Singleton)]
+    [View(Lifetime.Scoped)]
     public partial class USub04 : Page
     {
-        public USub04()
+        public USub04(USub04ViewModel vm)
         {
             InitializeComponent();
+            this.DataContext = vm;
         }
     }
 }

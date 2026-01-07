@@ -41,7 +41,6 @@ namespace HCB.UI
                 Description = alarm.Description,
                 Action = alarm.Action,
                 Level = alarm.Level,
-                Status = alarm.Status,
                 Enabled = enable,
                 LastRaisedAt = alarm.LastRaisedAt == DateTime.MinValue ? (DateTime?)null : alarm.LastRaisedAt,
                 IsModified = false
@@ -59,7 +58,6 @@ namespace HCB.UI
                 Description = Description,
                 Action = Action,
                 Level = Level,
-                Status = Status,
                 Enable = enable,
                 LastRaisedAt = LastRaisedAt ?? DateTime.MinValue
             };

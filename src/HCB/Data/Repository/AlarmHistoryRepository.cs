@@ -22,31 +22,31 @@ namespace HCB.Data.Repository
         /// 시간 범위 조건으로 AlarmHistory 조회
         /// 항상 fresh DbContext를 사용하므로 안전함
         /// </summary>
-        public IReadOnlyList<AlarmHistory> GetAlarmHistoryListByTimeRange(
-            DateTime from, DateTime to, bool includeUpperBound = false, bool orderByTimeAsc = true)
-        {
-            if (from > to)
-            {
-                var t = from; from = to; to = t;
-            }
+        //public IReadOnlyList<AlarmHistory> GetAlarmHistoryListByTimeRange(
+        //    DateTime from, DateTime to, bool includeUpperBound = false, bool orderByTimeAsc = true)
+        //{
+        //    if (from > to)
+        //    {
+        //        var t = from; from = to; to = t;
+        //    }
 
-            // === fresh DbContext 사용 ===
-            using var db = CreateDb();
+        //    // === fresh DbContext 사용 ===
+        //    using var db = CreateDb();
 
-            IQueryable<AlarmHistory> q = db.Set<AlarmHistory>();
+        //    IQueryable<AlarmHistory> q = db.Set<AlarmHistory>();
 
-            // where 조건 적용
-            if (includeUpperBound)
-                q = q.Where(h => h.UpdateTime >= from && h.UpdateTime <= to);
-            else
-                q = q.Where(h => h.UpdateTime >= from && h.UpdateTime < to);
+        //    // where 조건 적용
+        //    if (includeUpperBound)
+        //        q = q.Where(h => h.UpdateTime >= from && h.UpdateTime <= to);
+        //    else
+        //        q = q.Where(h => h.UpdateTime >= from && h.UpdateTime < to);
 
-            // 정렬 적용
-            q = orderByTimeAsc
-                ? q.OrderBy(h => h.UpdateTime)
-                : q.OrderByDescending(h => h.UpdateTime);
+        //    // 정렬 적용
+        //    q = orderByTimeAsc
+        //        ? q.OrderBy(h => h.UpdateTime)
+        //        : q.OrderByDescending(h => h.UpdateTime);
 
-            return q.ToList();
-        }
+        //    return q.ToList();
+        //}
     }
 }
