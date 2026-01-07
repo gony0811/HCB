@@ -50,9 +50,6 @@ namespace HCB.IoC
 
 
 
-
-
-
             // 공통: Lifetime 매칭
             Func<Lifetime, IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle>> reg =
                 life =>
@@ -101,12 +98,16 @@ namespace HCB.IoC
         private static void RegisterByName(ContainerBuilder b, Assembly[] assemblies, string suffix, Bind bind)
         {
             var rb = ApplyBind(
-                b.RegisterAssemblyTypes(assemblies)
-                 .Where(t => t.IsClass
-                             && !t.IsAbstract
-                             && t.Name.EndsWith(suffix)
-                             && !typeof(IHostedService).IsAssignableFrom(t)),
-                bind);
+                        b.RegisterAssemblyTypes(assemblies)
+                         .Where(t => t.IsClass
+                                     && !t.IsAbstract
+                                     && t.Name.EndsWith(suffix)
+                                     && !typeof(IHostedService).IsAssignableFrom(t)
+                                     // 아래 조건을 추가하여 어트리뷰트가 있는 경우 이 등록 과정을 건너뜁니다.
+                                     && !t.GetCustomAttributes(typeof(ServiceAttribute), false).Any()
+                                     && !t.GetCustomAttributes(typeof(RepositoryAttribute), false).Any()
+                                     && !t.GetCustomAttributes(typeof(ViewModelAttribute), false).Any()),
+                        bind);
 
             // ViewModel 접미사인 경우는 매번 새 인스턴스가 필요하므로 InstancePerDependency 사용
             if (suffix == "ViewModel")
