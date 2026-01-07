@@ -27,8 +27,8 @@
             </Ellipse.Style>
         </Ellipse>
 
-            <!-- ● 라벨 -->
-            <telerik:HighlightTextBlock
+        <!-- ● 라벨 -->
+        <telerik:HighlightTextBlock
                        Grid.Column="2"
                        Style="{StaticResource HighlightTextBlockStyle}"
                        VerticalAlignment="Center"
@@ -37,6 +37,5 @@
                        Foreground="{Binding TextBrush, ElementName=root}"
                        TextTrimming="CharacterEllipsis"
                        Text="{Binding Label, ElementName=root}" />
-        </Grid>
-    </Grid>
+    </StackPanel>
 </UserControl>

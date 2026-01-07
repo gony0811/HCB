@@ -31,7 +31,7 @@
                     <ColumnDefinition></ColumnDefinition>
                 </Grid.ColumnDefinitions>
                 <Border BorderBrush="Gray" BorderThickness="1">
-                    <TextBlock Text="{Binding Name}"
+                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Name}"
                    FontSize="18"
                    FontWeight="Bold"
                    Foreground="White"
@@ -39,12 +39,12 @@
                 </Border>
                 
 
-                <Button Content="Servo ON"
+                <Button Content="SERVO ON"
                         Grid.Column="1"
                         Command="{Binding ServoOnCommand}"
                         Margin="4,0"/>
 
-                <Button Content="Home"
+                <Button Content="HOME"
                         Grid.Column="2"
                         Command="{Binding HomeCommand}"
                         Margin="4,0"/>
@@ -53,15 +53,16 @@
             <!-- ===== Status Indicators ===== -->
             <UniformGrid Grid.Row="1" Columns="4" Margin="0,10,0,10">
 
-                <local:StateCell Label="Enable"     IsOn="{Binding IsEnabled}"/>
-                <local:StateCell Label="Busy"       IsOn="{Binding IsBusy}"/>
-                <local:StateCell Label="Error"      IsOn="{Binding IsError}"/>
-                <local:StateCell Label="InPos"      IsOn="{Binding InPosition}"/>
+                <local:StateCell Label="ENABLE"     IsOn="{Binding IsEnabled}"/>
+                <local:StateCell Label="BUSY"       IsOn="{Binding IsBusy}"/>
+                <local:StateCell Label="ERROR"      IsOn="{Binding IsError}"/>
+                <local:StateCell Label="INPOS"      IsOn="{Binding InPosition}"/>
 
-                <local:StateCell Label="Home"       IsOn="{Binding IsHome}"/>
-                <local:StateCell Label="+Limit"     IsOn="{Binding IsPlusLimit}"/>
-                <local:StateCell Label="-Limit"     IsOn="{Binding IsMinusLimit}"/>
-                <local:StateCell Label="HomeDone"   IsOn="{Binding IsHomeDone}"/>
+                
+                <local:StateCell Label="P-LIMIT"     IsOn="{Binding IsPlusLimit}"/>
+                <local:StateCell Label="ORIGIN"      IsOn="{Binding IsHome}"/>
+                <local:StateCell Label="N-LIMIT"     IsOn="{Binding IsMinusLimit}"/>
+                <local:StateCell Label="CAL."       IsOn="{Binding IsHomeDone}"/>
 
             </UniformGrid>
 
@@ -74,9 +75,9 @@
                 </Grid.ColumnDefinitions>
                 <Border BorderBrush="Gray" BorderThickness="1" Margin="2">
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="Current Pos"
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="CURRENT-POS"
                                Foreground="Gray"/>
-                        <TextBlock Text="{Binding CurrentPosition, StringFormat=F3}"
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding CurrentPosition, StringFormat=F3}"
                                FontSize="16"
                                TextAlignment="Center"
                                Foreground="White"/>
@@ -84,9 +85,9 @@
                 </Border>
                 <Border BorderBrush="Gray" BorderThickness="1" Grid.Column="1" Margin="2">
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="Command Pos"
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="TARGET-POS"
                                Foreground="Gray"/>
-                        <TextBlock Text="{Binding CommandPosition, StringFormat=F3}"
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding CommandPosition, StringFormat=F3}"
                                FontSize="16"
                                    TextAlignment="Center"
                                Foreground="White"/>
@@ -95,9 +96,9 @@
 
                 <Border BorderBrush="Gray" BorderThickness="1" Grid.Column="2" Margin="2">
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="Speed"
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="VELOCITY"
                                     Foreground="Gray"/>
-                        <TextBlock Text="{Binding CurrentSpeed, StringFormat=F2}"
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding CurrentSpeed, StringFormat=F2}"
                                     FontSize="16"
                                    TextAlignment="Center"
                                     Foreground="White"/>

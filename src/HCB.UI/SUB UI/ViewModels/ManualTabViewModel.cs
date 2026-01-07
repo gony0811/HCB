@@ -106,54 +106,62 @@ namespace HCB.UI
 
         private void Initialize()
         {
-            var DYMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.D_Y);
-            var PYMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.P_Y);
-            var BXMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_X);
-            var BZ1Motion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_Z);
-            var BZ2Motion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.h_z);
-            var WYMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.W_Y);
-            var WTMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.W_T);
-            var BTMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_T);
-
-            foreach (var DY in DYMotion.PositionList)
+            try
             {
-                DyAxisTable.AddRow(new PositionTableRowModel(DY.Name, DY.Position, DY.Speed));
+                var DYMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.D_Y);
+                var PYMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.P_Y);
+                var BXMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_X);
+                var BZ1Motion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_Z);
+                var BZ2Motion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.h_z);
+                var WYMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.W_Y);
+                var WTMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.W_T);
+                var BTMotion = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_T);
+
+                foreach (var DY in DYMotion.PositionList)
+                {
+                    DyAxisTable.AddRow(new PositionTableRowModel(DY.Name, DY.Position, DY.Speed));
+                }
+
+                foreach (var PY in PYMotion.PositionList)
+                {
+                    PyAxisTable.AddRow(new PositionTableRowModel(PY.Name, PY.Position, PY.Speed));
+                }
+
+                foreach (var BX in BXMotion.PositionList)
+                {
+                    BxAxisTable.AddRow(new PositionTableRowModel(BX.Name, BX.Position, BX.Speed));
+                }
+
+                foreach (var BT in BTMotion.PositionList)
+                {
+                    BtAxisTable.AddRow(new PositionTableRowModel(BT.Name, BT.Position, BT.Speed));
+                }
+
+                foreach (var BZ1 in BZ1Motion.PositionList)
+                {
+                    Bz1AxisTable.AddRow(new PositionTableRowModel(BZ1.Name, BZ1.Position, BZ1.Speed));
+                }
+
+                foreach (var BZ2 in BZ2Motion.PositionList)
+                {
+                    Bz2AxisTable.AddRow(new PositionTableRowModel(BZ2.Name, BZ2.Position, BZ2.Speed));
+                }
+
+                foreach (var WY in WYMotion.PositionList)
+                {
+                    WyAxisTable.AddRow(new PositionTableRowModel(WY.Name, WY.Position, WY.Speed));
+                }
+
+                foreach (var WT in WTMotion.PositionList)
+                {
+                    WtAxisTable.AddRow(new PositionTableRowModel(WT.Name, WT.Position, WT.Speed));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "ManualTabViewModel 초기화 중 오류 발생");
             }
 
-            foreach (var PY in PYMotion.PositionList)
-            {
-                PyAxisTable.AddRow(new PositionTableRowModel(PY.Name, PY.Position, PY.Speed));
-            }
-
-            foreach (var BX in BXMotion.PositionList)
-            {
-                BxAxisTable.AddRow(new PositionTableRowModel(BX.Name, BX.Position, BX.Speed));
-            }
-
-            foreach (var BT in BTMotion.PositionList)
-            {
-                BtAxisTable.AddRow(new PositionTableRowModel(BT.Name, BT.Position, BT.Speed));
-            }
-
-            foreach (var BZ1 in BZ1Motion.PositionList)
-            {
-                Bz1AxisTable.AddRow(new PositionTableRowModel(BZ1.Name, BZ1.Position, BZ1.Speed));
-            }
-
-            foreach (var BZ2 in BZ2Motion.PositionList)
-            {
-                Bz2AxisTable.AddRow(new PositionTableRowModel(BZ2.Name, BZ2.Position, BZ2.Speed));
-            }
-
-            foreach (var WY in WYMotion.PositionList)
-            {
-                WyAxisTable.AddRow(new PositionTableRowModel(WY.Name, WY.Position, WY.Speed));
-            }
-
-            foreach (var WT in WTMotion.PositionList)
-            {
-                WtAxisTable.AddRow(new PositionTableRowModel(WT.Name, WT.Position, WT.Speed));
-            }
         }
 
         [RelayCommand]

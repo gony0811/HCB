@@ -53,7 +53,7 @@ namespace HCB.UI
                 if (UserService.CurrentAuthority.Name == "ADMIN" || UserService.CurrentAuthority.Name == "SERVICE_ENGINEER")
                 {
                     OperatorGrant = Visibility.Visible;
-                    EngineerGrant = Visibility.Visible;
+                    EngineerGrant = Visibility.Visible; 
                 }
                 else
                 {
