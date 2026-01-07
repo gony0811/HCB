@@ -44,54 +44,27 @@ namespace HCB.UI
         private PositionTableViewModel dyAxisTable;
 
         [ObservableProperty]
-        private MotorStatusTableViewModel dyMotorStatusTable;
-
-
-        [ObservableProperty]
         private PositionTableViewModel pyAxisTable;
-
-        [ObservableProperty]
-        private MotorStatusTableViewModel pyMotorStatusTable;
-
-
-
         // B-Head
         [ObservableProperty]
         private PositionTableViewModel bxAxisTable;
-
-        [ObservableProperty]
-        private MotorStatusTableViewModel bxMotorStatusTable;
-
-
         [ObservableProperty]
         private PositionTableViewModel bz1AxisTable;
-
-        [ObservableProperty]
-        private MotorStatusTableViewModel bz1MotorStatusTable;
 
         [ObservableProperty]
         private PositionTableViewModel bz2AxisTable;
 
         [ObservableProperty]
-        private MotorStatusTableViewModel bz2MotorStatusTable;
-
-        [ObservableProperty]
         private PositionTableViewModel btAxisTable;
 
-        [ObservableProperty]
-        private MotorStatusTableViewModel btMotorStatusTable;
         // W-Table
         [ObservableProperty]
         private PositionTableViewModel wyAxisTable;
 
-        [ObservableProperty]
-        private MotorStatusTableViewModel wyMotorStatusTable;
 
         [ObservableProperty]
         private PositionTableViewModel wtAxisTable;
 
-        [ObservableProperty]
-        private MotorStatusTableViewModel wtMotorStatusTable;
 
 
         [ObservableProperty] private bool isDieLoading;
@@ -105,8 +78,7 @@ namespace HCB.UI
             ILogger logger,
             DeviceManager deviceManager,
             SequenceService sequenceService,
-            Func<string, PositionTableViewModel> positionFactory,
-            Func<string, MotorStatusTableViewModel> motorStatusFactory)
+            Func<string, PositionTableViewModel> positionFactory)
         {
             _logger = logger.ForContext<ManualTabViewModel>();
             _deviceManager = deviceManager;
@@ -114,28 +86,20 @@ namespace HCB.UI
 
             // PositionTableViewModel 및 MotorStatusTableViewModel 인스턴스를 팩토리로 생성
             dyAxisTable = positionFactory("D-Y Axis");
-            dyMotorStatusTable = motorStatusFactory("Die DY");
 
             pyAxisTable = positionFactory("P-Y Axis");
-            pyMotorStatusTable = motorStatusFactory("P-Y");
 
             bxAxisTable = positionFactory("B-X Axis");
-            bxMotorStatusTable = motorStatusFactory("B-X");
 
             bz1AxisTable = positionFactory("B-Z1 Axis");
-            bz1MotorStatusTable = motorStatusFactory("B-Z1");
 
             bz2AxisTable = positionFactory("B-Z2 Axis");
-            bz2MotorStatusTable = motorStatusFactory("B-Z2");
 
             btAxisTable = positionFactory("B-T Axis");
-            btMotorStatusTable = motorStatusFactory("B-T");
 
             wyAxisTable = positionFactory("W-Y Axis");
-            wyMotorStatusTable = motorStatusFactory("W-Y");
 
             wtAxisTable = positionFactory("W-T Axis");
-            wtMotorStatusTable = motorStatusFactory("W-T");
 
             Initialize();
         }
