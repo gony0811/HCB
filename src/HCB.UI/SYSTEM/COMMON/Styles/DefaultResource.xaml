@@ -123,7 +123,7 @@
     </Style>
 
     <!-- ComboBox 기본 스타일 -->
-    <Style TargetType="ComboBox" x:Key="RoundedComboBox">
+    <Style TargetType="telerik:RadComboBox" x:Key="RoundedComboBox">
         <Setter Property="Background" Value="{StaticResource Btn.Bg}"/>
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="BorderBrush" Value="{StaticResource Btn.Bg}"/>
@@ -133,7 +133,7 @@
         <Setter Property="SnapsToDevicePixels" Value="True"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ComboBox">
+                <ControlTemplate TargetType="telerik:RadComboBox">
                     <Grid>
                         <Border x:Name="Border"
                             Background="{TemplateBinding Background}"
@@ -155,7 +155,7 @@
                                           ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                           ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"/>
 
-                            <ToggleButton Grid.Column="1"
+                            <telerik:RadToggleButton Grid.Column="1"
                                       x:Name="DropDownToggle"
                                       Focusable="False"
                                       IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
@@ -173,7 +173,7 @@
                                       Fill="White"
                                       Width="8" Height="5"/>
                                 </Grid>
-                            </ToggleButton>
+                            </telerik:RadToggleButton>
                         </Grid>
 
                         <!-- Popup 내부 수정 -->
@@ -647,7 +647,7 @@
     <Style x:Key="Cell" TargetType="Border">
         <Setter Property="BorderBrush" Value="#3C4A52"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="Padding" Value="4,2"/>
     </Style>
     <!-- 헤더 셀 -->
     <Style x:Key="HeaderCell" TargetType="Border" BasedOn="{StaticResource Cell}">

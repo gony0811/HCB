@@ -49,7 +49,9 @@
             <Ellipse Grid.Column="0" Style="{StaticResource DotStyle}"/>
 
             <!-- ● 라벨 -->
-            <TextBlock Grid.Column="2"
+            <telerik:HighlightTextBlock
+                       Grid.Column="2"
+                       Style="{StaticResource HighlightTextBlockStyle}"
                        VerticalAlignment="Center"
                        FontSize="{Binding FontSize, ElementName=root}"  
                        FontWeight="SemiBold"

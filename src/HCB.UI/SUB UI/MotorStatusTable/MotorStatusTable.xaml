@@ -27,7 +27,8 @@
                              State="{Binding HomeState}"
                              DotSize="{Binding FontSize}"
                              FontSize="{Binding FontSize, ElementName=root}"
-                             VerticalContentAlignment="Center"/>
+                             VerticalContentAlignment="Center"
+                             HorizontalContentAlignment="Center"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="2" Grid.Row="0">
@@ -35,7 +36,8 @@
                              State="{Binding RdyState}"
                              DotSize="{Binding FontSize}"
                              FontSize="{Binding FontSize, ElementName=root}" 
-                             VerticalContentAlignment="Center"/>
+                             VerticalContentAlignment="Center"
+                             HorizontalContentAlignment="Center"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="3" Grid.Row="0">
@@ -43,7 +45,8 @@
                              State="{Binding AlmState}"
                              DotSize="{Binding FontSize}"
                              FontSize="{Binding FontSize, ElementName=root}"
-                             VerticalContentAlignment="Center"/>
+                             VerticalContentAlignment="Center"
+                             HorizontalContentAlignment="Center"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="4" Grid.Row="0">
@@ -51,7 +54,8 @@
                              State="{Binding InpoState}"
                              DotSize="{Binding FontSize}"
                              FontSize="{Binding FontSize, ElementName=root}"
-                             VerticalContentAlignment="Center"/>
+                             VerticalContentAlignment="Center"
+                             HorizontalContentAlignment="Center"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="5" Grid.Row="0">
@@ -67,35 +71,38 @@
             <local:StateCell Label="N-LMT" 
                              State="{Binding NlmtState}"
                              FontSize="{Binding FontSize, ElementName=root}"
-                             VerticalContentAlignment="Center"/>
+                             VerticalContentAlignment="Center"
+                             HorizontalContentAlignment="Center"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="2" Grid.Row="1">
             <local:StateCell Label="ORGIN" 
                              State="{Binding OrgState}"
                              FontSize="{Binding FontSize, ElementName=root}"
-                             VerticalContentAlignment="Center"/>
+                             VerticalContentAlignment="Center"
+                             HorizontalContentAlignment="Center"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="3" Grid.Row="1">
             <local:StateCell Label="P-LMT" 
                              State="{Binding PlmtState}"
                              FontSize="{Binding FontSize, ElementName=root}"
-                             VerticalContentAlignment="Center"/>
+                             VerticalContentAlignment="Center"
+                             HorizontalContentAlignment="Center"/>
         </Border>
 
         <Border Style="{StaticResource Cell}" Grid.Column="4" Grid.Row="1" Grid.ColumnSpan="2">
             <WrapPanel Orientation="Vertical">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="ENC: "
                            FontSize="{Binding FontSize, ElementName=root}"/>
-                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" MinWidth="80" Text="{Binding Enc}"
+                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Width="Auto" Text="{Binding Enc}"
                            FontSize="{Binding FontSize, ElementName=root}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="POS: "
                            FontSize="{Binding FontSize, ElementName=root}"/>
-                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" MinWidth="100" Text="{Binding Pos}"
+                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Width="Auto" Text="{Binding Pos}"
                            FontSize="{Binding FontSize, ElementName=root}"/>
                 </StackPanel>
             </WrapPanel>
