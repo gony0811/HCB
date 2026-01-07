@@ -1,0 +1,65 @@
+﻿<UserControl x:Class="HCB.UI.PositionTable"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <!--telerik:GroupBox Header="{Binding TableName}"
+          Style="{StaticResource GroupBoxStyle}"
+          FontSize="20"
+          Margin="5 10 5 10"-->
+
+    <telerik:RadGridView ItemsSource="{Binding Rows}"
+              Style="{StaticResource RadGridViewStyle}"
+              FontSize="14"
+              ShowGroupPanel="False"
+              AutoGenerateColumns="False"                             
+              CanUserDeleteRows="False"
+              EnableRowVirtualization="True"
+              EnableColumnVirtualization="True"
+              GridLinesVisibility="Both"
+              SelectionMode="Single">
+
+        <telerik:RadGridView.Columns>
+            <telerik:GridViewDataColumn Header="Save" Width="80" TextAlignment="Center">
+                <telerik:GridViewDataColumn.CellTemplate>
+                    <DataTemplate>
+                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="저장"
+                                Click="SaveButton_Click"
+                                Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" />
+                    </DataTemplate>
+                </telerik:GridViewDataColumn.CellTemplate>
+            </telerik:GridViewDataColumn>
+
+            <telerik:GridViewDataColumn Header="Name" DataMemberBinding="{Binding Name}" MinWidth="150" IsReadOnly="True" TextAlignment="Center"/>
+            <telerik:GridViewDataColumn Header="POS" IsReadOnly="False"
+                    DataMemberBinding="{Binding Position, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Width="100" TextAlignment="Center"/>
+
+            <telerik:GridViewDataColumn Header="SPD" IsReadOnly="False"
+                    DataMemberBinding="{Binding Speed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Width="100" TextAlignment="Center"/>
+
+            <telerik:GridViewDataColumn Header="Move" Width="80">
+                <telerik:GridViewDataColumn.CellTemplate>
+                    <DataTemplate>
+                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="이동"
+                                Command="{Binding DataContext.MoveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" />
+                    </DataTemplate>
+                </telerik:GridViewDataColumn.CellTemplate>
+            </telerik:GridViewDataColumn>
+        </telerik:RadGridView.Columns>
+    </telerik:RadGridView>
+    <!--/telerik:GroupBox-->
+</UserControl>

@@ -23,7 +23,8 @@ namespace HCB.UI
         // POSITION NAMES
         public const string READY_POSITION = "READY";
         public const string LOAD_POSITION = "LOAD";
-
+        public const string WAFER_CENTER_POSITION = "WAFER_CENTER";
+        public const string DTABLE_CENTER_POSITION = "DTABLE_CENTER";
         public const string DIE_1_PICK_POSITION = "DIE_1_PICK";
         public const string DIE_2_PICK_POSITION = "DIE_2_PICK";
         public const string DIE_3_PICK_POSITION = "DIE_3_PICK";

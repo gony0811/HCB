@@ -22,8 +22,9 @@ namespace HCB.UI
     [View(Lifetime.Scoped)]
     public partial class StepSeqTab : UserControl
     {
-        public StepSeqTab()
+        public StepSeqTab(StepSeqTabViewModel stepSeqTabViewModel)
         {
+            this.DataContext = stepSeqTabViewModel;
             InitializeComponent();
         }
     }

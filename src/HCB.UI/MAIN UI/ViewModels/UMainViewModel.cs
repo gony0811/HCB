@@ -33,7 +33,8 @@ namespace HCB.UI
 
         #region Sub ViewModels
 
-        public NavigationViewModel NavVM { get; }
+        [ObservableProperty]
+        private NavigationViewModel navVM;
         public SequenceServiceVM SequenceServiceVM { get; }
         #endregion
 

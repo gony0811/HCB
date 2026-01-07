@@ -138,7 +138,8 @@ namespace HCB.UI
 
                     motion.CurrentPosition = feedpos - homepos;
                     motion.CommandPosition = commandpos - homepos;
-                    
+
+                    // 상태 비트 설정
                     motion.IsEnabled = ((intResponse & 0x00001000) == 0x00001000);
                     motion.IsBusy = !((intResponse & 0x00002000) == 0x00002000);
                     motion.IsError = ((intResponse & 0x01000000) == 0x00100000);

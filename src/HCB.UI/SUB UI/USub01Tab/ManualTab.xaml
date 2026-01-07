@@ -5,18 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:HCB.UI"
-             mc:Ignorable="d" >
-    
-    <UserControl.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-            <Style TargetType="local:MotorStatusTable">
-                <Setter Property="FontSize" Value="10"></Setter>
-            </Style>
-        </ResourceDictionary>
-    </UserControl.Resources>
+             mc:Ignorable="d">
     <telerik:RadTabControl Style="{StaticResource RadTabControlStyle}">
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="D-TABLE">
             <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="*, Auto">
@@ -49,7 +38,7 @@
                 <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 표시"
                           Margin="4"
                           Grid.Row="1">
-                    <local:MotorStateControl DataContext="{Binding DyAxis}" />
+                    <local:MotorStateControl DataContext="{Binding DyAxis}"/>
                 </telerik:GroupBox>
             </Grid>
             

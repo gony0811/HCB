@@ -6,11 +6,17 @@
       xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
       xmlns:local="clr-namespace:HCB.UI"
       mc:Ignorable="d" 
-      d:DesignHeight="450" d:DesignWidth="800"
       >
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
     <telerik:RadTabControl Style="{StaticResource RadTabControlStyle}">
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" FontSize="10" Header="PRE-STEP">
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="PRE-STEP" Margin="1">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition/>
@@ -32,30 +38,184 @@
             </Grid>
         </telerik:RadTabItem>
 
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="STEP 1">
-            <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="Auto, Auto, Auto">
-                <WrapPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="0">
-                    <telerik:CheckBoxControl Style="{StaticResource CheckBoxControlStyle}" IsHitTestVisible="False" IsChecked="{Binding IsCheckProcess1}"/>
-                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Move Wafer Center"/>
-                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding ProcessingTime1}"/>
-                </WrapPanel>
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="STEP 1" Margin="{StaticResource TabItemMargin}">
+            <Grid local:GridHelper.Columns="1*, 1*, 1*" local:GridHelper.Rows="Auto, *, Auto">
+                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="STEP 1 : WAFER ALIGN" Grid.Column="0" Grid.Row="0" Margin="4">
+                    <WrapPanel Orientation="Vertical">
+                        <StackPanel Orientation="Vertical">
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Move Wafer Center" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+
+
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferAlignCompleted }" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Wafer Align" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferAlignElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2" Margin="{StaticResource ControlMargin}">
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding Step1StartCommand}">
+                                <telerik:HighlightTextBlock Text="START"/>
+                            </telerik:RadButton>
+
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding Step2StopCommand}">
+                                <telerik:HighlightTextBlock Text="STOP"/>
+                            </telerik:RadButton>
+                        </StackPanel>
+                    </WrapPanel>
+                </telerik:GroupBox>
+
+                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="STEP 2 : DIE PICKUP" Grid.Column="0" Grid.Row="1" Margin="4">
+
+                    <WrapPanel Orientation="Vertical">
+                        <StackPanel Orientation="Vertical">
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDTableCenterPositionMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Move D-Table Center" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDTableCenterPositionMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDieCarrierAlignCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Die Carrier Align" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDieCarrierAlignElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+
+
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDiePickUpCompleted }" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Die Pick Up" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDiePickUpElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2" Margin="{StaticResource ControlMargin}">
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding Step2StartCommand}">
+                                <telerik:HighlightTextBlock Text="START"/>
+                            </telerik:RadButton>
+
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding Step2StopCommand}">
+                                <telerik:HighlightTextBlock Text="STOP"/>
+                            </telerik:RadButton>
+                        </StackPanel>
+                    </WrapPanel>
+                       
+                </telerik:GroupBox>
+
+                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="STEP 3 : Upper Camera Die Align" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Margin="4">
+                    <WrapPanel Orientation="Vertical">
+                        <StackPanel Orientation="Vertical">
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepMovePTableCenterCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Move P-Table Center" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepMovePTableCenterElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepLeftFiducialMarkAlignCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Fiducial Mark Align (L)" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepLeftFiducialMarkAlignElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepRightFiducialMarkAlignCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Fiducial Mark Align (R)" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepRightFiducialMarkAlignElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepCalculateFiducialMarkPositionCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Calculate Fiducial Mark" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepCalculateFiducialMarkPositionElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepLeftDieMarkDetectCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Die Mark Align (L)" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepLeftDieMarkDetectElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepRightDieMarkDetectCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Die Mark Align (R)" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepRightDieMarkDetectElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDieAlignmentCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Die Alignment" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDieAlignmentElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2" Margin="{StaticResource ControlMargin}">
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding Step3StartCommand}">
+                                <telerik:HighlightTextBlock Text="START"/>
+                            </telerik:RadButton>
+
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding Step3StopCommand}">
+                                <telerik:HighlightTextBlock Text="STOP"/>
+                            </telerik:RadButton>
+                        </StackPanel>
+                    </WrapPanel>
+                </telerik:GroupBox>
+
+                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="STEP 4 : Bonding Process" Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Margin="4">
+                    <WrapPanel Orientation="Vertical">
+                        <StackPanel Orientation="Vertical">
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepMoveBondingPositionCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Move Bonding Position" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepMoveBondingPositionElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferLogicMarkDetectingCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Detecting Wafer Mark" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferLogicMarkDetectingElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepDieFinalAlignCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Die Final Align" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepDieFinalAlignElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+                            <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepBodingProcessCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Bonding Process" FontSize="14" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepBodingProcessElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                            </WrapPanel>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2" Margin="{StaticResource ControlMargin}">
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding Step4StartCommand}">
+                                <telerik:HighlightTextBlock Text="START"/>
+                            </telerik:RadButton>
+
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding Step4StopCommand}">
+                                <telerik:HighlightTextBlock Text="STOP"/>
+                            </telerik:RadButton>
+                        </StackPanel>
+                    </WrapPanel>
+                       
+                </telerik:GroupBox>
+
+               
             </Grid>
         </telerik:RadTabItem>
 
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="STEP 2">
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="STEP 2" Margin="{StaticResource TabItemMargin}">
 
         </telerik:RadTabItem>
 
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="STEP 3">
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="STEP 3" Margin="{StaticResource TabItemMargin}">
 
         </telerik:RadTabItem>
 
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="STEP 4">
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="STEP 4" Margin="{StaticResource TabItemMargin}">
 
         </telerik:RadTabItem>
 
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="BONDING">
-
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Width="100" Header="BONDING" Margin="{StaticResource TabItemMargin}">
         </telerik:RadTabItem>
 
     </telerik:RadTabControl>
