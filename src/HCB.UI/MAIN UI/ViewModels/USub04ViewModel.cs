@@ -21,9 +21,15 @@ public partial class USub04ViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private AlarmHistoryDto selectedHistory;
 
+    // ================ 페이징 및 검색 =========================
     [ObservableProperty] private int pageSize = 20;
     [ObservableProperty] private int totalCount;
     [ObservableProperty] private int currentPageIndex = 0;
+
+    [ObservableProperty] private DateTime startSearchDate = DateTime.Now.AddDays(-7); // 기본값 일주일 전
+    [ObservableProperty] private DateTime endSearchDate = DateTime.Now;
+    [ObservableProperty] private string searchText = string.Empty;
+    // ========================================================= 
 
     private bool isLoading;
 
@@ -65,14 +71,29 @@ public partial class USub04ViewModel : ObservableObject, IDisposable
         {
             isLoading = true;
 
-            TotalCount = await alarmHistoryRepository.CountAsync();
-            AlarmHistoryList = await alarmService.GetAlarmHistoryList(
-                CurrentPageIndex + 1, PageSize);
+            // 종료 날짜의 시간을 23:59:59로 설정하여 해당 날짜 전체를 포함
+            var endDateTime = EndSearchDate.Date.AddDays(1).AddTicks(-1);
+            var startDateTime = StartSearchDate.Date;
+
+            TotalCount = await alarmService.GetSearchCount(startDateTime, endDateTime, SearchText);
+            AlarmHistoryList = await alarmService.SearchAlarmHistory(
+                startDateTime, endDateTime, SearchText, CurrentPageIndex + 1, PageSize);
+        }
+        catch (Exception ex)
+        {
+            // 로깅 추가
         }
         finally
         {
             isLoading = false;
         }
+    }
+
+    [RelayCommand]
+    public async Task Search()
+    {
+        CurrentPageIndex = 0; // 검색 시 첫 페이지로 이동
+        await LoadPageData();
     }
 
     /* ============================

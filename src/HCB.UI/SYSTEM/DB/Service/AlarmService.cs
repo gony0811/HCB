@@ -131,6 +131,29 @@ namespace HCB.UI
                 histories.Select(AlarmHistoryDto.ToDTO));
         }
 
+        public async Task<ObservableCollection<AlarmHistoryDto>> SearchAlarmHistory(
+            DateTime startDate,
+            DateTime endDate,
+            string searchText = "",
+            int pageNumber = 1,
+            int pageSize = 50)
+        {
+            int skip = (pageNumber - 1) * pageSize;
+
+            // 검색 조건 구성
+            var histories = await alarmHistoryRepository.ListAsync(
+                predicate: x => x.CreateAt >= startDate &&
+                                x.CreateAt <= endDate &&
+                                (string.IsNullOrEmpty(searchText) || x.Alarm.Name.Contains(searchText) || x.Alarm.Code.Contains(searchText)),
+                include: i => i.Include(x => x.Alarm),
+                orderBy: q => q.OrderByDescending(x => x.CreateAt),
+                skip: skip,
+                take: pageSize);
+
+            return new ObservableCollection<AlarmHistoryDto>(
+                histories.Select(AlarmHistoryDto.ToDTO));
+        }
+
         // 전체 알람 설정 리스트 조회
         public async Task<IReadOnlyList<Alarm>> GetAlarmList(Sort sort = Sort.Ascending)
         {
@@ -139,6 +162,14 @@ namespace HCB.UI
 
             return await alarmRepository.ListAsync(orderBy: q => q.OrderByDescending(a => a.Code));
         }
+        public async Task<int> GetSearchCount(DateTime start, DateTime end, string text)
+        {
+            return await alarmHistoryRepository.CountAsync(x =>
+                x.CreateAt >= start && x.CreateAt <= end &&
+                (string.IsNullOrEmpty(text) || x.Alarm.Name.Contains(text)));
+        }
+
+
 
         /* ============================
          * CRUD Operations

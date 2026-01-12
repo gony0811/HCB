@@ -87,20 +87,20 @@
                         </Grid.ColumnDefinitions>
 
                         <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Grid.Row="0" Grid.Column="0" Text="Begin" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <DatePicker Grid.Row="0" Grid.Column="1"
-                    SelectedDate="{Binding BeginDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    Margin="0,2"/>
+                        <telerik:RadDatePicker Grid.Row="0" Grid.Column="1"
+                                                SelectedValue="{Binding StartSearchDate, Mode=TwoWay}"
+                                                InputMode="DatePicker"
+                                                Margin="0,2"/>
 
-                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Grid.Row="1" Grid.Column="0" Text="End" VerticalAlignment="Center"             Margin="0,8,8,0"/>
-                        <DatePicker Grid.Row="1" Grid.Column="1"
-                                    SelectedDate="{Binding EndDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    Margin="0,8,0,2"/>
+                        <telerik:RadDatePicker Grid.Row="1" Grid.Column="1"
+                                                SelectedDate="{Binding EndSearchDate, Mode=TwoWay}"
+                                                InputMode="DatePicker"
+                                                Margin="0,2"/>
 
-                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Grid.Row="2" Grid.ColumnSpan="2"
-                                            Content="검색"
-                                            Margin="0,12,0,0"
-                                            HorizontalAlignment="Stretch"
-                                            Command="{Binding SearchErrorsCommand}"/>
+                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                           Grid.Row="2" Grid.ColumnSpan="2"
+                                           Content="검색"
+                                           Command="{Binding SearchCommand}" />
 
                         <telerik:RadButton Style="{StaticResource RadButtonStyle}" Grid.Row="3" Grid.ColumnSpan="2"
                                             Content="알람 히스토리 생성"
