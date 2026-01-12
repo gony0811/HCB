@@ -46,7 +46,7 @@ namespace HCB.UI
         {
             Byte[] byCommand;
             UInt32 uRet;
-
+            uDeviceId = 0;
             uRet = DTKPowerPmac.Instance.Connect(uDeviceId);
 
             if ((DTK_STATUS)uRet == DTK_STATUS.DS_Ok)
@@ -59,7 +59,7 @@ namespace HCB.UI
             else
             {
                 DTKPowerPmac.Instance.Close(uDeviceId);
-                Id = int.MaxValue;
+                uDeviceId = int.MaxValue;
                 IsConnected = false;
             }
 

@@ -1,4 +1,6 @@
 ﻿using Autofac;
+using HCB.Data.Entity;
+using HCB.Data.Repository;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -57,11 +59,12 @@ namespace HCB.UI
             
 
             _host = StartUp.BuildHost(e.Args);
+
             SplashScreenUpdate("호스트 빌드 완료.", 10);
 
             SplashScreenUpdate("어플리케이션 초기화 및 구동 시작", 15);
 
-            await InitializeApplicationAsync();
+
 
             SplashScreenUpdate("데이터베이스 연결 및 초기화...", 20);
             await StartUp.InitDatabaseAsync(_host);
@@ -71,9 +74,9 @@ namespace HCB.UI
 
             var userService = _host.Services.GetRequiredService<UserService>();
             await userService.InitializeAsync();
-            SplashScreenUpdate("데이터베이스 연결 및 초기화 완료", 30);
+            SplashScreenUpdate("데이터베이스 연결 및 초기화 완료", 25);
 
-
+            await InitializeApplicationAsync();
 
             SplashScreenUpdate("어플리케이션 초기화 완료", 100);
             
@@ -104,7 +107,10 @@ namespace HCB.UI
 
             SplashScreenUpdate("백그라운드 서비스 시작", 30);
             await _host.StartAsync();
+
+
         }
+           
 
         protected override void OnExit(ExitEventArgs e)
         {

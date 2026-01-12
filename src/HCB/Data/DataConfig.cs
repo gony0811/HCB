@@ -141,6 +141,8 @@ namespace HCB.Data
                 .IsRequired()
                 .HasMaxLength(100);
 
+            e.HasIndex(d => d.Name).IsUnique();
+
             e.Property(x => x.Value)
                 .IsRequired();
 
@@ -183,6 +185,8 @@ namespace HCB.Data
             builder.Property(d => d.Name)
                 .IsRequired()
                 .HasMaxLength(100);
+
+            builder.HasIndex(d => d.Name).IsUnique();
 
             builder.Property(d => d.FileName).HasMaxLength(100);
             builder.Property(d => d.InstanceName).HasMaxLength(100);
@@ -284,6 +288,8 @@ namespace HCB.Data
                 .IsRequired()
                 .HasMaxLength(100);
 
+            builder.HasIndex(m => m.Name).IsUnique();
+
             builder.Property(x => x.Unit)
                 .HasConversion<string>()
                 .IsRequired();
@@ -311,6 +317,8 @@ namespace HCB.Data
             builder.Property(m => m.Name)
                 .IsRequired()
                 .HasMaxLength(100);
+
+            builder.HasIndex(m => m.Name).IsUnique();
 
             builder.Property(m => m.IoDataType)
                 .IsRequired()
@@ -345,6 +353,8 @@ namespace HCB.Data
                 .IsRequired()
                 .HasMaxLength(100);
 
+            builder.HasIndex(p => p.Name).IsUnique();
+
             builder.Property(p => p.Speed)
                 .HasDefaultValue(0.0);
 
@@ -370,7 +380,7 @@ namespace HCB.Data
             e.Property(x => x.Name)
                 .IsRequired()
                 .HasMaxLength(100);
-
+            e.HasIndex(x => x.Name).IsUnique();
 
             e.Property(x => x.IntValue)
                 .IsRequired(false);

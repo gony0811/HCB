@@ -1,4 +1,6 @@
-﻿using HCB.Data.Entity;
+﻿using Autofac.Core;
+using HCB.Data.Entity;
+using HCB.Data.Repository;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -6,6 +8,7 @@ namespace HCB.Data
 {
     public static class DbSeeder
     {
+
         public static async Task EnsureSeededAsync(AppDb db, CancellationToken ct = default(CancellationToken))
         {
             db.Database.Migrate();
@@ -67,6 +70,48 @@ namespace HCB.Data
         }
 
         // ---------- helpers ----------
+        private static async Task<Device> InsertDeviceAsync(AppDb db, Device device, CancellationToken ct)
+        {
+            var existingDevice = await db.Set<Device>()
+                                         .FirstOrDefaultAsync(d => d.Name == device.Name, ct)
+                                         .ConfigureAwait(false);
+            if (existingDevice != null)
+            {
+                return existingDevice; // 이미 존재하면 반환
+            }
+            db.Set<Device>().Add(device);
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            return device;
+        }
+
+        private static async Task<MotionEntity> InsertMotionEntityAsync(AppDb db, MotionEntity entity, CancellationToken ct)
+        {
+            var existingEntity = await db.Set<MotionEntity>()
+                                         .FirstOrDefaultAsync(e => e.Name == entity.Name && e.ParentDeviceEntity.DeviceId == entity.ParentDeviceEntity.DeviceId, ct)
+                                         .ConfigureAwait(false);
+            if (existingEntity != null)
+            {
+                return existingEntity; // 이미 존재하면 반환
+            }
+            db.Set<MotionEntity>().Add(entity);
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            return entity;
+        }
+
+        private static async Task<MotionDeviceDetail> InsertMotionDeviceDetailAsync(AppDb db, MotionDeviceDetail detail, CancellationToken ct)
+        {
+            var existingDetail = await db.Set<MotionDeviceDetail>()
+                                         .FirstOrDefaultAsync(d => d.DeviceId == detail.DeviceId, ct)
+                                         .ConfigureAwait(false);
+            if (existingDetail != null)
+            {
+                return existingDetail; // 이미 존재하면 반환
+            }
+            db.Set<MotionDeviceDetail>().Add(detail);
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            return detail;
+        }
+
 
         private static async Task<Role> UpsertRoleAsync(AppDb db, string name, int rank, string passwordRaw, CancellationToken ct)
         {
