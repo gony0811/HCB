@@ -13,15 +13,16 @@
     <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="Auto, 1*, Auto">
 
         <!-- === Left Title === -->
-        <telerik:HighlightTextBlock Text="Motion" FontSize="20" Margin="5" />
+        <telerik:HighlightTextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Text="Motion" TextAlignment="Left" FontSize="20" Margin="5" />
 
         <!-- === MOTION LIST GRID === -->
-        <telerik:RadGridView 
+        <telerik:RadGridView Style="{StaticResource RadGridViewStyle}"
                             x:Name="MotionGrid"
                             ItemsSource="{Binding Device.MotionList}"
                              ShowGroupPanel="False"
                              SelectedItem="{Binding SelectedMotion}"
                              Grid.Row="1"
+                             Grid.Column="0"
                              AutoGenerateColumns="False"
                              IsReadOnly="True"
                              VirtualizingPanel.IsVirtualizing="True"
@@ -42,16 +43,19 @@
         </telerik:RadGridView>
 
         <!-- Bottom Left Buttons -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <telerik:RadButton Content="모션 생성"
+        <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Right">
+            <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                               Content="모션 생성"
                                Command="{Binding MotionCreateCommand}"
                                Margin="5" />
-            <telerik:RadButton Content="모션 수정"
-                   Command="{Binding MotionUpdateCommand}"
-                   Margin="5" />
-            <telerik:RadButton Content="모션 삭제"
-                   Command="{Binding MotionCreateCommand}"
-                   Margin="5" />
+            <telerik:RadButton Style="{StaticResource RadButtonStyle}"
+                               Content="모션 수정"
+                               Command="{Binding MotionUpdateCommand}"
+                               Margin="5" />
+            <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                               Content="모션 삭제"
+                               Command="{Binding MotionCreateCommand}"
+                               Margin="5" />
         </StackPanel>
 
         <!-- === Parameter Title === -->
@@ -85,13 +89,16 @@
 
         <!-- Bottom Right Buttons -->
         <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-            <telerik:RadButton Content="파라미터 생성"
+            <telerik:RadButton Style="{StaticResource RadButtonStyle}"
+                               Content="파라미터 생성"
                                Command="{Binding MotionParameterCreateCommand}"
                                Margin="5" />
-            <telerik:RadButton Content="파라미터 수정"
+            <telerik:RadButton Style="{StaticResource RadButtonStyle}"
+                               Content="파라미터 수정"
                                Command="{Binding MotionParameterUpdateCommand}"
                                Margin="5" />
-            <telerik:RadButton Content="파라미터 삭제"
+            <telerik:RadButton Style="{StaticResource RadButtonStyle}"
+                               Content="파라미터 삭제"
                                Command="{Binding MotionParameterDeleteCommand}"
                                Margin="5" />
         </StackPanel>

@@ -654,11 +654,11 @@
         <Setter Property="Background" Value="#2B3339"/>
     </Style>
     <!-- 텍스트 스타일(옵션) -->
-    <Style x:Key="HeaderText" TargetType="TextBlock">
+    <Style x:Key="HeaderText" TargetType="telerik:HighlightTextBlock">
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="#E6FFFFFF"/>
     </Style>
-    <Style x:Key="ValueText" TargetType="TextBlock">
+    <Style x:Key="ValueText" TargetType="telerik:HighlightTextBlock">
         <Setter Property="Foreground" Value="#E6FFFFFF"/>
     </Style>
 

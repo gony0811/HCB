@@ -34,7 +34,6 @@
                        VerticalAlignment="Center"
                        FontSize="{Binding FontSize, ElementName=root}"  
                        FontWeight="SemiBold"
-                       Foreground="{Binding TextBrush, ElementName=root}"
                        TextTrimming="CharacterEllipsis"
                        Text="{Binding Label, ElementName=root}" />
     </StackPanel>
