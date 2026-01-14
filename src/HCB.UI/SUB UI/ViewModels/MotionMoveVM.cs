@@ -6,16 +6,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using Serilog;
 
 namespace HCB.UI
 {
     public partial class MotionMoveVM : ObservableObject
     {
+        private readonly ILogger _logger;
+
         [ObservableProperty] public int speed;
         [ObservableProperty] public IAxis axis;
 
-        public MotionMoveVM()
+        public MotionMoveVM(ILogger logger)
         {      
+            this._logger = logger.ForContext<MotionMoveVM>();
         }
 
         [RelayCommand]
@@ -31,8 +35,25 @@ namespace HCB.UI
             if (Axis == null) return;
             try
             {
+                if (!Axis.IsEnabled)
+                {
+                    this._logger.Warning("{axis} is not enabled.", Axis.Name);
+                    return;
+                }
+                else if (Axis.IsBusy)
+                {
+                    this._logger.Warning("{axis} is busy.", Axis.Name);
+                    return;
+                }
+                else if (Axis.LimitMinSpeed > Speed || Axis.LimitMaxSpeed < Speed)
+                {
+                    this._logger.Warning("{axis} speed {speed} is out of range [{min},{max}].", Axis.Name, Speed, Axis.LimitMinSpeed, Axis.LimitMaxSpeed);
+                    return;
+                }
+
                 await Axis.JogMove(JogMoveType.Plus, Speed);
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
 
             }
@@ -44,6 +65,22 @@ namespace HCB.UI
             if (Axis == null) return;
             try
             {
+                if (!Axis.IsEnabled)
+                {
+                    this._logger.Warning("{axis} is not enabled.", Axis.Name);
+                    return;
+                }
+                else if (Axis.IsBusy)
+                {
+                    this._logger.Warning("{axis} is busy.", Axis.Name);
+                    return;
+                }
+                else if (Axis.LimitMinSpeed > Speed || Axis.LimitMaxSpeed < Speed)
+                {
+                    this._logger.Warning("{axis} speed {speed} is out of range [{min},{max}].", Axis.Name, Speed, Axis.LimitMinSpeed, Axis.LimitMaxSpeed);
+                    return;
+                }
+
                 await Axis.JogMove(JogMoveType.Minus, Speed);
             }
             catch (Exception e)

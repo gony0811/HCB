@@ -345,7 +345,7 @@ namespace HCB.UI
 
         private DAxis ConvertToDMotion(MotionEntity m, IMotionDevice runtime)
         {
-            var dm = new DAxis
+            var dm = new DAxis(this._logger)
             {
                 Id = m.Id,
                 Name = m.Name,

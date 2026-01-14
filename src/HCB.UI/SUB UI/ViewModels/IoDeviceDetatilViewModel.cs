@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Repository;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,14 +13,16 @@ namespace HCB.UI
 {
     public partial class IoDeviceDetatilViewModel : ObservableObject, IDeviceDetailViewModel
     {
+        private readonly ILogger logger;
         private readonly IoDataRepository ioDataRepository;
         private readonly DialogService dialogService;
         [ObservableProperty] private IIoDevice device;
 
         [ObservableProperty] private IIoData selectedIoData;
 
-        public IoDeviceDetatilViewModel(IIoDevice device, DialogService dialogService, IoDataRepository ioDataRepository)
+        public IoDeviceDetatilViewModel(ILogger logger, IIoDevice device, DialogService dialogService, IoDataRepository ioDataRepository)
         {
+            this.logger = logger.ForContext<IoDeviceDetatilViewModel>();
             this.ioDataRepository = ioDataRepository;
             this.dialogService = dialogService;
             Device = device;

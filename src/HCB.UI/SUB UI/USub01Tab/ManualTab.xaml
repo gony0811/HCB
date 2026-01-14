@@ -23,6 +23,7 @@
                                              CanUserDeleteRows="False"
                                              SelectionMode="Single"
                                              GridLinesVisibility="None"
+                                             MinHeight="250"
                                              Margin="5">
 
                             <telerik:RadGridView.Columns>
@@ -50,43 +51,52 @@
         </telerik:RadTabItem>
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="P-TABLE">
             <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="*, Auto">
-                <telerik:RadGridView
-                        Style="{StaticResource RadGridViewStyle}"
-                        ItemsSource="{Binding PyAxis.PositionList}"
-                        FontSize="16"
-                        ShowGroupPanel="False"
-                        AutoGenerateColumns="False"
-                        IsReadOnly="True"
-                        CanUserDeleteRows="False"
-                        SelectionMode="Single"
-                        GridLinesVisibility="None">
+                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="P-Y"
+                          Margin="5"
+                          Grid.Row="0" Grid.Column="0">
+                    <StackPanel Orientation="Vertical" Margin="5">
+                        <telerik:RadGridView    Style="{StaticResource RadGridViewStyle}"
+                                                ItemsSource="{Binding PyAxis.PositionList}"
+                                                FontSize="16"
+                                                ShowGroupPanel="False"
+                                                AutoGenerateColumns="False"
+                                                IsReadOnly="True"
+                                                CanUserDeleteRows="False"
+                                                SelectionMode="Single"
+                                                GridLinesVisibility="None" 
+                                                MinHeight="250"
+                                                Margin="5">
 
-                    <telerik:RadGridView.Columns>
-                        <telerik:GridViewDataColumn Header="이름"
-                                        DataMemberBinding="{Binding Name}"
-                                        Width="*"
-                                        SortMemberPath="Name"/>
-                        <telerik:GridViewDataColumn Header="위치"
-                                        DataMemberBinding="{Binding Position, StringFormat=F3}"
-                                        Width="140"
-                                        SortMemberPath="Location"/>
-                        <telerik:GridViewDataColumn Header="속도"
-                                        DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                                        Width="120"
-                                        SortMemberPath="Speed"/>
-                    </telerik:RadGridView.Columns>
-                </telerik:RadGridView>
-                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 표시"
-                                  Margin="4"
-                                  Grid.Row="1">
-                    <local:MotorStateControl DataContext="{Binding PyAxis}" />
+                            <telerik:RadGridView.Columns>
+                                <telerik:GridViewDataColumn Header="이름"
+                        DataMemberBinding="{Binding Name}"
+                        Width="*"
+                        SortMemberPath="Name"/>
+                                <telerik:GridViewDataColumn Header="위치"
+                        DataMemberBinding="{Binding Position, StringFormat=F3}"
+                        Width="140"
+                        SortMemberPath="Location"/>
+                                <telerik:GridViewDataColumn Header="속도"
+                        DataMemberBinding="{Binding Speed, StringFormat=F2}"
+                        Width="120"
+                        SortMemberPath="Speed"/>
+                            </telerik:RadGridView.Columns>
+                        </telerik:RadGridView>
+
+                        <local:MotorStateControl DataContext="{Binding PyAxis}" Margin="5"/>
+                    </StackPanel>
+
                 </telerik:GroupBox>
             </Grid>
         </telerik:RadTabItem>
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="B-HEAD">
             <Grid local:GridHelper.Columns="1*, 1*, 1*">
                 <Grid local:GridHelper.Rows="*, Auto">
-                    <telerik:RadGridView
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="H-X"
+          Margin="4"
+          Grid.Row="0">
+                        <StackPanel Orientation="Vertical" Margin="5">
+                            <telerik:RadGridView
                             Style="{StaticResource RadGridViewStyle}"
                             ItemsSource="{Binding BxAxis.PositionList}"
                             FontSize="16"
@@ -95,31 +105,36 @@
                             IsReadOnly="True"
                             CanUserDeleteRows="False"
                             SelectionMode="Single"
-                            GridLinesVisibility="None">
+                            MinHeight="250"
+                            GridLinesVisibility="None" Margin="5">
 
-                        <telerik:RadGridView.Columns>
-                            <telerik:GridViewDataColumn Header="이름"
+                                <telerik:RadGridView.Columns>
+                                    <telerik:GridViewDataColumn Header="이름"
                 DataMemberBinding="{Binding Name}"
                 Width="*"
                 SortMemberPath="Name"/>
-                            <telerik:GridViewDataColumn Header="위치"
+                                    <telerik:GridViewDataColumn Header="위치"
                 DataMemberBinding="{Binding Position, StringFormat=F3}"
                 Width="140"
                 SortMemberPath="Location"/>
-                            <telerik:GridViewDataColumn Header="속도"
+                                    <telerik:GridViewDataColumn Header="속도"
                 DataMemberBinding="{Binding Speed, StringFormat=F2}"
                 Width="120"
                 SortMemberPath="Speed"/>
-                        </telerik:RadGridView.Columns>
-                    </telerik:RadGridView>
-                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 표시"
-          Margin="4"
-          Grid.Row="1">
-                        <local:MotorStateControl DataContext="{Binding BxAxis}" />
+                                </telerik:RadGridView.Columns>
+                            </telerik:RadGridView>
+
+                            <local:MotorStateControl DataContext="{Binding BxAxis}" Margin="5"/>
+                        </StackPanel>
                     </telerik:GroupBox>
+                        
                 </Grid>
                 <Grid local:GridHelper.Rows="*, Auto" Grid.Column="1">
-                    <telerik:RadGridView
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="H-Z"
+                    Margin="5"
+                    Grid.Row="0" Grid.RowSpan="2">
+                        <StackPanel Orientation="Vertical" Margin="5">
+                            <telerik:RadGridView
                               Style="{StaticResource RadGridViewStyle}"
                               ItemsSource="{Binding Bz1Axis.PositionList}"
                               FontSize="16"
@@ -128,31 +143,35 @@
                               IsReadOnly="True"
                               CanUserDeleteRows="False"
                               SelectionMode="Single"
-                              GridLinesVisibility="None">
+                              GridLinesVisibility="None"
+                              MinHeight="250"
+                              Margin="5">
 
-                        <telerik:RadGridView.Columns>
-                            <telerik:GridViewDataColumn Header="이름"
+                                <telerik:RadGridView.Columns>
+                                    <telerik:GridViewDataColumn Header="이름"
                                                           DataMemberBinding="{Binding Name}"
                                                           Width="*"
                                                           SortMemberPath="Name"/>
-                            <telerik:GridViewDataColumn Header="위치"
+                                    <telerik:GridViewDataColumn Header="위치"
                                                           DataMemberBinding="{Binding Position, StringFormat=F3}"
                                                           Width="140"
                                                           SortMemberPath="Location"/>
-                            <telerik:GridViewDataColumn Header="속도"
+                                    <telerik:GridViewDataColumn Header="속도"
                                                           DataMemberBinding="{Binding Speed, StringFormat=F2}"
                                                           Width="120"
                                                           SortMemberPath="Speed"/>
-                        </telerik:RadGridView.Columns>
-                    </telerik:RadGridView>
-                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 표시"
-                                        Margin="4"
-                                        Grid.Row="1">
-                        <local:MotorStateControl DataContext="{Binding Bz1Axis}" />
+                                </telerik:RadGridView.Columns>
+                            </telerik:RadGridView>
+
+                            <local:MotorStateControl DataContext="{Binding Bz1Axis}" Margin="5"/>
+                        </StackPanel>
                     </telerik:GroupBox>
                 </Grid>
                 <Grid local:GridHelper.Rows="*, Auto" Grid.Column="2">
-                    <telerik:RadGridView
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="h-z"
+                                    Margin="4" Grid.Row="0" Grid.RowSpan="2">
+                        <StackPanel Orientation="Vertical" Margin="5">
+                            <telerik:RadGridView
                                   Style="{StaticResource RadGridViewStyle}"
                                   ItemsSource="{Binding Bz2Axis.PositionList}"
                                   FontSize="16"
@@ -161,26 +180,28 @@
                                   IsReadOnly="True"
                                   CanUserDeleteRows="False"
                                   SelectionMode="Single"
-                                  GridLinesVisibility="None">
+                                  GridLinesVisibility="None"
+                                MinHeight="250"
+                                Margin="5">
 
-                        <telerik:RadGridView.Columns>
-                            <telerik:GridViewDataColumn Header="이름"
+                                <telerik:RadGridView.Columns>
+                                    <telerik:GridViewDataColumn Header="이름"
                                                           DataMemberBinding="{Binding Name}"
                                                           Width="*"
                                                           SortMemberPath="Name"/>
-                            <telerik:GridViewDataColumn Header="위치"
+                                    <telerik:GridViewDataColumn Header="위치"
                                                           DataMemberBinding="{Binding Position, StringFormat=F3}"
                                                           Width="140"
                                                           SortMemberPath="Location"/>
-                            <telerik:GridViewDataColumn Header="속도"
+                                    <telerik:GridViewDataColumn Header="속도"
                                                           DataMemberBinding="{Binding Speed, StringFormat=F2}"
                                                           Width="120"
                                                           SortMemberPath="Speed"/>
-                        </telerik:RadGridView.Columns>
-                    </telerik:RadGridView>
-                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 표시"
-                                    Margin="4" Grid.Row="1">
-                        <local:MotorStateControl DataContext="{Binding Bz2Axis}" />
+                                </telerik:RadGridView.Columns>
+                            </telerik:RadGridView>
+
+                            <local:MotorStateControl DataContext="{Binding Bz2Axis}" Margin="5"/>
+                        </StackPanel>
                     </telerik:GroupBox>
                 </Grid>
             </Grid>
@@ -188,69 +209,81 @@
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="W-Table">
             <Grid local:GridHelper.Columns="1*, 1*">
                 <Grid local:GridHelper.Rows="*, Auto">
-                    <telerik:RadGridView
-                        Style="{StaticResource RadGridViewStyle}"
-                        ItemsSource="{Binding WyAxis.PositionList}"
-                        FontSize="16"
-                        ShowGroupPanel="False"
-                        AutoGenerateColumns="False"
-                        IsReadOnly="True"
-                        CanUserDeleteRows="False"
-                        SelectionMode="Single"
-                        GridLinesVisibility="None">
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="W-Y"
+                                Margin="4"
+                                Grid.Row="0" Grid.RowSpan="2">
+                        <StackPanel Orientation="Vertical" Margin="5">
 
-                        <telerik:RadGridView.Columns>
-                            <telerik:GridViewDataColumn Header="이름"
+
+                            <telerik:RadGridView
+                                Style="{StaticResource RadGridViewStyle}"
+                                ItemsSource="{Binding WyAxis.PositionList}"
+                                FontSize="16"
+                                ShowGroupPanel="False"
+                                AutoGenerateColumns="False"
+                                IsReadOnly="True"
+                                CanUserDeleteRows="False"
+                                SelectionMode="Single"
+                                GridLinesVisibility="None"
+                                MinHeight="250"
+                                Margin="5">
+
+                                <telerik:RadGridView.Columns>
+                                    <telerik:GridViewDataColumn Header="이름"
                                                         DataMemberBinding="{Binding Name}"
                                                         Width="*"
                                                         SortMemberPath="Name"/>
-                            <telerik:GridViewDataColumn Header="위치"
+                                    <telerik:GridViewDataColumn Header="위치"
                                                         DataMemberBinding="{Binding Position, StringFormat=F3}"
                                                         Width="140"
                                                         SortMemberPath="Location"/>
-                            <telerik:GridViewDataColumn Header="속도"
+                                    <telerik:GridViewDataColumn Header="속도"
                                                         DataMemberBinding="{Binding Speed, StringFormat=F2}"
                                                         Width="120"
                                                         SortMemberPath="Speed"/>
-                        </telerik:RadGridView.Columns>
-                    </telerik:RadGridView>
-                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 표시"
-                                      Margin="4"
-                                      Grid.Row="1">
-                        <local:MotorStateControl DataContext="{Binding WyAxis}" />
+                                </telerik:RadGridView.Columns>
+                            </telerik:RadGridView>
+
+                            <local:MotorStateControl DataContext="{Binding WyAxis}" Margin="5"/>
+                        </StackPanel>
                     </telerik:GroupBox>
                 </Grid>
                 <Grid local:GridHelper.Rows="*, Auto" Grid.Column="1">
-                    <telerik:RadGridView
-                      Style="{StaticResource RadGridViewStyle}"
-                      ItemsSource="{Binding WtAxis.PositionList}"
-                      FontSize="16"
-                      ShowGroupPanel="False"
-                      AutoGenerateColumns="False"
-                      IsReadOnly="True"
-                      CanUserDeleteRows="False"
-                      SelectionMode="Single"
-                      GridLinesVisibility="None">
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="W-T"
+                                Margin="4"
+                                Grid.Row="0" Grid.RowSpan="2">
+                        <StackPanel Orientation="Vertical" Margin="5">
+                            <telerik:RadGridView
+                                Style="{StaticResource RadGridViewStyle}"
+                                ItemsSource="{Binding WtAxis.PositionList}"
+                                FontSize="16"
+                                ShowGroupPanel="False"
+                                AutoGenerateColumns="False"
+                                IsReadOnly="True"
+                                CanUserDeleteRows="False"
+                                SelectionMode="Single"
+                                GridLinesVisibility="None"
+                                MinHeight="250"
+                                Margin="5">
 
-                        <telerik:RadGridView.Columns>
-                            <telerik:GridViewDataColumn Header="이름"
+                                <telerik:RadGridView.Columns>
+                                    <telerik:GridViewDataColumn Header="이름"
                                                   DataMemberBinding="{Binding Name}"
                                                   Width="*"
                                                   SortMemberPath="Name"/>
-                            <telerik:GridViewDataColumn Header="위치"
+                                    <telerik:GridViewDataColumn Header="위치"
                                                   DataMemberBinding="{Binding Position, StringFormat=F3}"
                                                   Width="140"
                                                   SortMemberPath="Location"/>
-                            <telerik:GridViewDataColumn Header="속도"
+                                    <telerik:GridViewDataColumn Header="속도"
                                                   DataMemberBinding="{Binding Speed, StringFormat=F2}"
                                                   Width="120"
                                                   SortMemberPath="Speed"/>
-                        </telerik:RadGridView.Columns>
-                    </telerik:RadGridView>
-                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 표시"
-                                Margin="4"
-                                Grid.Row="1">
-                        <local:MotorStateControl DataContext="{Binding WtAxis}" />
+                                </telerik:RadGridView.Columns>
+                            </telerik:RadGridView>
+
+                            <local:MotorStateControl DataContext="{Binding WtAxis}" Margin="5"/>
+                        </StackPanel>
                     </telerik:GroupBox>
                 </Grid>
                 

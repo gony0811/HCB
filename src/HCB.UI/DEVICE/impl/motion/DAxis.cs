@@ -9,11 +9,14 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using Serilog;
 
 namespace HCB.UI
 {
     public partial class DAxis : ObservableObject, IAxis
     {
+        private readonly ILogger logger;
+
         [ObservableProperty] private int id;
         [ObservableProperty] private string name;
         [ObservableProperty] private int motorNo;
@@ -46,6 +49,10 @@ namespace HCB.UI
         [ObservableProperty] private double commandPosition;
         [ObservableProperty] private double currentPosition;
 
+        public DAxis(ILogger logger)
+        {
+            this.logger = logger.ForContext<DAxis>();
+        }
 
         [RelayCommand]
         public async Task Home()
@@ -128,6 +135,9 @@ namespace HCB.UI
 
             if (ready)
             {
+                
+                //cmd = string.Format("#{0}J/ #{0}$", MotorNo);
+
                 cmd = string.Format("#{0}J/", MotorNo);
             }
             else
@@ -152,14 +162,28 @@ namespace HCB.UI
 
         public Task JogMove(JogMoveType moveType, double jogSpeed)
         {
-            string cmd = $"{Name}, {moveType.ToString()}, JogSpeed: {jogSpeed}";
+             this.logger.Information($"{Name}, {moveType.ToString()}, JogSpeed: {jogSpeed}");
             // Todo: 현재 테스트 용도로 MessageBox 사용중 실사용시 삭제
-            MessageBox.Show(cmd);
+
             try
             {
                 if (Device?.IsConnected == true && Device?.IsEnabled == true)
                 {
-                    return Device.SendCommand(cmd);
+                    if (moveType == JogMoveType.Stop)
+                    {
+                        string stopCmd = string.Format("#{0:D}J/", MotorNo);
+                        return Device.SendCommand(stopCmd);
+                    }
+                    else
+                    {
+                        string direction = (moveType == JogMoveType.Plus ? "+" : "-");
+                        // Motor[x].JogSpeed={속도} 와 #{x}J/ 를 공백으로 구분하여 한 번에 전송
+                        string cmd = string.Format("Motor[{0}].JogSpeed={1} #{0}J{2}", MotorNo, jogSpeed, direction);
+                        //string cmd = string.Format("Motor[{0}].JogSpeed={1} #{0}J/", MotorNo, jogSpeed);
+                        //string cmd = string.Format("#{0:D}J/", MotorNo);
+
+                        return Device.SendCommand(cmd);
+                    }    
                 }
             }
             catch(Exception e)

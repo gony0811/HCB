@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCB", "HCB\HCB.csproj", "{F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCB.UI", "HCB.UI\HCB.UI.csproj", "{F94D450A-3EAC-420A-AEAC-D3EF29BEC7DD}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "HCB.Setup", "HCB.Setup\HCB.Setup.vdproj", "{F2AF564E-8FC3-EA29-E40B-4E58F5A3E520}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,8 @@ Global
 		{F94D450A-3EAC-420A-AEAC-D3EF29BEC7DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F94D450A-3EAC-420A-AEAC-D3EF29BEC7DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F94D450A-3EAC-420A-AEAC-D3EF29BEC7DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2AF564E-8FC3-EA29-E40B-4E58F5A3E520}.Debug|Any CPU.ActiveCfg = Debug
+		{F2AF564E-8FC3-EA29-E40B-4E58F5A3E520}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

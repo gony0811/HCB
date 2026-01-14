@@ -16,25 +16,28 @@ using System.Threading.Tasks;
 using System.Windows;
 using Telerik.Windows.Documents.Fixed.Model.Data;
 using Telerik.Windows.Documents.Spreadsheet.Expressions.Functions;
+using Serilog;
 
 namespace HCB.UI
 {
     [ViewModel(Lifetime.Singleton)]
     public partial class USub06ViewModel : ObservableObject
     {
+        private readonly ILogger logger;
         private readonly DeviceManager deviceManager;
         private readonly DialogService dialogService;
         private readonly MotionPositionRepository positionRepository;
         [ObservableProperty] private ObservableCollection<IAxis> motionList = new();
         [ObservableProperty] private IAxis selectedMotion;
         [ObservableProperty] private DMotionPosition selectedPosition;
-        [ObservableProperty] private MotionMoveVM motionMoveVM = new MotionMoveVM();
+        [ObservableProperty] private MotionMoveVM motionMoveVM;
 
-        [ObservableProperty] MotorStateControlVM motionStatus = new MotorStateControlVM();
+        [ObservableProperty] MotorStateControlVM motionStatus;
         private IDisposable statusSubscription;
 
-        public USub06ViewModel(DeviceManager deviceManager, DialogService dialogService, MotionPositionRepository positionRepository)
+        public USub06ViewModel(ILogger logger, DeviceManager deviceManager, DialogService dialogService, MotionPositionRepository positionRepository)
         {
+            this.logger = logger;
             this.deviceManager = deviceManager;
             this.dialogService = dialogService;
             this.positionRepository = positionRepository;
@@ -51,6 +54,8 @@ namespace HCB.UI
                 }
             }
 
+            MotionMoveVM = new MotionMoveVM(this.logger);
+            MotionStatus = new MotorStateControlVM(this.logger);
             SelectedMotion = MotionList.FirstOrDefault();
             MotionMoveVM.Axis = SelectedMotion;
 

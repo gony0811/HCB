@@ -1,6 +1,9 @@
 ﻿using HCB.Data.Entity.Type;
 using HCB.Data.Entity;
 using System.Linq;
+using Serilog;
+using System.Runtime.CompilerServices;
+using Serilog;
 
 namespace HCB.UI
 {
@@ -9,9 +12,9 @@ namespace HCB.UI
         // =============================================================
         // MotionEntity → DMotion
         // =============================================================
-        public static DAxis ToRuntime(MotionEntity e, IMotionDevice device)
+        public static DAxis ToRuntime(ILogger logger, MotionEntity e, IMotionDevice device)
         {
-            var dm = new DAxis
+            var dm = new DAxis(logger)
             {
                 Id = e.Id,
                 Name = e.Name,

@@ -6,6 +6,7 @@ using HCB.Data.Entity.Type;
 using HCB.Data.Interface;
 using HCB.Data.Repository;
 using HCB.IoC;
+using Serilog;
 using SharpDX.Direct3D9;
 using System;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace HCB.UI
 
     public partial class MotionDeviceDetailViewModel : ObservableObject, IDeviceDetailViewModel
     {
+        private readonly ILogger logger;
         private readonly DialogService dialogService;
         private readonly MotionRepository motionRepository;
         private readonly MotionParameterRepository parameterRepository;
@@ -31,12 +33,14 @@ namespace HCB.UI
         [ObservableProperty] private DMotionParameter selectedParam;
 
         public MotionDeviceDetailViewModel(
+            ILogger logger,
             IMotionDevice device, 
             DialogService dialogService,
             MotionRepository motionRepository,
             MotionParameterRepository parameterRepository,
             MotionPositionRepository positionRepository)
         {
+            this.logger = logger.ForContext<MotionDeviceDetailViewModel>();
             this.dialogService = dialogService;
             this.motionRepository = motionRepository;
             this.parameterRepository = parameterRepository;
@@ -73,7 +77,7 @@ namespace HCB.UI
                 try
                 {
                     var resultEntity = await motionRepository.AddAsync(entity);
-                    Device.MotionList.Add(MotionFactory.ToRuntime(resultEntity, Device));
+                    Device.MotionList.Add(MotionFactory.ToRuntime(this.logger, resultEntity, Device));
                     
                 }catch (Exception e)
                 {
