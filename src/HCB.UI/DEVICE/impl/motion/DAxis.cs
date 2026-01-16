@@ -95,7 +95,9 @@ namespace HCB.UI
         [RelayCommand]
         public async Task ServoOn()
         {
-            MessageBox.Show($"{Name} 서보온");
+
+            logger.Information("ServoOn/Off Command Sent: {Name}, IsEnabled: {IsEnabled}", Name, IsEnabled);
+
             if (Device?.IsConnected != true || Device?.IsEnabled != true)
             {
                 return;

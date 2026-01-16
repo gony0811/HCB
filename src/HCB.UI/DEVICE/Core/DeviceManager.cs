@@ -355,6 +355,8 @@ namespace HCB.UI
                 LimitMaxSpeed = m.MaximumSpeed,
                 LimitMinPosition = m.MinimumLocation,
                 LimitMaxPosition = m.MaximumLocation,
+                EncoderCountPerUnit = m.EncoderCountsPerUnit,
+                HommingProgramNumber = m.HommingProgramNumber,
                 Device = runtime
             };
 
