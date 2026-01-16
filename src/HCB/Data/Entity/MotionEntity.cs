@@ -26,10 +26,6 @@ namespace HCB.Data.Entity
         public double EncoderCountsPerUnit { get; set; } = 1.0;
         public int HommingProgramNumber { get; set; } = 0;
 
-        public double EncoderCountsPerUnit { get; set; } = 1.0;
-
-        public int HommingProgramNumber { get; set; } = 0;
-
         public int ParentDeviceId { get; set; }  
         public MotionDeviceDetail? ParentDeviceEntity { get; set; }
 
