@@ -50,7 +50,7 @@ namespace HCB.UI
                 if ((DTK_STATUS)uRet == DTK_STATUS.DS_Ok)
                 {
                     byCommand = new Byte[255];
-                    byCommand = System.Text.Encoding.GetEncoding("euc-kr").GetBytes("echo 3");
+                    byCommand = System.Text.Encoding.ASCII.GetBytes("echo 3");
                     uRet = DTKPowerPmac.Instance.SendCommandA(uDeviceId, byCommand);
                     IsConnected = true;
                     this.logger.Information("Power PMAC IO Device Connected. IP: {Ip}", Ip);
@@ -219,9 +219,9 @@ namespace HCB.UI
 
             String stringcmd = command;
 
-            byCommand = System.Text.Encoding.GetEncoding("euc-kr").GetBytes(stringcmd);
+            byCommand = System.Text.Encoding.ASCII.GetBytes(stringcmd);
             DTKPowerPmac.Instance.GetResponseA(uDeviceId, byCommand, byResponse, Convert.ToInt32(byResponse.Length - 1));
-            strResponse = System.Text.Encoding.GetEncoding("euc-kr").GetString(byResponse);
+            strResponse = System.Text.Encoding.ASCII.GetString(byResponse);
 
             return Task.CompletedTask;
         }
@@ -236,9 +236,9 @@ namespace HCB.UI
 
             String stringcmd = command;
 
-            byCommand = System.Text.Encoding.GetEncoding("euc-kr").GetBytes(stringcmd);
+            byCommand = System.Text.Encoding.ASCII.GetBytes(stringcmd);
             DTKPowerPmac.Instance.GetResponseA(uDeviceId, byCommand, byResponse, Convert.ToInt32(byResponse.Length - 1));
-            strResponse = System.Text.Encoding.GetEncoding("euc-kr").GetString(byResponse);
+            strResponse = System.Text.Encoding.ASCII.GetString(byResponse);
 
 
             return Task.FromResult((TResult)Convert.ChangeType(strResponse, typeof(TResult)));

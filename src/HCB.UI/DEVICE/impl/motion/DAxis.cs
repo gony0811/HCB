@@ -105,8 +105,8 @@ namespace HCB.UI
 
             // 2. 현재 상태에 따른 명령 생성 및 사전 처리
             string command = IsEnabled
-                ? $"#{MotorNo}J/"  // Servo On -> Off 시퀀스
-                : $"#{MotorNo}K";   // Servo Off -> On 시퀀스
+                ? $"#{MotorNo}K"  // Servo On -> Off 시퀀스
+                : $"#{MotorNo}J/";   // Servo Off -> On 시퀀스
 
             if (IsEnabled)
             {

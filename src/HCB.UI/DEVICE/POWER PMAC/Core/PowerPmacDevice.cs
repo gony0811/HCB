@@ -195,7 +195,7 @@ namespace HCB.UI
 
             byCommand = System.Text.Encoding.ASCII.GetBytes(stringcmd);
             DTKPowerPmac.Instance.GetResponseA(uDeviceId, byCommand, byResponse, Convert.ToInt32(byResponse.Length - 1));
-            strResponse = System.Text.Encoding.GetEncoding("euc-kr").GetString(byResponse);
+            strResponse = System.Text.Encoding.ASCII.GetString(byResponse);
 
             return Task.CompletedTask;
         }
