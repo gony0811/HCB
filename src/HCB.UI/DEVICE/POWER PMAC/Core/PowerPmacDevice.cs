@@ -52,7 +52,7 @@ namespace HCB.UI
             if ((DTK_STATUS)uRet == DTK_STATUS.DS_Ok)
             {
                 byCommand = new Byte[255];
-                byCommand = System.Text.Encoding.GetEncoding("euc-kr").GetBytes("echo 3");
+                byCommand = System.Text.Encoding.ASCII.GetBytes("echo 3");
                 uRet = DTKPowerPmac.Instance.SendCommandA(uDeviceId, byCommand);
                 IsConnected = true;
             }
@@ -194,7 +194,7 @@ namespace HCB.UI
             String stringcmd = command;
 
             byCommand = System.Text.Encoding.GetEncoding("euc-kr").GetBytes(stringcmd);
-            DTKPowerPmac.Instance.GetResponseA((uint)Id, byCommand, byResponse, Convert.ToInt32(byResponse.Length - 1));
+            DTKPowerPmac.Instance.GetResponseA(uDeviceId, byCommand, byResponse, Convert.ToInt32(byResponse.Length - 1));
             strResponse = System.Text.Encoding.GetEncoding("euc-kr").GetString(byResponse);
 
             return Task.CompletedTask;
@@ -212,7 +212,7 @@ namespace HCB.UI
             String stringcmd = command;
 
             byCommand = Encoding.ASCII.GetBytes(command);
-            uint errorCode = DTKPowerPmac.Instance.GetResponseA((uint)Id, byCommand, byResponse, Convert.ToInt32(byResponse.Length - 1));
+            uint errorCode = DTKPowerPmac.Instance.GetResponseA(uDeviceId, byCommand, byResponse, Convert.ToInt32(byResponse.Length - 1));
             strResponse = Encoding.ASCII.GetString(byResponse);
             string trimmedResponse = strResponse.Trim();
             if (trimmedResponse.StartsWith("?"))
