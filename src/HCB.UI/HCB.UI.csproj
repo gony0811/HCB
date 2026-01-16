@@ -8,6 +8,7 @@
     <RootNamespace>HCB.UI</RootNamespace>
     <EnableDefaultItems>False</EnableDefaultItems>
     <Nullable>enable</Nullable>
+    <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -333,12 +334,12 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Include="DEVICE\dll\PowerPmac32.dll">
+    <Content Include="DEVICE\dll\PowerPmac32.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="DEVICE\dll\PowerPmac64.dll">
+    </Content>
+    <Content Include="DEVICE\dll\PowerPmac64.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>

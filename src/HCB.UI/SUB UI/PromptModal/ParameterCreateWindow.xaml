@@ -10,7 +10,7 @@
     <Border Padding="16">
         <StackPanel>
             <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="파라미터 이름" Margin="0,0,0,6"/>
-            <telerik:RadWatermarkTextBox Style="{StaticResource RadWatermarkTextBoxStyle}" Text="{Binding Value.Name, UpdateSourceTrigger=PropertyChanged}"/>
+            <telerik:RadWatermarkTextBox Style="{StaticResource RadWatermarkTextBoxStyle}" MinWidth="150" Text="{Binding Value.Name, UpdateSourceTrigger=PropertyChanged}"/>
 
             <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="설정치" Margin="0,0,0,6" />
             <telerik:RadWatermarkTextBox Style="{StaticResource RadWatermarkTextBoxStyle}" Text="{Binding Value.Value, UpdateSourceTrigger=PropertyChanged}" 

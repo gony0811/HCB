@@ -12,6 +12,7 @@ namespace HCB.UI
         [ObservableProperty] private double maximumLocation;
         [ObservableProperty] private double minimumSpeed;
         [ObservableProperty] private double maximumSpeed;
+        [ObservableProperty] private double encoderCountPerUnit;
         [ObservableProperty] private UnitType unit;
 
         public MotionEntity ToEntity()

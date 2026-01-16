@@ -79,7 +79,11 @@ namespace HCB.UI
                 foreach (var device in devices)
                 {
                     if (device.IsEnabled && !device.IsConnected)
+                    {
+                        await device.Initialize();
                         await device.Connect();
+                    }
+                        
                 }
             }
             catch (Exception ex)
