@@ -12,6 +12,8 @@ namespace HCB.UI
         [ObservableProperty] private double maximumLocation;
         [ObservableProperty] private double minimumSpeed;
         [ObservableProperty] private double maximumSpeed;
+        [ObservableProperty] private double encoderCountsPerUnit;
+        [ObservableProperty] private int hommingProgramNumber;
         [ObservableProperty] private UnitType unit;
 
         public MotionEntity ToEntity()
@@ -24,6 +26,8 @@ namespace HCB.UI
                 MaximumLocation = this.MaximumLocation,
                 MinimumSpeed = this.MinimumSpeed,
                 MaximumSpeed = this.MaximumSpeed,
+                EncoderCountsPerUnit = this.EncoderCountsPerUnit,
+                HommingProgramNumber = this.HommingProgramNumber,
                 Unit = this.Unit
             };
         }

@@ -46,7 +46,7 @@
                         <ContextMenu 
                             DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                             <MenuItem Header="연결" Command="{Binding DeviceConnCommand}" />
-                            <MenuItem Header="연결해제" Command="{Binding DeviceDisConnCommand}" />
+                            <MenuItem Header="연결해제" Command="{Binding DeviceDisConnCommand}"/>
                             <Separator/>
                             <MenuItem Header="수정" Command="{Binding DeviceUpdateCommand}" />
                             <MenuItem Header="삭제" Command="{Binding DeviceDeleteCommand}" />

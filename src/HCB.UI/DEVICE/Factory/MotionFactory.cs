@@ -27,6 +27,9 @@ namespace HCB.UI
                 LimitMinPosition = e.MinimumLocation,
                 LimitMaxPosition = e.MaximumLocation,
 
+                EncoderCountPerUnit = e.EncoderCountsPerUnit,
+                HommingProgramNumber = e.HommingProgramNumber,
+
                 Device = device,
             };
 

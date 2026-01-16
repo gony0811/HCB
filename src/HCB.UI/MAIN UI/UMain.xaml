@@ -470,7 +470,7 @@
             </StackPanel>
 
             <StackPanel Grid.Column="1" HorizontalAlignment="Right" Margin="5">
-                <telerik:RadButton x:Name="Exit" MinHeight="80" MinWidth="120" Command="{Binding ProgramExitCommand}">
+                <telerik:RadButton Style="{StaticResource RadButtonStyle}" x:Name="Exit" MinHeight="80" MinWidth="120" Command="{Binding ProgramExitCommand}">
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <telerik:RadGlyph Glyph="&#xe11c;" Width="24" Height="24" Margin="0,0,0,5"/>
                         <telerik:HighlightTextBlock Text="종료" TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
