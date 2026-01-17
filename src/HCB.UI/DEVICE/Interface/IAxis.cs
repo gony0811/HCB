@@ -29,6 +29,8 @@ namespace HCB.UI
         double LimitMinPosition { get; set; }           // 최소 위치
         double LimitMaxPosition { get; set; }           // 최대 위치
         double EncoderCountPerUnit { get; set; }        // 모터의 단위당 엔코더 펄스 수
+
+        int HommingProgramNumber { get; set; }    // 홈 프로그램 번호
         double InpositionRange { get; set; }           // Inposition 허용 범위
 
         UnitType Unit { get; set; }

@@ -52,6 +52,7 @@ namespace HCB.UI
         public DAxis(ILogger logger)
         {
             this.logger = logger.ForContext<DAxis>();
+            HomeTimeout = 10000;
         }
 
         [RelayCommand]
