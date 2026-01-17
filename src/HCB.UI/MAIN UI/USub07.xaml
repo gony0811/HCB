@@ -22,115 +22,21 @@
                 <RowDefinition></RowDefinition>
             </Grid.RowDefinitions>
 
-            <Border Grid.Column="0" Grid.Row="0" Margin="10">
+            <Border Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Margin="10">
                 <telerik:RadHighlightTextBlock Text="센서 제어" 
                          FontSize="24" 
                          FontWeight="SemiBold" 
                          Style="{StaticResource RadHighlightTextBlockStyle}"/>
             </Border>
 
-            
-            <Grid Grid.Column="0" Grid.Row="1" Margin="0" local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="Auto, 1*">
-                <telerik:RadHighlightTextBlock Text="입력 신호 (아날로그) _ 수정 불가" 
-                                                 FontSize="15" 
-                                                 FontWeight="SemiBold" 
-                                                 Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                <ListView 
-                    Grid.Row="1"
-                    ItemsSource="{Binding AnalogInput}"
-                    Background="Transparent" BorderThickness="0"
-                    ScrollViewer.VerticalScrollBarVisibility="Auto"
-                    VirtualizingPanel.IsVirtualizing="True"
-                    VirtualizingPanel.VirtualizationMode="Recycling">
-                    <!-- 행 구분선 & 패딩 -->
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="Padding" Value="12,10"/>
-                            <Setter Property="BorderBrush" Value="Gray"/>
-                            <Setter Property="BorderThickness" Value="1"/>
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.ItemTemplate>
-                        <!-- 각 항목 = SensorIoItemViewModel -->
-                        <DataTemplate DataType="{x:Type vm:SensorIoItemViewModel}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
 
-                                <!-- 센서명 -->
-                                <TextBlock Text="{Binding Name}"
-                                           VerticalAlignment="Center"
-                                           Foreground="White"
-                                           FontSize="16"/>      
 
-                                <!-- 토글(오른쪽) : 컨트롤 클래스명을 프로젝트에 맞춰주세요 -->
-                                <uc:IoPillToggle Grid.Column="1"
-                                                 Margin="8,0,0,0"
-                                                 IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                                 IsReadOnly="{Binding IsReadOnly}"
-                                                 Command="{Binding ToggleCommand}"
-                                                 CommandParameter="{Binding}"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-                <telerik:RadHighlightTextBlock Text="출력 신호 (아날로그) _ 수정 가능" 
-                                               Grid.Column="1"
+            <Grid Grid.Column="0" Grid.Row="1" Margin="0" local:GridHelper.Rows="Auto, 1*">
+                <telerik:RadHighlightTextBlock Text="입력 신호 (디지털)" 
                                  FontSize="15" 
                                  FontWeight="SemiBold" 
                                  Style="{StaticResource RadHighlightTextBlockStyle}"/>
-                <ListView 
-                        Grid.Column="1"
-                         Grid.Row="1"
-                         ItemsSource="{Binding AnalogOutput}"
-                         Background="Transparent" BorderThickness="0"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto"
-                         VirtualizingPanel.IsVirtualizing="True"
-                         VirtualizingPanel.VirtualizationMode="Recycling">
-                    <!-- 행 구분선 & 패딩 -->
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="Padding" Value="12,10"/>
-                            <Setter Property="BorderBrush" Value="Gray"/>
-                            <Setter Property="BorderThickness" Value="1"/>
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.ItemTemplate>
-                        <!-- 각 항목 = SensorIoItemViewModel -->
-                        <DataTemplate DataType="{x:Type vm:SensorIoItemViewModel}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
 
-                                <!-- 센서명 -->
-                                <TextBlock Text="{Binding Name}"
-                            VerticalAlignment="Center"
-                            Foreground="White"
-                            FontSize="16"/>
-
-                                <!-- 토글(오른쪽) : 컨트롤 클래스명을 프로젝트에 맞춰주세요 -->
-                                <uc:IoPillToggle Grid.Column="1"
-                                  Margin="8,0,0,0"
-                                  IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                  IsReadOnly="{Binding IsReadOnly}"
-                                  Command="{Binding ToggleCommand}"
-                                  CommandParameter="{Binding}"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </Grid>
-
-
-            <Grid Grid.Column="1" Grid.Row="1" Margin="0" local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="Auto, 1*">
-                <telerik:RadHighlightTextBlock Text="입력 신호 (디지털) _ 수정 불가" 
-                                 FontSize="15" 
-                                 FontWeight="SemiBold" 
-                                 Style="{StaticResource RadHighlightTextBlockStyle}"/>
                 <ListView 
                         Grid.Row="1"
                         ItemsSource="{Binding DigitalInput}"
@@ -152,14 +58,14 @@
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
                                 <!-- 센서명 -->
-                                <TextBlock Text="{Binding Name}"
+                                <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Name}"
                                            VerticalAlignment="Center"
                                            Foreground="White"
-                                           FontSize="16"/>
+                                           FontSize="15"/>
 
                                 <!-- 토글(오른쪽) : 컨트롤 클래스명을 프로젝트에 맞춰주세요 -->
                                 <uc:IoPillToggle Grid.Column="1"
@@ -172,19 +78,21 @@
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
-                <telerik:RadHighlightTextBlock Text="출력 신호 (디지털) _ 수정 가능" 
-                                                Grid.Column="1"
-                                                 FontSize="15" 
-                                                 FontWeight="SemiBold" 
-                                                 Style="{StaticResource RadHighlightTextBlockStyle}"/>
+            </Grid>
+
+            <Grid Grid.Column="1" Grid.Row="1" Margin="0" local:GridHelper.Rows="Auto, 1*">
+                <telerik:RadHighlightTextBlock Text="출력 신호 (디지털)" 
+                                   FontSize="15" 
+                                   FontWeight="SemiBold" 
+                                   Style="{StaticResource RadHighlightTextBlockStyle}"/>
                 <ListView 
-                    Grid.Column="1"
-                     Grid.Row="1"
-                     ItemsSource="{Binding DigitalOutput}"
-                     Background="Transparent" BorderThickness="0"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                     VirtualizingPanel.IsVirtualizing="True"
-                     VirtualizingPanel.VirtualizationMode="Recycling">
+      Grid.Column="1"
+       Grid.Row="1"
+       ItemsSource="{Binding DigitalOutput}"
+       Background="Transparent" BorderThickness="0"
+       ScrollViewer.VerticalScrollBarVisibility="Auto"
+       VirtualizingPanel.IsVirtualizing="True"
+       VirtualizingPanel.VirtualizationMode="Recycling">
                     <!-- 행 구분선 & 패딩 -->
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
@@ -204,22 +112,21 @@
 
                                 <!-- 센서명 -->
                                 <TextBlock Text="{Binding Name}"
-                                            VerticalAlignment="Center"
-                                            Foreground="White"
-                                            FontSize="16"/>
+                              VerticalAlignment="Center"
+                              Foreground="White"
+                              FontSize="12"/>
 
                                 <!-- 토글(오른쪽) : 컨트롤 클래스명을 프로젝트에 맞춰주세요 -->
                                 <uc:IoPillToggle Grid.Column="1"
-                                                  Margin="8,0,0,0"
-                                                  IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                                  IsReadOnly="{Binding IsReadOnly}"
-                                                  Command="{Binding ToggleCommand}"
-                                                  CommandParameter="{Binding}"/>
+                                    Margin="8,0,0,0"
+                                    IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                    IsReadOnly="{Binding IsReadOnly}"
+                                    Command="{Binding ToggleCommand}"
+                                    CommandParameter="{Binding}"/>
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
-
             </Grid>
         </Grid>
 

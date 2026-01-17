@@ -9,6 +9,7 @@ namespace HCB.UI
     public static partial class MotionExtensions
     {
         public const string PowerPmacDeviceName = "PMAC";
+        public const string PMacIoDeviceName = "PMacIO";
 
         public const string D_Y = "D_Y";
         public const string P_Y = "P_Y";

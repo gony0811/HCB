@@ -121,17 +121,21 @@ namespace HCB.UI
 
                     var io = data as AbstractIoBase;
 
-                    strCommand = string.Format("{0}{1:D4}", io.Address, io.Index);
+                    strCommand = io.Address;
 
-                    strResponse = SendCommand<string>(strCommand).Result;
+                    //strCommand = string.Format("{0}{1:D3}", io.Address, io.Index);
 
-                    switch(io.IoType)
+                    strResponse = SendCommand<string>(strCommand).Result;     
+
+                    switch (io.IoType)
                     {
                         case IoType.AnalogInput:
-                            (io as AnalogInput).Value = Convert.ToDouble(strResponse);
+                            double dVal = Double.Parse(strResponse);
+                            (io as AnalogInput).Value = dVal;
                             break;
                         case IoType.DigitalInput:
-                            (io as DigitalInput).Value = (Convert.ToUInt32(strResponse) != 0);
+                            uint iVal = uint.Parse(strResponse);
+                            (io as DigitalInput).Value = iVal > 0 ? true : false;
                             break;
                     }
                 }
@@ -161,6 +165,17 @@ namespace HCB.UI
             if (simulation == false)
             {
                 var ioData = (DigitalOutput)FindIoDataByName(name);
+
+
+                if (ioData.Value != bOnOff)
+                {
+                    String strCommand = "";
+
+                    strCommand = bOnOff ? string.Format("{0}=1", ioData.Address) : string.Format("{0}=0", ioData.Address);
+
+                    SendCommand(strCommand);
+                }
+
                 ioData.Value = bOnOff;
             }
             else // simulation == true
