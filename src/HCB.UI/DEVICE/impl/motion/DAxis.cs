@@ -53,6 +53,17 @@ namespace HCB.UI
         {
             this.logger = logger.ForContext<DAxis>();
             HomeTimeout = 10000;
+
+            /// InpositionRange 기본값 설정
+            if (unit == UnitType.mm)
+            {
+                InpositionRange = 0.001;
+            }
+            else if (unit == UnitType.um)
+            {
+                InpositionRange = 1;
+            }
+            
         }
 
         [RelayCommand]

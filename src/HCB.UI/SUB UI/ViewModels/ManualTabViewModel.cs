@@ -102,6 +102,63 @@ namespace HCB.UI
         }
 
         [RelayCommand]
+        public async Task MovePosition(Tuple<IAxis, DMotionPosition>? parameters)
+        {
+            if (parameters == null) return;
+
+            var axis = parameters.Item1;
+            var position = parameters.Item2;
+
+            if (axis == null || position == null) return;
+
+            try
+            {
+                if (!axis.IsEnabled)
+                {
+                    _logger.Warning("{AxisName} is not enabled.", axis.Name);
+                    return;
+                }
+
+                if (axis.IsBusy)
+                {
+                    _logger.Warning("{AxisName} is busy.", axis.Name);
+                    return;
+                }
+
+                await axis.Move(MoveType.Absolute, velocity: position.Speed, position: position.Position);
+
+                _logger.Information("Move {AxisName} to {Position} at Speed {Speed}", axis.Name, position.Position, position.Speed);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Move Position Error for {AxisName}", axis.Name);
+            }
+        }
+
+        [RelayCommand]
+        public async Task MoveStop(IAxis? axis)
+        {
+            if (axis == null || axis.Device == null) return;
+            try
+            {
+                if (!axis.IsEnabled)
+                {
+                    _logger.Warning("{AxisName} is not enabled.", axis.Name);
+                    return;
+                }
+                else
+                {
+                    _logger.Information("Move Stop {AxisName}", axis.Name);
+                    await axis.MoveStop();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Move Stop Error for {AxisName}", axis.Name);
+            }
+        }
+
+        [RelayCommand]
         public async Task DYMovePosition(DMotionPosition? p)
         {
             if (p == null || DyAxis == null || DyAxis.Device == null) return;
@@ -156,6 +213,31 @@ namespace HCB.UI
             catch (Exception ex)
             {
                 _logger.Error(ex, "H-Z Move Position Error");
+            }
+        }
+
+        [RelayCommand]
+        public async Task PYMovePosition(DMotionPosition? p)
+        {
+            if (p == null || PyAxis == null || PyAxis.Device == null) return;
+            try
+            {
+                if (!PyAxis.IsEnabled)
+                {
+                    _logger.Warning("{AxisName} is not enabled.", PyAxis.Name);
+                    return;
+                }
+                if (PyAxis.IsBusy)
+                {
+                    _logger.Warning("{AxisName} is busy.", PyAxis.Name);
+                    return;
+                }
+                await PyAxis.Move(MoveType.Absolute, p.Position, p.Speed);
+                _logger.Information("Move {AxisName} to {Position} at Speed {Speed}", PyAxis.Name, p.Position, p.Speed);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "PY Move Position Error");
             }
         }
     }

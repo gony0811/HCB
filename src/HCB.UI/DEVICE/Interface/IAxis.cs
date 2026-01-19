@@ -31,7 +31,7 @@ namespace HCB.UI
         double EncoderCountPerUnit { get; set; }        // 모터의 단위당 엔코더 펄스 수
 
         int HommingProgramNumber { get; set; }    // 홈 프로그램 번호
-        double InpositionRange { get; set; }           // Inposition 허용 범위
+        double InpositionRange { get; set; }       // Inposition 허용 범위
 
         UnitType Unit { get; set; }
         IMotionDevice Device { get; set; }      // 부모 디바이스

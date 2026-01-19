@@ -3,9 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:converters="clr-namespace:HCB.UI.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:HCB.UI"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <converters:TupleConverter x:Key="TupleConverter" />
+    </UserControl.Resources>
+    
     <telerik:RadTabControl Style="{StaticResource RadTabControlStyle}">
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="D-TABLE">
             <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="*, Auto">
@@ -33,20 +38,36 @@
                                 SortMemberPath="Name"/>
                                 <telerik:GridViewDataColumn Header="위치"
                                 DataMemberBinding="{Binding Position, StringFormat=F3}"
-                                Width="140"
+                                Width="100"
                                 SortMemberPath="Location"/>
                                 <telerik:GridViewDataColumn Header="속도"
                                 DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                                Width="120"
+                                Width="100"
                                 SortMemberPath="Speed"/>
-                                <telerik:GridViewDataColumn Header="동작" Width="80">
+                                <telerik:GridViewDataColumn Header="동작" Width="200">
                                     <telerik:GridViewDataColumn.CellTemplate>
                                         <DataTemplate>
-                                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                            <StackPanel Orientation="Horizontal">
+                                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
                                                                Content="이동" 
-                                                               Command="{Binding DataContext.DYMovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                               CommandParameter="{Binding}"
-                                                               Margin="2"/>
+                                                               Width="80"
+                                                               Command="{Binding DataContext.MovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                               Margin="2">
+                                                    <telerik:RadButton.CommandParameter>
+                                                        <MultiBinding Converter="{StaticResource TupleConverter}">
+                                                            <Binding Path="DataContext.DyAxis" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                            <Binding/>
+                                                        </MultiBinding>
+                                                    </telerik:RadButton.CommandParameter>
+                                                </telerik:RadButton>
+                                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                               Content="정지" 
+                                                               Width="80"
+                                                               Command="{Binding DataContext.MoveStopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                               CommandParameter="{Binding DataContext.DyAxis, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                               Margin="2">
+                                                </telerik:RadButton>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </telerik:GridViewDataColumn.CellTemplate>
                                 </telerik:GridViewDataColumn>
@@ -85,12 +106,40 @@
                         SortMemberPath="Name"/>
                                 <telerik:GridViewDataColumn Header="위치"
                         DataMemberBinding="{Binding Position, StringFormat=F3}"
-                        Width="140"
+                        Width="100"
                         SortMemberPath="Location"/>
                                 <telerik:GridViewDataColumn Header="속도"
                         DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                        Width="120"
+                        Width="100"
                         SortMemberPath="Speed"/>
+                                <telerik:GridViewDataColumn Header="동작" Width="200">
+                                    <telerik:GridViewDataColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                   Content="이동" 
+                                                                     Width="80"
+                                                                   Command="{Binding DataContext.MovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                   Margin="2">
+                                                    <telerik:RadButton.CommandParameter>
+                                                        <MultiBinding Converter="{StaticResource TupleConverter}">
+                                                            <Binding Path="DataContext.PyAxis" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                            <Binding/>
+                                                        </MultiBinding>
+                                                    </telerik:RadButton.CommandParameter>
+                                                </telerik:RadButton>
+                                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                    Content="정지" 
+                                                                    Width="80"
+                                                                    Command="{Binding DataContext.MoveStopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                    CommandParameter="{Binding DataContext.PyAxis, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    Margin="2">
+                                                </telerik:RadButton>
+                                            </StackPanel>
+                                            
+                                        </DataTemplate>
+                                    </telerik:GridViewDataColumn.CellTemplate>
+                                </telerik:GridViewDataColumn>
                             </telerik:RadGridView.Columns>
                         </telerik:RadGridView>
 
@@ -121,17 +170,44 @@
 
                                 <telerik:RadGridView.Columns>
                                     <telerik:GridViewDataColumn Header="이름"
-                DataMemberBinding="{Binding Name}"
-                Width="*"
-                SortMemberPath="Name"/>
-                                    <telerik:GridViewDataColumn Header="위치"
-                DataMemberBinding="{Binding Position, StringFormat=F3}"
-                Width="140"
-                SortMemberPath="Location"/>
-                                    <telerik:GridViewDataColumn Header="속도"
-                DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                Width="120"
-                SortMemberPath="Speed"/>
+                                                                DataMemberBinding="{Binding Name}"
+                                                                Width="*"
+                                                                SortMemberPath="Name"/>
+                                                                                    <telerik:GridViewDataColumn Header="위치"
+                                                                DataMemberBinding="{Binding Position, StringFormat=F3}"
+                                                                Width="100"
+                                                                SortMemberPath="Location"/>
+                                                                                    <telerik:GridViewDataColumn Header="속도"
+                                                                DataMemberBinding="{Binding Speed, StringFormat=F2}"
+                                                                Width="100"
+                                                                SortMemberPath="Speed"/>
+                                    <telerik:GridViewDataColumn Header="동작" Width="200">
+                                        <telerik:GridViewDataColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                   Content="이동" 
+                                                                   Width="80"
+                                                                   Command="{Binding DataContext.MovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                   Margin="2">
+                                                        <telerik:RadButton.CommandParameter>
+                                                            <MultiBinding Converter="{StaticResource TupleConverter}">
+                                                                <Binding Path="DataContext.BxAxis" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                                <Binding/>
+                                                            </MultiBinding>
+                                                        </telerik:RadButton.CommandParameter>
+                                                    </telerik:RadButton>
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                   Content="정지" 
+                                                                   Width="80"
+                                                                   Command="{Binding DataContext.MoveStopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                   CommandParameter="{Binding DataContext.BxAxis, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                   Margin="2">
+                                                    </telerik:RadButton>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </telerik:GridViewDataColumn.CellTemplate>
+                                    </telerik:GridViewDataColumn>
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 
@@ -165,20 +241,36 @@
                                                           SortMemberPath="Name"/>
                                     <telerik:GridViewDataColumn Header="위치"
                                                           DataMemberBinding="{Binding Position, StringFormat=F3}"
-                                                          Width="140"
+                                                          Width="100"
                                                           SortMemberPath="Location"/>
                                     <telerik:GridViewDataColumn Header="속도"
                                                           DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                                                          Width="120"
+                                                          Width="100"
                                                           SortMemberPath="Speed"/>
-                                    <telerik:GridViewDataColumn Header="동작" Width="80">
+                                    <telerik:GridViewDataColumn Header="동작" Width="200">
                                         <telerik:GridViewDataColumn.CellTemplate>
                                             <DataTemplate>
-                                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                <StackPanel Orientation="Horizontal">
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
                                                                    Content="이동" 
-                                                                   Command="{Binding DataContext.Bz1MovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                                   CommandParameter="{Binding}"
-                                                                   Margin="2"/>
+                                                                   Width="80"
+                                                                   Command="{Binding DataContext.MovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                   Margin="2">
+                                                        <telerik:RadButton.CommandParameter>
+                                                            <MultiBinding Converter="{StaticResource TupleConverter}">
+                                                                <Binding Path="DataContext.Bz1Axis" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                                <Binding/>
+                                                            </MultiBinding>
+                                                        </telerik:RadButton.CommandParameter>
+                                                    </telerik:RadButton>
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                    Content="정지" 
+                                                                    Width="80"
+                                                                    Command="{Binding DataContext.MoveStopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                    CommandParameter="{Binding DataContext.Bz1Axis, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    Margin="2">
+                                                    </telerik:RadButton>
+                                                </StackPanel>
                                             </DataTemplate>
                                         </telerik:GridViewDataColumn.CellTemplate>
                                     </telerik:GridViewDataColumn>
@@ -213,12 +305,39 @@
                                                           SortMemberPath="Name"/>
                                     <telerik:GridViewDataColumn Header="위치"
                                                           DataMemberBinding="{Binding Position, StringFormat=F3}"
-                                                          Width="140"
+                                                          Width="100"
                                                           SortMemberPath="Location"/>
                                     <telerik:GridViewDataColumn Header="속도"
                                                           DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                                                          Width="120"
+                                                          Width="100"
                                                           SortMemberPath="Speed"/>
+                                    <telerik:GridViewDataColumn Header="동작" Width="200">
+                                        <telerik:GridViewDataColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                   Content="이동" 
+                                                                   Width="80"
+                                                                   Command="{Binding DataContext.MovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                   Margin="2">
+                                                        <telerik:RadButton.CommandParameter>
+                                                            <MultiBinding Converter="{StaticResource TupleConverter}">
+                                                                <Binding Path="DataContext.Bz2Axis" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                                <Binding/>
+                                                            </MultiBinding>
+                                                        </telerik:RadButton.CommandParameter>
+                                                    </telerik:RadButton>
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                   Content="정지" 
+                                                                   Width="80"
+                                                                   Command="{Binding DataContext.MoveStopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                   CommandParameter="{Binding DataContext.Bz2Axis, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                   Margin="2">
+                                                    </telerik:RadButton>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </telerik:GridViewDataColumn.CellTemplate>
+                                    </telerik:GridViewDataColumn>
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 
@@ -257,12 +376,40 @@
                                                         SortMemberPath="Name"/>
                                     <telerik:GridViewDataColumn Header="위치"
                                                         DataMemberBinding="{Binding Position, StringFormat=F3}"
-                                                        Width="140"
+                                                        Width="100"
                                                         SortMemberPath="Location"/>
                                     <telerik:GridViewDataColumn Header="속도"
                                                         DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                                                        Width="120"
+                                                        Width="100"
                                                         SortMemberPath="Speed"/>
+                                    <telerik:GridViewDataColumn Header="동작" Width="200">
+                                        <telerik:GridViewDataColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                       Content="이동" 
+                                                                       Width="80"
+                                                                       Command="{Binding DataContext.MovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                       Margin="2">
+                                                        <telerik:RadButton.CommandParameter>
+                                                            <MultiBinding Converter="{StaticResource TupleConverter}">
+                                                                <Binding Path="DataContext.WyAxis" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                                <Binding/>
+                                                            </MultiBinding>
+                                                        </telerik:RadButton.CommandParameter>
+                                                    </telerik:RadButton>
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                  Content="정지" 
+                                                                  Width="80"
+                                                                  Command="{Binding DataContext.MoveStopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                  CommandParameter="{Binding DataContext.WyAxis, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                  Margin="2">
+                                                    </telerik:RadButton>
+                                                </StackPanel>
+                                                
+                                            </DataTemplate>
+                                        </telerik:GridViewDataColumn.CellTemplate>
+                                    </telerik:GridViewDataColumn>
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 
@@ -295,12 +442,40 @@
                                                   SortMemberPath="Name"/>
                                     <telerik:GridViewDataColumn Header="위치"
                                                   DataMemberBinding="{Binding Position, StringFormat=F3}"
-                                                  Width="140"
+                                                  Width="100"
                                                   SortMemberPath="Location"/>
                                     <telerik:GridViewDataColumn Header="속도"
                                                   DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                                                  Width="120"
+                                                  Width="100"
                                                   SortMemberPath="Speed"/>
+
+                                    <telerik:GridViewDataColumn Header="동작" Width="200">
+                                        <telerik:GridViewDataColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                   Content="이동" 
+                                                                   Command="{Binding DataContext.MovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                   Margin="2">
+                                                        <telerik:RadButton.CommandParameter>
+                                                            <MultiBinding Converter="{StaticResource TupleConverter}">
+                                                                <Binding Path="DataContext.WtAxis" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                                <Binding/>
+                                                            </MultiBinding>
+                                                        </telerik:RadButton.CommandParameter>
+                                                    </telerik:RadButton>
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                   Content="정지" 
+                                                                   Width="80"
+                                                                   Command="{Binding DataContext.MoveStopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                   CommandParameter="{Binding DataContext.WtAxis, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                   Margin="2">
+                                                    </telerik:RadButton>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </telerik:GridViewDataColumn.CellTemplate>
+                                    </telerik:GridViewDataColumn>
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 
