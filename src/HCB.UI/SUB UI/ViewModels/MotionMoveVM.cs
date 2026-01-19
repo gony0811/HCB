@@ -13,8 +13,30 @@ namespace HCB.UI
     public partial class MotionMoveVM : ObservableObject
     {
         private readonly ILogger _logger;
+        [ObservableProperty] private double pitch;
+        private double _speed;
+        public double Speed
+        {
+            get => _speed;
+            set
+            {
+                // 범위를 강제로 제한 (Clamping)
+                double validatedValue = Math.Max(Axis.LimitMinSpeed, Math.Min(Axis.LimitMaxSpeed, value));
 
-        [ObservableProperty] public int speed;
+                if (_speed != validatedValue)
+                {
+                    _speed = validatedValue;
+                    OnPropertyChanged(nameof(Speed));
+                }
+                else
+                {
+                    // 범위를 벗어난 값을 입력했을 때, UI의 글자를 다시 정상 범위 숫자로 
+                    // 되돌리기 위해 강제로 알림을 한 번 더 보냅니다.
+                    OnPropertyChanged(nameof(Speed));
+                }
+            }
+        }
+
         [ObservableProperty] public IAxis axis;
 
         public MotionMoveVM(ILogger logger)
@@ -23,9 +45,36 @@ namespace HCB.UI
         }
 
         [RelayCommand]
+        public void SelectPitch(double pitch)
+        {
+            Pitch = pitch;
+        }
+
+        [RelayCommand]
         public async Task PitchMove()
         {
-            MessageBox.Show(Axis.Name);
+            if (Axis == null || Pitch == 0) return;
+            try
+            {
+                if (!Axis.IsEnabled)
+                {
+                    this._logger.Warning("{axis} is not enabled.", Axis.Name);
+                    return;
+                }
+
+                if ( Axis.CurrentPosition + Pitch >= Axis.LimitMinPosition 
+                    && Axis.CurrentPosition + Pitch <= Axis.LimitMaxPosition)
+                {
+                    //Axis.Move()
+                }else
+                {
+                    this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, Speed, Axis.LimitMinPosition, Axis.LimitMaxPosition);
+                }
+            }
+            catch (Exception e)
+            {
+
+            }
         }
 
         [RelayCommand]

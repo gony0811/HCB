@@ -238,7 +238,6 @@ namespace HCB.UI
         public Task JogMove(JogMoveType moveType, double jogSpeed)
         {
              this.logger.Information($"{Name}, {moveType.ToString()}, JogSpeed: {jogSpeed}");
-            // Todo: 현재 테스트 용도로 MessageBox 사용중 실사용시 삭제
 
             try
             {

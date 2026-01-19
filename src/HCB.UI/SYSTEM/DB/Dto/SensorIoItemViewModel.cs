@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System;
 
 namespace HCB.UI
 {
@@ -24,20 +25,29 @@ namespace HCB.UI
 
         public SensorIoItemViewModel(string ioName, PmacIoDevice pmacIo, string label = "", bool isChecked = false, bool isReadOnly = false)
         {
-            _ioName = ioName;
-            Name = label;
-            IsChecked = isChecked;
-            IsReadOnly = isReadOnly;
-            _device = pmacIo;
-
-            var io = _device.FindIoDataByName(_ioName);
-
-            if (io is not null && io.IoType == Data.Entity.Type.IoType.DigitalInput)
+            try
             {
-                var data = (DigitalInput)io;
+                _ioName = ioName;
+                Name = label;
+                IsChecked = isChecked;
+                IsReadOnly = isReadOnly;
+                _device = pmacIo;
 
-                data.ValueChanged += DI_ValueChanged;
+                var io = _device.FindIoDataByName(_ioName);
+
+                if (io is not null && io.IoType == Data.Entity.Type.IoType.DigitalInput)
+                {
+                    var data = (DigitalInput)io;
+
+                    data.ValueChanged += DI_ValueChanged;
+                }
             }
+            catch (Exception ex)
+            {
+                // Log the exception or handle it as needed
+                
+            }
+
         }
 
         private void DI_ValueChanged(object? sender, ValueChangedEventArgs<object> e)

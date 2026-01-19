@@ -9,6 +9,7 @@
     <EnableDefaultItems>False</EnableDefaultItems>
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x86</Platforms>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.Extensions.Configuration.Binder.SourceGeneration</InterceptorsNamespaces>
   </PropertyGroup>
 
   <ItemGroup>
