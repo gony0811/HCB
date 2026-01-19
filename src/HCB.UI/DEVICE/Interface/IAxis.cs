@@ -43,6 +43,7 @@ namespace HCB.UI
 
         Task ServoReady(bool ready);    // 서보 온
 
+        Task Move(MoveType moveType, double velocity, double position);
         Task Move(MoveType moveType, double jerk, double velocity, double position);
 
         Task JogMove(JogMoveType moveType, double jogSpeed);   // 조그 이동

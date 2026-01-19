@@ -100,5 +100,63 @@ namespace HCB.UI
                 IsWaferLoading = false;
             });
         }
+
+        [RelayCommand]
+        public async Task DYMovePosition(DMotionPosition? p)
+        {
+            if (p == null || DyAxis == null || DyAxis.Device == null) return;
+
+            try
+            {
+                if (!DyAxis.IsEnabled)
+                {
+                    _logger.Warning("{AxisName} is not enabled.", DyAxis.Name);
+                    return;
+                }
+
+                if (DyAxis.IsBusy)
+                {
+                    _logger.Warning("{AxisName} is busy.", DyAxis.Name);
+                    return;
+                }
+
+                await DyAxis.Move(MoveType.Absolute, p.Position, p.Speed);
+
+                _logger.Information("Move {AxisName} to {Position} at Speed {Speed}", DyAxis.Name, p.Position, p.Speed);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "DY Move Position Error");
+            }
+        }
+
+        [RelayCommand]
+        public async Task Bz1MovePosition(DMotionPosition? p)
+        {
+            if (p == null || Bz1Axis == null || Bz1Axis.Device == null) return;
+
+            try
+            {
+                if (!Bz1Axis.IsEnabled)
+                {
+                    _logger.Warning("{AxisName} is not enabled.", Bz1Axis.Name);
+                    return;
+                }
+
+                if (Bz1Axis.IsBusy)
+                {
+                    _logger.Warning("{AxisName} is busy.", Bz1Axis.Name);
+                    return;
+                }
+
+                await Bz1Axis.Move(MoveType.Absolute, p.Speed, p.Position);
+
+                _logger.Information("Move {AxisName} to {Position} at Speed {Speed}", Bz1Axis.Name, p.Position, p.Speed);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "H-Z Move Position Error");
+            }
+        }
     }
 }

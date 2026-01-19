@@ -39,6 +39,17 @@
                                 DataMemberBinding="{Binding Speed, StringFormat=F2}"
                                 Width="120"
                                 SortMemberPath="Speed"/>
+                                <telerik:GridViewDataColumn Header="동작" Width="80">
+                                    <telerik:GridViewDataColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                               Content="이동" 
+                                                               Command="{Binding DataContext.DYMovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                               CommandParameter="{Binding}"
+                                                               Margin="2"/>
+                                        </DataTemplate>
+                                    </telerik:GridViewDataColumn.CellTemplate>
+                                </telerik:GridViewDataColumn>
                             </telerik:RadGridView.Columns>
                         </telerik:RadGridView>
 
@@ -160,6 +171,17 @@
                                                           DataMemberBinding="{Binding Speed, StringFormat=F2}"
                                                           Width="120"
                                                           SortMemberPath="Speed"/>
+                                    <telerik:GridViewDataColumn Header="동작" Width="80">
+                                        <telerik:GridViewDataColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                   Content="이동" 
+                                                                   Command="{Binding DataContext.Bz1MovePositionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                   CommandParameter="{Binding}"
+                                                                   Margin="2"/>
+                                            </DataTemplate>
+                                        </telerik:GridViewDataColumn.CellTemplate>
+                                    </telerik:GridViewDataColumn>
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 
