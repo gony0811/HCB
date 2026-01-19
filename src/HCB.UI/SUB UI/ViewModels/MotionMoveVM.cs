@@ -40,7 +40,7 @@ namespace HCB.UI
                     this._logger.Warning("{axis} is not enabled.", Axis.Name);
                     return;
                 }
-                else if (Axis.IsBusy)
+                else if (!Axis.IsMinusLimit && Axis.IsBusy)
                 {
                     this._logger.Warning("{axis} is busy.", Axis.Name);
                     return;
@@ -70,7 +70,7 @@ namespace HCB.UI
                     this._logger.Warning("{axis} is not enabled.", Axis.Name);
                     return;
                 }
-                else if (Axis.IsBusy)
+                else if (!Axis.IsPlusLimit && Axis.IsBusy)
                 {
                     this._logger.Warning("{axis} is busy.", Axis.Name);
                     return;

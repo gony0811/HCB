@@ -18,6 +18,7 @@ namespace HCB.UI
     {
         private CancellationTokenSource _cancellationTokenSource = new();
         private readonly SequenceService _sequenceService;
+        private readonly DeviceManager _deviceManager;
 
         [ObservableProperty] private bool isDTableLoading;
         [ObservableProperty] private bool isDTableStandby;
@@ -32,13 +33,22 @@ namespace HCB.UI
         {
             "DIE 1","DIE 2", "DIE 3", "DIE 4", "DIE 5", "DIE 6", "DIE 7", "DIE 8", "DIE 9",
         };
-        public TableManagerViewModel(SequenceService sequenceService)
+
+        private List<string> dIoNameList = new List<string>()
+        {
+            IoExtensions.DO_DTABLE_VAC_1_ON, IoExtensions.DO_DTABLE_VAC_2_ON, IoExtensions.DO_DTABLE_VAC_3_ON, IoExtensions.DO_DTABLE_VAC_4_ON, IoExtensions.DO_DTABLE_VAC_5_ON, IoExtensions.DO_DTABLE_VAC_6_ON, IoExtensions.DO_DTABLE_VAC_7_ON, IoExtensions.DO_DTABLE_VAC_8_ON, IoExtensions.DO_DTABLE_VAC_9_ON,
+        };
+
+        public TableManagerViewModel(SequenceService sequenceService, DeviceManager deviceManager)
         {
             this._sequenceService = sequenceService;
+            this._deviceManager = deviceManager;
 
-            foreach (var item in dTableNameList)
+            var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+
+            for (var i = 0; i < dTableNameList.Count; i++)
             {
-                DTableList.Add(new SensorIoItemViewModel(item));
+                DTableList.Add(new SensorIoItemViewModel(dIoNameList[i], ioDevice, dTableNameList[i]));
             }
         }
 

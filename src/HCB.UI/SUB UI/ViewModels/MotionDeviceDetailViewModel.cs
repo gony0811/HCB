@@ -112,6 +112,8 @@ namespace HCB.UI
                 MinimumLocation = SelectedMotion.LimitMinPosition,
                 MaximumSpeed = SelectedMotion.LimitMaxSpeed,
                 MinimumSpeed = SelectedMotion.LimitMinSpeed,
+                EncoderCountsPerUnit = SelectedMotion.EncoderCountPerUnit,
+                HommingProgramNumber = SelectedMotion.HommingProgramNumber,
                 Unit = SelectedMotion.Unit
             };
 
@@ -130,6 +132,8 @@ namespace HCB.UI
                     dto.LimitMinPosition = entity.MinimumLocation;
                     dto.LimitMaxSpeed = entity.MaximumSpeed;
                     dto.LimitMinSpeed = entity.MinimumSpeed;
+                    dto.EncoderCountPerUnit = entity.EncoderCountsPerUnit;
+                    dto.HommingProgramNumber = entity.HommingProgramNumber;
                     dto.Unit = entity.Unit;
 
                     dialogService.ShowMessage("업데이트 완료", "모션이 저장 되었습니다");

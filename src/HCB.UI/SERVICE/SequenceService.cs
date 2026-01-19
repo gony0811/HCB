@@ -21,6 +21,7 @@ namespace HCB.UI
         private readonly SequenceServiceVM _sequenceServiceVM;
         private readonly Timer _timer;
         private readonly bool _simulation;
+        private readonly SemaphoreSlim _pollingLock = new SemaphoreSlim(1, 1);
 
         private CancellationToken _stopToken = CancellationToken.None;
 
@@ -31,8 +32,24 @@ namespace HCB.UI
             _sequenceHelper = sequenceHelper;
             _sequenceServiceVM = sequenceServiceVM;
             _simulation = dataOptions.Simulation;
+            
             // 디바이스 데이터 폴링 타이머 설정 (100ms 주기)
-            _timer = new Timer(async _ => await DeviceDataPolling(CancellationToken.None), null, Timeout.Infinite, Timeout.Infinite);
+            // 중복 실행 방지 및 종료 시 대기를 위해 SemaphoreSlim 사용
+            _timer = new Timer(async _ => 
+            {
+                // 락 획득 시도 (이미 실행 중이면 스킵)
+                if (await _pollingLock.WaitAsync(0))
+                {
+                    try
+                    {
+                        await DeviceDataPolling(CancellationToken.None);
+                    }
+                    finally
+                    {
+                        _pollingLock.Release();
+                    }
+                }
+            }, null, Timeout.Infinite, Timeout.Infinite);
         }
 
 
@@ -48,6 +65,12 @@ namespace HCB.UI
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.Information("SequenceService is stopping.");
+
+            _timer.Change(Timeout.Infinite, Timeout.Infinite); // 타이머 중지
+
+            // 현재 실행 중인 폴링 작업이 있다면 완료될 때까지 대기
+            await _pollingLock.WaitAsync(cancellationToken);
+            _pollingLock.Release();
 
             await DeviceDetatch();
 
@@ -96,6 +119,8 @@ namespace HCB.UI
         {
             try
             {
+
+
                 var devices = _deviceManager.Devices.Where(d => d.IsConnected).ToList();
                 foreach (var device in devices)
                 {

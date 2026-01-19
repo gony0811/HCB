@@ -10,7 +10,7 @@ namespace HCB.UI
 {
     public static class IoExtensions
     {
-        public const string IoDeviceName = "PmacIO";
+        public const string IoDeviceName = "PMacIO";
 
         #region Digital Input Names
         public const string DI_EMO_1_SWITCH = "DI_EMO_1_SWITCH";
@@ -27,6 +27,7 @@ namespace HCB.UI
         public const string DI_FAN_2_ALARM = "DI_FAN_2_ALARM";
         public const string DI_FAN_3_ALARM = "DI_FAN_3_ALARM";
         public const string DI_FAN_4_ALARM = "DI_FAN_4_ALARM";
+        public const string DI_EPU_ALARM = "DI_EPU_ALARM";
         public const string DI_CP04_TRIP = "DI_CP04_TRIP";                  // EFU
         public const string DI_CP05_TRIP = "DI_CP05_TRIP";                  // Piezo & LV32-DLDC
         public const string DI_CP06_TRIP = "DI_CP06_TRIP";                  // LED Controller

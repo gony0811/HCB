@@ -99,6 +99,9 @@ namespace HCB.UI
                 MinimumLocation = r.LimitMinPosition,
                 MaximumLocation = r.LimitMaxPosition,
 
+                EncoderCountsPerUnit = r.EncoderCountPerUnit,
+                HommingProgramNumber = r.HommingProgramNumber,
+
                 ParentDeviceId = r.Device.Id
             };
 

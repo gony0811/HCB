@@ -52,6 +52,7 @@ namespace HCB.UI
         public DAxis(ILogger logger)
         {
             this.logger = logger.ForContext<DAxis>();
+            HomeTimeout = 10000;
         }
 
         [RelayCommand]
@@ -95,7 +96,9 @@ namespace HCB.UI
         [RelayCommand]
         public async Task ServoOn()
         {
-            MessageBox.Show($"{Name} 서보온");
+
+            logger.Information("ServoOn/Off Command Sent: {Name}, IsEnabled: {IsEnabled}", Name, IsEnabled);
+
             if (Device?.IsConnected != true || Device?.IsEnabled != true)
             {
                 return;
@@ -103,8 +106,8 @@ namespace HCB.UI
 
             // 2. 현재 상태에 따른 명령 생성 및 사전 처리
             string command = IsEnabled
-                ? $"#{MotorNo}J/"  // Servo On -> Off 시퀀스
-                : $"#{MotorNo}K";   // Servo Off -> On 시퀀스
+                ? $"#{MotorNo}K"  // Servo On -> Off 시퀀스
+                : $"#{MotorNo}J/";   // Servo Off -> On 시퀀스
 
             if (IsEnabled)
             {

@@ -6,6 +6,10 @@ namespace HCB.UI
     public partial class SensorIoItemViewModel : ObservableObject
     {
 
+        private readonly PmacIoDevice _device;
+
+        private readonly string _ioName = string.Empty;
+
         [ObservableProperty]
         private string name;
 
@@ -18,17 +22,36 @@ namespace HCB.UI
 
         public SensorIoItemViewModel() { }
 
-        public SensorIoItemViewModel(string name, bool isChecked = false, bool isReadOnly = false)
+        public SensorIoItemViewModel(string ioName, PmacIoDevice pmacIo, string label = "", bool isChecked = false, bool isReadOnly = false)
         {
-            Name = name;
+            _ioName = ioName;
+            Name = label;
             IsChecked = isChecked;
             IsReadOnly = isReadOnly;
+            _device = pmacIo;
+
+            var io = _device.FindIoDataByName(_ioName);
+
+            if (io is not null && io.IoType == Data.Entity.Type.IoType.DigitalInput)
+            {
+                var data = (DigitalInput)io;
+
+                data.ValueChanged += DI_ValueChanged;
+            }
         }
+
+        private void DI_ValueChanged(object? sender, ValueChangedEventArgs<object> e)
+        {
+            IsChecked = (bool)e.NewValue;
+        }
+
 
         [RelayCommand]
         private void Toggle()
         {
             if (IsReadOnly) return;
+
+            _device.SetDigital(_ioName, IsChecked);
         }
 
         private bool CanToggle() => !IsReadOnly;

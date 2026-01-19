@@ -103,7 +103,87 @@ namespace HCB.UI
             return Task.CompletedTask;
         }
 
-        public Task RefreshStatus()
+        public async Task RefreshStatus()
+        {
+            foreach (var motion in MotionList)
+            {
+                try
+                {
+                    // 1. 명령어 생성
+                    // 띄어쓰기로 구분하여 여러 값을 한 번에 요청합니다.
+                    var sb = new System.Text.StringBuilder();
+                    sb.Append($"Motor[{motion.MotorNo}].Status[0] ");       // 상태 비트 (매뉴얼 기준)
+                    sb.Append($"Motor[{motion.MotorNo}].HomePos ");         // 홈 오프셋
+                    sb.Append($"Motor[{motion.MotorNo}].ActPos ");          // 현재 위치 (Encoder)
+                    sb.Append($"Motor[{motion.MotorNo}].DesPos ");          // 명령 위치 (Desired)
+                                                                            // (HomeComplete는 Status[0]의 Bit 15에 있으므로 별도 요청 불필요)
+
+                    // 2. 비동기 전송 및 응답 수신
+                    string strResponse = await SendCommand<string>(sb.ToString());
+
+                    // 3. 응답 파싱 (줄바꿈 문자로 분리)
+                    var values = strResponse.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (values.Length < 4) continue; // 데이터가 부족하면 스킵
+
+                    // 4. 데이터 변환
+                    // Status[0]은 Hex($) 문자열이므로 처리 필요
+                    uint status0 = Convert.ToUInt32(values[0].Replace("$", ""), 16);
+
+                    double homePosVal = Convert.ToDouble(values[1]);
+                    double actPosVal = Convert.ToDouble(values[2]);
+                    double desPosVal = Convert.ToDouble(values[3]);
+
+                    // 단위 변환
+                    double homePos = homePosVal / motion.EncoderCountPerUnit;
+                    double actPos = actPosVal / motion.EncoderCountPerUnit;
+                    double desPos = desPosVal / motion.EncoderCountPerUnit;
+
+                    motion.CurrentPosition = actPos - homePos;
+                    motion.CommandPosition = desPos - homePos;
+
+                    // =========================================================
+                    // [중요] 매뉴얼 기반 상태 비트 분석
+                    // =========================================================
+
+                    // 1. Servo On 상태 (Bit 13: ClosedLoop) - $2000
+                    motion.IsEnabled = (status0 & 0x00002000) != 0;
+
+                    // 2. 원점 복귀 완료 (Bit 15: HomeComplete) - $8000
+                    motion.IsHomeDone = (status0 & 0x00008000) != 0;
+
+                    // 3. 에러 상태 (Bit 24: AmpFault) - $1000000
+                    // 필요시 Bit 26(FeFatal, $4000000)이나 Bit 21(I2tFault)도 OR 조건으로 추가 가능
+                    motion.IsError = (status0 & 0x01000000) != 0;
+
+                    // 4. 하드웨어 리미트
+                    // Plus Limit (Bit 28) - $10000000
+                    motion.IsPlusLimit = (status0 & 0x10000000) != 0;
+
+                    // Minus Limit (Bit 29) - $20000000
+                    motion.IsMinusLimit = (status0 & 0x20000000) != 0;
+
+                    // 5. 이동 중 여부 (Busy)
+                    // Bit 11 (InPos)이 0이면 "이동 중"으로 판단
+                    // InPos ($800): 목표 위치 도달 시 1, 이동 중이거나 오차 크면 0
+                    bool isInPosBit = (status0 & 0x00000800) != 0;
+                    motion.IsBusy = !isInPosBit;
+
+                    // 6. InPosition 최종 판단
+                    // 하드웨어 신호(Bit 11)와 소프트웨어 오차 범위 체크를 동시에 만족해야 True
+                    bool isPosDiffOk = (Math.Abs(motion.CommandPosition - motion.CurrentPosition) <= motion.InpositionRange);
+
+                    motion.InPosition = isInPosBit && isPosDiffOk;
+                }
+                catch (Exception ex)
+                {
+                    // 디버깅을 위해 콘솔에 출력 (실제 운영 시엔 로그 기록)
+                    Console.WriteLine($"Motion[{motion.MotorNo}] Update Error: {ex.Message}");
+                }
+            }
+        }
+
+        public Task RefreshStatus_()
         {          
             foreach (var motion in MotionList)
             {
@@ -193,9 +273,9 @@ namespace HCB.UI
 
             String stringcmd = command;
 
-            byCommand = System.Text.Encoding.GetEncoding("euc-kr").GetBytes(stringcmd);
+            byCommand = System.Text.Encoding.ASCII.GetBytes(stringcmd);
             DTKPowerPmac.Instance.GetResponseA(uDeviceId, byCommand, byResponse, Convert.ToInt32(byResponse.Length - 1));
-            strResponse = System.Text.Encoding.GetEncoding("euc-kr").GetString(byResponse);
+            strResponse = System.Text.Encoding.ASCII.GetString(byResponse);
 
             return Task.CompletedTask;
         }
