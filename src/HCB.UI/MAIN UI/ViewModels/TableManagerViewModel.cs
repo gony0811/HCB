@@ -46,9 +46,12 @@ namespace HCB.UI
 
             var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
 
-            for (var i = 0; i < dTableNameList.Count; i++)
+            if (ioDevice != null)
             {
-                DTableList.Add(new SensorIoItemViewModel(dIoNameList[i], ioDevice, dTableNameList[i]));
+                for (var i = 0; i < dTableNameList.Count; i++)
+                {
+                    DTableList.Add(new SensorIoItemViewModel(dIoNameList[i], ioDevice, dTableNameList[i]));
+                }
             }
         }
 

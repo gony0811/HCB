@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
              xmlns:local="clr-namespace:HCB.UI"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              mc:Ignorable="d" >
     <Grid>
@@ -17,7 +18,6 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
@@ -26,12 +26,43 @@
                         <RowDefinition Height="*"></RowDefinition>
                         <RowDefinition Height="*"></RowDefinition>
                     </Grid.RowDefinitions>
-                    <Button Content="-0.01 um" Margin="2" Command="{Binding PitchMoveCommand}"></Button>
-                    <Button Content="-0.1 um" Grid.Row="1" Margin="2" Command="{Binding PitchMoveCommand}"></Button>
-                    <Button Content="-1 um" Grid.Row="2" Margin="2" Command="{Binding PitchMoveCommand}"></Button>
-                    <Button Content="0.01 um" Grid.Column="2" Margin="2" Command="{Binding PitchMoveCommand}"></Button>
-                    <Button Content="0.1 um" Grid.Column="2" Grid.Row="1" Margin="2" Command="{Binding PitchMoveCommand}"></Button>
-                    <Button Content="1 um" Grid.Column="2" Grid.Row="2" Margin="2" Command="{Binding PitchMoveCommand}"></Button>
+                    <Button Content="-0.1 mm"
+                            Grid.Column="0" Grid.Row="0" Margin="1"
+                            Command="{Binding SelectPitchCommand}">
+                        <Button.CommandParameter>
+                            <sys:Double>-0.1</sys:Double>
+                        </Button.CommandParameter>
+                    </Button>
+
+                    <Button Content="-1.0 mm" 
+                            Grid.Column="1" Grid.Row="0" Margin="1"
+                            Command="{Binding SelectPitchCommand}">
+                        <Button.CommandParameter>
+                            <sys:Double>-1.0</sys:Double>
+                        </Button.CommandParameter>
+                    </Button>
+
+                    <Button Content="0.1 mm" 
+                            Grid.Column="0" Grid.Row="1" Margin="1"
+                            Command="{Binding SelectPitchCommand}">
+                        <Button.CommandParameter>
+                            <sys:Double>0.1</sys:Double>
+                        </Button.CommandParameter>
+                    </Button>
+
+                    <Button Content="1.0 mm" 
+                            Grid.Column="1" Grid.Row="1" Margin="1"
+                            Command="{Binding SelectPitchCommand}">
+                        <Button.CommandParameter>
+                            <sys:Double>1.0</sys:Double>
+                        </Button.CommandParameter>
+                    </Button>
+                    <StackPanel Grid.ColumnSpan="2" Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock Text="피치 (mm)" TextAlignment="Right" VerticalAlignment="Center" Margin="5"/>
+                        <TextBox Text="{Binding Pitch}" TextAlignment="Center" Width="100"/>
+                    </StackPanel>
+                   
+                    
                     <Button Content="피치 이동" Grid.ColumnSpan="3" Grid.Row="3" Command="{Binding PitchMoveCommand}"/>
                 </Grid>
                 
@@ -90,28 +121,39 @@
                 </Grid>
             </telerik:RadTabItem>
         </telerik:RadTabControl>
-        <Grid Grid.Column="1" Margin="10">
+        <Grid Grid.Column="1" Margin="10" Width="50">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Text="속도"/>
+            <TextBlock Grid.Row="0" Text="속도" TextAlignment="Center"/>
             <telerik:RadSlider 
-                Grid.Row="1"
-                Orientation="Vertical"
-                Margin="4"
-                Minimum="1"
-                Maximum="100"
-                StepAction="ChangeRange"
-                Value="{Binding Speed}"
-                TickPlacement="None"
-                IsSnapToTickEnabled="False"
-                SelectionStart="1"
-                SelectionEnd="{Binding Speed}"/>
-            <TextBlock Grid.Row="2"
-                       HorizontalAlignment="Center"
-                       Text="{Binding Speed}"/>
+                    Grid.Row="1"
+                    Orientation="Vertical"
+                    Margin="4"
+                    HorizontalAlignment="Center"
+                    Minimum="{Binding Axis.LimitMinSpeed}"
+                    Maximum="{Binding Axis.LimitMaxSpeed}"
+                    SmallChange="0.1" 
+                    LargeChange="0.5" 
+                    TickFrequency="0.1" 
+                    IsSnapToTickEnabled="True" 
+                    Value="{Binding Speed}"
+                    TickPlacement="BottomRight" StepAction="ChangeRange"
+                    SelectionStart="{Binding Axis.LimitMinSpeed}"
+                    SelectionEnd="{Binding Speed}"/>
+            <TextBox Grid.Row="2" HorizontalAlignment="Center">
+                <TextBox.Text>
+                    <Binding Path="Speed" 
+                             UpdateSourceTrigger="PropertyChanged" 
+                             StringFormat="N1">
+                        <Binding.ValidationRules>
+                            <ExceptionValidationRule />
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
         </Grid>
         
     </Grid>
