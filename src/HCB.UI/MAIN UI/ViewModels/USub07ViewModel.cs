@@ -52,7 +52,14 @@ namespace HCB.UI
             // Refresh device status to get current output values
             if (device != null && device.IsConnected)
             {
-                await device.RefreshStatus();
+                try
+                {
+                    await device.RefreshStatus();
+                }
+                catch (Exception ex)
+                {
+                    logger.Warning(ex, "Failed to refresh device status during I/O page load");
+                }
             }
 
             foreach (var group in ioList.GroupBy(x => x.IoDataType))
@@ -74,9 +81,8 @@ namespace HCB.UI
                         }
                         catch (Exception ex)
                         {
-                            // If reading fails, keep default value and log the error
+                            // If reading fails, keep default value (false) and log the error
                             logger.Warning(ex, "Failed to read initial value for digital output: {IoName}", io.Name);
-                            initialValue = false;
                         }
                     }
 
