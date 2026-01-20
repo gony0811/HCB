@@ -66,9 +66,8 @@ namespace HCB.UI
             {
                 foreach (var io in group)
                 {
-                    bool initialValue = false;
-
                     // Read initial value from device for digital outputs
+                    bool initialValue = false;
                     if (group.Key == IoType.DigitalOutput)
                     {
                         try
