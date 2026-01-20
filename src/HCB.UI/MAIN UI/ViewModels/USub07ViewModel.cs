@@ -2,6 +2,8 @@
 using HCB.Data.Entity.Type;
 using HCB.Data.Repository;
 using HCB.IoC;
+using Serilog;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,6 +13,7 @@ namespace HCB.UI
     [ViewModel(Lifetime.Singleton)]
     public partial class USub07ViewModel : ObservableObject 
     {
+        private readonly ILogger logger;
         private readonly IoDataRepository ioRepository;
         private readonly DeviceManager deviceManager;
 
@@ -26,8 +29,9 @@ namespace HCB.UI
         [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> digitalOutput = new ObservableCollection<SensorIoItemViewModel>();
 
-        public USub07ViewModel(IoDataRepository ioDataRepository, DeviceManager deviceManager)
+        public USub07ViewModel(ILogger logger, IoDataRepository ioDataRepository, DeviceManager deviceManager)
         {
+            this.logger = logger.ForContext<USub07ViewModel>();
             this.ioRepository = ioDataRepository;
             this.deviceManager = deviceManager;
             _ = LoadIoData();
@@ -68,9 +72,10 @@ namespace HCB.UI
                                 initialValue = digitalOutput.Value;
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            // If reading fails, keep default value
+                            // If reading fails, keep default value and log the error
+                            logger.Warning(ex, "Failed to read initial value for digital output: {IoName}", io.Name);
                             initialValue = false;
                         }
                     }
