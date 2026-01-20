@@ -2,6 +2,8 @@
 using HCB.Data.Entity.Type;
 using HCB.Data.Repository;
 using HCB.IoC;
+using Serilog;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,6 +13,7 @@ namespace HCB.UI
     [ViewModel(Lifetime.Singleton)]
     public partial class USub07ViewModel : ObservableObject 
     {
+        private readonly ILogger logger;
         private readonly IoDataRepository ioRepository;
         private readonly DeviceManager deviceManager;
 
@@ -26,8 +29,9 @@ namespace HCB.UI
         [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> digitalOutput = new ObservableCollection<SensorIoItemViewModel>();
 
-        public USub07ViewModel(IoDataRepository ioDataRepository, DeviceManager deviceManager)
+        public USub07ViewModel(ILogger logger, IoDataRepository ioDataRepository, DeviceManager deviceManager)
         {
+            this.logger = logger.ForContext<USub07ViewModel>();
             this.ioRepository = ioDataRepository;
             this.deviceManager = deviceManager;
             _ = LoadIoData();
@@ -45,10 +49,41 @@ namespace HCB.UI
             DigitalInput.Clear();
             DigitalOutput.Clear();
 
+            // Refresh device status to get current output values
+            if (device != null && device.IsConnected)
+            {
+                try
+                {
+                    await device.RefreshStatus();
+                }
+                catch (Exception ex)
+                {
+                    logger.Warning(ex, "Failed to refresh device status during I/O page load");
+                }
+            }
+
             foreach (var group in ioList.GroupBy(x => x.IoDataType))
             {
                 foreach (var io in group)
                 {
+                    // Read initial value from device for digital outputs
+                    bool initialValue = false;
+                    if (group.Key == IoType.DigitalOutput)
+                    {
+                        try
+                        {
+                            var ioData = device.FindIoDataByName(io.Name);
+                            if (ioData != null && ioData is DigitalOutput digitalOutput)
+                            {
+                                initialValue = digitalOutput.Value;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // If reading fails, keep default value (false) and log the error
+                            logger.Warning(ex, "Failed to read initial value for digital output: {IoName}", io.Name);
+                        }
+                    }
 
                     switch (group.Key)
                     {
@@ -62,7 +97,7 @@ namespace HCB.UI
                             DigitalInput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, false, true));
                             break;
                         case IoType.DigitalOutput:
-                            DigitalOutput.Add(new SensorIoItemViewModel(io.Name, device, io.Address));
+                            DigitalOutput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, initialValue, false));
                             break;
                     }
                 }
