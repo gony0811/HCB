@@ -53,6 +53,17 @@ namespace HCB.UI
         {
             this.logger = logger.ForContext<DAxis>();
             HomeTimeout = 10000;
+
+            /// InpositionRange 기본값 설정
+            if (unit == UnitType.mm)
+            {
+                InpositionRange = 0.001;
+            }
+            else if (unit == UnitType.um)
+            {
+                InpositionRange = 1;
+            }
+            
         }
 
         [RelayCommand]
@@ -158,9 +169,81 @@ namespace HCB.UI
             }     
         }
 
-        public Task Move(MoveType moveType, double jerk, double velocity, double position)
+        public async Task Move(MoveType moveType, double velocity, double position)
         {
-            throw new NotImplementedException();
+            this.logger.Information($"{Name}, {moveType.ToString()}, Velocity: {velocity}, Position: {position}");
+
+            var setPos = position * EncoderCountPerUnit;
+
+            if (Device?.IsConnected != true && Device?.IsEnabled != true)
+            {
+                this.logger.Information($"{Name} Axis is not available.");
+                return;
+            }
+
+            // 속도 설정 (공통)
+            string speedCmd = $"Motor[{MotorNo}].JogSpeed={velocity}";
+            await Device.SendCommand(speedCmd);
+
+            string moveCmd;
+
+            if (moveType == MoveType.Absolute)
+            {
+                // 절대 위치 이동 명령 (J=절대위치)
+                moveCmd = $"#{MotorNo}J={setPos}";
+            }
+            else if (moveType == MoveType.Relative)
+            {
+                // 상대 위치 이동 명령 (J^이동거리)
+                // PMAC에서 ^ 기호는 현재 위치 기준 증분(Incremental) 이동을 의미합니다.
+                moveCmd = $"#{MotorNo}J^{setPos}";
+            }
+            else
+            {
+                throw new NotImplementedException($"{moveType} Move is not implemented.");
+            }
+
+            await Device.SendCommand(moveCmd);
+        }
+
+        public async Task Move(MoveType moveType, double jerk, double velocity, double position)
+        {
+            this.logger.Information($"{Name}, {moveType.ToString()}, Velocity: {velocity}, Position: {position}");
+
+            var setPos = position * EncoderCountPerUnit;
+
+            if (Device?.IsConnected != true && Device?.IsEnabled != true)
+            {
+                this.logger.Information($"{Name} Axis is not available.");
+                return;
+            }
+
+            string jerkCmd = $"Motor[{MotorNo}].Jerk={jerk}";
+            await Device.SendCommand(jerkCmd);
+
+            // 속도 설정 (공통)
+            string speedCmd = $"Motor[{MotorNo}].JogSpeed={velocity}";
+            await Device.SendCommand(speedCmd);
+
+            string moveCmd;
+
+            if (moveType == MoveType.Absolute)
+            {
+                // 절대 위치 이동 명령 (J=절대위치)
+                moveCmd = $"#{MotorNo}J={setPos}";
+            }
+            else if (moveType == MoveType.Relative)
+            {
+                // 상대 위치 이동 명령 (J^이동거리)
+                // PMAC에서 ^ 기호는 현재 위치 기준 증분(Incremental) 이동을 의미합니다.
+                moveCmd = $"#{MotorNo}J^{setPos}";
+            }
+            else
+            {
+                throw new NotImplementedException($"{moveType} Move is not implemented.");
+            }
+
+            await Device.SendCommand(moveCmd);
         }
 
         public Task JogMove(JogMoveType moveType, double jogSpeed)

@@ -100,5 +100,145 @@ namespace HCB.UI
                 IsWaferLoading = false;
             });
         }
+
+        [RelayCommand]
+        public async Task MovePosition(Tuple<IAxis, DMotionPosition>? parameters)
+        {
+            if (parameters == null) return;
+
+            var axis = parameters.Item1;
+            var position = parameters.Item2;
+
+            if (axis == null || position == null) return;
+
+            try
+            {
+                if (!axis.IsEnabled)
+                {
+                    _logger.Warning("{AxisName} is not enabled.", axis.Name);
+                    return;
+                }
+
+                if (axis.IsBusy)
+                {
+                    _logger.Warning("{AxisName} is busy.", axis.Name);
+                    return;
+                }
+
+                await axis.Move(MoveType.Absolute, velocity: position.Speed, position: position.Position);
+
+                _logger.Information("Move {AxisName} to {Position} at Speed {Speed}", axis.Name, position.Position, position.Speed);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Move Position Error for {AxisName}", axis.Name);
+            }
+        }
+
+        [RelayCommand]
+        public async Task MoveStop(IAxis? axis)
+        {
+            if (axis == null || axis.Device == null) return;
+            try
+            {
+                if (!axis.IsEnabled)
+                {
+                    _logger.Warning("{AxisName} is not enabled.", axis.Name);
+                    return;
+                }
+                else
+                {
+                    _logger.Information("Move Stop {AxisName}", axis.Name);
+                    await axis.MoveStop();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Move Stop Error for {AxisName}", axis.Name);
+            }
+        }
+
+        [RelayCommand]
+        public async Task DYMovePosition(DMotionPosition? p)
+        {
+            if (p == null || DyAxis == null || DyAxis.Device == null) return;
+
+            try
+            {
+                if (!DyAxis.IsEnabled)
+                {
+                    _logger.Warning("{AxisName} is not enabled.", DyAxis.Name);
+                    return;
+                }
+
+                if (DyAxis.IsBusy)
+                {
+                    _logger.Warning("{AxisName} is busy.", DyAxis.Name);
+                    return;
+                }
+
+                await DyAxis.Move(MoveType.Absolute, p.Position, p.Speed);
+
+                _logger.Information("Move {AxisName} to {Position} at Speed {Speed}", DyAxis.Name, p.Position, p.Speed);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "DY Move Position Error");
+            }
+        }
+
+        [RelayCommand]
+        public async Task Bz1MovePosition(DMotionPosition? p)
+        {
+            if (p == null || Bz1Axis == null || Bz1Axis.Device == null) return;
+
+            try
+            {
+                if (!Bz1Axis.IsEnabled)
+                {
+                    _logger.Warning("{AxisName} is not enabled.", Bz1Axis.Name);
+                    return;
+                }
+
+                if (Bz1Axis.IsBusy)
+                {
+                    _logger.Warning("{AxisName} is busy.", Bz1Axis.Name);
+                    return;
+                }
+
+                await Bz1Axis.Move(MoveType.Absolute, p.Speed, p.Position);
+
+                _logger.Information("Move {AxisName} to {Position} at Speed {Speed}", Bz1Axis.Name, p.Position, p.Speed);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "H-Z Move Position Error");
+            }
+        }
+
+        [RelayCommand]
+        public async Task PYMovePosition(DMotionPosition? p)
+        {
+            if (p == null || PyAxis == null || PyAxis.Device == null) return;
+            try
+            {
+                if (!PyAxis.IsEnabled)
+                {
+                    _logger.Warning("{AxisName} is not enabled.", PyAxis.Name);
+                    return;
+                }
+                if (PyAxis.IsBusy)
+                {
+                    _logger.Warning("{AxisName} is busy.", PyAxis.Name);
+                    return;
+                }
+                await PyAxis.Move(MoveType.Absolute, p.Position, p.Speed);
+                _logger.Information("Move {AxisName} to {Position} at Speed {Speed}", PyAxis.Name, p.Position, p.Speed);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "PY Move Position Error");
+            }
+        }
     }
 }
