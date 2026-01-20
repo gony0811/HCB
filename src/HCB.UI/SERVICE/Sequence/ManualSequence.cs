@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Telerik.Windows.Documents.Spreadsheet.Expressions.Functions;
 
 namespace HCB.UI
 {
@@ -30,10 +31,15 @@ namespace HCB.UI
                 var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // D Table Y축 (예시)
                 var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); // H Table X축 (예시)
                 var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 (예시)
-
-                if (d_y == null) throw new Exception("D Table Y axis not found in motion device.");
-                if (H_X == null) throw new Exception("H Table X axis not found in motion device.");
-                if (H_Z == null) throw new Exception("H Table Z axis not found in motion device.");
+                
+                if (d_y == null || H_X == null || H_Z == null)
+                {
+                    string errorMsg = "";
+                    if (d_y == null) errorMsg += "[D_Y] ";
+                    if (H_X == null) errorMsg += "[H_X] ";
+                    if (H_Z == null) errorMsg += "[H_Z] ";
+                    throw new Exception(errorMsg + "축을 찾을 수 없습니다");
+                }
 
                 await _sequenceHelper.MoveAsync(H_Z.MotorNo, LOAD_POSITION, ct);
 
@@ -53,6 +59,7 @@ namespace HCB.UI
             catch (Exception ex)
             {
                 _logger.Error(ex, ex.Message);
+                return;
             }
             finally
             {
@@ -105,6 +112,7 @@ namespace HCB.UI
             catch (Exception ex)
             {
                 _logger.Error(ex, ex.Message);
+                return;
             }
             finally
             {
