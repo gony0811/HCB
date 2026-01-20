@@ -9,7 +9,8 @@ namespace HCB.UI
 
         private readonly PmacIoDevice _device;
 
-        private readonly string _ioName = string.Empty;
+        [ObservableProperty]
+        private string ioName;
 
         [ObservableProperty]
         private string name;
@@ -21,19 +22,23 @@ namespace HCB.UI
         [NotifyCanExecuteChangedFor(nameof(ToggleCommand))]
         private bool isReadOnly;
 
+        [ObservableProperty]
+        private string description;
+
         public SensorIoItemViewModel() { }
 
-        public SensorIoItemViewModel(string ioName, PmacIoDevice pmacIo, string label = "", bool isChecked = false, bool isReadOnly = false)
+        public SensorIoItemViewModel(string ioName, PmacIoDevice pmacIo, string label = "", string description="", bool isChecked = false, bool isReadOnly = false)
         {
             try
             {
-                _ioName = ioName;
+                IoName = ioName;
                 Name = label;
                 IsChecked = isChecked;
                 IsReadOnly = isReadOnly;
                 _device = pmacIo;
+                Description = description;
 
-                var io = _device.FindIoDataByName(_ioName);
+                var io = _device.FindIoDataByName(IoName);
 
                 if (io is not null && io.IoType == Data.Entity.Type.IoType.DigitalInput)
                 {
@@ -61,7 +66,7 @@ namespace HCB.UI
         {
             if (IsReadOnly) return;
 
-            _device.SetDigital(_ioName, IsChecked);
+            _device.SetDigital(IoName, IsChecked);
         }
 
         private bool CanToggle() => !IsReadOnly;

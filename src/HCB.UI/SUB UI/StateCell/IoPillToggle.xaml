@@ -23,15 +23,10 @@
         <telerik:RadToggleButton.Template>
             <ControlTemplate TargetType="telerik:RadToggleButton">
                 <Grid SnapsToDevicePixels="True" Margin="0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
 
-                    <!-- 좌측 원형 인디케이터 -->
-                    <Border x:Name="indicator"
-                              Grid.Column="0"
+                        <!-- 좌측 원형 인디케이터 -->
+                        <Border x:Name="indicator"
                               Width="{Binding IndicatorSize, ElementName=root}"
                               Height="{Binding IndicatorSize, ElementName=root}"
                               CornerRadius="999"
@@ -40,61 +35,40 @@
                               BorderThickness="2"
                               />
 
-                    <!-- 우측 ON/OFF pill -->
-                    <Border x:Name="pill"
-                              Grid.Column="2"
+                        <!-- 우측 ON/OFF pill -->
+                        <Border x:Name="pill"
                               MinWidth="100" Height="50"
                               CornerRadius="5"
-     
                               >
-                        <telerik:HighlightTextBlock x:Name="lbl"
+                            <telerik:HighlightTextBlock x:Name="lbl"
                                    Text="{Binding OffText, ElementName=root}"
                                    Foreground="{Binding LabelInactiveBrush, ElementName=root}"
                                    FontWeight="SemiBold"
                                    FontSize="{Binding LabelFontSize, ElementName=root}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                                     />
-                    </Border>
+                        </Border>
+                    </StackPanel>
                 </Grid>
 
                 <!-- 상태 트리거 -->
                 <ControlTemplate.Triggers>
                     <!-- ON -->
                     <Trigger Property="IsChecked" Value="True">
-                        <!-- 인디케이터: 채움색 / 테두리 제거 -->
-                        <Setter TargetName="indicator" Property="Background" Value="{Binding IndicatorOnFill, ElementName=root}"/>
                         <Setter TargetName="indicator" Property="BorderThickness" Value="0"/>
 
-                        <!-- pill: On 색상 + 라벨 -->
-                        <Setter TargetName="pill" Property="Background" Value="{Binding PillOnBrush, ElementName=root}"/>
                         <Setter TargetName="lbl"  Property="Text"        Value="{Binding OnText, ElementName=root}"/>
-                        <Setter TargetName="lbl"  Property="Foreground"  Value="{Binding LabelActiveBrush, ElementName=root}"/>
+                        <Setter TargetName="lbl"  Property="Foreground"  Value="#FF28A745"/>
                     </Trigger>
 
-                    <!-- OFF -->
                     <Trigger Property="IsChecked" Value="False">
-                        <!-- 인디케이터: 투명 채움 + 붉은 링 -->
-                        <Setter TargetName="indicator" Property="Background" Value="Transparent"/>
-                        <Setter TargetName="indicator" Property="BorderBrush" Value="{Binding IndicatorOffStroke, ElementName=root}"/>
+                        <Setter TargetName="indicator" Property="BorderBrush" Value="#FFDC3545"/>
                         <Setter TargetName="indicator" Property="BorderThickness" Value="2"/>
 
-                        <Setter TargetName="pill" Property="Background" Value="{Binding PillOffBrush, ElementName=root}"/>
                         <Setter TargetName="lbl"  Property="Text"        Value="{Binding OffText, ElementName=root}"/>
-                        <Setter TargetName="lbl"  Property="Foreground"  Value="{Binding LabelInactiveBrush, ElementName=root}"/>
+                        <Setter TargetName="lbl"  Property="Foreground"  Value="#FFDC3545"/>
                     </Trigger>
 
-                    <!-- 읽기 전용(입력신호) 표기 -->
-                    <DataTrigger Binding="{Binding IsReadOnly, ElementName=root}" Value="True">
-                        <Setter Property="Cursor" Value="Arrow"/>
-                        <Setter TargetName="pill" Property="Opacity" Value="0.9"/>
-                    </DataTrigger>
-
-                    <!-- 비활성화 -->
-                    <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Cursor" Value="Arrow"/>
-                        <Setter TargetName="pill" Property="Background" Value="#223149"/>
-                        <Setter TargetName="lbl"  Property="Foreground" Value="#80FFFFFF"/>
-                    </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
         </telerik:RadToggleButton.Template>

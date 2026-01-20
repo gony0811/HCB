@@ -31,8 +31,7 @@ namespace HCB.UI
             this.ioRepository = ioDataRepository;
             this.deviceManager = deviceManager;
             _ = LoadIoData();
-            
-            
+                      
         }
 
         public async Task LoadIoData()
@@ -53,16 +52,16 @@ namespace HCB.UI
                     switch (group.Key)
                     {
                         case IoType.AnalogInput:
-                            AnalogInput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, false, true));
+                            AnalogInput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, io.Description, false, true));
                             break;
                         case IoType.AnalogOutput:
-                            AnalogOutput.Add(new SensorIoItemViewModel(io.Name, device, io.Address));
+                            AnalogOutput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, io.Description));
                             break;
                         case IoType.DigitalInput:
-                            DigitalInput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, false, true));
+                            DigitalInput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, io.Description, false, true));
                             break;
                         case IoType.DigitalOutput:
-                            DigitalOutput.Add(new SensorIoItemViewModel(io.Name, device, io.Address));
+                            DigitalOutput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, io.Description));
                             break;
                     }
                 }
