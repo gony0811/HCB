@@ -45,10 +45,35 @@ namespace HCB.UI
             DigitalInput.Clear();
             DigitalOutput.Clear();
 
+            // Refresh device status to get current output values
+            if (device != null && device.IsConnected)
+            {
+                await device.RefreshStatus();
+            }
+
             foreach (var group in ioList.GroupBy(x => x.IoDataType))
             {
                 foreach (var io in group)
                 {
+                    bool initialValue = false;
+
+                    // Read initial value from device for digital outputs
+                    if (group.Key == IoType.DigitalOutput)
+                    {
+                        try
+                        {
+                            var ioData = device.FindIoDataByName(io.Name);
+                            if (ioData != null && ioData is DigitalOutput digitalOutput)
+                            {
+                                initialValue = digitalOutput.Value;
+                            }
+                        }
+                        catch
+                        {
+                            // If reading fails, keep default value
+                            initialValue = false;
+                        }
+                    }
 
                     switch (group.Key)
                     {
@@ -62,7 +87,7 @@ namespace HCB.UI
                             DigitalInput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, false, true));
                             break;
                         case IoType.DigitalOutput:
-                            DigitalOutput.Add(new SensorIoItemViewModel(io.Name, device, io.Address));
+                            DigitalOutput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, initialValue, false));
                             break;
                     }
                 }

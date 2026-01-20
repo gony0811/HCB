@@ -26,10 +26,23 @@ namespace HCB.UI
                 }
                 else
                 {
-                    string command = string.Format("{0}={2}", Address, _value? 1:0);
+                    string command = string.Format("{0}={1}", Address, _value? 1:0);
                     Device.SendCommand(command);
                     OnValueChanged(old, value);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Sets the value without sending a command to the device. Used for reading back the current state.
+        /// </summary>
+        public void SetValueWithoutCommand(bool value)
+        {
+            var old = _value;
+            _value = value;
+            if (old != value)
+            {
+                OnValueChanged(old, value);
             }
         }
     }

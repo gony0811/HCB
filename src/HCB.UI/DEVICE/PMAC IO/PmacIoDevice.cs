@@ -137,6 +137,14 @@ namespace HCB.UI
                             uint iVal = uint.Parse(strResponse);
                             (io as DigitalInput).Value = iVal > 0 ? true : false;
                             break;
+                        case IoType.DigitalOutput:
+                            uint oVal = uint.Parse(strResponse);
+                            var output = io as DigitalOutput;
+                            if (output != null)
+                            {
+                                output.SetValueWithoutCommand(oVal > 0 ? true : false);
+                            }
+                            break;
                     }
                 }
                 catch (Exception ex)
