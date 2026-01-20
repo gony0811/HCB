@@ -75,9 +75,13 @@ namespace HCB.UI
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
+
                 var w_y = motionDevice?.FindMotionByName(MotionExtensions.W_Y); // W Table Y축 (예시)
                 var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); // H Table X축 (예시)
                 var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 (예시)
+
+
+                if (w_y == null || H_X == null || H_Z == null) 
 
                 if (w_y == null) throw new Exception("W Table Y axis not found in motion device.");
                 if (H_X == null) throw new Exception("H Table X axis not found in motion device.");
