@@ -370,7 +370,8 @@ namespace HCB.UI
                         Name = pos.Name,
                         Speed = pos.Speed,
                         Position = pos.Position,
-                        ParentMotion = dm
+                        ParentMotion = dm,
+                        _logger = this._logger
                     });
                 }
             }

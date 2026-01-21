@@ -73,6 +73,8 @@ namespace HCB.UI
         {
             statusSubscription?.Dispose();
         }
+
+
         #region Position CRUD
         [RelayCommand]
         public async Task PositionCreate()
@@ -93,7 +95,8 @@ namespace HCB.UI
                     Name = entity.Name,
                     Position = entity.Position,
                     Speed = entity.Speed,
-                    ParentMotion = SelectedMotion
+                    ParentMotion = SelectedMotion,
+                    _logger = logger
                 };
                 SelectedMotion.PositionList.Add(dto);
 

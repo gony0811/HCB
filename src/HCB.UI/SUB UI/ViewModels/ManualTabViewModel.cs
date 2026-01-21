@@ -23,7 +23,6 @@ namespace HCB.UI
         [ObservableProperty]
         private IAxis? pyAxis;
 
-
         [ObservableProperty]
         private IAxis? bxAxis;
 

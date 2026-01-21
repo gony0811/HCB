@@ -4,6 +4,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+      xmlns:converters="clr-namespace:HCB.UI.Converters"
       xmlns:local="clr-namespace:HCB.UI"
       xmlns:uc="clr-namespace:HCB.UI"
       xmlns:page="clr-namespace:HCB.UI"
@@ -16,7 +17,9 @@
                 <ResourceDictionary Source="/SYSTEM/Common/Styles/DefaultResource.xaml"/>
                 <ResourceDictionary Source="/SYSTEM/Common/Styles/ButtonsAndSwitches.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <converters:TupleConverter x:Key="TupleConverter" />
         </ResourceDictionary>
+        
     </Page.Resources>
     <Border>
         <Grid>
@@ -60,6 +63,8 @@
                               Margin="0,10,0,10">
                         <Grid local:GridHelper.Rows="1*, Auto">
 
+                            
+                            
                             <telerik:RadGridView
                                 x:Name="PositionDataGrid"
                                 Style="{StaticResource RadGridViewStyle}"
@@ -87,17 +92,37 @@
 
                                 <telerik:RadGridView.Columns>
                                     <telerik:GridViewDataColumn Header="이름"
-                                        DataMemberBinding="{Binding Name}"
-                                        Width="*"
-                                        SortMemberPath="Name"/>
+                                                                DataMemberBinding="{Binding Name}"
+                                                                Width="*"
+                                                                SortMemberPath="Name"/>
                                     <telerik:GridViewDataColumn Header="위치"
-                                        DataMemberBinding="{Binding Position, StringFormat=F3}"
-                                        Width="140"
-                                        SortMemberPath="Location"/>
+                                                                DataMemberBinding="{Binding Position, StringFormat=F3}"
+                                                                Width="140"
+                                                                SortMemberPath="Location"/>
                                     <telerik:GridViewDataColumn Header="속도"
-                                        DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                                        Width="120"
-                                        SortMemberPath="Speed"/>
+                                                                DataMemberBinding="{Binding Speed, StringFormat=F2}"
+                                                                Width="120"
+                                                                SortMemberPath="Speed"/>
+                                    <telerik:GridViewDataColumn Header="동작" Width="200">
+                                        <telerik:GridViewDataColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                        Content="이동" 
+                                                                        Width="80"
+                                                                        Command="{Binding AbsoluteMoveCommand}" 
+                                                                        Margin="2">
+                                                    </telerik:RadButton>
+                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                                                       Content="정지" 
+                                                                       Width="80"
+                                                                       Command="{Binding StopCommand}" 
+                                                                       Margin="2">
+                                                    </telerik:RadButton>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </telerik:GridViewDataColumn.CellTemplate>
+                                    </telerik:GridViewDataColumn>
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 

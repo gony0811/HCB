@@ -15,57 +15,19 @@
         </Grid.ColumnDefinitions>
         <telerik:RadTabControl TabStripPlacement="Top" SelectedIndex="0">
             <telerik:RadTabItem Header="피치 이동">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"></RowDefinition>
-                        <RowDefinition Height="*"></RowDefinition>
-                        <RowDefinition Height="*"></RowDefinition>
-                        <RowDefinition Height="*"></RowDefinition>
-                    </Grid.RowDefinitions>
-                    <Button Content="-0.1 mm"
-                            Grid.Column="0" Grid.Row="0" Margin="1"
-                            Command="{Binding SelectPitchCommand}">
-                        <Button.CommandParameter>
-                            <sys:Double>-0.1</sys:Double>
-                        </Button.CommandParameter>
-                    </Button>
 
-                    <Button Content="-1.0 mm" 
-                            Grid.Column="1" Grid.Row="0" Margin="1"
-                            Command="{Binding SelectPitchCommand}">
-                        <Button.CommandParameter>
-                            <sys:Double>-1.0</sys:Double>
-                        </Button.CommandParameter>
-                    </Button>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="피치 (" TextAlignment="Right" VerticalAlignment="Center" Margin="5"/>
+                            <TextBlock Text="{Binding Axis.Unit}" VerticalAlignment="Center"/>
+                            <TextBlock Text=" )" VerticalAlignment="Center" Margin="0 0 5 0"/>
+                        </StackPanel>
 
-                    <Button Content="0.1 mm" 
-                            Grid.Column="0" Grid.Row="1" Margin="1"
-                            Command="{Binding SelectPitchCommand}">
-                        <Button.CommandParameter>
-                            <sys:Double>0.1</sys:Double>
-                        </Button.CommandParameter>
-                    </Button>
-
-                    <Button Content="1.0 mm" 
-                            Grid.Column="1" Grid.Row="1" Margin="1"
-                            Command="{Binding SelectPitchCommand}">
-                        <Button.CommandParameter>
-                            <sys:Double>1.0</sys:Double>
-                        </Button.CommandParameter>
-                    </Button>
-                    <StackPanel Grid.ColumnSpan="2" Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="피치 (mm)" TextAlignment="Right" VerticalAlignment="Center" Margin="5"/>
                         <TextBox Text="{Binding Pitch}" TextAlignment="Center" Width="100"/>
                     </StackPanel>
-                   
-                    
-                    <Button Content="피치 이동" Grid.ColumnSpan="3" Grid.Row="3" Command="{Binding PitchMoveCommand}"/>
-                </Grid>
-                
+                    <Button Content="피치 이동" Command="{Binding PitchMoveCommand}"></Button>
+                </StackPanel>
             </telerik:RadTabItem>
             <telerik:RadTabItem Header="조그 이동">
                 <Grid>
@@ -139,13 +101,13 @@
                     LargeChange="0.5" 
                     TickFrequency="0.1" 
                     IsSnapToTickEnabled="True" 
-                    Value="{Binding Speed}"
+                    Value="{Binding Axis.SetSpeed}"
                     TickPlacement="BottomRight" StepAction="ChangeRange"
                     SelectionStart="{Binding Axis.LimitMinSpeed}"
-                    SelectionEnd="{Binding Speed}"/>
+                    SelectionEnd="{Binding Axis.LimitMaxSpeed}"/>
             <TextBox Grid.Row="2" HorizontalAlignment="Center">
                 <TextBox.Text>
-                    <Binding Path="Speed" 
+                    <Binding Path="Axis.SetSpeed" 
                              UpdateSourceTrigger="PropertyChanged" 
                              StringFormat="N1">
                         <Binding.ValidationRules>
