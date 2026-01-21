@@ -43,23 +43,26 @@ namespace HCB.UI
         public async Task SetAlarm(string code)
         {
             var alarm = await alarmRepository.FindAsync(x => x.Code == code);
-            if (alarm != null) await ProcessSetAlarm(alarm);
+            if (alarm != null && alarm.Enable == AlarmEnable.ENABLED) await ProcessSetAlarm(alarm);
         }
 
         // 중복 로직 처리를 위한 내부 메서드
         private async Task ProcessSetAlarm(Alarm alarm)
         {
-            var entity = new AlarmHistory
+
+            var history = new AlarmHistory
             {
                 AlarmId = alarm.Id,
                 Status = AlarmStatus.SET,
                 CreateAt = DateTime.Now
             };
 
-            entity = await alarmHistoryRepository.AddAsync(entity);
-            entity.Alarm = alarm;
 
-            AlarmHistoryAdded?.Invoke(AlarmHistoryDto.ToDTO(entity));
+
+            history = await alarmHistoryRepository.AddAsync(history);
+            history.Alarm = alarm;
+
+            AlarmHistoryAdded?.Invoke(AlarmHistoryDto.ToDTO(history));
             UpdateEQStatus(alarm.Level);
         }
 
@@ -190,6 +193,13 @@ namespace HCB.UI
                 AlarmLevel.HEAVY => AlarmState.HEAVY,
                 AlarmLevel.LIGHT => AlarmState.LIGHT,
                 _ => AlarmState.NO_ALARM
+            };
+
+            EQStatus.Availability = level switch
+            {
+                AlarmLevel.HEAVY => Availability.Down,
+                AlarmLevel.LIGHT => Availability.Up,
+                _ => Availability.Down
             };
         }
     }
