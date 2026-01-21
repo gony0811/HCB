@@ -84,13 +84,14 @@ namespace HCB.UI
 
         public Task Initialize()
         {
-            UInt32 uIPAddress;
-            String[] strIP = new String[4];
-            strIP = Ip.Split('.');
-            uIPAddress = (Convert.ToUInt32(strIP[0]) << 24) | (Convert.ToUInt32(strIP[1]) << 16) | (Convert.ToUInt32(strIP[2]) << 8) | Convert.ToUInt32(strIP[3]);
-
             try
             {
+                UInt32 uIPAddress;
+                String[] strIP = new String[4];
+                strIP = Ip.Split('.');
+                uIPAddress = (Convert.ToUInt32(strIP[0]) << 24) | (Convert.ToUInt32(strIP[1]) << 16) | (Convert.ToUInt32(strIP[2]) << 8) | Convert.ToUInt32(strIP[3]);
+
+
                 uDeviceId = DTKPowerPmac.Instance.Open(uIPAddress, (uint)DTK_MODE_TYPE.DM_GPASCII);
             }
             catch (Exception ex)
