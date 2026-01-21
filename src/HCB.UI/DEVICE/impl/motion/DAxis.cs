@@ -2,6 +2,8 @@
 using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Entity;
 using HCB.Data.Entity.Type;
+using HCB.UI.SERVICE.ViewModels;
+using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -9,7 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Serilog;
+using Telerik.Windows.Documents.Fixed.Model.Data;
 
 namespace HCB.UI
 {
@@ -46,8 +48,10 @@ namespace HCB.UI
         [ObservableProperty] private bool isMotionDone;
         [ObservableProperty] private bool isHomeDone;
         [ObservableProperty] private double currentSpeed;
+        [ObservableProperty] private double setSpeed = 0;
         [ObservableProperty] private double commandPosition;
         [ObservableProperty] private double currentPosition;
+
 
         public DAxis(ILogger logger)
         {
@@ -136,6 +140,7 @@ namespace HCB.UI
                 // dialogService.ShowMessage("통신 에러", ex.Message);
             }
         }
+
 
 
         public Task ServoReady(bool ready)

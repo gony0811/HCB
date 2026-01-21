@@ -209,6 +209,7 @@
   <Compile Include="SERVICE\Sequence\InitSequence.cs" />
   <Compile Include="SERVICE\Sequence\MainSequence.cs" />
   <Compile Include="SERVICE\Sequence\ManualSequence.cs" />
+  <Compile Include="SERVICE\Sequence\RunningTime.cs" />
   <Compile Include="SERVICE\Sequence\SequenceEventHandler.cs" />
   <Compile Include="SERVICE\Sequence\StepSequence.cs" />
   <Compile Include="SERVICE\ViewModels\SequenceState.cs" />

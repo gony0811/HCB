@@ -23,6 +23,7 @@ namespace HCB.UI
         double CurrentSpeed { get; set; }
         double LimitMinSpeed { get; set; }
         double LimitMaxSpeed { get; set; }
+        double SetSpeed { get; set; }
 
         double CommandPosition { get; set; }        // 명령 위치
         double CurrentPosition { get; set; }           // 현재 위치
