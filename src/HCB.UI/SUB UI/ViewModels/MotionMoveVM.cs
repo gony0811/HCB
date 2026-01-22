@@ -51,7 +51,7 @@ namespace HCB.UI
         }
 
         [RelayCommand]
-        public async Task PitchMove()
+        public async Task RelativeMove()
         {
             if (Axis == null || Pitch == 0) return;
             try
@@ -65,10 +65,39 @@ namespace HCB.UI
                 if ( Axis.CurrentPosition + Pitch >= Axis.LimitMinPosition 
                     && Axis.CurrentPosition + Pitch <= Axis.LimitMaxPosition)
                 {
-                    //Axis.Move()
-                }else
+                    await Axis.Move(MoveType.Relative, Axis.SetSpeed, Pitch);
+                }
+                else
                 {
                     this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, Speed, Axis.LimitMinPosition, Axis.LimitMaxPosition);
+                }
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+
+        [RelayCommand]
+        public async Task AbsoluteMove()
+        {
+            if (Axis == null) return;
+            try
+            {
+                if (!Axis.IsEnabled)
+                {
+                    this._logger.Warning("{axis} is not enabled.", Axis.Name);
+                    return;
+                }
+
+                if (Pitch >= Axis.LimitMinPosition
+                    && Pitch <= Axis.LimitMaxPosition)
+                {
+                    await Axis.Move(MoveType.Absolute, Axis.SetSpeed, Pitch);
+                }
+                else
+                {
+                    this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, Axis.SetSpeed, Axis.LimitMinPosition, Axis.LimitMaxPosition);
                 }
             }
             catch (Exception e)

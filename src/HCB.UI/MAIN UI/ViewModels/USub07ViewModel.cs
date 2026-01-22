@@ -2,6 +2,7 @@
 using HCB.Data.Entity.Type;
 using HCB.Data.Repository;
 using HCB.IoC;
+using HCB.UI.DEVICE.Core;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ namespace HCB.UI
     {
         private readonly IoDataRepository ioRepository;
         private readonly DeviceManager deviceManager;
+        private readonly IOManager ioManager;
 
         [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> analogInput = new ObservableCollection<SensorIoItemViewModel>();
@@ -26,17 +28,17 @@ namespace HCB.UI
         [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> digitalOutput = new ObservableCollection<SensorIoItemViewModel>();
 
-        public USub07ViewModel(IoDataRepository ioDataRepository, DeviceManager deviceManager)
+        public USub07ViewModel(IoDataRepository ioDataRepository, DeviceManager deviceManager, IOManager iOManager)
         {
             this.ioRepository = ioDataRepository;
             this.deviceManager = deviceManager;
+            this.ioManager = iOManager;
             _ = LoadIoData();
                       
         }
 
         public async Task LoadIoData()
         {
-            var device = deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
             var ioList = await ioRepository.ListAsync(x => x.IsEnabled);
             
             AnalogInput.Clear();
@@ -48,20 +50,19 @@ namespace HCB.UI
             {
                 foreach (var io in group)
                 {
-
                     switch (group.Key)
                     {
                         case IoType.AnalogInput:
-                            AnalogInput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, io.Description, false, true));
+                            AnalogInput.Add(ioManager.GetOrCreateIo(io.Name, io.Address, io.Description, false, true));
                             break;
                         case IoType.AnalogOutput:
-                            AnalogOutput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, io.Description));
+                            AnalogOutput.Add(ioManager.GetOrCreateIo(io.Name, io.Address, io.Description));
                             break;
                         case IoType.DigitalInput:
-                            DigitalInput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, io.Description, false, true));
+                            DigitalInput.Add(ioManager.GetOrCreateIo(io.Name,io.Address, io.Description, false, true));
                             break;
                         case IoType.DigitalOutput:
-                            DigitalOutput.Add(new SensorIoItemViewModel(io.Name, device, io.Address, io.Description));
+                            DigitalOutput.Add(ioManager.GetOrCreateIo(io.Name, io.Address, io.Description));
                             break;
                     }
                 }

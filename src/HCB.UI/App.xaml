@@ -37,7 +37,6 @@
                 <ResourceDictionary Source="/Telerik.Windows.Themes.Fluent;component/Themes/telerik.windows.controls.chart.xaml"/>
                 <ResourceDictionary Source="/Telerik.Windows.Themes.Fluent;component/Themes/telerik.windows.controls.expressions.xaml"/>
                 <ResourceDictionary Source="/Telerik.Windows.Themes.Fluent;component/Themes/telerik.windows.controls.fixeddocumentviewers.xaml"/>
-                <ResourceDictionary Source="/SYSTEM/Common/Styles/DefaultResource.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

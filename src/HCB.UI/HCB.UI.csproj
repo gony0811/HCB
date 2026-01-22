@@ -170,6 +170,7 @@
   <Compile Include="Converters\TupleConverter.cs" />
   <Compile Include="DEVICE\CommonType\IoType.cs" />
   <Compile Include="DEVICE\CommonType\ValueChangedEventArgs.cs" />
+  <Compile Include="DEVICE\Core\IOManager.cs" />
   <Compile Include="DEVICE\Factory\IDeviceFactory.cs" />
   <Compile Include="DEVICE\Factory\IoDataFactory.cs" />
   <Compile Include="DEVICE\impl\motion\MotionStatusStream.cs" />

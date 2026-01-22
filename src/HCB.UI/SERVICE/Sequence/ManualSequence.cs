@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,7 +50,6 @@ namespace HCB.UI
                     await _sequenceHelper.MoveAsync(d_y.MotorNo, LOAD_POSITION, ct);
                 });
 
-
                 await Task.Delay(3000, ct);
             }
             catch (OperationCanceledException)
@@ -67,6 +67,54 @@ namespace HCB.UI
             }
         }
 
+        public async Task DTableReady(CancellationToken ct)
+        {
+            string DtReady = "D_READY";
+            try
+            {
+                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Auto || EQStatus.Alarm == AlarmState.HEAVY)
+                {
+                    _logger.Warning("Cannot execute DTableLoading: Sequence Service is not in Manual Standby Status.");
+                    return;
+                }
+
+                _logger.Information("Die Ready Start");
+
+                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+                var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // D Table Y축 (예시)
+                var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); // H Table X축 (예시)
+                var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 (예시)
+
+                if (d_y == null || H_X == null || H_Z == null)
+                {
+                    string errorMsg = "";
+                    if (d_y == null) errorMsg += "[D_Y] ";
+                    if (H_X == null) errorMsg += "[H_X] ";
+                    if (H_Z == null) errorMsg += "[H_Z] ";
+                    throw new Exception(errorMsg + "축을 찾을 수 없습니다");
+                }
+
+                await _sequenceHelper.MoveAsync(d_y.MotorNo, DtReady, ct);
+                await _sequenceHelper.MoveAsync(H_X.MotorNo, DtReady, ct);
+                await _sequenceHelper.MoveAsync(H_Z.MotorNo, DtReady, ct);
+
+                await Task.Delay(3000, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("Die Ready Canceled");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, ex.Message);
+                return;
+            }
+            finally
+            {
+                _logger.Information("Die Ready End");
+            }
+        }
 
         public async Task WTableLoading(CancellationToken ct)
         {
