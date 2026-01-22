@@ -7,7 +7,7 @@ namespace HCB.UI
 {
     public partial class AlarmDto : ObservableObject
     {
-        public int Id { get; private set; }
+        public int Id { get; set; }
         [ObservableProperty] private string code;
         [ObservableProperty] private string name;
         [ObservableProperty] private string description;

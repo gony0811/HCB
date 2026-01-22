@@ -127,10 +127,6 @@
                             </StackPanel>
                         </Border>
                     </Grid>
-                    <StackPanel>
-                            <TextBlock Text="사용 여부" Foreground="#E6FFFFFF"/>
-                            <CheckBox IsChecked="{Binding Enabled}"></CheckBox>
-                    </StackPanel>
 
                         <Border  CornerRadius="5" Padding="12">
                         <StackPanel HorizontalAlignment="Stretch">

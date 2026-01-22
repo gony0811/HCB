@@ -12,6 +12,8 @@ using System.Windows;
 using Application = System.Windows.Application;
 using HCB.IoC;
 using HCB.Data.Entity.Type;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 
 namespace HCB.UI
 {
@@ -70,42 +72,54 @@ namespace HCB.UI
         {
             try
             {
-                // 신규 항목 (Id == 0)
-                var toAdd = AlarmList
-                    .Where(a => a.Id == 0 && a.IsModified)
-                    .Select(a => a.ToEntity())
-                    .ToList();
+                // 1. 변경된 항목만 필터링 (가독성을 위해 수정)
+                var modifiedItems = AlarmList.Where(a => a.IsModified).ToList();
 
-                // 수정된 항목 (Id > 0)
-                var toUpdate = AlarmList
-                    .Where(a => a.Id > 0 && a.IsModified)
-                    .Select(a => a.ToEntity())
-                    .ToList();
+                if (!modifiedItems.Any()) return;
 
-                if (!toAdd.Any() && !toUpdate.Any())
+                // 2. 신규/수정 분리
+                var toAddModels = modifiedItems.Where(a => a.Id == 0).ToList();
+                var toUpdateModels = modifiedItems.Where(a => a.Id > 0).ToList();
+
+                // 3. 서비스 호출 (트랜잭션 처리가 되어있다고 가정하거나 통합 메서드 권장)
+                // 만약 서비스에서 List<Entity>를 받는다면:
+                if (toAddModels.Any())
                 {
-                    //AlertModal.Ask(GetOwnerWindow(), "저장", "변경된 내용이 없습니다.");
-                    return;
+                    var newEntities = toAddModels.Select(a => a.ToEntity()).ToList();
+                    await _alarmService.AddAlarm(newEntities);
+
+                    // 중요: DB에서 생성된 ID를 ViewModel에 다시 반영
+                    for (int i = 0; i < toAddModels.Count; i++)
+                    {
+                        toAddModels[i].Id = newEntities[i].Id;
+                    }
                 }
 
-                // 신규 저장
-                if (toAdd.Any())
-                    await _alarmService.AddAlarm(toAdd);
+                if (toUpdateModels.Any())
+                {
+                    var updateEntities = toUpdateModels.Select(a => a.ToEntity()).ToList();
+                    await _alarmService.UpdateAlarm(updateEntities);
+                }
 
-                // 기존 항목 수정
-                if (toUpdate.Any())
-                    await _alarmService.UpdateAlarm(toUpdate);
-
-                // 상태 초기화
-                foreach (var alarm in AlarmList)
+                // 4. 저장에 성공한 항목들만 상태 초기화
+                foreach (var alarm in modifiedItems)
+                {
                     alarm.IsModified = false;
+                }
 
-                _dialogService.ShowMessage("저장", "알람이 저장되었습니다");
+                _dialogService.ShowMessage("저장", "알람이 성공적으로 저장되었습니다.");
+            }
+            catch (OperationCanceledException)
+            {
+                // 작업 취소 시 처리 (선택 사항)
+            }
+            catch(DbUpdateException e)
+            {
+                _dialogService.ShowMessage("중복 코드", "중복되는 코드가 있습니다. \n 확인해주세요");
             }
             catch (Exception e)
             {
-
-                _dialogService.ShowMessage("저장 실패", $"저장 중 오류가 발생: \n{e.Message}");
+                _dialogService.ShowMessage("저장 실패", $"오류 발생: {e.Message}");
             }
         }
 
