@@ -1,5 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
+using Serilog.Core;
 using System;
 
 namespace HCB.UI
@@ -8,7 +10,7 @@ namespace HCB.UI
     {
 
         private readonly PmacIoDevice _device;
-
+        private ILogger _logger;
         [ObservableProperty]
         private string ioName;
 
@@ -27,8 +29,9 @@ namespace HCB.UI
 
         public SensorIoItemViewModel() { }
 
-        public SensorIoItemViewModel(string ioName, PmacIoDevice pmacIo, string label = "", string description="", bool isChecked = false, bool isReadOnly = false)
+        public SensorIoItemViewModel(ILogger logger, string ioName, PmacIoDevice pmacIo, string label = "", string description="", bool isChecked = false, bool isReadOnly = false)
         {
+            this._logger = logger;
             try
             {
                 IoName = ioName;
@@ -62,11 +65,43 @@ namespace HCB.UI
 
 
         [RelayCommand]
-        private void Toggle()
+        public void Toggle()
         {
             if (IsReadOnly) return;
+            try
+            {
+                _device.SetDigital(IoName, !IsChecked);
+            }catch(Exception e)
+            {
+                _logger.Error(e.Message);
+            }
+            
+        }
 
-            _device.SetDigital(IoName, IsChecked);
+        public void On()
+        {
+            if (IsReadOnly) return;
+            try
+            {
+                _device.SetDigital(IoName, true);
+            }catch(Exception e)
+            {
+                _logger.Error(e.Message);
+            }
+            
+        } 
+
+        public void Off()
+        {
+            if (IsReadOnly) return;
+            try
+            {
+                _device.SetDigital(IoName, false);
+            }catch(Exception e)
+            {
+                _logger.Error(e.Message);
+            }
+            
         }
 
         private bool CanToggle() => !IsReadOnly;

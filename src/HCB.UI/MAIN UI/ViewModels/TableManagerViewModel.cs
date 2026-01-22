@@ -1,6 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
+using HCB.UI.DEVICE.Core;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
@@ -19,6 +22,8 @@ namespace HCB.UI
         private CancellationTokenSource _cancellationTokenSource = new();
         private readonly SequenceService _sequenceService;
         private readonly DeviceManager _deviceManager;
+        private IOManager ioManager;
+        private ILogger _logger;
 
         [ObservableProperty] private bool isDTableLoading;
         [ObservableProperty] private bool isDTableStandby;
@@ -39,8 +44,11 @@ namespace HCB.UI
             IoExtensions.DO_DTABLE_VAC_1_ON, IoExtensions.DO_DTABLE_VAC_2_ON, IoExtensions.DO_DTABLE_VAC_3_ON, IoExtensions.DO_DTABLE_VAC_4_ON, IoExtensions.DO_DTABLE_VAC_5_ON, IoExtensions.DO_DTABLE_VAC_6_ON, IoExtensions.DO_DTABLE_VAC_7_ON, IoExtensions.DO_DTABLE_VAC_8_ON, IoExtensions.DO_DTABLE_VAC_9_ON,
         };
 
-        public TableManagerViewModel(SequenceService sequenceService, DeviceManager deviceManager)
+        public TableManagerViewModel(IOManager ioManager, ILogger logger, SequenceService sequenceService, DeviceManager deviceManager)
         {
+
+            _logger = logger;
+            this.ioManager = ioManager;
             this._sequenceService = sequenceService;
             this._deviceManager = deviceManager;
 
@@ -50,7 +58,7 @@ namespace HCB.UI
             {
                 for (var i = 0; i < dTableNameList.Count; i++)
                 {
-                    DTableList.Add(new SensorIoItemViewModel(dIoNameList[i], ioDevice, dTableNameList[i]));
+                    DTableList.Add(ioManager.GetOrCreateIo(dIoNameList[i], dTableNameList[i]));
                 }
             }
         }
@@ -70,6 +78,32 @@ namespace HCB.UI
         public void DTableLoading()
         {
             Task.Run(async () => { await this._sequenceService.DTableLoading(_cancellationTokenSource.Token); });
+        }
+
+        [RelayCommand]
+        public void DTableReady()
+        {
+            Task.Run(async () => await this._sequenceService.DTableReady(_cancellationTokenSource.Token));
+        }
+
+        [RelayCommand]
+        public void DieAllOn()
+        {
+            foreach (var item in DTableList)
+            {
+               item.On();                
+            }
+        }
+
+        [RelayCommand]
+        public void DieAllOff()
+        {
+            foreach (var item in DTableList)
+            {
+               
+                 item.Off();
+                
+            }
         }
     }
 

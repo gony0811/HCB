@@ -43,7 +43,7 @@
                             </telerik:HighlightTextBlock>
                             
                         </telerik:RadButton>
-                        <telerik:RadButton Grid.Row="1" Width="100" Height="80"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" local:BlinkBehavior.IsBlinking="{Binding IsDTableStandby}">
+                        <telerik:RadButton Grid.Row="1" Width="100" Height="80"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" Command="{Binding DTableReadyCommand}" local:BlinkBehavior.IsBlinking="{Binding IsDTableStandby}">
                             <telerik:HighlightTextBlock TextAlignment="Center" Margin="5">
                                 READY
                                 <LineBreak/> POS
@@ -90,8 +90,10 @@
                 </ItemsControl>
 
                 <StackPanel Orientation="Horizontal" Grid.Column="2" VerticalAlignment="Center">
-                    <telerik:RadButton Content="ALL ON" Height="80" Width="100"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
-                    <telerik:RadButton Content="ALL OFF" Height="80" Width="100" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
+                    <telerik:RadButton Content="ALL ON"  Command="{Binding DieAllOnCommand}"
+                                       Height="80" Width="100"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"/>
+                    <telerik:RadButton Content="ALL OFF" Command="{Binding DieAllOffCommand}"
+                                       Height="80" Width="100" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"/>
                 </StackPanel>
             </Grid>
 
@@ -127,7 +129,7 @@
                     <telerik:RadButton Content="8 inch" Width="100" Height="80" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
                     <telerik:RadButton Content="12 inch" Width="100" Height="80" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
                 </StackPanel>
-                <telerik:RadButton Content="All Off" Grid.Column="2" Width="120" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
+                <telerik:RadButton Content="ALL Off"  Grid.Column="2" Width="120" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}"></telerik:RadButton>
             </Grid>
         </telerik:GroupBox>
     </Grid>

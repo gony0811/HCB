@@ -42,8 +42,13 @@
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="*"></RowDefinition>
             </Grid.RowDefinitions>
-            
-            <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Grid.Column="0" Grid.Row="0" Text="알람 정의" FontSize="24" FontWeight="SemiBold"/>
+
+            <Border Grid.Column="0" Grid.Row="0" Margin="10">
+                <telerik:RadHighlightTextBlock Text="알람 정의" 
+                         FontSize="24" 
+                         FontWeight="SemiBold" 
+                         Style="{StaticResource RadHighlightTextBlockStyle}"/>
+            </Border>
             <!-- 에러 목록 -->
             <Grid Grid.Column="0" Grid.Row="1" Margin="10" >
                 <Grid.RowDefinitions>

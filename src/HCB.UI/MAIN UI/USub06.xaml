@@ -77,6 +77,11 @@
                                 CanUserDeleteRows="False"
                                 SelectionMode="Single"
                                 GridLinesVisibility="None">
+                                <telerik:RadGridView.RowStyle>
+                                    <Style TargetType="telerik:GridViewRow" BasedOn="{StaticResource {x:Type telerik:GridViewRow}}">
+                                        <EventSetter Event="PreviewMouseRightButtonDown" Handler="OnRowRightClickSelection" />
+                                    </Style>
+                                </telerik:RadGridView.RowStyle>
                                 <telerik:RadGridView.ContextMenu>
                                     <ContextMenu DataContext="{Binding Path=PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
 

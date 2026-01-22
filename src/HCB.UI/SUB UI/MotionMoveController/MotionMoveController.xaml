@@ -14,20 +14,39 @@
             <ColumnDefinition Width="Auto"></ColumnDefinition>
         </Grid.ColumnDefinitions>
         <telerik:RadTabControl TabStripPlacement="Top" SelectedIndex="0">
-            <telerik:RadTabItem Header="피치 이동">
+            <telerik:RadTabItem Header="위치 이동">
+                <Grid local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="40, 1*, 40">
 
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="피치 (" TextAlignment="Right" VerticalAlignment="Center" Margin="5"/>
+                    <Grid Grid.Row="0" Grid.Column="0" local:GridHelper.Columns="1*, 1*">
+                        <TextBlock Text="Min" Background="#FF444444" Foreground="White" TextAlignment="Center" VerticalAlignment="Stretch" Padding="0,10"/>
+                        <Border BorderBrush="Gray" BorderThickness="1" Grid.Column="1">
+                            <TextBlock Text="{Binding Axis.LimitMinPosition}" VerticalAlignment="Center" TextAlignment="Center"/>
+                        </Border>
+                    </Grid>
+
+                    <Grid Grid.Row="0" Grid.Column="1" local:GridHelper.Columns="1*, 1*">
+                        <TextBlock Text="Max" Background="#FF444444" Foreground="White" Grid.Column="0" TextAlignment="Center" VerticalAlignment="Stretch" Padding="0,10"/>
+                        <Border BorderBrush="Gray" BorderThickness="1" Grid.Column="1">
+                            <TextBlock Text="{Binding Axis.LimitMaxPosition}" VerticalAlignment="Center" TextAlignment="Center"/>
+                        </Border>
+                    </Grid>
+
+                    <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" 
+                                Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
+                            <TextBlock Text="Position (" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Axis.Unit}" VerticalAlignment="Center"/>
-                            <TextBlock Text=" )" VerticalAlignment="Center" Margin="0 0 5 0"/>
+                            <TextBlock Text=")" VerticalAlignment="Center"/>
                         </StackPanel>
-
-                        <TextBox Text="{Binding Pitch}" TextAlignment="Center" Width="100"/>
+                        <TextBox Text="{Binding Pitch}" TextAlignment="Center" Width="120" Height="30" VerticalContentAlignment="Center"/>
                     </StackPanel>
-                    <Button Content="피치 이동" Command="{Binding PitchMoveCommand}"></Button>
-                </StackPanel>
+
+                    <Button Grid.Row="2" Grid.Column="0" Content="절대 이동" 
+                             Command="{Binding AbsoluteMoveCommand}" Margin="5,2"/>
+                    <Button Grid.Row="2" Grid.Column="1" Content="상대 이동" 
+                            Command="{Binding RelativeMoveCommand}" Margin="5,2"/>
+
+                </Grid>
             </telerik:RadTabItem>
             <telerik:RadTabItem Header="조그 이동">
                 <Grid>
