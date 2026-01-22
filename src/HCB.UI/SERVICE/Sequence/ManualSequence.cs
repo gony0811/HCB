@@ -19,7 +19,8 @@ namespace HCB.UI
         {
             try
             {
-                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Auto || EQStatus.Alarm == AlarmState.HEAVY)
+                var status = _operationService.Status;
+                if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Auto || status.Alarm == AlarmState.HEAVY)
                 {
                     _logger.Warning("Cannot execute DTableLoading: Sequence Service is not in Manual Standby Status.");
                     return;
@@ -72,7 +73,8 @@ namespace HCB.UI
             string DtReady = "D_READY";
             try
             {
-                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Auto || EQStatus.Alarm == AlarmState.HEAVY)
+                var status = _operationService.Status;
+                if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Auto || status.Alarm == AlarmState.HEAVY)
                 {
                     _logger.Warning("Cannot execute DTableLoading: Sequence Service is not in Manual Standby Status.");
                     return;
@@ -120,7 +122,8 @@ namespace HCB.UI
         {
             try
             {
-                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Operation == OperationMode.Auto || EQStatus.Alarm == AlarmState.HEAVY)
+                var status = _operationService.Status;
+                if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Auto || status.Alarm == AlarmState.HEAVY)
                 {
                     _logger.Warning("Cannot execute WTableLoading: Sequence Service is not in Manual Standby Status.");
                     return;
@@ -197,7 +200,8 @@ namespace HCB.UI
         {
             try
             {
-                if (EQStatus.Availability == Availability.Down || EQStatus.Run == RunStop.Run || EQStatus.Alarm == AlarmState.HEAVY)
+                var status = _operationService.Status;
+                if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Auto || status.Alarm == AlarmState.HEAVY)
                 {
                     _logger.Warning("Cannot execute DiePickup: Sequence Service can not execute die pickup sequence");
                     // Alarm 정의 필요

@@ -12,6 +12,7 @@ namespace HCB.UI
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         private readonly SequenceService _sequenceService;
+        private readonly OperationService _operationService;
         public readonly SequenceServiceVM _sequenceServiceVM;
 
         public RunInformation RunInformation { get; }
@@ -28,11 +29,12 @@ namespace HCB.UI
         [ObservableProperty]
         private bool isStopping;
 
-        public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, SequenceService sequenceService, AlarmService alarmService)
+        public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, OperationService operationService, SequenceService sequenceService, AlarmService alarmService)
         {
             RunInformation = runInformation;
             RunningStatus = runningStatus;
             _sequenceService = sequenceService;
+            _operationService = operationService;
             _cancellationTokenSource.TryReset();
             AlarmService = alarmService;
         }
@@ -40,13 +42,13 @@ namespace HCB.UI
         [RelayCommand]
         public void Loaded()
         {
-            EQStatus.Operation = OperationMode.Auto;
+            _operationService.Status.Operation = OperationMode.Auto;
         }
 
         [RelayCommand]      
         public void Unloaded() 
         {
-            EQStatus.Operation = OperationMode.Manual;
+            _operationService.Status.Operation = OperationMode.Manual;
         }
 
         [RelayCommand]

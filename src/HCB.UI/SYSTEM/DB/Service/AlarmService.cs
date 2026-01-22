@@ -16,13 +16,36 @@ namespace HCB.UI
     [Service(Lifetime.Singleton)]
     public partial class AlarmService : ObservableObject
     {
+        private readonly OperationService operationService;
         private readonly AlarmRepository alarmRepository;
         private readonly AlarmHistoryRepository alarmHistoryRepository;
 
-        public AlarmService(AlarmRepository alarmRepository, AlarmHistoryRepository alarmHistoryRepository)
+        private ObservableCollection<Alarm> alarmList = new ObservableCollection<Alarm>();
+
+        private ObservableCollection<Alarm> currentAlarms = new ObservableCollection<Alarm>();
+
+        public AlarmService(AlarmRepository alarmRepository, AlarmHistoryRepository alarmHistoryRepository, OperationService operationService)
         {
             this.alarmRepository = alarmRepository;
             this.alarmHistoryRepository = alarmHistoryRepository;
+            this.operationService = operationService;
+            LoadAlarms();
+        }
+
+        private void LoadAlarms()
+        {
+            var alarms = alarmRepository.ListAsync().Result;
+            alarmList = new ObservableCollection<Alarm>(alarms);
+        }
+
+        private Alarm? FindAlarm(int id)
+        {
+            return alarmList.FirstOrDefault((x) => x.Id == id);
+        }
+
+        private Alarm? FindAlarm(string code)
+        {
+            return alarmList.FirstOrDefault((x) => x.Code == code);
         }
 
         /* ============================
@@ -30,25 +53,33 @@ namespace HCB.UI
          * ============================ */
         public event Action<AlarmHistoryDto>? AlarmHistoryAdded;
         public event Action<int>? AlarmHistoryReset; // historyId
-
         /* ============================
          * Alarm 발생 (Set)
          * ============================ */
         public async Task SetAlarm(int id)
         {
-            var alarm = await alarmRepository.FindAsync(keyValues: id);
+            var alarm = FindAlarm(id.ToString());
             if (alarm != null) await ProcessSetAlarm(alarm);
         }
 
         public async Task SetAlarm(string code)
         {
-            var alarm = await alarmRepository.FindAsync(x => x.Code == code);
+            var alarm = FindAlarm(code);
             if (alarm != null && alarm.Enable == AlarmEnable.ENABLED) await ProcessSetAlarm(alarm);
         }
 
         // 중복 로직 처리를 위한 내부 메서드
         private async Task ProcessSetAlarm(Alarm alarm)
         {
+            if (currentAlarms.FirstOrDefault(x => x.Code == alarm.Code) != null)
+            {
+                // 이미 활성화된 알람인 경우 무시
+                return;
+            }
+            else
+            {
+                currentAlarms.Add(alarm);
+            }           
 
             var history = new AlarmHistory
             {
@@ -83,7 +114,7 @@ namespace HCB.UI
             await alarmHistoryRepository.Update(entity);
 
             AlarmHistoryReset?.Invoke(historyId);
-            EQStatus.Alarm = AlarmState.NO_ALARM;
+            operationService.Status.Alarm = AlarmState.NO_ALARM;
         }
 
         // 모든 알람 일괄 해제 (추가된 기능)
@@ -112,7 +143,7 @@ namespace HCB.UI
                 AlarmHistoryReset?.Invoke(entity.Id);
             }
 
-            EQStatus.Alarm = AlarmState.NO_ALARM;
+            operationService.Status.Alarm = AlarmState.NO_ALARM;
         }
 
         /* ============================
@@ -188,19 +219,22 @@ namespace HCB.UI
          * ============================ */
         private void UpdateEQStatus(AlarmLevel level)
         {
-            EQStatus.Alarm = level switch
+            var alarm = level switch
             {
                 AlarmLevel.HEAVY => AlarmState.HEAVY,
                 AlarmLevel.LIGHT => AlarmState.LIGHT,
                 _ => AlarmState.NO_ALARM
             };
 
-            EQStatus.Availability = level switch
+            var availability = level switch
             {
                 AlarmLevel.HEAVY => Availability.Down,
                 AlarmLevel.LIGHT => Availability.Up,
                 _ => Availability.Down
             };
+
+            operationService.SetAlarm(alarm);
+            operationService.SetAvailability(availability);
         }
     }
 }

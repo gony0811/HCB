@@ -18,6 +18,7 @@ namespace HCB.UI
         private ILogger _logger;
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
+        private readonly OperationService _operationService;
         private readonly Timer _timer;
         private readonly SemaphoreSlim _pollingLock = new SemaphoreSlim(1, 1);
         private readonly AlarmService _alarmService;
@@ -35,12 +36,13 @@ namespace HCB.UI
         private IAxis _WT;
         private IAxis _DY;        
 
-        public InterlockService(ILogger logger, ISequenceHelper sequenceHelper, DeviceManager deviceManager, AlarmService alarmService)
+        public InterlockService(ILogger logger, ISequenceHelper sequenceHelper, DeviceManager deviceManager, OperationService operationService,  AlarmService alarmService)
         {
             _logger = logger.ForContext<InterlockService>();
             _deviceManager = deviceManager;
             _sequenceHelper = sequenceHelper;
             _alarmService = alarmService;
+            _operationService = operationService;
 
             this.Initialize();
 
@@ -53,6 +55,10 @@ namespace HCB.UI
                 {
                     try
                     {
+                        var status = _operationService.Status;
+
+                        if (status.Availability == Availability.Down) return;
+
                         await MonitoringSafety(_cancellationTokenSource.Token);
 
                         await InterlockMotion(_cancellationTokenSource.Token);
@@ -93,21 +99,23 @@ namespace HCB.UI
         {
             try
             {
-                _logger.Information(new SysLog("InterlockService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "").ToString());
+                var status = _operationService.Status;
+
+                _logger.Information(new SysLog("InterlockService", status.Availability.ToString(), status.Run.ToString(), status.Alarm.ToString(), status.Operation.ToString(), "").ToString());
 
 
                 // 1. 알람 발생시 운전 정지 및 장비 다운 처리
-                if (EQStatus.Alarm == AlarmState.HEAVY)
+                if (status.Alarm == AlarmState.HEAVY)
                 {
-                    EQStatus.Run = RunStop.Stop;
-                    EQStatus.Operation = OperationMode.Manual;
-                    EQStatus.Availability = Availability.Down;
+                    status.Run = RunStop.Stop;
+                    status.Operation = OperationMode.Manual;
+                    status.Availability = Availability.Down;
 
                     /**** 모든 모션 축 정지 ****/
                     await _sequenceHelper.StopAllAsync(stoppingToken);
                     _sequenceHelper.SetTowerLamp(green: false, red: true, yellow: false, buzzer: true);
 
-                    _logger.Warning(new SysLog("OperationService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "Heavy Alarm Detected - Stopping Operation").ToString());
+                    _logger.Warning(new SysLog("OperationService", status.Availability.ToString(), status.Run.ToString(), status.Alarm.ToString(), status.Operation.ToString(), "Heavy Alarm Detected - Stopping Operation").ToString());
                 }
 
                 _timer.Change(0, 10); // 10ms 주기로 타이머 시작    s
@@ -168,132 +176,132 @@ namespace HCB.UI
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_SIDE_RIGHT_DOOR) == true)
             {
                 // 측면 오른쪽 도어가 열렸을 때 처리
-                await _alarmService.SetAlarm("E007");
+                await _alarmService.SetAlarm("E0007");
                 await _sequenceHelper.StopAllAsync(token);
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FAN_1_ALARM) == true)
             {
                 // 팬 1 알람 발생 시 처리
-                await _alarmService.SetAlarm("E008");
+                await _alarmService.SetAlarm("E0008");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FAN_2_ALARM) == true)
             {
                 // 팬 2 알람 발생 시 처리
-                await _alarmService.SetAlarm("E009");
+                await _alarmService.SetAlarm("E0009");
             }
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FAN_3_ALARM) == true)
             {
                 // 팬 3 알람 발생 시 처리
-                await _alarmService.SetAlarm("E010");
+                await _alarmService.SetAlarm("E0010");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FAN_4_ALARM) == true)
             {
                 // 팬 4 알람 발생 시 처리
-                await _alarmService.SetAlarm("E011");
+                await _alarmService.SetAlarm("E0011");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_EPU_ALARM) == true)
             {
                 // CP03 알람 발생 시 처리
-                await _alarmService.SetAlarm("E012");
+                await _alarmService.SetAlarm("E0012");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP04_TRIP) == false)
             {
                 // CP04 알람 발생 시 처리
-                await _alarmService.SetAlarm("E013");
+                await _alarmService.SetAlarm("E0013");
             }
             
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP05_TRIP) == false)
             {
                 // CP05 알람 발생 시 처리
-                await _alarmService.SetAlarm("E014");
+                await _alarmService.SetAlarm("E0014");
             }
 
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP06_TRIP) == false)
             {
                 // CP06 알람 발생 시 처리
-                await _alarmService.SetAlarm("E015");
+                await _alarmService.SetAlarm("E0015");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP07_TRIP) == false)
             {
                 // CP07 알람 발생 시 처리
-                await _alarmService.SetAlarm("E016");
+                await _alarmService.SetAlarm("E0016");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP08_TRIP) == false)
             {
                 // CP08 알람 발생 시 처리
-                await _alarmService.SetAlarm("E017");
+                await _alarmService.SetAlarm("E0017");
             }
             
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP10_TRIP) == false)
             {
                 // CP10 알람 발생 시 처리
-                await _alarmService.SetAlarm("E018");
+                await _alarmService.SetAlarm("E0018");
             }
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP11_TRIP) == false)
             {
                 // CP11 알람 발생 시 처리
-                await _alarmService.SetAlarm("E019");
+                await _alarmService.SetAlarm("E0019");
             }
             
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP12_TRIP) == false)
             {
                 // CP12 알람 발생 시 처리
-                await _alarmService.SetAlarm("E020");
+                await _alarmService.SetAlarm("E0020");
             }
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP22_TRIP) == false)
             {
                 // CP22 알람 발생 시 처리
-                await _alarmService.SetAlarm("E021");
+                await _alarmService.SetAlarm("E0021");
             }
             
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP23_TRIP) == false)
             {
                 // CP23 알람 발생 시 처리
-                await _alarmService.SetAlarm("E022");
+                await _alarmService.SetAlarm("E0022");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP24_TRIP) == false)
             {
                 // CP24 알람 발생 시 처리
-                await _alarmService.SetAlarm("E023");
+                await _alarmService.SetAlarm("E0023");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_DRIVER_BUS_DC) == false)
             {
                 // 드라이버 DC BUS 알람 발생 시 처리
-                await _alarmService.SetAlarm("E024");
+                await _alarmService.SetAlarm("E0024");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_MAIN_CDA_PRESSURE_SWITCH_ALARM) == true)
             {
                 // 메인 CDA 압력 스위치 알람 발생 시 처리
-                await _alarmService.SetAlarm("E025");
+                await _alarmService.SetAlarm("E0025");
             }
             
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_MAIN_VAC_PRESSURE_SWITCH_1_ALARM) == true)
             {
                 // 메인 VAC 압력 스위치 1 알람 발생 시 처리
-                await _alarmService.SetAlarm("E026");
+                await _alarmService.SetAlarm("E0026");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_MAIN_VAC_PRESSURE_SWITCH_2_ALARM) == true)
             {
                 // 메인 VAC 압력 스위치 2 알람 발생 시 처리
-                await _alarmService.SetAlarm("E027");
+                await _alarmService.SetAlarm("E0027");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_MAIN_N2_PRESSURE_SWITCH_ALARM) == true)
             {
                 // 메인 N2 압력 스위치 알람 발생 시 처리
-                await _alarmService.SetAlarm("E028");
+                await _alarmService.SetAlarm("E0028");
             }
 
         }
@@ -308,7 +316,7 @@ namespace HCB.UI
                 {
                     await _sequenceHelper.StopAllAsync(token);
                     await _alarmService.SetAlarm("E0029");
-                    _logger.Warning(new SysLog("InterlockService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "Interlock: HZ axis is not in safe position. Stopping HX axis movement.").ToString());
+                    _logger.Warning(new SysLog("InterlockService", _operationService.Status.Availability.ToString(), _operationService.Status.Run.ToString(), _operationService.Status.Alarm.ToString(), _operationService.Status.Operation.ToString(), "Interlock: HZ axis is not in safe position. Stopping HX axis movement.").ToString());
                 }
             }
 

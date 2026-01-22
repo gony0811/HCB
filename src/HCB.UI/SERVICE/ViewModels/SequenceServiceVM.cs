@@ -23,6 +23,8 @@ namespace HCB.UI
     [ViewModel(Lifetime.Singleton)]
     public partial class SequenceServiceVM : ObservableObject
     {
+        private readonly OperationService _operationService;
+
         /// <summary>
         /// 설비 초기화 여부 확인
         /// 설비를 초기화 해야 Auto 모드로 진입 가능
@@ -203,7 +205,7 @@ namespace HCB.UI
         [ObservableProperty]
         private string stepBodingProcessElapsedTime;
 
-        public SequenceServiceVM()
+        public SequenceServiceVM(OperationService operationService)
         {
             IsMachineInitialized = false;
             RunStop = RunStop.Stop;
@@ -211,6 +213,18 @@ namespace HCB.UI
             Availability = Availability.Up;
             OperationMode = OperationMode.Manual;
 
+            _operationService = operationService;
+
+            _operationService.EQStatusChanged += OnEQStatusChanged;
+
+        }
+
+        private void OnEQStatusChanged(EQStatus status)
+        {
+            RunStop = status.Run;
+            Alarm = status.Alarm;
+            Availability = status.Availability;
+            OperationMode = status.Operation;
         }
 
         public void InitializeAllSteps()

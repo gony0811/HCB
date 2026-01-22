@@ -206,6 +206,7 @@
   <Compile Include="SERVICE\Helper\SequenceHelper.cs" />
   <Compile Include="SERVICE\Interface\IOperationService.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
+  <Compile Include="SERVICE\OperationService.cs" />
   <Compile Include="SERVICE\SequenceService.cs" />
   <Compile Include="SERVICE\Sequence\InitSequence.cs" />
   <Compile Include="SERVICE\Sequence\MainSequence.cs" />
@@ -213,7 +214,6 @@
   <Compile Include="SERVICE\Sequence\RunningTime.cs" />
   <Compile Include="SERVICE\Sequence\SequenceEventHandler.cs" />
   <Compile Include="SERVICE\Sequence\StepSequence.cs" />
-  <Compile Include="SERVICE\ViewModels\SequenceState.cs" />
   <Compile Include="SERVICE\ViewModels\SequenceServiceVM.cs" />
   <Compile Include="SUB UI\Behavior\BlinkBehavior.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
