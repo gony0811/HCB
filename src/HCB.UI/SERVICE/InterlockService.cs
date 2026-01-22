@@ -53,6 +53,8 @@ namespace HCB.UI
                 {
                     try
                     {
+                        if (EQStatus.Availability == Availability.Down) return;
+
                         await MonitoringSafety(_cancellationTokenSource.Token);
 
                         await InterlockMotion(_cancellationTokenSource.Token);
@@ -168,132 +170,132 @@ namespace HCB.UI
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_SIDE_RIGHT_DOOR) == true)
             {
                 // 측면 오른쪽 도어가 열렸을 때 처리
-                await _alarmService.SetAlarm("E007");
+                await _alarmService.SetAlarm("E0007");
                 await _sequenceHelper.StopAllAsync(token);
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FAN_1_ALARM) == true)
             {
                 // 팬 1 알람 발생 시 처리
-                await _alarmService.SetAlarm("E008");
+                await _alarmService.SetAlarm("E0008");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FAN_2_ALARM) == true)
             {
                 // 팬 2 알람 발생 시 처리
-                await _alarmService.SetAlarm("E009");
+                await _alarmService.SetAlarm("E0009");
             }
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FAN_3_ALARM) == true)
             {
                 // 팬 3 알람 발생 시 처리
-                await _alarmService.SetAlarm("E010");
+                await _alarmService.SetAlarm("E0010");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FAN_4_ALARM) == true)
             {
                 // 팬 4 알람 발생 시 처리
-                await _alarmService.SetAlarm("E011");
+                await _alarmService.SetAlarm("E0011");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_EPU_ALARM) == true)
             {
                 // CP03 알람 발생 시 처리
-                await _alarmService.SetAlarm("E012");
+                await _alarmService.SetAlarm("E0012");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP04_TRIP) == false)
             {
                 // CP04 알람 발생 시 처리
-                await _alarmService.SetAlarm("E013");
+                await _alarmService.SetAlarm("E0013");
             }
             
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP05_TRIP) == false)
             {
                 // CP05 알람 발생 시 처리
-                await _alarmService.SetAlarm("E014");
+                await _alarmService.SetAlarm("E0014");
             }
 
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP06_TRIP) == false)
             {
                 // CP06 알람 발생 시 처리
-                await _alarmService.SetAlarm("E015");
+                await _alarmService.SetAlarm("E0015");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP07_TRIP) == false)
             {
                 // CP07 알람 발생 시 처리
-                await _alarmService.SetAlarm("E016");
+                await _alarmService.SetAlarm("E0016");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP08_TRIP) == false)
             {
                 // CP08 알람 발생 시 처리
-                await _alarmService.SetAlarm("E017");
+                await _alarmService.SetAlarm("E0017");
             }
             
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP10_TRIP) == false)
             {
                 // CP10 알람 발생 시 처리
-                await _alarmService.SetAlarm("E018");
+                await _alarmService.SetAlarm("E0018");
             }
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP11_TRIP) == false)
             {
                 // CP11 알람 발생 시 처리
-                await _alarmService.SetAlarm("E019");
+                await _alarmService.SetAlarm("E0019");
             }
             
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP12_TRIP) == false)
             {
                 // CP12 알람 발생 시 처리
-                await _alarmService.SetAlarm("E020");
+                await _alarmService.SetAlarm("E0020");
             }
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP22_TRIP) == false)
             {
                 // CP22 알람 발생 시 처리
-                await _alarmService.SetAlarm("E021");
+                await _alarmService.SetAlarm("E0021");
             }
             
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP23_TRIP) == false)
             {
                 // CP23 알람 발생 시 처리
-                await _alarmService.SetAlarm("E022");
+                await _alarmService.SetAlarm("E0022");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_CP24_TRIP) == false)
             {
                 // CP24 알람 발생 시 처리
-                await _alarmService.SetAlarm("E023");
+                await _alarmService.SetAlarm("E0023");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_DRIVER_BUS_DC) == false)
             {
                 // 드라이버 DC BUS 알람 발생 시 처리
-                await _alarmService.SetAlarm("E024");
+                await _alarmService.SetAlarm("E0024");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_MAIN_CDA_PRESSURE_SWITCH_ALARM) == true)
             {
                 // 메인 CDA 압력 스위치 알람 발생 시 처리
-                await _alarmService.SetAlarm("E025");
+                await _alarmService.SetAlarm("E0025");
             }
             
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_MAIN_VAC_PRESSURE_SWITCH_1_ALARM) == true)
             {
                 // 메인 VAC 압력 스위치 1 알람 발생 시 처리
-                await _alarmService.SetAlarm("E026");
+                await _alarmService.SetAlarm("E0026");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_MAIN_VAC_PRESSURE_SWITCH_2_ALARM) == true)
             {
                 // 메인 VAC 압력 스위치 2 알람 발생 시 처리
-                await _alarmService.SetAlarm("E027");
+                await _alarmService.SetAlarm("E0027");
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_MAIN_N2_PRESSURE_SWITCH_ALARM) == true)
             {
                 // 메인 N2 압력 스위치 알람 발생 시 처리
-                await _alarmService.SetAlarm("E028");
+                await _alarmService.SetAlarm("E0028");
             }
 
         }
