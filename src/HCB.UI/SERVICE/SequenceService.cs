@@ -19,6 +19,7 @@ namespace HCB.UI
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
         private readonly OperationService _operationService;
+        private readonly AlarmService _alarmService;
         private readonly SequenceServiceVM _sequenceServiceVM;
         private readonly Timer _timer;
         private readonly bool _simulation;
@@ -26,12 +27,13 @@ namespace HCB.UI
 
         private CancellationToken _stopToken = CancellationToken.None;
 
-        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, SequenceServiceVM sequenceServiceVM)
+        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, AlarmService alarmService, SequenceServiceVM sequenceServiceVM)
         {
             _logger = logger.ForContext<SequenceService>();
             _deviceManager = deviceManager;
             _sequenceHelper = sequenceHelper;
             _operationService = operationService;
+            _alarmService = alarmService;
             _sequenceServiceVM = sequenceServiceVM;
             _simulation = dataOptions.Simulation;
             

@@ -151,15 +151,15 @@
                                      FontWeight="Bold"/>
                             </Border>
                             <ControlTemplate.Triggers>
-                                <DataTrigger Binding="{Binding SequenceServiceVM.AlarmLevel}" Value="Normal">
+                                <DataTrigger Binding="{Binding SequenceServiceVM.Alarm}" Value="NORMAL">
                                     <Setter TargetName="LampBorder" Property="Background" Value="LightGreen"/>
                                     <Setter TargetName="LampText" Property="Text" Value="NORMAL"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding SequenceServiceVM.AlarmLevel}" Value="Light">
+                                <DataTrigger Binding="{Binding SequenceServiceVM.Alarm}" Value="LIGHT">
                                     <Setter TargetName="LampBorder" Property="Background" Value="SteelBlue"/>
                                     <Setter TargetName="LampText" Property="Text" Value="WARNING"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding SequenceServiceVM.AlarmLevel}" Value="Heavy">
+                                <DataTrigger Binding="{Binding SequenceServiceVM.Alarm}" Value="HEAVY">
                                     <Setter TargetName="LampBorder" Property="Background" Value="Red"/>
                                     <Setter TargetName="LampText" Property="Text" Value="ALERT"/>
                                 </DataTrigger>
