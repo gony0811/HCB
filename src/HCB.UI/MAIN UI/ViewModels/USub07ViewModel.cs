@@ -53,16 +53,21 @@ namespace HCB.UI
                     switch (group.Key)
                     {
                         case IoType.AnalogInput:
-                            AnalogInput.Add(ioManager.GetOrCreateIo(io.Name, io.Address, io.Description, false, true));
+                            var ai = ioManager.CreateIoVM(io.Address, io.Name, "", io.Description, true);
+                            if(ai != null) AnalogInput.Add(ai);
+
                             break;
                         case IoType.AnalogOutput:
-                            AnalogOutput.Add(ioManager.GetOrCreateIo(io.Name, io.Address, io.Description));
+                            var ao = ioManager.CreateIoVM(io.Address, io.Name, "", io.Description);
+                            if (ao != null) AnalogOutput.Add(ao);
                             break;
                         case IoType.DigitalInput:
-                            DigitalInput.Add(ioManager.GetOrCreateIo(io.Name,io.Address, io.Description, false, true));
+                            var di = ioManager.CreateIoVM(io.Address, io.Name, "", io.Description, true);
+                            if (di != null) DigitalInput.Add(di);
                             break;
                         case IoType.DigitalOutput:
-                            DigitalOutput.Add(ioManager.GetOrCreateIo(io.Name, io.Address, io.Description));
+                            var dio = ioManager.CreateIoVM(io.Address, io.Name, "", io.Description);
+                            if (dio != null) DigitalOutput.Add(dio);
                             break;
                     }
                 }

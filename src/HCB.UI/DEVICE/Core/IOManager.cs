@@ -1,4 +1,5 @@
-﻿using HCB.IoC;
+﻿using HCB.Data.Repository;
+using HCB.IoC;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
@@ -12,24 +13,47 @@ namespace HCB.UI.DEVICE.Core
     [Service(Lifetime.Singleton)] // 싱글톤으로 관리
     public class IOManager
     {
-        private readonly ConcurrentDictionary<string, SensorIoItemViewModel> _ioCache = new();
+        private static readonly Dictionary<string, SharedIoState> _sharedIoStates = new();
+        private readonly IoDataRepository ioRepository;
         private readonly DeviceManager _deviceManager;
         private readonly ILogger _logger;
+        private PmacIoDevice device;
 
-        public IOManager(ILogger logger, DeviceManager deviceManager)
+        public IOManager(ILogger logger, DeviceManager deviceManager, IoDataRepository ioDataRepository)
         {
             _logger = logger;
             _deviceManager = deviceManager;
+            this.ioRepository = ioDataRepository;
+            _ = Load();
         }
 
-        public SensorIoItemViewModel GetOrCreateIo(string name, string address, string description = "", bool isChecked = false, bool isReadOnly = false)
+        public async Task Load()
         {
-            // Address나 Name을 키로 사용하여 중복 생성 방지
-            return _ioCache.GetOrAdd(name, (key) =>
+            this.device = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+            var ioList = await ioRepository.ListAsync(x => x.IsEnabled);
+            foreach (var io in ioList) {
+                _sharedIoStates.Add(io.Name, new SharedIoState());
+            }
+        }
+
+        public SensorIoItemViewModel? CreateIoVM(string address, string name, string label="", string description="", bool isReadOnly = false)
+        {
+            try
             {
-                var device = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
-                return new SensorIoItemViewModel(_logger, key, device, address, description, isChecked, isReadOnly);
-            });
+                var state = _sharedIoStates[name];
+                if (label.Equals(""))
+                {
+                    return new SensorIoItemViewModel(_logger, name, state, device, address, description, isReadOnly);
+                }else
+                {
+                    return new SensorIoItemViewModel(_logger, name, state, device, label, description, isReadOnly);
+                }
+                
+            }catch(Exception ex)
+            {
+                _logger.Error("Io Address Not Found");
+            }
+            return null;
         }
     }
 }

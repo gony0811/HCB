@@ -245,6 +245,7 @@
   <Compile Include="SYSTEM\DB\Dto\RecipeCreateDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\RecipeDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\RecipeParamDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\SharedIoState.cs" />
   <Compile Include="SYSTEM\DB\Service\AlarmService.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToBrushConverter.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToTextConvert.cs" />

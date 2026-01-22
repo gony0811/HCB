@@ -58,7 +58,9 @@ namespace HCB.UI
             {
                 for (var i = 0; i < dTableNameList.Count; i++)
                 {
-                    DTableList.Add(ioManager.GetOrCreateIo(dIoNameList[i], dTableNameList[i]));
+                    var result = ioManager.CreateIoVM(dTableNameList[i], dIoNameList[i], dTableNameList[i]);
+                    if(result != null) DTableList.Add(result);
+
                 }
             }
         }
