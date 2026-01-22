@@ -18,6 +18,7 @@ namespace HCB.UI
         private ILogger _logger;
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
+        private readonly OperationService _operationService;
         private readonly SequenceServiceVM _sequenceServiceVM;
         private readonly Timer _timer;
         private readonly bool _simulation;
@@ -25,14 +26,16 @@ namespace HCB.UI
 
         private CancellationToken _stopToken = CancellationToken.None;
 
-        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, SequenceServiceVM sequenceServiceVM)
+        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, SequenceServiceVM sequenceServiceVM)
         {
             _logger = logger.ForContext<SequenceService>();
             _deviceManager = deviceManager;
             _sequenceHelper = sequenceHelper;
+            _operationService = operationService;
             _sequenceServiceVM = sequenceServiceVM;
             _simulation = dataOptions.Simulation;
             
+
             // 디바이스 데이터 폴링 타이머 설정 (100ms 주기)
             // 중복 실행 방지 및 종료 시 대기를 위해 SemaphoreSlim 사용
             _timer = new Timer(async _ => 

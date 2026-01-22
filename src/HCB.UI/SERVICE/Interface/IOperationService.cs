@@ -7,13 +7,10 @@ namespace HCB.UI
     {
         EQStatus Status { get; }
 
-        event Action<Availability> AvailabilityChanged;
-        event Action<AlarmLevel> AlarmChanged;
-        event Action<RunStop> RunChanged;
-        event Action<OperationMode> OperationModeChanged;
+        event Action<EQStatus> EQStatusChanged;
 
         void SetAvailability(Availability availability);
-        void SetAlarm(AlarmLevel alarm);
+        void SetAlarm(AlarmState state);
         void SetRun(RunStop run);
         void SetOperationMode(OperationMode operation);
     }

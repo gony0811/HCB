@@ -18,6 +18,7 @@ namespace HCB.UI
         private ILogger _logger;
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
+        private readonly OperationService _operationService;
         private readonly Timer _timer;
         private readonly SemaphoreSlim _pollingLock = new SemaphoreSlim(1, 1);
         private readonly AlarmService _alarmService;
@@ -35,12 +36,13 @@ namespace HCB.UI
         private IAxis _WT;
         private IAxis _DY;        
 
-        public InterlockService(ILogger logger, ISequenceHelper sequenceHelper, DeviceManager deviceManager, AlarmService alarmService)
+        public InterlockService(ILogger logger, ISequenceHelper sequenceHelper, DeviceManager deviceManager, OperationService operationService,  AlarmService alarmService)
         {
             _logger = logger.ForContext<InterlockService>();
             _deviceManager = deviceManager;
             _sequenceHelper = sequenceHelper;
             _alarmService = alarmService;
+            _operationService = operationService;
 
             this.Initialize();
 
@@ -53,7 +55,9 @@ namespace HCB.UI
                 {
                     try
                     {
-                        if (EQStatus.Availability == Availability.Down) return;
+                        var status = _operationService.Status;
+
+                        if (status.Availability == Availability.Down) return;
 
                         await MonitoringSafety(_cancellationTokenSource.Token);
 
@@ -95,21 +99,23 @@ namespace HCB.UI
         {
             try
             {
-                _logger.Information(new SysLog("InterlockService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "").ToString());
+                var status = _operationService.Status;
+
+                _logger.Information(new SysLog("InterlockService", status.Availability.ToString(), status.Run.ToString(), status.Alarm.ToString(), status.Operation.ToString(), "").ToString());
 
 
                 // 1. 알람 발생시 운전 정지 및 장비 다운 처리
-                if (EQStatus.Alarm == AlarmState.HEAVY)
+                if (status.Alarm == AlarmState.HEAVY)
                 {
-                    EQStatus.Run = RunStop.Stop;
-                    EQStatus.Operation = OperationMode.Manual;
-                    EQStatus.Availability = Availability.Down;
+                    status.Run = RunStop.Stop;
+                    status.Operation = OperationMode.Manual;
+                    status.Availability = Availability.Down;
 
                     /**** 모든 모션 축 정지 ****/
                     await _sequenceHelper.StopAllAsync(stoppingToken);
                     _sequenceHelper.SetTowerLamp(green: false, red: true, yellow: false, buzzer: true);
 
-                    _logger.Warning(new SysLog("OperationService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "Heavy Alarm Detected - Stopping Operation").ToString());
+                    _logger.Warning(new SysLog("OperationService", status.Availability.ToString(), status.Run.ToString(), status.Alarm.ToString(), status.Operation.ToString(), "Heavy Alarm Detected - Stopping Operation").ToString());
                 }
 
                 _timer.Change(0, 10); // 10ms 주기로 타이머 시작    s
@@ -310,7 +316,7 @@ namespace HCB.UI
                 {
                     await _sequenceHelper.StopAllAsync(token);
                     await _alarmService.SetAlarm("E0029");
-                    _logger.Warning(new SysLog("InterlockService", EQStatus.Availability.ToString(), EQStatus.Run.ToString(), EQStatus.Alarm.ToString(), EQStatus.Operation.ToString(), "Interlock: HZ axis is not in safe position. Stopping HX axis movement.").ToString());
+                    _logger.Warning(new SysLog("InterlockService", _operationService.Status.Availability.ToString(), _operationService.Status.Run.ToString(), _operationService.Status.Alarm.ToString(), _operationService.Status.Operation.ToString(), "Interlock: HZ axis is not in safe position. Stopping HX axis movement.").ToString());
                 }
             }
 

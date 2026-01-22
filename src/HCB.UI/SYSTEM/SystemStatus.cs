@@ -1,4 +1,5 @@
 ﻿using HCB.Data.Entity.Type;
+using HCB.IoC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,9 +37,9 @@ namespace HCB.UI
 
     public class EQStatus
     {
-        public static Availability Availability { get; set; } = Availability.Up;
-        public static AlarmState Alarm { get; set; } = AlarmState.NO_ALARM;
-        public static RunStop Run { get; set; } = RunStop.Ready;
-        public static OperationMode Operation { get; set; } = OperationMode.Manual;
+        public Availability Availability { get; set; } = Availability.Up;
+        public AlarmState Alarm { get; set; } = AlarmState.NO_ALARM;
+        public RunStop Run { get; set; } = RunStop.Ready;
+        public OperationMode Operation { get; set; } = OperationMode.Manual;
     }
 }

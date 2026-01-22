@@ -16,7 +16,7 @@ namespace HCB.UI
     [Service(Lifetime.Singleton)]
     public partial class AlarmService : ObservableObject
     {
-        
+        private readonly OperationService operationService;
         private readonly AlarmRepository alarmRepository;
         private readonly AlarmHistoryRepository alarmHistoryRepository;
 
@@ -24,11 +24,11 @@ namespace HCB.UI
 
         private ObservableCollection<Alarm> currentAlarms = new ObservableCollection<Alarm>();
 
-        public AlarmService(AlarmRepository alarmRepository, AlarmHistoryRepository alarmHistoryRepository)
+        public AlarmService(AlarmRepository alarmRepository, AlarmHistoryRepository alarmHistoryRepository, OperationService operationService)
         {
             this.alarmRepository = alarmRepository;
             this.alarmHistoryRepository = alarmHistoryRepository;
-
+            this.operationService = operationService;
             LoadAlarms();
         }
 
@@ -114,7 +114,7 @@ namespace HCB.UI
             await alarmHistoryRepository.Update(entity);
 
             AlarmHistoryReset?.Invoke(historyId);
-            EQStatus.Alarm = AlarmState.NO_ALARM;
+            operationService.Status.Alarm = AlarmState.NO_ALARM;
         }
 
         // 모든 알람 일괄 해제 (추가된 기능)
@@ -143,7 +143,7 @@ namespace HCB.UI
                 AlarmHistoryReset?.Invoke(entity.Id);
             }
 
-            EQStatus.Alarm = AlarmState.NO_ALARM;
+            operationService.Status.Alarm = AlarmState.NO_ALARM;
         }
 
         /* ============================
@@ -219,19 +219,22 @@ namespace HCB.UI
          * ============================ */
         private void UpdateEQStatus(AlarmLevel level)
         {
-            EQStatus.Alarm = level switch
+            var alarm = level switch
             {
                 AlarmLevel.HEAVY => AlarmState.HEAVY,
                 AlarmLevel.LIGHT => AlarmState.LIGHT,
                 _ => AlarmState.NO_ALARM
             };
 
-            EQStatus.Availability = level switch
+            var availability = level switch
             {
                 AlarmLevel.HEAVY => Availability.Down,
                 AlarmLevel.LIGHT => Availability.Up,
                 _ => Availability.Down
             };
+
+            operationService.SetAlarm(alarm);
+            operationService.SetAvailability(availability);
         }
     }
 }
