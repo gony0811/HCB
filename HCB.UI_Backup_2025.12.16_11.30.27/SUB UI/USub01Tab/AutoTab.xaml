@@ -1,0 +1,209 @@
+﻿<UserControl x:Class="HCB.UI.AutoTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+             xmlns:local="clr-namespace:HCB.UI"
+             mc:Ignorable="d" >
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+            </Grid.RowDefinitions>
+            <telerik:GroupBox Header="Run Information" FontSize="14" Style="{StaticResource GroupBoxStyle}" Margin="4">
+                
+                <!-- 3 Columns , 6 Rows  -->
+                <Grid local:GridHelper.Columns="Auto, 1*, 1*, 1*, 1*" 
+                      local:GridHelper.Rows="1*, 1*, 1*, 1*, 1*, 1*" 
+                      DataContext="{Binding RunInformation}"
+                      >
+                    <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource HeaderCell}">
+                        <telerik:Label Content="OperatorID" Style="{StaticResource LabelStyle}"/>
+                    </Border>
+                    <Border Grid.Column="0" Grid.Row="1" Style="{StaticResource HeaderCell}">
+                        <telerik:Label Content="Lot Size" Style="{StaticResource LabelStyle}"/>
+                    </Border>
+                    <Border Grid.Column="0" Grid.Row="2" Style="{StaticResource HeaderCell}">
+                        <telerik:Label Content="Wafer Size" Style="{StaticResource LabelStyle}"/>
+                    </Border>
+                    <Border Grid.Column="0" Grid.Row="3" Style="{StaticResource HeaderCell}">
+                        <telerik:Label Content="Die Carrier" Style="{StaticResource LabelStyle}"/>
+                    </Border>
+                    <Border Grid.Column="0" Grid.Row="4" Grid.RowSpan="4" Style="{StaticResource HeaderCell}">
+                        <telerik:Label Content="Die Size" HorizontalContentAlignment="Center" Style="{StaticResource LabelStyle}"/>
+                    </Border>
+                    <Border Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="4"  Style="{StaticResource Cell}">
+                        <telerik:HighlightTextBlock Text="{Binding OperatorId}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"></telerik:HighlightTextBlock>
+                    </Border>
+                    <Border Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="4"  Style="{StaticResource Cell}">
+                        <telerik:HighlightTextBlock Text="{Binding LotId}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"></telerik:HighlightTextBlock>
+                    </Border>
+
+                    <Border Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="4"  Style="{StaticResource Cell}">
+                        <telerik:HighlightTextBlock Text="{Binding WaferSize}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"></telerik:HighlightTextBlock>
+                    </Border>
+                    <Border Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="4" Style="{StaticResource Cell}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <telerik:HighlightTextBlock Text="Die 수:"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                            <telerik:HighlightTextBlock Text="{Binding DieCarrier}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                            <telerik:HighlightTextBlock Text="EA"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                        </StackPanel>
+                        
+                    </Border>
+
+                    <Border Grid.Column="1" Grid.Row="4" Style="{StaticResource HeaderCell}">
+                        <telerik:HighlightTextBlock Text="Top"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                    </Border>
+
+                    <Border Grid.Column="1" Grid.Row="5" Style="{StaticResource HeaderCell}">
+                        <telerik:HighlightTextBlock Text="Bottom"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                    </Border>
+
+                    <Border Grid.Column="3" Grid.Row="4" Style="{StaticResource HeaderCell}">
+                        <telerik:HighlightTextBlock Text="Thickness"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                    </Border>
+
+                    <Border Grid.Column="3" Grid.Row="5" Style="{StaticResource HeaderCell}">
+                        <telerik:HighlightTextBlock Text="Thickness"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                    </Border>
+
+                    <Border Grid.Column="2" Grid.Row="4" Style="{StaticResource Cell}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <telerik:HighlightTextBlock Text="{Binding DieTopSize}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                            <telerik:Label Content="x" Style="{StaticResource LabelStyle}"/>
+                            <telerik:HighlightTextBlock Text="{Binding DieTopSize}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                            <telerik:Label Content=" mm" Style="{StaticResource LabelStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="4" Grid.Row="4" Style="{StaticResource Cell}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <telerik:HighlightTextBlock Text="{Binding DieTopThickness}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                            <telerik:Label Content=" um" Style="{StaticResource LabelStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Grid.Row="5" Style="{StaticResource Cell}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <telerik:HighlightTextBlock Text="{Binding DieBottomSize}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                            <telerik:Label Content="x" Style="{StaticResource LabelStyle}"/>
+                            <telerik:HighlightTextBlock Text="{Binding DieBottomSize}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                            <telerik:Label Content=" mm" Style="{StaticResource LabelStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="4" Grid.Row="5" Style="{StaticResource Cell}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <telerik:HighlightTextBlock Text="{Binding DieBottomThickness}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                            <telerik:Label Content=" um" Style="{StaticResource LabelStyle}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+            </telerik:GroupBox>
+            <telerik:GroupBox Header="Running Step" FontSize="14" Grid.Row="1" Style="{StaticResource GroupBoxStyle}" Margin="4">
+                <Grid local:GridHelper.Columns="1*, 1*, 1*, 1*, 1*" 
+                      local:GridHelper.Rows="Auto, 1*" 
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                    <telerik:Label Style="{StaticResource LabelStyle}" Content="Step▼" Foreground="Red" HorizontalContentAlignment="Center" Grid.Column="0" Grid.Row="0"></telerik:Label>
+                    <Border Background="Yellow" Width="100" Height="100" Margin="4 0 0 0" Grid.Column="0" Grid.Row="1"></Border>
+                    <Border Background="Green"  Width="100" Height="100" Margin="4 0 0 0" Grid.Column="1" Grid.Row="1" ></Border>
+                    <Border Background="Blue"  Width="100" Height="100" Margin="4 0 0 0" Grid.Column="2" Grid.Row="1"></Border>
+                    <Border Background="Purple"  Width="100" Height="100" Margin="4 0 0 0" Grid.Column="3" Grid.Row="1"></Border>
+                    <Border Background="White"  Width="100" Height="100" Margin="4 0 0 0" Grid.Column="4" Grid.Row="1"></Border>
+                </Grid>
+                
+            </telerik:GroupBox>
+        </Grid>
+
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"></RowDefinition>
+                <RowDefinition Height="Auto"></RowDefinition>
+            </Grid.RowDefinitions>
+            <telerik:GroupBox Header="Running Status" FontSize="14" Style="{StaticResource GroupBoxStyle}" Margin="4">
+                <Grid local:GridHelper.Columns="1*, 1*, 1*, 1*"
+                      local:GridHelper.Rows="1*, 1*, 1*, 1*, 1*, 1*" 
+                      VerticalAlignment="Center">
+
+                    <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource HeaderCell}">
+                        <telerik:Label Style="{StaticResource LabelStyle}" Content="실행" HorizontalContentAlignment="Center"></telerik:Label>
+                    </Border>
+
+                    <Border Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource HeaderCell}">
+                        <telerik:Label Style="{StaticResource LabelStyle}" Content="진행도" HorizontalContentAlignment="Center"></telerik:Label>
+                    </Border>
+
+                    <Border Grid.Column="3" Grid.Row="0" Style="{StaticResource HeaderCell}">
+                        <telerik:Label Style="{StaticResource LabelStyle}" Content="Start / End" HorizontalContentAlignment="Center"></telerik:Label>
+                    </Border>
+
+                    <Border Grid.Column="0" Grid.Row="1" Style="{StaticResource Cell}">
+                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="Running" Command="{Binding RunningCommand}" Margin="4" />
+                    </Border>
+                    <Border Grid.ColumnSpan="2" Grid.Column="1" Grid.Row="1" Style="{StaticResource Cell}">
+                        <telerik:RadProgressBar Style="{StaticResource RadProgressBarStyle}" Height="20" Margin="4"></telerik:RadProgressBar>
+                    </Border>
+                    <Border Grid.Column="3" Grid.Row="1" Style="{StaticResource Cell}">
+                        <local:TimeRange DataContext="{Binding RunningStatus.RunningTimeRange}" Margin="4" />
+                    </Border>
+
+                    <Border Grid.Column="0" Grid.Row="2" Style="{StaticResource Cell}">
+                        <Button Content="Loading" Command="{Binding LoadingCommand}" Margin="4"/>
+                    </Border>
+                    <Border Grid.ColumnSpan="2" Grid.Column="1" Grid.Row="2" Style="{StaticResource Cell}">
+                        <telerik:RadProgressBar Style="{StaticResource RadProgressBarStyle}" Height="20" Margin="4"></telerik:RadProgressBar>
+                    </Border>
+                    <Border Grid.Column="3" Grid.Row="2" Style="{StaticResource Cell}">
+                        <local:TimeRange DataContext="{Binding RunningStatus.LoadingTimeRange}" Margin="4"/>
+                    </Border>
+                    <Border Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="3" Style="{StaticResource HeaderCell}">
+                        <telerik:Label Style="{StaticResource LabelStyle}" Content="Tact Time" HorizontalContentAlignment="Center"/>
+                    </Border>
+                    <Border Grid.ColumnSpan="2" Grid.Column="2" Grid.Row="3" Style="{StaticResource Cell}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="0"></TextBlock>
+                            <TextBlock Text=" UPH"></TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <Border  Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="4" Style="{StaticResource HeaderCell}">
+                        <telerik:Label Style="{StaticResource LabelStyle}" Content="Bonding Accuracy" HorizontalContentAlignment="Center"/>
+                    </Border>
+                    <Border  Grid.ColumnSpan="2" Grid.Column="2" Grid.Row="4" Style="{StaticResource Cell}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <telerik:Label Content="+/- "></telerik:Label>
+                            <telerik:Label Content="0"></telerik:Label>
+                            <telerik:Label Content=" nm"></telerik:Label>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.ColumnSpan="4" Grid.Row="5" Style="{StaticResource Cell}">
+                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="실시간 Auccracy Data 보기"></telerik:RadButton>
+                    </Border>
+                    
+                </Grid>
+            </telerik:GroupBox>
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="4" HorizontalAlignment="Center">
+                <Button Content="INITIAL" Width="120" Height="80"></Button>
+                <Button Content="START" Width="120" Height="80"></Button>
+                <Button Content="STOP" Width="120" Height="80"></Button>
+                <Button Content="RESET" Width="120" Height="80"></Button>
+            </StackPanel>
+            
+        </Grid>
+    </Grid>
+</UserControl>

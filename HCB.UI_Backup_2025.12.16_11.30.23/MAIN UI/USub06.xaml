@@ -1,0 +1,203 @@
+﻿<Page x:Class="HCB.UI.USub06"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+      xmlns:local="clr-namespace:HCB.UI"
+      xmlns:uc="clr-namespace:HCB.UI"
+      xmlns:page="clr-namespace:HCB.UI"
+      mc:Ignorable="d"
+      Title="USub06">
+    <!-- 모터 제어 화면 -->
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/Common/Styles/DefaultResource.xaml"/>
+                <ResourceDictionary Source="/SYSTEM/Common/Styles/ButtonsAndSwitches.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
+    <Border>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition></RowDefinition>
+            </Grid.RowDefinitions>
+            <Border Grid.Column="0" Grid.Row="0" Margin="10">
+                <telerik:RadHighlightTextBlock Text="모터 제어" 
+                                         FontSize="24" 
+                                         FontWeight="SemiBold" 
+                                         Style="{StaticResource RadHighlightTextBlockStyle}"/>
+            </Border>
+
+            <telerik:GroupBox Header="모션 항목"
+                      Style="{StaticResource GroupBoxStyle}"
+                      Grid.Column="0" Grid.Row="1" Grid.RowSpan="2"
+                      Margin="10" Width="250">
+                <telerik:RadListBox
+                    ItemsSource="{Binding MotionList}"
+                    SelectedItem="{Binding SelectedMotion, Mode=TwoWay}"
+                    DisplayMemberPath="Name"
+                    Background="{x:Null}"
+                    BorderThickness="0"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    SelectionMode="Single"/>
+            </telerik:GroupBox>
+            <Border Grid.Column="1" Grid.Row="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.7*"></ColumnDefinition>
+                        <ColumnDefinition Width="0.3*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+
+                    <telerik:GroupBox Header="위치" 
+                              Grid.Column="0" 
+                              Style="{StaticResource GroupBoxStyle}" 
+                              Margin="0,10,0,10">
+                        <Grid local:GridHelper.Rows="1*, Auto">
+
+                            <telerik:RadGridView
+                                    x:Name="PositionDataGrid"
+                                    ItemsSource="{Binding SelectedMotion.PositionList}"
+                                    SelectedItem="{Binding SelectedPosition, Mode=TwoWay}"
+                                    FontSize="16"
+                                    ShowGroupPanel="False"
+                                    AutoGenerateColumns="False"
+                                    IsReadOnly="True"
+                                    CanUserDeleteRows="False"
+                                    SelectionMode="Single"
+                                    EnableRowVirtualization="True"
+                                    EnableColumnVirtualization="True"
+                                    GridLinesVisibility="None">
+                                <telerik:RadGridView.RowStyle>
+                                    <Style TargetType="telerik:GridViewRow"
+                                           BasedOn="{StaticResource {x:Type telerik:GridViewRow}}">
+                                                                        <EventSetter Event="MouseRightButtonDown"
+                                                     Handler="DataGridRow_MouseRightButtonDown"/>
+                                                                        <Setter Property="Tag"
+                                                Value="{Binding DataContext,
+                                                        RelativeSource={RelativeSource AncestorType=telerik:RadGridView}}"/>
+
+                                        <Setter Property="ContextMenu">
+                                            <Setter.Value>
+                                                <ContextMenu>
+
+                                                    <!-- 수정 -->
+                                                    <MenuItem Header="수정"
+                                                              Command="{Binding PlacementTarget.Tag.PositionUpdateCommand,
+                                                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                              CommandParameter="{Binding PlacementTarget.DataContext,
+                                                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+
+                                                    <!-- 삭제 -->
+                                                    <MenuItem Header="삭제"
+                                                              Command="{Binding PlacementTarget.Tag.PositionDeleteCommand,
+                                                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                              CommandParameter="{Binding PlacementTarget.DataContext,
+                                                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                </ContextMenu>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </telerik:RadGridView.RowStyle>
+                                <telerik:RadGridView.Columns>
+                                    <telerik:GridViewDataColumn Header="이름"
+                                        DataMemberBinding="{Binding Name}"
+                                        Width="*"
+                                        SortMemberPath="Name"/>
+                                    <telerik:GridViewDataColumn Header="위치"
+                                        DataMemberBinding="{Binding Position, StringFormat=F3}"
+                                        Width="140"
+                                        SortMemberPath="Location"/>
+                                    <telerik:GridViewDataColumn Header="속도"
+                                        DataMemberBinding="{Binding Speed, StringFormat=F2}"
+                                        Width="120"
+                                        SortMemberPath="Speed"/>
+                                </telerik:RadGridView.Columns>
+                            </telerik:RadGridView>
+
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="생성" Command="{Binding PositionCreateCommand}" Grid.Row="1"></telerik:RadButton>
+                        </Grid>
+
+                    </telerik:GroupBox>
+
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="0.4*"></RowDefinition>
+                            <RowDefinition Height="0.6*"></RowDefinition>
+                        </Grid.RowDefinitions>
+
+
+                        <!-- 모터 상태 관리 -->
+                        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 관리" Grid.Row="0" Margin="10">
+                            <uc:MotorStateControl x:Name="MotorState"></uc:MotorStateControl>
+                        </telerik:GroupBox>
+
+                        <!-- 모터 조작 -->
+                        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="조작" Grid.Row="1" Margin="10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="0.7*"></ColumnDefinition>
+                                    <ColumnDefinition Width="0.3*"></ColumnDefinition>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <StackPanel Orientation="Horizontal" Margin="10">
+                                        <TextBox  Style="{StaticResource TextBox.Rounded.Panel}" Width="150" Margin="5,0,0,0"></TextBox>
+                                        <TextBlock Text="um" Margin="5,0,0,0"></TextBlock>
+                                    </StackPanel>
+
+                                    <!-- 조작 버튼 -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="0.3*"></ColumnDefinition>
+                                            <ColumnDefinition Width="0.4*"></ColumnDefinition>
+                                            <ColumnDefinition Width="0.3*"></ColumnDefinition>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"></RowDefinition>
+                                            <RowDefinition Height="Auto"></RowDefinition>
+                                            <RowDefinition Height="Auto"></RowDefinition>
+                                            <RowDefinition Height="Auto"></RowDefinition>
+                                        </Grid.RowDefinitions>
+                                        <Button Content="-1um" Grid.Column="0" Grid.Row="0" Margin="2" MinHeight="40"/>
+
+                                        <Button Content="-0.1um" Grid.Column="0" Grid.Row="1" Margin="2" />
+                                        <Button Content="-0.01um" Grid.Column="0" Grid.Row="2" Margin="2" />
+                                        <telerik:RadButton Style="{StaticResource Button.Circle.WithRing}" 
+                                                Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" 
+                                                Width="100" Height="100"></telerik:RadButton>
+
+                                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="1um" Grid.Column="2" Grid.Row="0" Margin="2" MinHeight="40"/>
+
+                                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="0.1um" Grid.Column="2" Grid.Row="1" Margin="2" />
+                                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="0.01um" Grid.Column="2" Grid.Row="2" Margin="2" />
+                                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="정지" Background="Red" Grid.Column="1" Grid.Row="2" Margin="2"/>
+                                    </Grid>
+                                </StackPanel>
+
+
+                                <Grid Grid.Column="1" VerticalAlignment="Top">
+                                    <!-- Speed -->
+                                    <uc:LabelSlider TitleLabel="속도" 
+                                                    Minimum="1" Maximum="100"
+                                                    Height="230"
+                                                    TickFrequency="1"
+                                                    IsSnapToTickEnabled="True"
+                                                    Value="{Binding Speed}"/>
+                                </Grid>
+                            </Grid>
+                        </telerik:GroupBox>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+    
+</Page>

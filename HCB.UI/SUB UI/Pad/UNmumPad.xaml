@@ -1,0 +1,107 @@
+﻿<telerik:RadWindow x:Class="HCB.UI.UNmumPad"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+        xmlns:local="clr-namespace:HCB.UI"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewTextInput="Window_PreviewTextInput"
+        Style="{StaticResource RadWindowStyle}"
+        mc:Ignorable="d"        
+        Header="KEY PAD" Height="300" Width="550">
+    <telerik:RadWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/Common/Styles/NumPadStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </telerik:RadWindow.Resources>
+
+    <Border Style="{StaticResource MainPanel}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.35*"></ColumnDefinition>
+                <ColumnDefinition Width="0.65*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
+            <!-- 정보 UI -->
+            <StackPanel Orientation="Vertical" Grid.Column="0"
+                      VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                      Margin="12" ClipToBounds="False">
+                <TextBlock Text="Current Value" Style="{StaticResource Tb}"></TextBlock>
+
+                <TextBox Text="{Binding CurrentValue}" Style="{StaticResource ValueInfoBox}"></TextBox>
+
+                <TextBlock Text="Maximum Value" Style="{StaticResource Tb}"></TextBlock>
+
+                <TextBox Text="{Binding MaximumValue}" Style="{StaticResource ValueInfoBox}"></TextBox>
+
+                <TextBlock Text="Minimum Value" Style="{StaticResource Tb}"></TextBlock>
+                <TextBox Text="{Binding MinimumValue}" Style="{StaticResource ValueInfoBox}"></TextBox>
+            </StackPanel>
+
+            <Grid Grid.Column="1" Margin="0,0,10,0" VerticalAlignment="Center">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="8"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- 표시부 -->
+                <TextBox x:Name="InputBox" Grid.Row="0"
+                         Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource ValueInfoBox}"
+                         FontSize="26" FontWeight="Bold"
+                         HorizontalContentAlignment="Right"
+                         VerticalContentAlignment="Center"
+                         Padding="8"
+                         InputMethod.IsInputMethodEnabled="False"
+                         LostFocus="InputBox_LostFocus"/>
+
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                                <!-- 1행: 7 8 9 C -->
+                    <Button Grid.Row="0" Grid.Column="0" Content="7" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="0" Grid.Column="1" Content="8" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="0" Grid.Column="2" Content="9" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="0" Grid.Column="3" Content="C" Style="{StaticResource CommandButton}" Click="OnClearAll"/>
+
+                                <!-- 2행: 4 5 6 ⌫ -->
+                    <Button Grid.Row="1" Grid.Column="0" Content="4" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="1" Grid.Column="1" Content="5" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="1" Grid.Column="2" Content="6" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="1" Grid.Column="3" Content="⌫" Style="{StaticResource CommandButton}" Click="OnBackspace"/>
+
+                                <!-- 3행: 1 2 3 - -->
+                    <Button Grid.Row="2" Grid.Column="0" Content="1" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="2" Grid.Column="1" Content="2" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="2" Grid.Column="2" Content="3" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="2" Grid.Column="3" Content="−" Style="{StaticResource CommandButton}" Click="OnDecrement"/>
+    
+                                <!-- 4행: 0 (빈칸) + -->
+                    <Button Grid.Row="3" Grid.Column="1" Content="0" Style="{StaticResource NumberButton}" Click="OnDigit"/>
+                    <Button Grid.Row="3" Grid.Column="2" Content="." Style="{StaticResource CommandButton}" Click="OnDot"/>
+                    <Button Grid.Row="3" Grid.Column="3" Content="＋" Style="{StaticResource CommandButton}" Click="OnIncrement"/>
+                    
+                    <Button Grid.Row="4" Grid.Column="2" Content="Apply" Click="OnApply" BorderBrush="Transparent" Background="Green"></Button>
+                    <Button Grid.Row="4" Grid.Column="3" Content="Cancel" Click="OnCancel" BorderBrush="Transparent" Background="Red"></Button>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+    
+</telerik:RadWindow>

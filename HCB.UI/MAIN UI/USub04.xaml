@@ -1,0 +1,123 @@
+﻿<Page x:Class="HCB.UI.USub04"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+      xmlns:local="clr-namespace:HCB.UI"
+      xmlns:uc="clr-namespace:HCB.UI"
+      mc:Ignorable="d" 
+      Title="USub04">
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/Common/Styles/DefaultResource.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
+    
+    <!-- 에러 로그 화면 -->
+    <Border>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.85*"></ColumnDefinition>
+                <ColumnDefinition Width="0.15*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Column="0" Grid.Row="0" Margin="10">
+                <telerik:RadHighlightTextBlock Text="에러 로그" 
+                                         FontSize="24" 
+                                         FontWeight="SemiBold" 
+                                         Style="{StaticResource RadHighlightTextBlockStyle}"/>
+            </Border>
+
+            <Grid Grid.Column="0" Grid.Row="1" local:GridHelper.Rows="1*, Auto">
+                <telerik:RadGridView
+                      ItemsSource="{Binding AlarmHistoryList}"
+                      SelectedItem="{Binding SelectedHistory, Mode=TwoWay}"
+                      Style="{StaticResource RadGridViewStyle}"
+                        ShowGroupPanel="False"
+                      AutoGenerateColumns="False"   
+                      IsReadOnly="True"
+                      VirtualizingPanel.IsVirtualizing="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling"
+                      EnableRowVirtualization="True"
+                      ScrollViewer.CanContentScroll="True"
+                      Margin="10">
+                    <telerik:RadGridView.Columns>
+                        <telerik:GridViewDataColumn Header="에러 번호" DataMemberBinding="{Binding Code}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="에러 내용" DataMemberBinding="{Binding Name}" Width="4*"/>
+                        <telerik:GridViewDataColumn Header="레벨" DataMemberBinding="{Binding Level}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="상태" DataMemberBinding="{Binding Status}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="발생 날짜" DataMemberBinding="{Binding CreateDate}" DataFormatString="{} {0:yyyy-MM-dd}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="발생 시각" DataMemberBinding="{Binding CreateTime}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="해제 시각" DataMemberBinding="{Binding ResetTime}" Width="1*"/>
+                        <telerik:GridViewDataColumn Header="조치 시간" DataMemberBinding="{Binding AcknowledgeTime}" Width="1*"/>
+                    </telerik:RadGridView.Columns>
+                </telerik:RadGridView>
+                <telerik:RadDataPager Grid.Row="1"
+                                      Margin="10,0,10,10"
+                                      DisplayMode="FirstLastPreviousNextNumeric"
+                                      IsTotalItemCountFixed="False"
+                                      PageSize="{Binding PageSize}"
+                                      ItemCount="{Binding TotalCount}"
+                                      PageIndex="{Binding CurrentPageIndex, Mode=TwoWay}" />
+            </Grid>
+            
+            
+            
+            <!-- 오른쪽 검색 패널 -->
+            <Grid Grid.Column="1" Grid.Row="1" Margin="8">
+                <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="검색" Padding="8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Grid.Row="0" Grid.Column="0" Text="Begin" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <telerik:RadDatePicker Grid.Row="0" Grid.Column="1"
+                                                SelectedValue="{Binding StartSearchDate, Mode=TwoWay}"
+                                                InputMode="DatePicker"
+                                                Margin="0,2"/>
+
+                        <telerik:RadDatePicker Grid.Row="1" Grid.Column="1"
+                                                SelectedDate="{Binding EndSearchDate, Mode=TwoWay}"
+                                                InputMode="DatePicker"
+                                                Margin="0,2"/>
+
+                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
+                                           Grid.Row="2" Grid.ColumnSpan="2"
+                                           Content="검색"
+                                           Command="{Binding SearchCommand}" />
+
+                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Grid.Row="3" Grid.ColumnSpan="2"
+                                            Content="알람 히스토리 생성"
+                                            Margin="0,12,0,0"
+                                            HorizontalAlignment="Stretch"
+                                            Command="{Binding HistoryCreateCommand}"/>
+                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Grid.Row="4" Grid.ColumnSpan="2"
+                                            Content="All Reset"
+                                            Margin="0,12,0,0"
+                                            HorizontalAlignment="Stretch"
+                                            Command="{Binding AllResetCommand}"/>
+                        
+                    </Grid>
+                </telerik:GroupBox>
+            </Grid>
+
+        </Grid>
+    </Border>
+    
+</Page>

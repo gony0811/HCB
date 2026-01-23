@@ -1,0 +1,352 @@
+﻿
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>HCB.UI</RootNamespace>
+    <EnableDefaultItems>False</EnableDefaultItems>
+    <Nullable>enable</Nullable>
+    <Platforms>AnyCPU;x86</Platforms>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.Extensions.Configuration.Binder.SourceGeneration</InterceptorsNamespaces>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac" Version="9.0.0" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
+    <PackageReference Include="PropertyTools.Wpf" Version="3.1.0" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Serilog.Sinks.SQLite" Version="6.0.0" />
+    <PackageReference Include="System.Reactive" Version="6.1.0" />
+    <PackageReference Include="Telerik.UI.for.Wpf.80" Version="2025.4.1111" />
+    <PackageReference Include="Telerik.Windows.Themes.Windows11.for.Wpf" Version="2025.4.1111" />
+  </ItemGroup>
+  
+  <ItemGroup>
+  <ApplicationDefinition Include="App.xaml">
+    <Generator>MSBuild:Compile</Generator>
+    <SubType>Designer</SubType>
+  </ApplicationDefinition>
+  <Page Include="MAIN UI\USub02.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\USub03.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\USub04.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\USub05.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\USub06.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\USub07.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\CreateModal\PromptModal.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\MotionMoveController\MotionMoveController.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\Pad\UNmumPad.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\Pad\UPasswordNPad.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\PromptModal\ParameterCreateWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\PromptModal\RecipeCreateWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\Slider\LabelSlider.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\SplashView\SplashView.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\Title\TitleBar.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub01Tab\StepSeqTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub08Tab\IoDeviceView.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SYSTEM\COMMON\Styles\ButtonsAndSwitches.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SYSTEM\COMMON\Styles\DefaultResource.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SYSTEM\COMMON\Styles\NumPadStyle.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SYSTEM\COMMON\Styles\Palette.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SYSTEM\COMMON\Styles\PasswordPadStyle.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SYSTEM\COMMON\Styles\UMainStyle.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\UMain.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\USub01.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MAIN UI\USub08.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="MainWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+    <SubType>Designer</SubType>
+  </Page>
+  <Page Include="SUB UI\CreateModal\CreateModal.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\PositionTable\PositionTable.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\MotorStatusTable\MotorStatusTable.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\StateCell\IoPillToggle.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\StateCell\MotorStateControl.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\StateCell\StateCell.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\TimeRange\TimeRange.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub01Tab\AutoTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub01Tab\LoadingTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub01Tab\ManualTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub08Tab\MotionDeviceView.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Compile Include="App.xaml.cs">
+    <DependentUpon>App.xaml</DependentUpon>
+    <SubType>Code</SubType>
+  </Compile>
+  <Compile Include="appsettings.Designer.cs">
+    <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    <AutoGen>True</AutoGen>
+    <DependentUpon>appsettings.json</DependentUpon>
+  </Compile>
+  <Compile Include="Converters\TupleConverter.cs" />
+  <Compile Include="DEVICE\CommonType\IoType.cs" />
+  <Compile Include="DEVICE\CommonType\ValueChangedEventArgs.cs" />
+  <Compile Include="DEVICE\Core\IOManager.cs" />
+  <Compile Include="DEVICE\Factory\IDeviceFactory.cs" />
+  <Compile Include="DEVICE\Factory\IoDataFactory.cs" />
+  <Compile Include="DEVICE\impl\motion\MotionStatusStream.cs" />
+  <Compile Include="DEVICE\Interface\device\IMotionDevice.cs" />
+  <Compile Include="DEVICE\Interface\IIoData.cs" />
+  <Compile Include="DEVICE\Interface\device\IIoDevice.cs" />
+  <Compile Include="DEVICE\impl\AbstractIoBase.cs" />
+  <Compile Include="DEVICE\impl\analog\AbstractAnalog.cs" />
+  <Compile Include="DEVICE\impl\analog\AnalogInput.cs" />
+  <Compile Include="DEVICE\impl\analog\AnalogOutput.cs" />
+  <Compile Include="DEVICE\impl\digital\AbstractDigital.cs" />
+  <Compile Include="DEVICE\impl\digital\DigitalInput.cs" />
+  <Compile Include="DEVICE\impl\digital\DigitalOutput.cs" />
+  <Compile Include="DEVICE\impl\motion\MotionStatus.cs" />
+  <Compile Include="DEVICE\Interface\IMotionStatusStream.cs" />
+  <Compile Include="DEVICE\PMAC IO\PmacIoDevice.cs" />
+  <Compile Include="MAIN UI\USub02.xaml.cs" />
+  <Compile Include="MAIN UI\USub03.xaml.cs" />
+  <Compile Include="MAIN UI\USub04.xaml.cs" />
+  <Compile Include="MAIN UI\USub05.xaml.cs" />
+  <Compile Include="MAIN UI\USub06.xaml.cs" />
+  <Compile Include="MAIN UI\USub07.xaml.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub02ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub03ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub04ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub05ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub06ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub07ViewModel.cs" />
+  <Compile Include="SERVICE\ExceptionType\ErrorException.cs" />
+  <Compile Include="SERVICE\Extenstions\IoExtensions.cs" />
+  <Compile Include="SERVICE\Extenstions\MotionConstants.cs" />
+  <Compile Include="SERVICE\Extenstions\MotionExtensions.cs" />
+  <Compile Include="SERVICE\Interface\ISequenceHelper.cs" />
+  <Compile Include="SERVICE\Helper\SequenceHelper.cs" />
+  <Compile Include="SERVICE\Interface\IOperationService.cs" />
+  <Compile Include="SERVICE\InterlockService.cs" />
+  <Compile Include="SERVICE\OperationService.cs" />
+  <Compile Include="SERVICE\SequenceService.cs" />
+  <Compile Include="SERVICE\Sequence\InitSequence.cs" />
+  <Compile Include="SERVICE\Sequence\MainSequence.cs" />
+  <Compile Include="SERVICE\Sequence\ManualSequence.cs" />
+  <Compile Include="SERVICE\Sequence\RunningTime.cs" />
+  <Compile Include="SERVICE\Sequence\SequenceEventHandler.cs" />
+  <Compile Include="SERVICE\Sequence\StepSequence.cs" />
+  <Compile Include="SERVICE\ViewModels\SequenceServiceVM.cs" />
+  <Compile Include="SUB UI\Behavior\BlinkBehavior.cs" />
+  <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
+  <Compile Include="SUB UI\MotionMoveController\MotionMoveController.xaml.cs" />
+  <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
+  <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
+  <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
+  <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
+  <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\StepLamp.cs" />
+  <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\MotionMoveVM.cs" />
+  <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
+  <Compile Include="SUB UI\PromptModal\ParameterCreateWindow.xaml.cs" />
+  <Compile Include="SUB UI\SplashView\SplashView.xaml.cs" />
+  <Compile Include="SUB UI\Title\TitleBar.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\IoDataCreateVM.cs" />
+  <Compile Include="SUB UI\ViewModels\IoDeviceDetatilViewModel.cs" />
+  <Compile Include="SUB UI\USub08Tab\IoDeviceView.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\PositionCreateVM.cs" />
+  <Compile Include="SUB UI\ViewModels\PromptDialogVM.cs" />
+  <Compile Include="SUB UI\ViewModels\RecipeCreateVM.cs" />
+  <Compile Include="SUB UI\ViewModels\RoleScreenVM.cs" />
+  <Compile Include="SUB UI\ViewModels\StepSeqTabViewModel.cs" />
+  <Compile Include="SYSTEM\COMMON\Types\EnumTypes.cs" />
+  <Compile Include="SYSTEM\DB\Dto\IODeviceUpdateDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\MotionControllerUpdateDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\ParameterCreateDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RecipeCreateDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RecipeDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RecipeParamDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\SharedIoState.cs" />
+  <Compile Include="SYSTEM\DB\Service\AlarmService.cs" />
+  <Compile Include="SYSTEM\COMMON\Converter\BoolToBrushConverter.cs" />
+  <Compile Include="SYSTEM\COMMON\Converter\BoolToTextConvert.cs" />
+  <Compile Include="SYSTEM\COMMON\Converter\KeyEqualsConverter.cs" />
+  <Compile Include="SYSTEM\COMMON\Converter\NotConverter.cs" />
+  <Compile Include="SYSTEM\DB\Dto\AlarmDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\AlarmHistoryDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\Authority.cs" />
+  <Compile Include="SYSTEM\DB\Dto\DeviceItem.cs" />
+  <Compile Include="SYSTEM\DB\Dto\MotionPositionCreate.cs" />
+  <Compile Include="SYSTEM\DB\Dto\MotorStateControlVM.cs" />
+  <Compile Include="SYSTEM\DB\Dto\ParameterModel.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RangeValue.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RolePermissionView.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RoleScreenDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\RoleScreensGroupVM.cs" />
+  <Compile Include="SYSTEM\DB\Dto\SensorIoItemViewModel.cs" />
+  <Compile Include="SYSTEM\DB\Service\DialogService.cs" />
+  <Compile Include="SYSTEM\DB\Service\RecipeService.cs" />
+  <Compile Include="SYSTEM\DB\Service\UserService.cs" />
+  <Compile Include="DEVICE\CommonType\MotionType.cs" />
+  <Compile Include="DEVICE\Factory\DeviceFactory.cs" />
+  <Compile Include="DEVICE\Core\DeviceManager.cs" />
+  <Compile Include="DEVICE\Factory\MotionFactory.cs" />
+  <Compile Include="DEVICE\Interface\IDevice.cs" />
+  <Compile Include="DEVICE\Interface\IAxis.cs" />
+  <Compile Include="DEVICE\impl\motion\DAxis.cs" />
+  <Compile Include="DEVICE\impl\motion\DMotionParameter.cs" />
+  <Compile Include="DEVICE\impl\motion\DMotionPosition.cs" />
+  <Compile Include="DEVICE\POWER PMAC\Core\PowerPmacDevice.cs" />
+  <Compile Include="DEVICE\POWER PMAC\Driver\DTKPowerPmacDriver.cs" />
+  <Compile Include="DEVICE\POWER PMAC\Interface\IDTKPowerPmac.cs" />
+  <Compile Include="DEVICE\POWER PMAC\Interface\impl\DTKPowerPmac.cs" />
+  <Compile Include="MAIN UI\UMain.xaml.cs" />
+  <Compile Include="MAIN UI\USub01.xaml.cs" />
+  <Compile Include="MAIN UI\USub08.xaml.cs" />
+  <Compile Include="MAIN UI\ViewModels\NavigationViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\TableManagerViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\UMainViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub01ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub08ViewModel.cs" />
+  <Compile Include="MainWindow.xaml.cs">
+    <DependentUpon>MainWindow.xaml</DependentUpon>
+    <SubType>Code</SubType>
+  </Compile>
+  <Compile Include="StartUp.cs" />
+  <Compile Include="SUB UI\CreateModal\CreateModal.xaml.cs" />
+  <Compile Include="SUB UI\PositionTable\PositionTable.xaml.cs" />
+  <Compile Include="SUB UI\PositionTable\PositionTableViewModel.cs" />
+  <Compile Include="SUB UI\Helper\GridHelper.cs" />
+  <Compile Include="SUB UI\Helper\NumericTextBox.cs" />
+  <Compile Include="SUB UI\Helper\ValueTemplateSelector.cs" />
+  <Compile Include="SUB UI\MotorStatusTable\MotorStatusTable.xaml.cs" />
+  <Compile Include="SUB UI\StateCell\IoPillToggle.xaml.cs" />
+  <Compile Include="SUB UI\StateCell\MotorStateControl.xaml.cs" />
+  <Compile Include="SUB UI\StateCell\StateCell.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\StateCellVM.cs" />
+  <Compile Include="SUB UI\StateCell\Type.cs" />
+  <Compile Include="SUB UI\TimeRange\TimeRange.xaml.cs" />
+  <Compile Include="SUB UI\TimeRange\TimeRangeViewModel.cs" />
+  <Compile Include="SUB UI\USub01Tab\AutoTab.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\AutoTabViewModel.cs" />
+  <Compile Include="SUB UI\USub01Tab\LoadingTab.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\ManualTab.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\ManualTabViewModel.cs" />
+  <Compile Include="SUB UI\USub01Tab\RunInformation.cs" />
+  <Compile Include="SUB UI\USub01Tab\RunningStatus.cs" />
+  <Compile Include="SUB UI\ViewModels\DeviceCreateVM.cs" />
+  <Compile Include="SUB UI\USub08Tab\DeviceDetailTemplateSelector.cs" />
+  <Compile Include="SUB UI\USub08Tab\DeviceDetailViewModelFactory.cs" />
+  <Compile Include="SUB UI\ViewModels\MotionCreateVM.cs" />
+  <Compile Include="SUB UI\ViewModels\MotionDeviceDetailViewModel.cs" />
+  <Compile Include="SUB UI\USub08Tab\MotionDeviceView.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\MotionParameterCreateVM.cs" />
+  <Compile Include="SYSTEM\Logging\GridLogSink.cs" />
+  <Compile Include="SYSTEM\Logging\LogMessage.cs" />
+  <Compile Include="SYSTEM\Logging\TextBoxSink.cs" />
+  <Compile Include="SYSTEM\Options\DataOptions.cs" />
+  <Compile Include="SYSTEM\SystemStatus.cs" />
+</ItemGroup>
+  
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>appsettings.Designer.cs</LastGenOutput>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\HCB\HCB.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Content Include="DEVICE\dll\PowerPmac32.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DEVICE\dll\PowerPmac64.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>
