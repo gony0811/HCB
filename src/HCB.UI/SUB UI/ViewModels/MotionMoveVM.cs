@@ -40,7 +40,7 @@ namespace HCB.UI
         [ObservableProperty] public IAxis axis;
 
         public MotionMoveVM(ILogger logger)
-        {
+        {      
             this._logger = logger.ForContext<MotionMoveVM>();
         }
 
@@ -62,7 +62,7 @@ namespace HCB.UI
                     return;
                 }
 
-                if (Axis.CurrentPosition + Pitch >= Axis.LimitMinPosition
+                if ( Axis.CurrentPosition + Pitch >= Axis.LimitMinPosition 
                     && Axis.CurrentPosition + Pitch <= Axis.LimitMaxPosition)
                 {
                     await Axis.Move(MoveType.Relative, Axis.SetSpeed, Pitch);
@@ -129,7 +129,7 @@ namespace HCB.UI
                     return;
                 }
 
-                await Axis.JogMove(JogMoveType.Plus, Speed);
+                await Axis.JogMove(JogMoveType.Plus, Axis.SetSpeed);
             }
             catch (Exception e)
             {
@@ -159,7 +159,7 @@ namespace HCB.UI
                     return;
                 }
 
-                await Axis.JogMove(JogMoveType.Minus, Speed);
+                await Axis.JogMove(JogMoveType.Minus, Axis.SetSpeed);
             }
             catch (Exception e)
             {
@@ -169,11 +169,11 @@ namespace HCB.UI
 
         [RelayCommand]
         public async Task JogStop()
-        {
+        { 
             if (Axis == null) return;
             try
             {
-                await Axis.JogMove(JogMoveType.Stop, 0);
+                 await Axis.JogMove(JogMoveType.Stop, 0);
             }
             catch (Exception e)
             {

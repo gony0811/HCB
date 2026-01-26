@@ -109,7 +109,7 @@ namespace HCB.UI
                         : errorMsg;
                     
                     logger.Error($"[Sequence] WaitUntilAsync 타임아웃: {message}");
-                    throw new TimeoutException(message);
+                    return;
                 }
 
                 // 짧은 대기 후 다시 확인

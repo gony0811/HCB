@@ -304,6 +304,7 @@ namespace HCB.UI
                                 Address = ioData.Address,
                                 Index = ioData.Index,
                                 IoType = ioData.IoDataType,
+                                Device = device
                             });
                             break;
                         case IoType.DigitalOutput:
@@ -314,6 +315,7 @@ namespace HCB.UI
                                 Address = ioData.Address,
                                 Index = ioData.Index,
                                 IoType = ioData.IoDataType,
+                                Device = device
                             });
                             break;
                         case IoType.AnalogInput:
@@ -324,6 +326,7 @@ namespace HCB.UI
                                 Address = ioData.Address,
                                 Index = ioData.Index,
                                 IoType = ioData.IoDataType,
+                                Device = device
                             });
                             break;
                         case IoType.AnalogOutput:
@@ -334,6 +337,7 @@ namespace HCB.UI
                                 Address = ioData.Address,
                                 Index = ioData.Index,
                                 IoType = ioData.IoDataType,
+                                Device = device
                             });
                             break;
                     }

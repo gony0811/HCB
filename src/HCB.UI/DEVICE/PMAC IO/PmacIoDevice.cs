@@ -27,6 +27,7 @@ namespace HCB.UI
 
         private ILogger logger;
         private uint uDeviceId;
+        private bool bInitialized = false;
 
         public PmacIoDevice()
         {
@@ -54,6 +55,8 @@ namespace HCB.UI
                     uRet = DTKPowerPmac.Instance.SendCommandA(uDeviceId, byCommand);
                     IsConnected = true;
                     this.logger.Information("Power PMAC IO Device Connected. IP: {Ip}", Ip);
+
+                    
                 }
                 else
                 {
@@ -125,17 +128,30 @@ namespace HCB.UI
 
                     //strCommand = string.Format("{0}{1:D3}", io.Address, io.Index);
 
+                    if (bInitialized && (io.IoType == IoType.DigitalOutput || io.IoType == IoType.AnalogOutput))
+                    {
+                        continue;
+                    }
+
                     strResponse = SendCommand<string>(strCommand).Result;     
 
                     switch (io.IoType)
                     {
+                        case IoType.AnalogOutput:
+                            double aoVal = Double.Parse(strResponse);
+                            (io as AnalogOutput).Value = aoVal;
+                            break;
                         case IoType.AnalogInput:
-                            double dVal = Double.Parse(strResponse);
-                            (io as AnalogInput).Value = dVal;
+                            double aiVal = Double.Parse(strResponse);
+                            (io as AnalogInput).Value = aiVal;
+                            break;
+                        case IoType.DigitalOutput:
+                            uint doVal = uint.Parse(strResponse);
+                            (io as DigitalOutput).Value = doVal > 0 ? true : false;
                             break;
                         case IoType.DigitalInput:
-                            uint iVal = uint.Parse(strResponse);
-                            (io as DigitalInput).Value = iVal > 0 ? true : false;
+                            uint diVal = uint.Parse(strResponse);
+                            (io as DigitalInput).Value = diVal > 0 ? true : false;
                             break;
                     }
                 }
@@ -143,7 +159,13 @@ namespace HCB.UI
                 {
                     // 예외 처리 로직
                 }
+                finally
+                {
+                    
+                }
             }
+
+            if (!bInitialized) bInitialized = true;
 
             return Task.Delay(10);
         }

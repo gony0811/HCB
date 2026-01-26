@@ -46,7 +46,6 @@ namespace HCB.UI
         {
             Byte[] byCommand;
             UInt32 uRet;
-            uDeviceId = 0;
             uRet = DTKPowerPmac.Instance.Connect(uDeviceId);
 
             if ((DTK_STATUS)uRet == DTK_STATUS.DS_Ok)
@@ -91,8 +90,8 @@ namespace HCB.UI
                 strIP = Ip.Split('.');
                 uIPAddress = (Convert.ToUInt32(strIP[0]) << 24) | (Convert.ToUInt32(strIP[1]) << 16) | (Convert.ToUInt32(strIP[2]) << 8) | Convert.ToUInt32(strIP[3]);
 
-
                 uDeviceId = DTKPowerPmac.Instance.Open(uIPAddress, (uint)DTK_MODE_TYPE.DM_GPASCII);
+                
             }
             catch (Exception ex)
             {

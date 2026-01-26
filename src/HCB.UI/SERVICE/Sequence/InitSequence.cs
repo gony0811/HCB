@@ -30,13 +30,13 @@ namespace HCB.UI
                     this._logger.Warning("MachineInitAsync를 실행할 수 없습니다: 설비 상태가 다운 상태 입니다. 알람을 조치하고 설비를 리셋하십시요.");
                     return;
                 }
-
+                
                 this._logger.Debug("MachineInitAsync 시작");
 
                 await Init_PreCheck(ct);
                 await Init_Head(ct);
                 await Init_WTable(ct);
-                await Init_PTable(ct);
+                await Init_PTable(ct);         
                 await Init_DTable(ct);
             }
             catch (OperationCanceledException)
@@ -101,12 +101,12 @@ namespace HCB.UI
                 // (옵션) 하나라도 실패했는지 확인하려면
                 bool isAllSuccess = results.All(r => r == true);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 this._logger.Error(e, "전체 서보온 중 오류 발생");
             }
         }
-        // 전체 서보오프 
+
         public async Task Init_ServoAllOff(CancellationToken ct)
         {
             try
@@ -145,7 +145,7 @@ namespace HCB.UI
 
                 // 초기화 전에 서보 온, 홈 완료, 정지상태 확인
                 if (p_y.IsEnabled == false || p_y.IsHomeDone != true || p_y.IsBusy)
-                {
+                { 
                     throw new Exception("P-Table 초기화 실패: 서보가 켜져 있지 않거나, 홈이 완료되지 않았거나, 축이 움직이고 있습니다.");
                 }
                 else if (H_Z?.CurrentPosition <= (headSafetyHeight - H_Z?.InpositionRange)) // Head가 안전 높이보다 낮은 경우 (0에 가까우면 높은 위치)
@@ -183,7 +183,7 @@ namespace HCB.UI
 
                 if (H_Z is null || !H_Z.IsEnabled || !H_Z.IsHomeDone) throw new Exception("H_Z축이 준비되지 않았습니다. H_Z축 Servo On, Home 실행여부를 확인하십시요.");
                 if (h_z is null || !h_z.IsEnabled || !h_z.IsHomeDone) throw new Exception("h_z축이 준비되지 않았습니다. h_z축 Servo On, Home 실행여부를 확인하십시요.");
-                if (H_X is null || !H_X.IsEnabled || !H_X.IsHomeDone) throw new Exception("H_X축이 준비되지 않았습니다. H_X축 Servo On, Home 실행여부를 확인하십시요.");
+                if (H_X is null || !H_X.IsEnabled || !H_X.IsHomeDone) throw new Exception("H_X축이 준비되지 않았습니다. H_X축 Servo On, Home 실행여부를 확인하십시요.");              
 
 
                 if (H_Z.IsBusy || h_z.IsBusy || H_X.IsBusy) throw new Exception("Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");

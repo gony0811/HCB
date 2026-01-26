@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HCB.UI
 {
-    public interface IAxis
+    public interface IAxis 
     {
         int Id { get; set; }
         string Name { get; set; }
