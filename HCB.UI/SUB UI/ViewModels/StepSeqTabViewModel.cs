@@ -105,7 +105,7 @@ namespace HCB.UI
         [RelayCommand]
         public async Task WaferPinDown(CancellationToken ct)
         {
-            await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct); // W-Table 리프트 핀 다운
+            await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct); // W-Table 리프트 핀 다운
         }
     }
 }
