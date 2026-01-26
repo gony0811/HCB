@@ -40,7 +40,7 @@ namespace HCB.UI
         [ObservableProperty] public IAxis axis;
 
         public MotionMoveVM(ILogger logger)
-        {      
+        {
             this._logger = logger.ForContext<MotionMoveVM>();
         }
 
@@ -62,14 +62,14 @@ namespace HCB.UI
                     return;
                 }
 
-                if ( Axis.CurrentPosition + Pitch >= Axis.LimitMinPosition 
+                if (Axis.CurrentPosition + Pitch >= Axis.LimitMinPosition
                     && Axis.CurrentPosition + Pitch <= Axis.LimitMaxPosition)
                 {
                     await Axis.Move(MoveType.Relative, Axis.SetSpeed, Pitch);
                 }
                 else
                 {
-                    this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, Speed, Axis.LimitMinPosition, Axis.LimitMaxPosition);
+                    this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, Axis.SetSpeed, Axis.LimitMinPosition, Axis.LimitMaxPosition);
                 }
             }
             catch (Exception e)
@@ -123,9 +123,9 @@ namespace HCB.UI
                     this._logger.Warning("{axis} is busy.", Axis.Name);
                     return;
                 }
-                else if (Axis.LimitMinSpeed > Speed || Axis.LimitMaxSpeed < Speed)
+                else if (Axis.LimitMinSpeed > Axis.SetSpeed || Axis.LimitMaxSpeed < Axis.SetSpeed)
                 {
-                    this._logger.Warning("{axis} speed {speed} is out of range [{min},{max}].", Axis.Name, Speed, Axis.LimitMinSpeed, Axis.LimitMaxSpeed);
+                    this._logger.Warning("{axis} speed {speed} is out of range [{min},{max}].", Axis.Name, Axis.SetSpeed, Axis.LimitMinSpeed, Axis.LimitMaxSpeed);
                     return;
                 }
 
@@ -153,9 +153,9 @@ namespace HCB.UI
                     this._logger.Warning("{axis} is busy.", Axis.Name);
                     return;
                 }
-                else if (Axis.LimitMinSpeed > Speed || Axis.LimitMaxSpeed < Speed)
+                else if (Axis.LimitMinSpeed > Axis.SetSpeed || Axis.LimitMaxSpeed < Axis.SetSpeed)
                 {
-                    this._logger.Warning("{axis} speed {speed} is out of range [{min},{max}].", Axis.Name, Speed, Axis.LimitMinSpeed, Axis.LimitMaxSpeed);
+                    this._logger.Warning("{axis} speed {speed} is out of range [{min},{max}].", Axis.Name, Axis.SetSpeed, Axis.LimitMinSpeed, Axis.LimitMaxSpeed);
                     return;
                 }
 
@@ -169,11 +169,11 @@ namespace HCB.UI
 
         [RelayCommand]
         public async Task JogStop()
-        { 
+        {
             if (Axis == null) return;
             try
             {
-                 await Axis.JogMove(JogMoveType.Stop, 0);
+                await Axis.JogMove(JogMoveType.Stop, 0);
             }
             catch (Exception e)
             {

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HCB.UI
 {
-    public interface IAxis 
+    public interface IAxis
     {
         int Id { get; set; }
         string Name { get; set; }
@@ -40,7 +40,8 @@ namespace HCB.UI
         ObservableCollection<DMotionParameter> ParameterList { get; set; }
         ObservableCollection<DMotionPosition> PositionList { get; set; }
 
-        Task ServoOn();
+        Task<bool> ServoOn();
+        Task<bool> ServoOff();
 
         Task ServoReady(bool ready);    // 서보 온
 
