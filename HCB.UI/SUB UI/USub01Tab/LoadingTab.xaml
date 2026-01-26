@@ -81,9 +81,6 @@
                                             Command="{Binding ToggleCommand}"
                                             CommandParameter="{Binding}"/>
                                 </StackPanel>
-                                    <!-- 센서 이름 -->
-                                    
-                                
                             </Border>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

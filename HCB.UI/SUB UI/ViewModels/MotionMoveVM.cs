@@ -69,7 +69,7 @@ namespace HCB.UI
                 }
                 else
                 {
-                    this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, Speed, Axis.LimitMinPosition, Axis.LimitMaxPosition);
+                    this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, Axis.SetSpeed, Axis.LimitMinPosition, Axis.LimitMaxPosition);
                 }
             }
             catch (Exception e)
@@ -123,13 +123,13 @@ namespace HCB.UI
                     this._logger.Warning("{axis} is busy.", Axis.Name);
                     return;
                 }
-                else if (Axis.LimitMinSpeed > Speed || Axis.LimitMaxSpeed < Speed)
+                else if (Axis.LimitMinSpeed > Axis.SetSpeed || Axis.LimitMaxSpeed < Axis.SetSpeed)
                 {
-                    this._logger.Warning("{axis} speed {speed} is out of range [{min},{max}].", Axis.Name, Speed, Axis.LimitMinSpeed, Axis.LimitMaxSpeed);
+                    this._logger.Warning("{axis} speed {speed} is out of range [{min},{max}].", Axis.Name, Axis.SetSpeed, Axis.LimitMinSpeed, Axis.LimitMaxSpeed);
                     return;
                 }
 
-                await Axis.JogMove(JogMoveType.Plus, Speed);
+                await Axis.JogMove(JogMoveType.Plus, Axis.SetSpeed);
             }
             catch (Exception e)
             {
@@ -153,13 +153,13 @@ namespace HCB.UI
                     this._logger.Warning("{axis} is busy.", Axis.Name);
                     return;
                 }
-                else if (Axis.LimitMinSpeed > Speed || Axis.LimitMaxSpeed < Speed)
+                else if (Axis.LimitMinSpeed > Axis.SetSpeed || Axis.LimitMaxSpeed < Axis.SetSpeed)
                 {
-                    this._logger.Warning("{axis} speed {speed} is out of range [{min},{max}].", Axis.Name, Speed, Axis.LimitMinSpeed, Axis.LimitMaxSpeed);
+                    this._logger.Warning("{axis} speed {speed} is out of range [{min},{max}].", Axis.Name, Axis.SetSpeed, Axis.LimitMinSpeed, Axis.LimitMaxSpeed);
                     return;
                 }
 
-                await Axis.JogMove(JogMoveType.Minus, Speed);
+                await Axis.JogMove(JogMoveType.Minus, Axis.SetSpeed);
             }
             catch (Exception e)
             {

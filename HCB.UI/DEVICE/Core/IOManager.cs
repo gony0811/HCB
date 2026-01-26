@@ -32,7 +32,7 @@ namespace HCB.UI.DEVICE.Core
             this.device = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
             var ioList = await ioRepository.ListAsync(x => x.IsEnabled);
             foreach (var io in ioList) {
-                _sharedIoStates.Add(io.Name, new SharedIoState());
+                _sharedIoStates.Add(io.Name, new SharedIoState { IsChecked = device.GetDigital(io.Name)});
             }
         }
 
