@@ -106,7 +106,7 @@ namespace HCB.UI
                 this._logger.Error(e, "전체 서보온 중 오류 발생");
             }
         }
-
+        // 전체 서보오프 
         public async Task Init_ServoAllOff(CancellationToken ct)
         {
             try
