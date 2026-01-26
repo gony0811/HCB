@@ -67,7 +67,7 @@ namespace HCB.UI
             {
                 InpositionRange = 1;
             }
-            
+
         }
 
         [RelayCommand]
@@ -100,48 +100,105 @@ namespace HCB.UI
                     }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 MessageBox.Show($"에러: \n {e.Message}");
             }
-            
+
         }
 
 
         [RelayCommand]
-        public async Task ServoOn()
+        public async Task<bool> ServoOn()
         {
 
-            logger.Information("ServoOn/Off Command Sent: {Name}, IsEnabled: {IsEnabled}", Name, IsEnabled);
-
-            if (Device?.IsConnected != true || Device?.IsEnabled != true)
+            if (Device?.IsConnected != true)
             {
-                return;
+                return false;
             }
+            string command = $"#{MotorNo}J/";
 
-            // 2. 현재 상태에 따른 명령 생성 및 사전 처리
-            string command = IsEnabled
-                ? $"#{MotorNo}K"  // Servo On -> Off 시퀀스
-                : $"#{MotorNo}J/";   // Servo Off -> On 시퀀스
-
-            if (IsEnabled)
-            {
-                IsHomeDone = false; 
-            }
+            if (IsEnabled) return true;
 
             try
             {
                 await Device.SendCommand(command);
+                await Task.Delay(1000);
+
+                if (IsEnabled)
+                {
+                    logger.Information($"{Name}: Servo On Success");
+                }
+                else
+                {
+                    throw new Exception("Servo On Failed");
+                }
+                return IsEnabled;
             }
             catch (Exception ex)
             {
-                // 로그 기록 및 사용자 알림 (예시)
-                // logger.LogError(ex, "Servo Command 전송 실패");
-                // dialogService.ShowMessage("통신 에러", ex.Message);
+                logger.Error($"{Name}: Servo On Failed");
+                return false;
             }
+            //// 2. 현재 상태에 따른 명령 생성 및 사전 처리
+            //string command = IsEnabled
+            //    ? $"#{MotorNo}K"  // Servo On -> Off 시퀀스
+            //    : $"#{MotorNo}J/";   // Servo Off -> On 시퀀스
+
+            //if (IsEnabled)
+            //{
+            //    IsHomeDone = false; 
+            //}
+
+            //try
+            //{
+            //    await Device.SendCommand(command);
+            //    await Task.Delay(1000);
+            //    logger.Information($"{Name}: {(IsEnabled ? "Servo ON" : "Servo Off")}");
+            //    return IsEnabled;
+            //}
+            //catch (Exception ex)
+            //{
+            //    // 로그 기록 및 사용자 알림 (예시)
+            //    logger.Error(ex, "Servo Command 전송 실패");
+            //    // dialogService.ShowMessage("통신 에러", ex.Message);
+            //}
+
+            //return IsEnabled;
         }
 
+        [RelayCommand]
+        public async Task<bool> ServoOff()
+        {
 
+            if (Device?.IsConnected != true)
+            {
+                return false;
+            }
+            string command = $"#{MotorNo}K/";
+
+            if (!IsEnabled) return false;
+
+            try
+            {
+                await Device.SendCommand(command);
+                await Task.Delay(1000);
+                if (!IsEnabled)
+                {
+                    logger.Information($"{Name}: Servo Off Success");
+                }
+                else
+                {
+                    throw new Exception("Servo Off Fail");
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.Information($"{Name}: Servo Off Failed");
+                return false;
+            }
+        }
 
         public Task ServoReady(bool ready)
         {
@@ -154,7 +211,7 @@ namespace HCB.UI
 
             if (ready)
             {
-                
+
                 //cmd = string.Format("#{0}J/ #{0}$", MotorNo);
 
                 cmd = string.Format("#{0}J/", MotorNo);
@@ -166,12 +223,12 @@ namespace HCB.UI
 
             if (Device?.IsConnected == true && Device?.IsEnabled == true)
             {
-                return Device.SendCommand(cmd);              
+                return Device.SendCommand(cmd);
             }
             else
             {
                 return Task.CompletedTask;
-            }     
+            }
         }
 
         public async Task Move(MoveType moveType, double velocity, double position)
@@ -253,7 +310,7 @@ namespace HCB.UI
 
         public Task JogMove(JogMoveType moveType, double jogSpeed)
         {
-             this.logger.Information($"{Name}, {moveType.ToString()}, JogSpeed: {jogSpeed}");
+            this.logger.Information($"{Name}, {moveType.ToString()}, JogSpeed: {jogSpeed}");
 
             try
             {
@@ -273,12 +330,12 @@ namespace HCB.UI
                         //string cmd = string.Format("#{0:D}J/", MotorNo);
 
                         return Device.SendCommand(cmd);
-                    }    
+                    }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                
+
             }
             return Task.CompletedTask;
         }
@@ -310,6 +367,5 @@ namespace HCB.UI
                 return Task.CompletedTask;
             }
         }
-
     }
 }

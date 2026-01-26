@@ -34,6 +34,14 @@
                     <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding StepDieAlignCommand}">
                         <telerik:HighlightTextBlock Text="Die Align"/>
                     </telerik:RadButton>
+
+                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding StepDieAlignCommand}">
+                        <telerik:HighlightTextBlock Text="Servo All On"/>
+                    </telerik:RadButton>
+
+                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding StepDieAlignCommand}">
+                        <telerik:HighlightTextBlock Text="Servo All Off"/>
+                    </telerik:RadButton>
                 </StackPanel>
             </Grid>
         </telerik:RadTabItem>
