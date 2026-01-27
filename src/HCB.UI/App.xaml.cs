@@ -112,9 +112,27 @@ namespace HCB.UI
             }
 
             SplashScreenUpdate("백그라운드 서비스 시작", 30);
+
             await _host.StartAsync();
 
+            var deviceManager = _host.Services.GetRequiredService<DeviceManager>();
 
+            bool bConnected = true;
+
+            do 
+            {
+                bConnected = true;
+
+                foreach (var device in deviceManager.Devices)
+                {
+                    bConnected &= device.IsConnected;
+                }
+
+                
+
+            } while(!bConnected);
+
+            SplashScreenUpdate("장치 연결 시도 중...", 50);
         }
            
 

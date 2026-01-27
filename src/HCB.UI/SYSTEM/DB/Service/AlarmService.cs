@@ -59,14 +59,16 @@ namespace HCB.UI
         /* ============================
          * Alarm 발생 (Set)
          * ============================ */
-        public async Task SetAlarm(int id)
+        public Task SetAlarm(int id)
         {
             var alarm = FindAlarm(id);
             if (alarm != null)
             {
                 alarm.LastRaisedAt = DateTime.Now;
-                await ProcessSetAlarm(alarm);
+                return ProcessSetAlarm(alarm);
             }
+
+            return Task.CompletedTask;
         }
 
         public async Task SetAlarm(string code)
@@ -108,8 +110,12 @@ namespace HCB.UI
             if (!_isModalOpen)
             {
                 // WPF UI 스레드에서 실행 보장
-                App.Current.Dispatcher.Invoke(() =>
+                // InvokeAsync를 사용하고 await 하지 않음으로써(Fire-and-forget), 
+                // ShowDialog()로 인한 블로킹이 작업 스레드의 다음 시퀀스 진행을 막지 않도록 함.
+                _ = App.Current.Dispatcher.InvokeAsync(() =>
                 {
+                    // 비동기 처리로 인한 시점 차이로 이미 모달이 열려있는지 안전하게 재확인
+                    if (_isModalOpen) return;
                     RaiseAlarmModal(alarm);
                 });
             }
