@@ -111,28 +111,61 @@ namespace HCB.UI
                 throw new InvalidOperationException("호스트가 초기화되지 않았습니다. StartUp.BuildHost가 null을 반환했습니다.");
             }
 
-            SplashScreenUpdate("백그라운드 서비스 시작", 30);
+            SplashScreenUpdate("장치 연결 시도 중...", 30);
 
-            await _host.StartAsync();
+            var systemMainService = _host.Services.GetRequiredService<SystemMainService>();
+
+            await systemMainService.StartAsync();
+
+           
 
             var deviceManager = _host.Services.GetRequiredService<DeviceManager>();
 
-            bool bConnected = true;
+            // 10초 타임아웃 설정
+            var timeout = TimeSpan.FromSeconds(10);
+            var startTime = DateTime.Now;
+            bool bConnected = false;
 
-            do 
+            while ((DateTime.Now - startTime) < timeout)
             {
                 bConnected = true;
-
                 foreach (var device in deviceManager.Devices)
                 {
-                    bConnected &= device.IsConnected;
+                    if (!device.IsConnected)
+                    {
+                        bConnected = false;
+                        break;
+                    }
                 }
 
+                if (bConnected)
+                {
+                    break;
+                }
+
+                // 경과 시간에 따른 진행률 업데이트 (30% -> 90%)
+                var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
+                int progress = Convert.ToInt32(30 + (elapsed / timeout.TotalMilliseconds) * 60);
+                SplashScreenUpdate("장치 연결 시도 중...", Math.Min(progress, 90));
+
+                await Task.Delay(100);
+
                 
+            }
 
-            } while(!bConnected);
+            if (!bConnected)
+            {
+                // 타임아웃 발생 시 처리 (예: 로그 기록, 사용자 알림 등)
+                // 필요에 따라 예외를 던지거나 경고 메시지를 표시할 수 있습니다.
+                // throw new TimeoutException("장치 연결 시간이 초과되었습니다.");
+                SplashScreenUpdate("장치 연결 실패", 90);
+            }
+            else
+            {
+                SplashScreenUpdate("장치 연결 완료", 90);
+            }
 
-            SplashScreenUpdate("장치 연결 시도 중...", 50);
+            await _host.StartAsync();
         }
            
 
@@ -156,6 +189,8 @@ namespace HCB.UI
             using (_host)
             {
                 _host.StopAsync();
+                var systemMainService = _host.Services.GetRequiredService<SystemMainService>();
+                _ = systemMainService.StopAsync();
             }
                 try { _mutex?.ReleaseMutex(); } catch { /* ignore */ }
             _mutex?.Dispose();

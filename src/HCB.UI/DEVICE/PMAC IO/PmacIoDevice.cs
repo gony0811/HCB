@@ -39,14 +39,14 @@ namespace HCB.UI
             this.logger = logger.ForContext<PmacIoDevice>();
         }
 
-        public Task Connect()
+        public async Task Connect()
         {
             Byte[] byCommand;
             UInt32 uRet;
 
             try
             {
-                uRet = DTKPowerPmac.Instance.Connect(uDeviceId);
+                uRet = await Task.Run(() => DTKPowerPmac.Instance.Connect(uDeviceId));
 
                 if ((DTK_STATUS)uRet == DTK_STATUS.DS_Ok)
                 {
@@ -70,24 +70,20 @@ namespace HCB.UI
                 this.logger.Error(ex, "Power PMAC IO Device Connection Failed. IP: {Ip}", Ip);
                 IsConnected = false;
             }
-
-            return Task.CompletedTask;
         }
 
-        public Task Disconnect()
+        public async Task Disconnect()
         {
             if (IsConnected)
             {
                 DTKPowerPmac.Instance.IsConnected(uDeviceId, out int connected);
 
                 if (connected == 1)
-                    DTKPowerPmac.Instance.Disconnect(uDeviceId);
+                    await Task.Run(() => DTKPowerPmac.Instance.Disconnect(uDeviceId));
                 DTKPowerPmac.Instance.Close(uDeviceId);
                 uDeviceId = int.MaxValue;
                 IsConnected = false;
             }
-
-            return Task.CompletedTask;
         }
 
         public Task Initialize()

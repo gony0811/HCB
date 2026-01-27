@@ -206,6 +206,7 @@
   <Compile Include="SERVICE\Extenstions\IoExtensions.cs" />
   <Compile Include="SERVICE\Extenstions\MotionConstants.cs" />
   <Compile Include="SERVICE\Extenstions\MotionExtensions.cs" />
+  <Compile Include="SERVICE\Interface\IMainService.cs" />
   <Compile Include="SERVICE\Interface\ISequenceHelper.cs" />
   <Compile Include="SERVICE\Helper\SequenceHelper.cs" />
   <Compile Include="SERVICE\Interface\IOperationService.cs" />
@@ -218,6 +219,7 @@
   <Compile Include="SERVICE\Sequence\RunningTime.cs" />
   <Compile Include="SERVICE\Sequence\SequenceEventHandler.cs" />
   <Compile Include="SERVICE\Sequence\StepSequence.cs" />
+  <Compile Include="SERVICE\SystemMainService.cs" />
   <Compile Include="SERVICE\ViewModels\SequenceServiceVM.cs" />
   <Compile Include="SUB UI\Alarm\SetAlarmView.xaml.cs" />
   <Compile Include="SUB UI\Behavior\BlinkBehavior.cs" />
