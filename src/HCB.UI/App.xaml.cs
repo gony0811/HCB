@@ -93,10 +93,10 @@ namespace HCB.UI
             var mainWindow = _host.Services.GetRequiredService<UMain>();
 
             FluentPalette.LoadPreset(FluentPalette.ColorVariation.Dark);
-            FluentPalette palette = FluentPalette.Palette;
-            // 2. 원하는 색상으로 강조 색상 (Accent Color) 변경
-            // 예: Telerik의 기본 파란색 대신 진한 주황색으로 변경
-            palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
+            //FluentPalette palette = FluentPalette.Palette;
+            //// 2. 원하는 색상으로 강조 색상 (Accent Color) 변경
+            //// 예: Telerik의 기본 파란색 대신 진한 주황색으로 변경
+            //palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
             RadWindowInteropHelper.SetShowInTaskbar(mainWindow, true);
 
             mainWindow.Show();

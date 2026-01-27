@@ -21,7 +21,6 @@ namespace HCB.UI
         private readonly OperationService _operationService;
         private readonly AlarmService _alarmService;
         private readonly SequenceServiceVM _sequenceServiceVM;
-        private readonly Timer _timer;
         private readonly bool _simulation;
         private readonly SemaphoreSlim _pollingLock = new SemaphoreSlim(1, 1);
 
