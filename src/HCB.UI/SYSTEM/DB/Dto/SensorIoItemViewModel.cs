@@ -74,7 +74,7 @@ namespace HCB.UI
             if (IsReadOnly) return;
             try
             {
-                _device.SetDigital(IoName, !IsChecked);
+                _device.SetDigital(IoName, IsChecked);
             }catch(Exception e)
             {
                 _logger.Error(e.Message);

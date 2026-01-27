@@ -93,6 +93,7 @@
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                     <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="되돌리기" Width="90" Height="30" Command="{Binding DiscardCommand}" />
                     <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="저장" Width="80" Height="30" Command="{Binding SaveAlarmCommand}" Margin="8,0,0,0"/>
+                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="SET ALARM" Width="80" Height="30" Command="{Binding SetAlarmCommand}" Margin="8,0,0,0"/>
                 </StackPanel>
             </Grid>
             <!-- 편집부 -->

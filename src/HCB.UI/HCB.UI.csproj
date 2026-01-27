@@ -61,6 +61,9 @@
   <Page Include="MAIN UI\USub07.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\Alarm\SetAlarmView.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\CreateModal\PromptModal.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -216,6 +219,7 @@
   <Compile Include="SERVICE\Sequence\SequenceEventHandler.cs" />
   <Compile Include="SERVICE\Sequence\StepSequence.cs" />
   <Compile Include="SERVICE\ViewModels\SequenceServiceVM.cs" />
+  <Compile Include="SUB UI\Alarm\SetAlarmView.xaml.cs" />
   <Compile Include="SUB UI\Behavior\BlinkBehavior.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />
   <Compile Include="SUB UI\MotionMoveController\MotionMoveController.xaml.cs" />
@@ -226,6 +230,7 @@
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\StepLamp.cs" />
   <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
+  <Compile Include="SUB UI\ViewModels\AlarmModalViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\MotionMoveVM.cs" />
   <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
   <Compile Include="SUB UI\PromptModal\ParameterCreateWindow.xaml.cs" />
