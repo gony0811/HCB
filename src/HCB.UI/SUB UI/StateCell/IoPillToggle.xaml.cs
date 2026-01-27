@@ -99,8 +99,8 @@ namespace HCB.UI
 
     public class InverseBoolConverter : IValueConverter
     {
-        public object Convert(object v, Type t, object p, CultureInfo c) => v is bool b ? b : v;
-        public object ConvertBack(object v, Type t, object p, CultureInfo c) => v is bool b ? b : v;
+        public object Convert(object v, Type t, object p, CultureInfo c) => v is bool b ? !b : v;
+        public object ConvertBack(object v, Type t, object p, CultureInfo c) => v is bool b ? !b : v;
     }
 
 
