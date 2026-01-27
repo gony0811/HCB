@@ -119,18 +119,18 @@ namespace HCB.UI
 
             bool bConnected = true;
 
-            do 
-            {
-                bConnected = true;
+            //do 
+            //{
+            //    bConnected = true;
 
-                foreach (var device in deviceManager.Devices)
-                {
-                    bConnected &= device.IsConnected;
-                }
+            //    foreach (var device in deviceManager.Devices)
+            //    {
+            //        bConnected &= device.IsConnected;
+            //    }
 
                 
 
-            } while(!bConnected);
+            //} while(!bConnected);
 
             SplashScreenUpdate("장치 연결 시도 중...", 50);
         }
