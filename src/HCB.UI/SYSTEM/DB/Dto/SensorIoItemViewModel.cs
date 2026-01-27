@@ -45,14 +45,14 @@ namespace HCB.UI
                 _device = pmacIo;
                 Description = description;
 
-                //var io = _device.FindIoDataByName(IoName);
+                var io = _device.FindIoDataByName(IoName);
 
-                //if (io is not null && io.IoType == Data.Entity.Type.IoType.DigitalInput)
-                //{
-                //    var data = (DigitalInput)io;
+                if (io is not null && io.IoType == Data.Entity.Type.IoType.DigitalInput)
+                {
+                    var data = (DigitalInput)io;
 
-                //    data.ValueChanged += DI_ValueChanged;
-                //}
+                    data.ValueChanged += DI_ValueChanged;
+                }
             }
             catch (Exception ex)
             {
@@ -62,10 +62,10 @@ namespace HCB.UI
 
         }
 
-        //private void DI_ValueChanged(object? sender, ValueChangedEventArgs<object> e)
-        //{
-        //    IsChecked = (bool)e.NewValue;
-        //}
+        private void DI_ValueChanged(object? sender, ValueChangedEventArgs<object> e)
+        {
+            IsChecked = (bool)e.NewValue;
+        }
 
 
         [RelayCommand]
