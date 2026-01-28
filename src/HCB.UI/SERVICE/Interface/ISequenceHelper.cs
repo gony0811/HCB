@@ -20,7 +20,7 @@ namespace HCB.UI
         void Log(LogLevel logLevel, string message);
         Task DelayAsync(int ms, CancellationToken ct);
         // 공통 기능: 조건 대기 (가장 범용적인 함수 하나만)
-        Task WaitUntilAsync(Func<bool> condition, int timeoutMs, CancellationToken ct, string errorMsg);
+        Task<bool> WaitUntilAsync(Func<bool> condition, int timeoutMs, CancellationToken ct, string errorMsg);
 
         /*
          // 사용 예시 (MotionExtensions 등에서 호출)

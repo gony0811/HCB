@@ -204,6 +204,41 @@ namespace HCB.UI
             }
         }
 
+
+        public async Task<bool> SetDigitalAsync(string name, bool bOnOff, int retry = 5, int delayMs = 300)
+        {
+            var ioData = (DigitalOutput)FindIoDataByName(name);
+
+            try
+            {
+                // 이미 해당 상태라면 바로 true 반환
+                if (ioData.Value == bOnOff) return true;
+
+                // 명령 전송
+                string strCommand = bOnOff ? $"{ioData.Address}=1" : $"{ioData.Address}=0";
+                await SendCommand(strCommand); // 비동기 명령 전송 가정
+
+                // 결과 확인 루프
+                for (int i = 0; i < retry; i++)
+                {
+                    await Task.Delay(delayMs);
+
+                    if (GetDigital(name) == bOnOff)
+                    {
+                        ioData.Value = bOnOff; // 메모리 값 업데이트
+                        return true;
+                    }
+                }
+
+                throw new TimeoutException($"[TimeOut] SET DIGITAL: {name}");
+            }
+            catch (Exception e)
+            {
+                this.logger.Error(e, "SetDigitalAsync Failed: {Name}", name);
+                return false;
+            }
+        }
+
         public bool GetDigital(string name)
         {
             var ioData = (AbstractDigital)FindIoDataByName(name);

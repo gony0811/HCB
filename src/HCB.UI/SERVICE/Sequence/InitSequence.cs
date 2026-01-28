@@ -19,6 +19,72 @@ namespace HCB.UI
         public const string READY_POSITION = "READY";
 
 
+        public async Task Initialize(CancellationToken ct)
+        {
+
+            var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+
+            
+            try
+            {
+                // 1. PreCheck 
+                bool preCheck = await Init_PreCheck(ct);
+                if (preCheck == false) throw new Exception("[Initialize] PRE-CHECK 실패");
+
+                // 2. Pin 제어
+                bool pinUp = await ioDevice.SetDigitalAsync(IoExtensions.DI_WTABLE_LIFT_PIN_UP, false);
+                if (!pinUp) throw new Exception("[Initialize] Wafer Loading Pin UP 상태 해제 실패");
+
+                bool pinDown = await ioDevice.SetDigitalAsync(IoExtensions.DI_WTABLE_LIFT_PIN_DOWN, true);
+                if (!pinDown) throw new Exception("[Initialize] Wafer Loading Pin DOWN 동작 실패");
+
+                // 3. 전체 Servo On 
+                bool servoResult = await Init_ServoAllOn(ct);
+                if (!servoResult) throw new Exception("[Initialize] 모든 축이 SERVO ON 되지 않았습니다");
+
+                // 4. H-Z BREAK OFF
+                bool breakResult = await ioDevice.SetDigitalAsync(IoExtensions.DO_ZIMM_SOL_ON, false);
+                if (!breakResult) throw new Exception("[Initialize] H-Z축의 브레이크가 OFF 되지 않았습니다");
+
+                // 5. Axis Home
+                string[] axes = { "H_Z", "h_z", "H_X", "H_T", "D_Y", "W_Y", "W_T", "P_Y"};
+
+                foreach (string axis in axes) 
+                {
+                    ct.ThrowIfCancellationRequested(); // 중단 요청 확인
+
+                    var motion = motionDevice.FindMotionByName(axis);
+                    await motion.Home();
+                    bool isHome = false;
+
+                    for(int i = 0; i <= 300; i++)
+                    {
+                        if (motion.InPosition)
+                        {
+                            isHome = true;
+                            break;
+                        }
+                        await Task.Delay(200, ct);
+                    }
+
+                    if (!isHome) throw new Exception($"[Initialize] {axis} 축이 Home에 도달하지 못했습니다");
+
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Warning("사용자에 의해 초기화가 취소되었습니다.");
+            }
+            catch (Exception e)
+            {
+                this._logger.Error(e.Message);
+                this._logger.Error("Initialize 시퀀스를 종료합니다");
+            }
+
+        }
+
+
         public async Task MachineInitAsync(CancellationToken ct)
         {
             try
@@ -59,37 +125,104 @@ namespace HCB.UI
             }
         }
 
-        public async Task Init_PreCheck(CancellationToken ct)
+        public async Task<bool> Init_PreCheck(CancellationToken ct)
         {
+            bool dieVacResult = false;
+            bool waferVacResult = false;
+
+            string[] dieVac =
+            {
+                IoExtensions.DO_DTABLE_VAC_1_ON, IoExtensions.DO_DTABLE_VAC_2_ON, IoExtensions.DO_DTABLE_VAC_3_ON, IoExtensions.DO_DTABLE_VAC_4_ON, IoExtensions.DO_DTABLE_VAC_5_ON,
+                IoExtensions.DO_DTABLE_VAC_6_ON, IoExtensions.DO_DTABLE_VAC_7_ON, IoExtensions.DO_DTABLE_VAC_8_ON, IoExtensions.DO_DTABLE_VAC_9_ON,
+            };
+            string[] waferVac =
+            {
+                IoExtensions.DO_WTABLE_VAC_1_ON, IoExtensions.DO_WTABLE_VAC_2_ON, IoExtensions.DO_WTABLE_VAC_3_ON, IoExtensions.DO_WTABLE_VAC_4_ON, IoExtensions.DO_WTABLE_VAC_5_ON
+            };
+
             try
             {
+                
                 this._logger.Debug("초기화 사전 점검 시작");
                 var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
                 var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
 
-                await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct); // W-Table 리프트 핀 다운
-
-                var headVacOnOff = ioDevice.GetDigital(IoExtensions.DI_HEADER_VAC_EJECTOR) ? eOnOff.On : eOnOff.Off;
-                /// HEAD Top Die가 Pickup 되어 있는지 확인
-                if (headVacOnOff == eOnOff.On)
+                // ----------------- Die 확인 -------------------------
+                for(int i=0; i < dieVac.Length; i++)
                 {
+                    // Die에 잔류 자재 유무 확인
+                    var result = ioDevice.GetDigital(dieVac[i]);
+                    if (result) _logger.Information($"[Pre-Check] #{i} Die에 잔류한 자재가 있습니다");
+                    dieVacResult = dieVacResult || result;
+                }
+
+                // Die 잔류 자재 유무 결과 확인
+                if (dieVacResult) throw new Exception("Die에 잔류한 자재가 있습니다");
+
+                // ----------------- Wafer 확인 -------------------------
+                for (int i = 0; i < waferVac.Length; i++)
+                {
+                    // Die에 잔류 자재 유무 확인
+                    var result = ioDevice.GetDigital(waferVac[i]);
+                    if (result) _logger.Information($"[Pre-Check] #{i} Wafer에 잔류한 자재가 있습니다");
+                    waferVacResult = waferVacResult || result;
+                }
+
+                // Die 잔류 자재 유무 결과 확인
+                if (waferVacResult) throw new Exception("Die에 잔류한 자재가 있습니다");
+
+                // ------------------ Picker -----------------------------------
+                if (ioDevice.GetDigital(IoExtensions.DI_HEADER_VAC_EJECTOR))
+                {
+                    _logger.Information("[Pre-Check] Head가 Die를 Pickup하고 있습니다");
                     throw new Exception("Head가 Die를 Pickup하고 있습니다.");
                 }
+
+                // ------------------- 상태 및 인터락 ----------------------------
+
+                _logger.Information("[Pre-Check] 상태 및 인터락 확인중");
+                bool availability = _sequenceServiceVM.Availability != Availability.Up;
+                bool alarm = _sequenceServiceVM.Alarm != AlarmState.NO_ALARM;
+                bool operationMode = _sequenceServiceVM.OperationMode != OperationMode.Auto;
+
+                if (availability)
+                {
+                    _logger.Information("Availability를 Up 상태로 변경해주세요");
+                }
+
+                if (alarm)
+                {
+                    _logger.Information("Alarm을 NOMAL상태로 변경해주세요");
+                }
+                
+                if (operationMode)
+                {
+                    _logger.Information("OperationMode를 Auto로 변경해주세요");
+                }
+
+                if (availability || alarm || operationMode)
+                {
+                    _logger.Information("[Pre-Check] 상태 및 인터락이 초기 구동상태에 적합하지 않습니다");
+                    throw new Exception("[Pre-Check] 상태 및 인터락이 초기 구동상태에 적합하지 않습니다");
+                }
+
+                // 모두 통과 시 
+                return true;
             }
             catch (OperationCanceledException)
             {
-                _logger.Information("초기화 사전 점검이 취소되었습니다.");
-                throw;
+                _logger.Information("[Pre-Check] 초기화 사전 점검이 취소되었습니다.");
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "초기화 사전 점검 중 오류 발생");
-                throw;
+                _logger.Error(ex, "[Pre-Check] 초기화 사전 점검 중 오류 발생");
+                return false;
             }
         }
 
         // 전체 서보온 
-        public async Task Init_ServoAllOn(CancellationToken ct)
+        public async Task<bool> Init_ServoAllOn(CancellationToken ct)
         {
             try
             {
@@ -98,12 +231,13 @@ namespace HCB.UI
                 var motionList = motionDevice.MotionList;
                 var tasks = motionList.Select(item => item.ServoOn());
                 var results = await Task.WhenAll(tasks);
-                // (옵션) 하나라도 실패했는지 확인하려면
-                bool isAllSuccess = results.All(r => r == true);
+                await Task.Delay(1000);
+                return results.All(r => r == true);
             }
             catch(Exception e)
             {
                 this._logger.Error(e, "전체 서보온 중 오류 발생");
+                return false;
             }
         }
 

@@ -33,17 +33,20 @@ namespace HCB.UI
                 var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // D Table Y축 (예시)
                 var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); // H Table X축 (예시)
                 var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 (예시)
+                var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); // H Table Z축 (예시)
                 
-                if (d_y == null || H_X == null || H_Z == null)
+                if (d_y == null || H_X == null || H_Z == null || h_z == null)
                 {
                     string errorMsg = "";
                     if (d_y == null) errorMsg += "[D_Y] ";
                     if (H_X == null) errorMsg += "[H_X] ";
                     if (H_Z == null) errorMsg += "[H_Z] ";
+                    if (h_z == null) errorMsg += "[h_z] ";
                     throw new Exception(errorMsg + "축을 찾을 수 없습니다");
                 }
 
                 await _sequenceHelper.MoveAsync(H_Z.MotorNo, LOAD_POSITION, ct);
+                await _sequenceHelper.MoveAsync(h_z.MotorNo, LOAD_POSITION, ct);
 
                 await Task.Run(async () =>
                 {
@@ -152,9 +155,8 @@ namespace HCB.UI
                     await _sequenceHelper.MoveAsync(H_X.MotorNo, LOAD_POSITION, ct);
                     await _sequenceHelper.MoveAsync(w_y.MotorNo, LOAD_POSITION, ct);
                 });
-
-
                 await Task.Delay(3000, ct);
+                await _sequenceHelper.WTableVacuumAll(eOnOff.Off, ct);
             }
             catch (OperationCanceledException)
             {

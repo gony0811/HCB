@@ -219,6 +219,7 @@
   <Compile Include="SERVICE\Sequence\RunningTime.cs" />
   <Compile Include="SERVICE\Sequence\SequenceEventHandler.cs" />
   <Compile Include="SERVICE\Sequence\StepSequence.cs" />
+  <Compile Include="SERVICE\Sequence\WaferSequence.cs" />
   <Compile Include="SERVICE\SystemMainService.cs" />
   <Compile Include="SERVICE\ViewModels\SequenceServiceVM.cs" />
   <Compile Include="SUB UI\Alarm\SetAlarmView.xaml.cs" />
