@@ -10,6 +10,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using Telerik.Windows.Controls;
 
 namespace HCB.UI
 {
@@ -23,6 +25,7 @@ namespace HCB.UI
         private ObservableCollection<Alarm> alarmList = new ObservableCollection<Alarm>();
 
         private ObservableCollection<Alarm> currentAlarms = new ObservableCollection<Alarm>();
+        private bool _isModalOpen = false; 
 
         public AlarmService(AlarmRepository alarmRepository, AlarmHistoryRepository alarmHistoryRepository, OperationService operationService)
         {
@@ -56,16 +59,26 @@ namespace HCB.UI
         /* ============================
          * Alarm 발생 (Set)
          * ============================ */
-        public async Task SetAlarm(int id)
+        public Task SetAlarm(int id)
         {
-            var alarm = FindAlarm(id.ToString());
-            if (alarm != null) await ProcessSetAlarm(alarm);
+            var alarm = FindAlarm(id);
+            if (alarm != null)
+            {
+                alarm.LastRaisedAt = DateTime.Now;
+                return ProcessSetAlarm(alarm);
+            }
+
+            return Task.CompletedTask;
         }
 
         public async Task SetAlarm(string code)
         {
             var alarm = FindAlarm(code);
-            if (alarm != null && alarm.Enable == AlarmEnable.ENABLED) await ProcessSetAlarm(alarm);
+            if (alarm != null && alarm.Enable == AlarmEnable.ENABLED)
+            {
+                alarm.LastRaisedAt = DateTime.Now;
+                await ProcessSetAlarm(alarm);
+            }
         }
 
         // 중복 로직 처리를 위한 내부 메서드
@@ -88,13 +101,51 @@ namespace HCB.UI
                 CreateAt = DateTime.Now
             };
 
-
-
             history = await alarmHistoryRepository.AddAsync(history);
             history.Alarm = alarm;
 
             AlarmHistoryAdded?.Invoke(AlarmHistoryDto.ToDTO(history));
             UpdateEQStatus(alarm.Level);
+
+            if (!_isModalOpen)
+            {
+                // WPF UI 스레드에서 실행 보장
+                // InvokeAsync를 사용하고 await 하지 않음으로써(Fire-and-forget), 
+                // ShowDialog()로 인한 블로킹이 작업 스레드의 다음 시퀀스 진행을 막지 않도록 함.
+                _ = App.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    // 비동기 처리로 인한 시점 차이로 이미 모달이 열려있는지 안전하게 재확인
+                    if (_isModalOpen) return;
+                    RaiseAlarmModal(alarm);
+                });
+            }
+        }
+
+        public void RaiseAlarmModal(Alarm alarmData)
+        {
+            _isModalOpen = true;
+            var view = new SetAlarmView();
+
+            var vm = new AlarmModalViewModel(this)
+            {
+                AlarmList = this.currentAlarms,
+                SelectedAlarm = alarmData
+            };
+
+            RadWindow window = new RadWindow
+            {
+                Content = view,
+                Owner = App.Current.MainWindow,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ResizeMode = ResizeMode.NoResize,
+                CanClose = false,
+            };
+
+            vm.RequestClose = () => window.Close();
+
+            view.DataContext = vm;
+            window.Closed += (s, e) => { _isModalOpen = false; };
+            window.ShowDialog();
         }
 
         /* ============================
@@ -144,6 +195,8 @@ namespace HCB.UI
             }
 
             operationService.Status.Alarm = AlarmState.NO_ALARM;
+
+            this.currentAlarms.Clear();
         }
 
         /* ============================

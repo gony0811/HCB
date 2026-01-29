@@ -67,7 +67,7 @@ namespace HCB.UI
             {
                 InpositionRange = 1;
             }
-
+            
         }
 
         [RelayCommand]
@@ -100,11 +100,11 @@ namespace HCB.UI
                     }
                 }
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 MessageBox.Show($"에러: \n {e.Message}");
             }
-
+            
         }
 
 
@@ -124,18 +124,16 @@ namespace HCB.UI
             {
                 await Device.SendCommand(command);
                 await Task.Delay(1000);
-
-                if (IsEnabled)
+                
+                if (IsEnabled) 
                 {
                     logger.Information($"{Name}: Servo On Success");
-                }
-                else
+                }else
                 {
                     throw new Exception("Servo On Failed");
                 }
                 return IsEnabled;
-            }
-            catch (Exception ex)
+            }catch(Exception ex)
             {
                 logger.Error($"{Name}: Servo On Failed");
                 return false;
@@ -211,7 +209,7 @@ namespace HCB.UI
 
             if (ready)
             {
-
+                
                 //cmd = string.Format("#{0}J/ #{0}$", MotorNo);
 
                 cmd = string.Format("#{0}J/", MotorNo);
@@ -223,12 +221,12 @@ namespace HCB.UI
 
             if (Device?.IsConnected == true && Device?.IsEnabled == true)
             {
-                return Device.SendCommand(cmd);
+                return Device.SendCommand(cmd);              
             }
             else
             {
                 return Task.CompletedTask;
-            }
+            }     
         }
 
         public async Task Move(MoveType moveType, double velocity, double position)
@@ -310,7 +308,7 @@ namespace HCB.UI
 
         public Task JogMove(JogMoveType moveType, double jogSpeed)
         {
-            this.logger.Information($"{Name}, {moveType.ToString()}, JogSpeed: {jogSpeed}");
+             this.logger.Information($"{Name}, {moveType.ToString()}, JogSpeed: {jogSpeed}");
 
             try
             {
@@ -330,12 +328,12 @@ namespace HCB.UI
                         //string cmd = string.Format("#{0:D}J/", MotorNo);
 
                         return Device.SendCommand(cmd);
-                    }
+                    }    
                 }
             }
-            catch (Exception e)
+            catch(Exception e)
             {
-
+                
             }
             return Task.CompletedTask;
         }

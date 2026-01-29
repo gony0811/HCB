@@ -20,16 +20,16 @@ namespace HCB.UI
                 var old = _value;
                 _value = value;
 
-                if (Device == null || !Device.IsConnected)
-                {
-                    return;
-                }
-                else
-                {
-                    string command = string.Format("{0}{1:D4}={2}", Address, Index, value);
-                    Device.SendCommand(command);
-                    OnValueChanged(old, value);
-                }
+                //if (Device == null || !Device.IsConnected)
+                //{
+                //    return;
+                //}
+                //else
+                //{
+                //    string command = string.Format("{0}{1:D4}={2}", Address, Index, value);
+                //    Device.SendCommand(command);
+                //    OnValueChanged(old, value);
+                //}
             }
         }
     }

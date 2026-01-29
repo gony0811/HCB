@@ -152,5 +152,11 @@ namespace HCB.UI
             }
         }
 
+        [RelayCommand]
+        public async Task SetAlarm()
+        {
+            await _alarmService.SetAlarm(1);
+        }
+
     }
 }

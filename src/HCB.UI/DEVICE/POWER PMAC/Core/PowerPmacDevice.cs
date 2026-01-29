@@ -42,12 +42,12 @@ namespace HCB.UI
             this.logger = logger.ForContext<PowerPmacDevice>();
         }
 
-        public Task Connect()
+        public async Task Connect()
         {
             Byte[] byCommand;
             UInt32 uRet;
-            uDeviceId = 0;
-            uRet = DTKPowerPmac.Instance.Connect(uDeviceId);
+            // 동기 메서드를 비동기로 래핑하여 UI 스레드 차단을 방지하고 완료될 때까지 대기
+            uRet = await Task.Run(() => DTKPowerPmac.Instance.Connect(uDeviceId));
 
             if ((DTK_STATUS)uRet == DTK_STATUS.DS_Ok)
             {
@@ -62,24 +62,20 @@ namespace HCB.UI
                 uDeviceId = int.MaxValue;
                 IsConnected = false;
             }
-
-            return Task.CompletedTask;
         }
 
-        public Task Disconnect()
+        public async Task Disconnect()
         {
             if (IsConnected)
             {
                 DTKPowerPmac.Instance.IsConnected(uDeviceId, out int connected);
 
                 if(connected == 1)
-                    DTKPowerPmac.Instance.Disconnect(uDeviceId);
+                    await Task.Run(()=> DTKPowerPmac.Instance.Disconnect(uDeviceId));
                 DTKPowerPmac.Instance.Close(uDeviceId);
                 uDeviceId = int.MaxValue;
                 IsConnected = false;
             }
-
-            return Task.CompletedTask;
         }
 
         public Task Initialize()
@@ -91,8 +87,8 @@ namespace HCB.UI
                 strIP = Ip.Split('.');
                 uIPAddress = (Convert.ToUInt32(strIP[0]) << 24) | (Convert.ToUInt32(strIP[1]) << 16) | (Convert.ToUInt32(strIP[2]) << 8) | Convert.ToUInt32(strIP[3]);
 
-
                 uDeviceId = DTKPowerPmac.Instance.Open(uIPAddress, (uint)DTK_MODE_TYPE.DM_GPASCII);
+                
             }
             catch (Exception ex)
             {
