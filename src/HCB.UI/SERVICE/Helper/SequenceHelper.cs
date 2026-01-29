@@ -88,7 +88,7 @@ namespace HCB.UI
         /// <param name="timeoutMs">타임아웃 시간 (밀리초)</param>
         /// <param name="ct">취소 토큰</param>
         /// <param name="errorMsg">타임아웃 시 표시할 에러 메시지</param>
-        public async Task WaitUntilAsync(Func<bool> condition, int timeoutMs, CancellationToken ct, string errorMsg)
+        public async Task<bool> WaitUntilAsync(Func<bool> condition, int timeoutMs, CancellationToken ct, string errorMsg)
         {
             if (condition == null)
                 throw new ArgumentNullException(nameof(condition));
@@ -109,7 +109,7 @@ namespace HCB.UI
                         : errorMsg;
                     
                     logger.Error($"[Sequence] WaitUntilAsync 타임아웃: {message}");
-                    return;
+                    return false;
                 }
 
                 // 짧은 대기 후 다시 확인
@@ -118,6 +118,7 @@ namespace HCB.UI
 
             stopwatch.Stop();
             logger.Debug($"[Sequence] WaitUntilAsync 완료 (소요시간: {stopwatch.ElapsedMilliseconds}ms)");
+            return true;
         }
     }
 }

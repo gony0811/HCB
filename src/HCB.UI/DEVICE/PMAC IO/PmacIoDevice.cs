@@ -39,14 +39,14 @@ namespace HCB.UI
             this.logger = logger.ForContext<PmacIoDevice>();
         }
 
-        public Task Connect()
+        public async Task Connect()
         {
             Byte[] byCommand;
             UInt32 uRet;
 
             try
             {
-                uRet = DTKPowerPmac.Instance.Connect(uDeviceId);
+                uRet = await Task.Run(() => DTKPowerPmac.Instance.Connect(uDeviceId));
 
                 if ((DTK_STATUS)uRet == DTK_STATUS.DS_Ok)
                 {
@@ -70,24 +70,20 @@ namespace HCB.UI
                 this.logger.Error(ex, "Power PMAC IO Device Connection Failed. IP: {Ip}", Ip);
                 IsConnected = false;
             }
-
-            return Task.CompletedTask;
         }
 
-        public Task Disconnect()
+        public async Task Disconnect()
         {
             if (IsConnected)
             {
                 DTKPowerPmac.Instance.IsConnected(uDeviceId, out int connected);
 
                 if (connected == 1)
-                    DTKPowerPmac.Instance.Disconnect(uDeviceId);
+                    await Task.Run(() => DTKPowerPmac.Instance.Disconnect(uDeviceId));
                 DTKPowerPmac.Instance.Close(uDeviceId);
                 uDeviceId = int.MaxValue;
                 IsConnected = false;
             }
-
-            return Task.CompletedTask;
         }
 
         public Task Initialize()
@@ -205,6 +201,41 @@ namespace HCB.UI
                 var simIoData = (AbstractDigital)FindIoDataByName(name);
                 simIoData.Value = bOnOff;
                 this.logger.Information("[Simulation] Set Digital IO: {Name} to {Value}", name, bOnOff);
+            }
+        }
+
+
+        public async Task<bool> SetDigitalAsync(string name, bool bOnOff, int retry = 5, int delayMs = 300)
+        {
+            var ioData = (DigitalOutput)FindIoDataByName(name);
+
+            try
+            {
+                // 이미 해당 상태라면 바로 true 반환
+                if (ioData.Value == bOnOff) return true;
+
+                // 명령 전송
+                string strCommand = bOnOff ? $"{ioData.Address}=1" : $"{ioData.Address}=0";
+                await SendCommand(strCommand); // 비동기 명령 전송 가정
+
+                // 결과 확인 루프
+                for (int i = 0; i < retry; i++)
+                {
+                    await Task.Delay(delayMs);
+
+                    if (GetDigital(name) == bOnOff)
+                    {
+                        ioData.Value = bOnOff; // 메모리 값 업데이트
+                        return true;
+                    }
+                }
+
+                throw new TimeoutException($"[TimeOut] SET DIGITAL: {name}");
+            }
+            catch (Exception e)
+            {
+                this.logger.Error(e, "SetDigitalAsync Failed: {Name}", name);
+                return false;
             }
         }
 

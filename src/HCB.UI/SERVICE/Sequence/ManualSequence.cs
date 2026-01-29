@@ -30,20 +30,26 @@ namespace HCB.UI
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
-                var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // D Table Y축 (예시)
-                var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); // H Table X축 (예시)
-                var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 (예시)
+                var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // D Table Y축 
+                var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); // H Table X축
+                var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 
+                var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); // H Table Z축 
                 
-                if (d_y == null || H_X == null || H_Z == null)
+                if (d_y == null || H_X == null || H_Z == null || h_z == null)
                 {
                     string errorMsg = "";
                     if (d_y == null) errorMsg += "[D_Y] ";
                     if (H_X == null) errorMsg += "[H_X] ";
                     if (H_Z == null) errorMsg += "[H_Z] ";
+                    if (h_z == null) errorMsg += "[h_z] ";
                     throw new Exception(errorMsg + "축을 찾을 수 없습니다");
                 }
 
-                await _sequenceHelper.MoveAsync(H_Z.MotorNo, LOAD_POSITION, ct);
+                // 모션 로딩 위치로 이동
+                await Task.WhenAll(
+                    _sequenceHelper.MoveAsync(H_Z.MotorNo, LOAD_POSITION, ct),
+                    _sequenceHelper.MoveAsync(h_z.MotorNo, LOAD_POSITION, ct)
+                );
 
                 await Task.Run(async () =>
                 {
@@ -52,6 +58,10 @@ namespace HCB.UI
                 });
 
                 await Task.Delay(3000, ct);
+
+                await _sequenceHelper.DTableVacuumAll(eOnOff.Off, ct);
+
+
             }
             catch (OperationCanceledException)
             {
@@ -65,6 +75,19 @@ namespace HCB.UI
             finally
             {
                 _logger.Information("Die Loading End");
+            }
+        }
+
+        public async Task DTableLoadComplete(CancellationToken ct)
+        {
+            try
+            {
+                await _sequenceHelper.DTableVacuumAll(eOnOff.On, ct);
+
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
             }
         }
 
@@ -134,31 +157,37 @@ namespace HCB.UI
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
 
-                var w_y = motionDevice?.FindMotionByName(MotionExtensions.W_Y); // W Table Y축 (예시)
-                var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); // H Table X축 (예시)
-                var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 (예시)
+                var w_y = motionDevice?.FindMotionByName(MotionExtensions.W_Y); 
+                var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); 
+                var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); 
+                var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); 
 
-
-                if (w_y == null || H_X == null || H_Z == null) 
 
                 if (w_y == null) throw new Exception("W Table Y axis not found in motion device.");
                 if (H_X == null) throw new Exception("H Table X axis not found in motion device.");
                 if (H_Z == null) throw new Exception("H Table Z axis not found in motion device.");
+                if (h_z == null) throw new Exception("h Table z axis not found in motion device.");
 
-                await _sequenceHelper.MoveAsync(H_Z.MotorNo, LOAD_POSITION, ct);
-
-                await Task.Run(async () =>
-                {
-                    await _sequenceHelper.MoveAsync(H_X.MotorNo, LOAD_POSITION, ct);
-                    await _sequenceHelper.MoveAsync(w_y.MotorNo, LOAD_POSITION, ct);
-                });
-
+                // 모션 로딩 위치로 이동
+                await Task.WhenAll(
+                    _sequenceHelper.MoveAsync(H_Z.MotorNo, LOAD_POSITION, ct),
+                    _sequenceHelper.MoveAsync(h_z.MotorNo, LOAD_POSITION, ct)
+                );    
+                await _sequenceHelper.MoveAsync(H_X.MotorNo, LOAD_POSITION, ct);
+                await _sequenceHelper.MoveAsync(w_y.MotorNo, LOAD_POSITION, ct);
 
                 await Task.Delay(3000, ct);
+
+                // Vacuum Off
+                await _sequenceHelper.WTableVacuumAll(eOnOff.Off, ct);
+
+                // Wafer Pin UP
+                await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
             }
             catch (OperationCanceledException)
             {
                 _logger.Information("Wafer Loading Canceled");
+                return;
             }
             catch (Exception ex)
             {
@@ -169,6 +198,22 @@ namespace HCB.UI
             {
                 _logger.Information("Wafer Loading End");
             }
+        }
+
+        public async Task WTableLoadComplete(CancellationToken ct)
+        {
+            try
+            {
+                // 1. Wafer pin down 
+                await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
+
+                // 2. wafer vacuum on
+                await _sequenceHelper.WTableVacuumAll(eOnOff.On, ct);
+            }catch(Exception e)
+            {
+                _logger.Error(e, e.Message);
+            }
+            
         }
 
         private bool CheckDiePresentOnDTable()

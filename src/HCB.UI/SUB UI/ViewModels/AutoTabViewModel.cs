@@ -67,9 +67,15 @@ namespace HCB.UI
         public void MachineInit()
         {
             Task.Run(async () => { 
-                IsInitializing = true;
-                await this._sequenceService.MachineInitAsync(_cancellationTokenSource.Token); 
-                IsInitializing = false;
+                try
+                {
+                    IsInitializing = true;
+                    await this._sequenceService.MachineInitAsync(_cancellationTokenSource.Token);
+                }
+                finally
+                {
+                    IsInitializing = false;
+                }
             });
         }
 
