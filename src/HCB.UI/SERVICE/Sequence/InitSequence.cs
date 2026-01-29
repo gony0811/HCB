@@ -19,72 +19,6 @@ namespace HCB.UI
         public const string READY_POSITION = "READY";
 
 
-        public async Task Initialize(CancellationToken ct)
-        {
-
-            var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-            var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
-
-            
-            try
-            {
-                // 1. PreCheck 
-                bool preCheck = await Init_PreCheck(ct);
-                if (preCheck == false) throw new Exception("[Initialize] PRE-CHECK 실패");
-
-                // 2. Pin 제어
-                bool pinUp = await ioDevice.SetDigitalAsync(IoExtensions.DI_WTABLE_LIFT_PIN_UP, false);
-                if (!pinUp) throw new Exception("[Initialize] Wafer Loading Pin UP 상태 해제 실패");
-
-                bool pinDown = await ioDevice.SetDigitalAsync(IoExtensions.DI_WTABLE_LIFT_PIN_DOWN, true);
-                if (!pinDown) throw new Exception("[Initialize] Wafer Loading Pin DOWN 동작 실패");
-
-                // 3. 전체 Servo On 
-                bool servoResult = await Init_ServoAllOn(ct);
-                if (!servoResult) throw new Exception("[Initialize] 모든 축이 SERVO ON 되지 않았습니다");
-
-                // 4. H-Z BREAK OFF
-                bool breakResult = await ioDevice.SetDigitalAsync(IoExtensions.DO_ZIMM_SOL_ON, false);
-                if (!breakResult) throw new Exception("[Initialize] H-Z축의 브레이크가 OFF 되지 않았습니다");
-
-                // 5. Axis Home
-                string[] axes = { "H_Z", "h_z", "H_X", "H_T", "D_Y", "W_Y", "W_T", "P_Y"};
-
-                foreach (string axis in axes) 
-                {
-                    ct.ThrowIfCancellationRequested(); // 중단 요청 확인
-
-                    var motion = motionDevice.FindMotionByName(axis);
-                    await motion.Home();
-                    bool isHome = false;
-
-                    for(int i = 0; i <= 300; i++)
-                    {
-                        if (motion.InPosition)
-                        {
-                            isHome = true;
-                            break;
-                        }
-                        await Task.Delay(200, ct);
-                    }
-
-                    if (!isHome) throw new Exception($"[Initialize] {axis} 축이 Home에 도달하지 못했습니다");
-
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.Warning("사용자에 의해 초기화가 취소되었습니다.");
-            }
-            catch (Exception e)
-            {
-                this._logger.Error(e.Message);
-                this._logger.Error("Initialize 시퀀스를 종료합니다");
-            }
-
-        }
-
-
         public async Task MachineInitAsync(CancellationToken ct)
         {
             try
@@ -99,11 +33,49 @@ namespace HCB.UI
                 
                 this._logger.Debug("MachineInitAsync 시작");
 
-                await Init_PreCheck(ct);
-                await Init_Head(ct);
-                await Init_WTable(ct);
-                await Init_PTable(ct);         
-                await Init_DTable(ct);
+                var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+
+                // 1. PreCheck 
+                bool preCheck = await Init_PreCheck(ct);
+                if (preCheck == false) throw new Exception("[Initialize] PRE-CHECK 실패");
+
+                // 2. Wafer pin down
+                await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct);
+
+                // 3. 전체 Servo On 
+                bool servoResult = await Init_ServoAllOn(ct);
+                if (!servoResult) throw new Exception("[Initialize] 모든 축이 SERVO ON 되지 않았습니다");
+
+                // 4. H-Z BREAK OFF
+                bool breakResult = await ioDevice.SetDigitalAsync(IoExtensions.DO_ZIMM_SOL_ON, false);
+                if (!breakResult) throw new Exception("[Initialize] H-Z축의 브레이크가 OFF 되지 않았습니다");
+
+                string[] axes = { "H_Z", "h_z", "H_X", "H_T", "D_Y", "W_Y", "W_T", "P_Y" };
+
+                foreach (string axis in axes)
+                {
+                    ct.ThrowIfCancellationRequested(); // 중단 요청 확인
+
+                    var motion = motionDevice.FindMotionByName(axis);
+                    await motion.Home();
+                    bool isHome = false;
+
+                    for (int i = 0; i <= 300; i++)
+                    {
+                        if (motion.InPosition)
+                        {
+                            isHome = true;
+                            break;
+                        }
+                        await Task.Delay(200, ct);
+                    }
+
+                    if (!isHome) throw new Exception($"[Initialize] {axis} 축이 Home에 도달하지 못했습니다");
+
+                }
+
+
             }
             catch (OperationCanceledException)
             {
@@ -119,9 +91,6 @@ namespace HCB.UI
             {
                 _logger.Error(ex, "MachineInitAsync 중 오류 발생");
                 throw;
-            }
-            finally
-            {
             }
         }
 
