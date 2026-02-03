@@ -81,21 +81,7 @@ namespace HCB.UI
 
         
 
-        public async Task WTableLoadComplete(CancellationToken ct)
-        {
-            try
-            {
-                // 1. Wafer pin down 
-                await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
-
-                // 2. wafer vacuum on
-                await _sequenceHelper.WTableVacuumAll(eOnOff.On, ct);
-            }catch(Exception e)
-            {
-                _logger.Error(e, e.Message);
-            }
-            
-        }
+        
 
         private bool CheckDiePresentOnDTable()
         {
@@ -171,8 +157,6 @@ namespace HCB.UI
                     _sequenceHelper.MoveAsync(MotionExtensions.H_Z, MotionExtensions.READY_POSITION, ct),
                     _sequenceHelper.MoveAsync(MotionExtensions.h_z, MotionExtensions.READY_POSITION, ct)
                 );
-
-
 
                 await Task.WhenAll(
                     _sequenceHelper.MoveAsync(MotionExtensions.H_X, diePositionName, ct),

@@ -147,34 +147,6 @@ namespace HCB.UI
                     throw new Exception("Head가 Die를 Pickup하고 있습니다.");
                 }
 
-                // ------------------- 상태 및 인터락 ----------------------------
-
-                _logger.Information("[Pre-Check] 상태 및 인터락 확인중");
-                bool availability = _sequenceServiceVM.Availability != Availability.Up;
-                bool alarm = _sequenceServiceVM.Alarm != AlarmState.NO_ALARM;
-                bool operationMode = _sequenceServiceVM.OperationMode != OperationMode.Auto;
-
-                if (availability)
-                {
-                    _logger.Information("Availability를 Up 상태로 변경해주세요");
-                }
-
-                if (alarm)
-                {
-                    _logger.Information("Alarm을 NOMAL상태로 변경해주세요");
-                }
-                
-                if (operationMode)
-                {
-                    _logger.Information("OperationMode를 Auto로 변경해주세요");
-                }
-
-                if (availability || alarm || operationMode)
-                {
-                    _logger.Information("[Pre-Check] 상태 및 인터락이 초기 구동상태에 적합하지 않습니다");
-                    throw new Exception("[Pre-Check] 상태 및 인터락이 초기 구동상태에 적합하지 않습니다");
-                }
-
                 // 모두 통과 시 
                 return true;
             }

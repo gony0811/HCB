@@ -21,19 +21,8 @@ namespace HCB.UI
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-
-                var WY= motionDevice?.FindMotionByName(MotionExtensions.W_Y);
-                var HX = motionDevice?.FindMotionByName(MotionExtensions.H_X);
-
-                if (WY == null) throw new Exception("W Table Y axis not found in motion device.");
-                if (HX == null) throw new Exception("H Table X axis not found in motion device.");
-                
-                Task moveHX = _sequenceHelper.MoveAsync(HX.MotorNo, MotionExtensions.WAFER_LOADING, ct);
-                Task moveWY = _sequenceHelper.MoveAsync(WY.MotorNo, MotionExtensions.WAFER_LOADING, ct);
-
-                // 작업 동시에 수행
-                await Task.WhenAll(moveHX, moveWY);
-
+                string[] motions = { MotionExtensions.W_Y, MotionExtensions.H_X };
+                await MotionsMove(motions, MotionExtensions.WAFER_LOADING, ct);
                 await Task.Delay(3000, ct);
 
                 // Vacuum Off
@@ -58,12 +47,29 @@ namespace HCB.UI
             }
         }
 
+        public async Task WTableLoadComplete(CancellationToken ct)
+        {
+            try
+            {
+                // 1. Wafer pin down 
+                await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
+
+                // 2. wafer vacuum on
+                await _sequenceHelper.WTableVacuumAll(eOnOff.On, ct);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
+            }
+
+        }
+
 
         public async Task WTableAlign(CancellationToken ct)
         {
             try
             {
-                _logger.Information("Wafer Loading Start");
+                _logger.Information("Wafer Align Start");
                 EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
@@ -99,7 +105,11 @@ namespace HCB.UI
             {
 
             }
-           
+            finally
+            {
+                _logger.Information("Wafer Align End");
+            }
+
         }
     }
 }
