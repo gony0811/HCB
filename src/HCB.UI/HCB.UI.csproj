@@ -210,12 +210,16 @@
   <Compile Include="SERVICE\Interface\ISequenceHelper.cs" />
   <Compile Include="SERVICE\Helper\SequenceHelper.cs" />
   <Compile Include="SERVICE\Interface\IOperationService.cs" />
+  <Compile Include="SERVICE\Interface\ReadyLoad.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
   <Compile Include="SERVICE\OperationService.cs" />
   <Compile Include="SERVICE\SequenceService.cs" />
+  <Compile Include="SERVICE\Sequence\BondingSequence.cs" />
+  <Compile Include="SERVICE\Sequence\DieSequence.cs" />
   <Compile Include="SERVICE\Sequence\InitSequence.cs" />
   <Compile Include="SERVICE\Sequence\MainSequence.cs" />
   <Compile Include="SERVICE\Sequence\ManualSequence.cs" />
+  <Compile Include="SERVICE\Sequence\PTableSequence.cs" />
   <Compile Include="SERVICE\Sequence\RunningTime.cs" />
   <Compile Include="SERVICE\Sequence\SequenceEventHandler.cs" />
   <Compile Include="SERVICE\Sequence\StepSequence.cs" />
