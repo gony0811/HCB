@@ -13,11 +13,12 @@ namespace HCB.UI
         private CancellationTokenSource cts;
         private readonly SequenceService SequenceService;
         public SequenceServiceVM SequenceServiceVM { get; }
-        public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM, SequenceService sequenceService)
+        private SequenceHelper _sequenceHelper;
+        public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM, SequenceService sequenceService, SequenceHelper sequenceHelper)
         {
             this.SequenceServiceVM = sequenceServiceVM;
             this.SequenceService = sequenceService;
-
+            _sequenceHelper = sequenceHelper;
         }
 
         [RelayCommand]
