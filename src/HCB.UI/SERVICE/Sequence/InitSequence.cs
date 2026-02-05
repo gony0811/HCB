@@ -239,6 +239,18 @@ namespace HCB.UI
             }
         }
 
+        public async Task MotionsMove(string motionName, string positionName, CancellationToken ct)
+        {
+            var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var tasks = new List<Task>();
+
+            var motion = motionDevice?.FindMotionByName(motionName);
+            if (motion == null)
+                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+
+            await _sequenceHelper.MoveAsync(motion.MotorNo, positionName, ct);
+        }
+
         public async Task MotionsMove(string[] motions, string positionName, CancellationToken ct)
         {
             var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
@@ -249,6 +261,23 @@ namespace HCB.UI
                 var motion = motionDevice?.FindMotionByName(item);
                 if (motion == null)
                     throw new KeyNotFoundException($"[Motion Error] '{item}' 축을 찾을 수 없습니다.");
+
+                tasks.Add(_sequenceHelper.MoveAsync(motion.MotorNo, positionName, ct));
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        public async Task MotionsMove(IEnumerable<(string Motion, string Position)> motionPosition, CancellationToken ct)
+        {
+            var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var tasks = new List<Task>();
+
+            foreach (var (motionName, positionName) in motionPosition)
+            {
+                var motion = motionDevice?.FindMotionByName(motionName);
+                if (motion == null)
+                    throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
 
                 tasks.Add(_sequenceHelper.MoveAsync(motion.MotorNo, positionName, ct));
             }

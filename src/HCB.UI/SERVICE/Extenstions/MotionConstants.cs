@@ -33,6 +33,11 @@ namespace HCB.UI
         public const string BTM_VISION_HIGH = "BTM_VISION_HIGH";
         public const string DIE_CARRIER_ALIGN_LOW = "DIE_CARRIER_ALIGN_LOW";
         public const string WAFER_ALIGN_LOW = "WAFER_ALIGN_LOW";
+        public const string TOP_DIE_VISION = "TOP_DIE_VISION";
+        public const string PICKUP_STANBY = "PICKUP_STANBY";
+
+        // h-z
+        public const string DIE_PICKUP = "DIE_PICKUP";
 
         // 사용 축: H-X, D-Y
         public const string DIE_CARRIER_ALIGN_1 = "DIE_CARRIER_ALIGN_1";
@@ -53,6 +58,7 @@ namespace HCB.UI
 
         // 사용 축: H_X, P_Z
         public const string BTM_VISION = "BTM_VISION";
+
 
         // -- 
         public const string READY_POSITION = "READY";
@@ -75,10 +81,5 @@ namespace HCB.UI
         public const string DIE_7_PICK_POSITION = "DIE_7_PICK";
         public const string DIE_8_PICK_POSITION = "DIE_8_PICK";
         public const string DIE_9_PICK_POSITION = "DIE_9_PICK";
-
-
-
-
-
     }
 }
