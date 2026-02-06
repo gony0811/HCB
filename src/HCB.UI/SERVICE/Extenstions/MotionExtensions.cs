@@ -127,6 +127,28 @@ namespace HCB.UI
             );
         }
 
+        public static async Task<bool> HomeAsync(this ISequenceHelper helper, List<IAxis> axes, CancellationToken ct)
+        {
+            if (axes == null || axes.Count == 0) throw new ArgumentException("axes is null/empty");
+
+            try
+            {
+                await Task.WhenAll(axes.Select(a => a.Home())).ConfigureAwait(false);
+                await helper.DelayAsync(100, ct).ConfigureAwait(false);
+
+                await Task.WhenAll(axes.Select(a =>
+                    helper.WaitUntilAsync(() => a.IsHomeDone, 20000, ct, $"Axis {a.Name} Homing Timeout")
+                )).ConfigureAwait(false);
+
+                return true;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static async Task MoveAsync(this ISequenceHelper helper, int motorNo, string positionName, CancellationToken ct)
         {
             var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(motorNo);

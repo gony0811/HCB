@@ -64,19 +64,63 @@ namespace HCB.UI
         }
 
         [RelayCommand]
-        public void MachineInit()
+        public async Task MachineInit()
         {
-            Task.Run(async () => { 
-                try
-                {
-                    IsInitializing = true;
-                    await this._sequenceService.MachineInitAsync(_cancellationTokenSource.Token);
-                }
-                finally
-                {
-                    IsInitializing = false;
-                }
-            });
+            
+            //try
+            //{
+            //    IsInitializing = true;
+
+            //    // 시스템 체크
+            //    _sequenceServiceVM.SystemCheck = StepState.InProgress;
+            //    var systemCheckResult = await this._sequenceService.Init_PreCheck(_cancellationTokenSource.Token);
+            //    if (systemCheckResult)
+            //    {
+            //        _sequenceServiceVM.SystemCheck = StepState.Completed;
+            //    }else
+            //    {
+            //        _sequenceServiceVM.SystemCheck = StepState.Failed;
+            //        return;
+            //    }
+
+            //    // 전체 서보온 
+            //    _sequenceServiceVM.ServoOn = StepState.InProgress;
+            //    var servoOnResult = await this._sequenceService.Init_ServoAllOn(_cancellationTokenSource.Token);
+            //    if (servoOnResult)
+            //    {
+            //        _sequenceServiceVM.ServoOn = StepState.Completed;
+            //    }
+            //    else
+            //    {
+            //        _sequenceServiceVM.ServoOn = StepState.Failed;
+            //        return;
+            //    }
+
+            //    // H-Z Break Off
+            //    _sequenceServiceVM.HZBreakOff = StepState.InProgress;
+            //    var breakOnOffResult =  await _sequenceService.SensorOnOff(IoExtensions.DO_ZIMM_SOL_ON, _cancellationTokenSource.Token);
+            //    if (breakOnOffResult)
+            //    {
+            //        _sequenceServiceVM.HZBreakOff = StepState.Completed;
+            //    }
+            //    else
+            //    {
+            //        _sequenceServiceVM.HZBreakOff = StepState.Failed;
+            //        return;
+            //    }
+
+            //    // All Home 
+            //    string[] axes = { "H_Z", "h_z", "H_X", "H_T", "D_Y", "W_Y", "W_T", "P_Y" };
+
+            //   _sequenceHelper.
+
+
+
+            //}
+            //finally
+            //{
+            //    IsInitializing = false;
+            //}
         }
 
         [RelayCommand]

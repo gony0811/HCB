@@ -60,6 +60,27 @@ public class DialogService
         return result;
     }
 
+    public Task<bool> ShowConfirmAsync(string title, string content)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+
+        Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            RadWindow.Confirm(new DialogParameters
+            {
+                Header = title,
+                Content = content,
+                Owner = GetOwnerWindow(),
+                Closed = (s, e) =>
+                {
+                    tcs.TrySetResult(e.DialogResult == true);
+                }
+            });
+        });
+
+        return tcs.Task;
+    }
+
     public double? ShowEditNumDialog(double value, double minValue, double maxValue)
     {
         var currentOwner = GetOwnerWindow();

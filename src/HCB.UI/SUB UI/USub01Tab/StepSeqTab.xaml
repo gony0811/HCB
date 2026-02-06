@@ -22,27 +22,27 @@
                     <TextBlock Text="Initialize" FontSize="28" FontWeight="Bold" Foreground="#4A69BD"/>
                     <Rectangle Height="2" Fill="#3498DB" Margin="0,5,0,0"/>
                     <TextBlock Text="시스템 초기화" FontSize="14" Foreground="#7F8C8D" Margin="0,5,0,20"/>
-                    <telerik:RadProgressBar Value="{Binding AxisLoad}" 
+                    <telerik:RadProgressBar Value="{Binding SequenceServiceVM.InitializeProgress}" 
                                             Maximum="100" 
                                             Minimum="0" Height="20" />
                 </StackPanel>
 
                 <Grid local:GridHelper.Columns="1*, 1*, 1*" Grid.Row="1">
-                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="System Status" FontSize="18" Grid.Column="0" Margin="2">
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="System" FontSize="18" Grid.Column="0" Margin="2">
                         <StackPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}"  State="{Binding SequenceServiceVM.SystemCheck}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="System Check" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
 
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.ServoOn}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Servo On" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.HZBreakOff}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="H-Z Break Off" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
@@ -51,22 +51,22 @@
                     <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="H-Axis Home" FontSize="18" Grid.Column="1" Margin="2">
                         <StackPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.HZHome}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="H-Z Home 이동" FontSize="16"  Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.HzHome}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="h-z Home 이동" FontSize="16" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.HXHome}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="H-X Home 이동" FontSize="16"  Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.HTHome}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="H-T Home 이동" FontSize="16" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
@@ -75,24 +75,24 @@
                     <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="Y-Axis Home" FontSize="18" Grid.Column="2" Margin="2">
                         <StackPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.DYHome}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="D-Y Home 이동" FontSize="16"  Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
 
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.PYHome}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="P-Y Home 이동" FontSize="16" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                             
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WYHome}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="W-Y Home 이동" FontSize="16" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
                             <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WTHome}" Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="W-T Home 이동" FontSize="16"  Margin="{StaticResource ControlMargin}"/>
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                             </WrapPanel>
@@ -197,23 +197,23 @@
                         <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="진행도" FontSize="18" Grid.Column="0" Margin="2">
                             <StackPanel>
                                 <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferCenterMeasure}" Margin="{StaticResource ControlMargin}"/>
                                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Center Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
                                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                                 </WrapPanel>
 
                                 <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferLeftMeasure}" Margin="{StaticResource ControlMargin}"/>
                                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Left Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
                                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                                 </WrapPanel>
                                 <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferRightMeasure}" Margin="{StaticResource ControlMargin}"/>
                                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Right Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
                                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                                 </WrapPanel>
                                 <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.StepWaferCenterMoveCompleted}" Margin="{StaticResource ControlMargin}"/>
+                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferAlign}" Margin="{StaticResource ControlMargin}"/>
                                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Wafer Align" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
                                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
                                 </WrapPanel>

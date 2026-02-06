@@ -36,8 +36,32 @@ namespace HCB.UI
             _sequenceServiceVM = sequenceServiceVM;
             _simulation = dataOptions.Simulation;
             
+        }
 
-
+        private async Task ExecuteStepAsync(
+            Func<Task> action,
+            Action<StepState> setState,
+            string stepName,
+            CancellationToken ct)
+        {
+            try
+            {
+                setState(StepState.InProgress);
+                await action();
+                setState(StepState.Completed);
+            }
+            catch (OperationCanceledException)
+            {
+                setState(StepState.Failed);
+                _logger.Warning($"{stepName} Canceled");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                setState(StepState.Failed);
+                _logger.Error(ex, $"{stepName} Failed");
+                throw;
+            }
         }
 
 

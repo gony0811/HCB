@@ -126,7 +126,7 @@ namespace HCB.UI
         {
             if (SelectedRecipe != null)
             {
-                bool result = _dialogService.ShowConfirm("레시피 복사", "복사하시겠습니까?");
+                bool result =  _dialogService.ShowConfirm("레시피 복사", "복사하시겠습니까?");
                 if (result)
                 {
                     try

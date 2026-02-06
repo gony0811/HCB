@@ -179,30 +179,76 @@ namespace HCB.UI
 
         public void SetDigital(string name, bool bOnOff, bool simulation = false)
         {
-           
-            if (simulation == false)
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("IO name is null or empty", nameof(name));
+
+            try
             {
-                var ioData = (DigitalOutput)FindIoDataByName(name);
-
-
-                if (ioData.Value != bOnOff)
+                if (!simulation)
                 {
-                    String strCommand = "";
+                    var io = FindIoDataByName(name);
 
-                    strCommand = bOnOff ? string.Format("{0}=1", ioData.Address) : string.Format("{0}=0", ioData.Address);
+                    // 1) 존재 여부 체크
+                    if (io == null)
+                    {
+                        logger.Error("SetDigital failed: IO '{Name}' not found.", name);
+                        throw new InvalidOperationException($"Digital IO '{name}' not found.");
+                    }
 
-                    SendCommand(strCommand);
+                    // 2) 타입 체크
+                    if (io is not DigitalOutput ioData)
+                    {
+                        logger.Error(
+                            "SetDigital failed: IO '{Name}' is not DigitalOutput (ActualType={Type})",
+                            name, io.GetType().Name
+                        );
+                        throw new InvalidOperationException(
+                            $"IO '{name}' is not DigitalOutput (Actual: {io.GetType().Name})"
+                        );
+                    }
+
+                    // 3) 값 변경 필요할 때만 명령 전송
+                    if (ioData.Value != bOnOff)
+                    {
+                        string strCommand = $"{ioData.Address}={(bOnOff ? 1 : 0)}";
+                        SendCommand(strCommand);
+                    }
+
+                    // 4) 내부 상태 업데이트
+                    ioData.Value = bOnOff;
                 }
+                else
+                {
+                    // Simulation 모드
+                    var simIo = FindIoDataByName(name);
 
-                ioData.Value = bOnOff;
+                    if (simIo == null)
+                    {
+                        logger.Warning("[Simulation] IO '{Name}' not found.", name);
+                        return; // 시뮬레이션에서는 그냥 무시하거나 정책적으로 throw 가능
+                    }
+
+                    if (simIo is not AbstractDigital simIoData)
+                    {
+                        logger.Warning(
+                            "[Simulation] IO '{Name}' is not AbstractDigital (ActualType={Type})",
+                            name, simIo.GetType().Name
+                        );
+                        return;
+                    }
+
+                    simIoData.Value = bOnOff;
+                    logger.Information("[Simulation] Set Digital IO: {Name} = {Value}", name, bOnOff);
+                }
             }
-            else // simulation == true
+            catch (Exception ex)
             {
-                var simIoData = (AbstractDigital)FindIoDataByName(name);
-                simIoData.Value = bOnOff;
-                this.logger.Information("[Simulation] Set Digital IO: {Name} to {Value}", name, bOnOff);
+                logger.Error(ex, "SetDigital exception: IO='{Name}', Value={Value}, Simulation={Simulation}",
+                             name, bOnOff, simulation);
+                throw; // 상위 시퀀스에서 StepState Failed 처리
             }
         }
+
 
 
         public async Task<bool> SetDigitalAsync(string name, bool bOnOff, int retry = 5, int delayMs = 300)

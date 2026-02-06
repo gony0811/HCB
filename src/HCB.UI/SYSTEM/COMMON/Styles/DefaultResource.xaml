@@ -712,6 +712,13 @@
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
                         </Trigger>
+                        <Trigger Property="State" Value="{x:Static local:StepState.Failed}">
+                            <Setter TargetName="LampBorder" Property="Background" Value="OrangeRed"/>
+                            <Setter TargetName="LampBorder" Property="Opacity" Value="1"/>
+                            <Trigger.EnterActions>
+                                <RemoveStoryboard BeginStoryboardName="PauseBlinkStoryboard"/>
+                            </Trigger.EnterActions>
+                        </Trigger>
 
                         <Trigger Property="State" Value="{x:Static local:StepState.Completed}">
                             <Setter TargetName="LampBorder" Property="Background" Value="LimeGreen"/>

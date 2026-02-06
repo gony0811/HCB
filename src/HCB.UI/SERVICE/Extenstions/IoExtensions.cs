@@ -168,49 +168,67 @@ namespace HCB.UI
 
         public static async Task DTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
         {
-            for (int channel = 1; channel <= 9; channel++)
-            {
-                await helper.DTableVacuum(channel, onOff, ct);
-            }
+            var tasks = Enumerable.Range(1, 9)
+                .Select(channel =>
+                    Task.Run(() => helper.DTableVacuum(channel, onOff, ct), ct)
+                )
+                .ToArray();
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         public static async Task DTableVacuum(this ISequenceHelper helper, int channel, eOnOff onOff, CancellationToken ct)
         {
-            var bOnOff = onOff == eOnOff.On ? true : false;
+            ct.ThrowIfCancellationRequested();
+
+            var bOnOff = onOff == eOnOff.On;
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
             if (device == null)
             {
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
+                throw new InvalidOperationException($"Io Device {IoDeviceName} not found.");
             }
+
             string doOn = $"DO_DTABLE_VAC_{channel}_ON";
             string doRelease = $"DO_DTABLE_VAC_{channel}_RELEASE";
-            string diPressureSwitch = $"DI_DTABLE_VAC_PRESSURE_SWITCH";
-            device.SetDigital(doOn, bOnOff, helper.IsSimulation);
-            device.SetDigital(doRelease, !bOnOff, helper.IsSimulation);
-
-            if (helper.IsSimulation)
+            string diPressureSwitch = $"DI_DTABLE_VAC_{channel}_PRESSURE_SWITCH";
+            try
             {
-                device.SetDigital(diPressureSwitch, bOnOff, helper.IsSimulation);
-            }
+                device.SetDigital(doOn, bOnOff, helper.IsSimulation);
+                device.SetDigital(doRelease, !bOnOff, helper.IsSimulation);
 
-            while (ct.IsCancellationRequested == false)
-            {
-                await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
-                await helper.WaitUntilAsync(
-                    () => device.GetDigital(diPressureSwitch) == bOnOff,
-                    3000,
-                    ct,
-                    $"{doOn} = {onOff} Timeout"
-                );
+                if (helper.IsSimulation)
+                    device.SetDigital(diPressureSwitch, bOnOff, helper.IsSimulation);
             }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                helper.Log(LogLevel.Error,
+                    $"DTableVacuum DO set failed. CH={channel}, OnOff={onOff}, doOn={doOn}, doRelease={doRelease}, sim={helper.IsSimulation} :: {ex.Message}");
+                throw;
+            }
+            // 명령 반영 대기
+            await helper.DelayAsync(100, ct).ConfigureAwait(false);
+
+            // 조건 만족될 때까지 대기(성공하면 여기서 끝)
+            await helper.WaitUntilAsync(
+                () => device.GetDigital(diPressureSwitch) == bOnOff,
+                3000,
+                ct,
+                $"{doOn} = {onOff} Timeout"
+            ).ConfigureAwait(false);
         }
 
         public static async Task WTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
         {
-            for (int channel = 1; channel <= 5; channel++)
-            {
-                await helper.WTableVacuum(channel, onOff, ct);
-            }
+
+            var tasks = Enumerable.Range(1, 5)
+                .Select(channel =>
+                    Task.Run(() => helper.WTableVacuum(channel, onOff, ct), ct)
+                )
+                .ToArray();
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         public static async Task WTableVacuum(this ISequenceHelper helper, int channel, eOnOff onOff, CancellationToken ct)
@@ -225,26 +243,32 @@ namespace HCB.UI
             string doRelease = $"DO_WTABLE_VAC_{channel}_RELEASE";
             string doN2Blow = $"DO_WTABLE_N2_BLOW";
             string diPressureSwitch = $"DI_WTABLE_VAC_PRESSURE_SWITCH";
-           
-            device.SetDigital(doOn, bOnOff, helper.IsSimulation);
-            device.SetDigital(doRelease, !bOnOff, helper.IsSimulation);
-            device.SetDigital(doN2Blow, !bOnOff, helper.IsSimulation); // N2 Blow is the opposite of Vacuum On/Off
 
-            if (helper.IsSimulation)
+            try
             {
-                device.SetDigital(diPressureSwitch, bOnOff, helper.IsSimulation);
-            }
+                device.SetDigital(doOn, bOnOff, helper.IsSimulation);
+                device.SetDigital(doRelease, !bOnOff, helper.IsSimulation);
+                device.SetDigital(doN2Blow, !bOnOff, helper.IsSimulation); // N2 Blow is the opposite of Vacuum On/Off
 
-            while (ct.IsCancellationRequested == false)
-            {
-                await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
-                await helper.WaitUntilAsync(
-                    () => device.GetDigital(diPressureSwitch) == bOnOff,
-                    3000,
-                    ct,
-                    $"{doOn} = {onOff} Timeout"
-                );
+                if (helper.IsSimulation)
+                {
+                    device.SetDigital(diPressureSwitch, bOnOff, helper.IsSimulation);
+                }
             }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            
+            await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
+            await helper.WaitUntilAsync(
+                () => device.GetDigital(diPressureSwitch) == bOnOff,
+                3000,
+                ct,
+                $"{doOn} = {onOff} Timeout"
+            );
+
 
             device.SetDigital(doN2Blow, false, helper.IsSimulation); // Ensure N2 Blow is turned off after operation
         }

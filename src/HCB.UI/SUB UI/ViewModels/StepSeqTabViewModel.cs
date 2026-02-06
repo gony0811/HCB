@@ -15,8 +15,10 @@ namespace HCB.UI
     {
         private CancellationTokenSource _cts;
         private readonly SequenceService SequenceService;
+        private readonly DialogService _dialogService;
         private readonly DeviceManager _deviceManager;
         private IOManager ioManager;
+
         public SequenceServiceVM SequenceServiceVM { get; }
         private SequenceHelper _sequenceHelper;
         [ObservableProperty]
@@ -24,7 +26,7 @@ namespace HCB.UI
 
         [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> dTableList = new ObservableCollection<SensorIoItemViewModel>();
-
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private List<string> dTableNameList = new List<string>()
         {
             "DIE 1","DIE 2", "DIE 3", "DIE 4", "DIE 5", "DIE 6", "DIE 7", "DIE 8", "DIE 9",
@@ -35,13 +37,15 @@ namespace HCB.UI
             IoExtensions.DO_DTABLE_VAC_1_ON, IoExtensions.DO_DTABLE_VAC_2_ON, IoExtensions.DO_DTABLE_VAC_3_ON, IoExtensions.DO_DTABLE_VAC_4_ON, IoExtensions.DO_DTABLE_VAC_5_ON, IoExtensions.DO_DTABLE_VAC_6_ON, IoExtensions.DO_DTABLE_VAC_7_ON, IoExtensions.DO_DTABLE_VAC_8_ON, IoExtensions.DO_DTABLE_VAC_9_ON,
         };
 
-        public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM, SequenceService sequenceService, SequenceHelper sequenceHelper, DeviceManager deviceManager, IOManager ioManager)
+        public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM, SequenceService sequenceService, SequenceHelper sequenceHelper, DeviceManager deviceManager, IOManager ioManager, DialogService dialogService)
         {
             this.SequenceServiceVM = sequenceServiceVM;
             this.SequenceService = sequenceService;
             this._sequenceHelper = sequenceHelper;
             this._deviceManager = deviceManager;
             this.ioManager = ioManager;
+            this._dialogService = dialogService;
+
             var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
 
             if (ioDevice != null)
@@ -50,7 +54,7 @@ namespace HCB.UI
                 {
                     var result = ioManager.CreateIoVM(dTableNameList[i], dIoNameList[i], dTableNameList[i]);
                     if (result != null) DTableList.Add(result);
-
+                    
                 }
             }
         }
@@ -61,28 +65,26 @@ namespace HCB.UI
             try
             {
                 IsInitializing = true;
-
-                // 1. 기존 취소 토큰 정리 및 새 토큰 생성
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-
-                // 2. 서비스 호출 (생성한 토큰 전달)
-                await SequenceService.MachineStartAsync(_cts.Token);
-
-                // 성공 시 알림 등 추가 로직
-            }
-            catch (OperationCanceledException)
+                SequenceServiceVM.SystemCheck = StepState.Idle;
+                SequenceServiceVM.ServoOn = StepState.Idle;
+                SequenceServiceVM.HZBreakOff= StepState.Idle;
+                SequenceServiceVM.HZHome = StepState.Idle;
+                SequenceServiceVM.HzHome = StepState.Idle;
+                SequenceServiceVM.HXHome = StepState.Idle;
+                SequenceServiceVM.HTHome= StepState.Idle;
+                SequenceServiceVM.DYHome= StepState.Idle;
+                SequenceServiceVM.PYHome= StepState.Idle;
+                SequenceServiceVM.WYHome= StepState.Idle;
+                SequenceServiceVM.WTHome= StepState.Idle;
+                await Task.Delay(1000);
+                await this.SequenceService.MachineInitAsync(_cancellationTokenSource.Token);
+            }catch(Exception e)
             {
-                // 사용자가 Stop을 눌렀을 때의 처리
-            }
-            catch (Exception ex)
-            {
-                // 에러 로깅
+                
             }
             finally
             {
                 IsInitializing = false;
-                InitializeCommand.NotifyCanExecuteChanged();
             }
         }
         // 중지 명령
@@ -92,6 +94,17 @@ namespace HCB.UI
             if (_cts != null && !_cts.IsCancellationRequested)
             {
                 _cts.Cancel(); // 토큰에 취소 신호 전달
+                SequenceServiceVM.SystemCheck = StepState.Idle;
+                SequenceServiceVM.ServoOn = StepState.Idle;
+                SequenceServiceVM.HZBreakOff = StepState.Idle;
+                SequenceServiceVM.HZHome = StepState.Idle;
+                SequenceServiceVM.HzHome = StepState.Idle;
+                SequenceServiceVM.HXHome = StepState.Idle;
+                SequenceServiceVM.HTHome = StepState.Idle;
+                SequenceServiceVM.DYHome = StepState.Idle;
+                SequenceServiceVM.PYHome = StepState.Idle;
+                SequenceServiceVM.WYHome = StepState.Idle;
+                SequenceServiceVM.WTHome = StepState.Idle;
             }
         }
 
@@ -105,6 +118,11 @@ namespace HCB.UI
                 _cts = new CancellationTokenSource();
 
                 await SequenceService.DTableLoading(_cts.Token);
+                var result = await _dialogService.ShowConfirmAsync("DIE 로딩중", "로딩이 완료된 후 확인을 눌러주세요");
+                if (result)
+                {
+                    await DieComplete();
+                }
             }
             catch (OperationCanceledException)
             {
@@ -153,6 +171,8 @@ namespace HCB.UI
                 _cts = new CancellationTokenSource();
 
                 await SequenceService.WTableLoading(_cts.Token);
+
+
             }
             catch (OperationCanceledException)
             {

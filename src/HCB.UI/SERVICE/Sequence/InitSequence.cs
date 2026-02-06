@@ -19,82 +19,8 @@ namespace HCB.UI
         public const string READY_POSITION = "READY";
 
 
-        public async Task MachineInitAsync(CancellationToken ct)
-        {
-            try
-            {
-                var status = _operationService.Status;
-
-                if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Manual || status.Alarm == AlarmState.HEAVY)
-                {
-                    this._logger.Warning("MachineInitAsync를 실행할 수 없습니다: 설비 상태가 다운 상태 입니다. 알람을 조치하고 설비를 리셋하십시요.");
-                    return;
-                }
-                
-                this._logger.Debug("MachineInitAsync 시작");
-
-                var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
-
-                // 1. PreCheck 
-                bool preCheck = await Init_PreCheck(ct);
-                if (preCheck == false) throw new Exception("[Initialize] PRE-CHECK 실패");
-
-                // 2. Wafer pin down
-                await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct);
-
-                // 3. 전체 Servo On 
-                bool servoResult = await Init_ServoAllOn(ct);
-                if (!servoResult) throw new Exception("[Initialize] 모든 축이 SERVO ON 되지 않았습니다");
-
-                // 4. H-Z BREAK OFF
-                bool breakResult = await ioDevice.SetDigitalAsync(IoExtensions.DO_ZIMM_SOL_ON, false);
-                if (!breakResult) throw new Exception("[Initialize] H-Z축의 브레이크가 OFF 되지 않았습니다");
-
-                string[] axes = { "H_Z", "h_z", "H_X", "H_T", "D_Y", "W_Y", "W_T", "P_Y" };
-
-                foreach (string axis in axes)
-                {
-                    ct.ThrowIfCancellationRequested(); // 중단 요청 확인
-
-                    var motion = motionDevice.FindMotionByName(axis);
-                    await motion.Home();
-                    bool isHome = false;
-
-                    for (int i = 0; i <= 300; i++)
-                    {
-                        if (motion.InPosition)
-                        {
-                            isHome = true;
-                            break;
-                        }
-                        await Task.Delay(200, ct);
-                    }
-
-                    if (!isHome) throw new Exception($"[Initialize] {axis} 축이 Home에 도달하지 못했습니다");
-
-                }
-
-
-            }
-            catch (OperationCanceledException)
-            {
-
-                _logger.Information("MachineInitAsync가 취소되었습니다.");
-                throw;
-            }
-            catch (ErrorException ex)
-            {
-                await _alarmService.SetAlarm(ex.ErrorCode);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "MachineInitAsync 중 오류 발생");
-                throw;
-            }
-        }
-
-        public async Task<bool> Init_PreCheck(CancellationToken ct)
+        
+        public bool Init_PreCheck(CancellationToken ct)
         {
             bool dieVacResult = false;
             bool waferVacResult = false;
@@ -111,7 +37,6 @@ namespace HCB.UI
 
             try
             {
-                
                 this._logger.Debug("초기화 사전 점검 시작");
                 var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
                 var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
@@ -200,6 +125,13 @@ namespace HCB.UI
             }
         }
 
+        public async Task<bool> SensorOnOff(string sensorName, CancellationToken ct)
+        {
+            var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+
+            return await ioDevice.SetDigitalAsync(sensorName, false);
+        }
 
         public async Task Init_Head(CancellationToken ct)
         {
@@ -292,6 +224,139 @@ namespace HCB.UI
             {
                 _logger.Warning("Cannot execute WTableLoading: Sequence Service is not in Manual Standby Status.");
                 throw new Exception("Cannot execute WTableLoading");
+            }
+        }
+
+        public async Task MachineInitAsync(CancellationToken ct)
+        {
+            try
+            {
+                _sequenceServiceVM.InitializeProgress = 0;
+                var status = _operationService.Status;
+
+                if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Manual || status.Alarm == AlarmState.HEAVY)
+                {
+                    this._logger.Warning("MachineInitAsync를 실행할 수 없습니다: 설비 상태가 다운 상태 입니다. 알람을 조치하고 설비를 리셋하십시요.");
+                    return;
+                }
+
+                this._logger.Debug("MachineInitAsync 시작");
+
+                var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+
+                // 1. PreCheck 
+                _sequenceServiceVM.SystemCheck = StepState.InProgress;
+                bool preCheck = Init_PreCheck(ct);
+                if (preCheck == false)
+                {
+                    _sequenceServiceVM.SystemCheck = StepState.Failed;
+                    throw new Exception("[Initialize] PRE-CHECK 실패");
+                }
+                _sequenceServiceVM.SystemCheck = StepState.Completed;
+                _sequenceServiceVM.InitializeProgress = 15;
+
+                // 2. Wafer pin down
+                await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct);
+                _sequenceServiceVM.InitializeProgress = 30;
+                // 3. 전체 Servo On 
+                _sequenceServiceVM.ServoOn= StepState.InProgress;
+                bool servoResult = await Init_ServoAllOn(ct);
+                if (!servoResult)
+                {
+                    _sequenceServiceVM.ServoOn = StepState.Failed;
+                    throw new Exception("[Initialize] 모든 축이 SERVO ON 되지 않았습니다");
+                }
+                _sequenceServiceVM.ServoOn = StepState.Completed;
+                _sequenceServiceVM.InitializeProgress = 45;
+                // 4. H-Z BREAK OFF
+                _sequenceServiceVM.HZBreakOff = StepState.InProgress;
+                bool breakResult = await ioDevice.SetDigitalAsync(IoExtensions.DO_ZIMM_SOL_ON, false);
+                if (!breakResult)
+                {
+                    _sequenceServiceVM.HZBreakOff = StepState.Failed;
+                    throw new Exception("[Initialize] H-Z축의 브레이크가 OFF 되지 않았습니다");
+                }
+                _sequenceServiceVM.HZBreakOff = StepState.Completed;
+                _sequenceServiceVM.InitializeProgress = 60;
+                // 5. Header Home Z축
+                var HZ = motionDevice.FindMotionByName(MotionExtensions.H_Z);
+                var hz = motionDevice.FindMotionByName(MotionExtensions.h_z);
+                var head = new List<IAxis> { HZ, hz };
+
+                _sequenceServiceVM.HZHome = StepState.InProgress;
+                _sequenceServiceVM.HzHome = StepState.InProgress;
+                var headHomeResult = await MotionExtensions.HomeAsync(_sequenceHelper, head, ct);
+                if (!headHomeResult)
+                {
+                    _sequenceServiceVM.HZHome = StepState.Failed;
+                    _sequenceServiceVM.HzHome = StepState.Failed;
+                    throw new Exception("[Initialize] Header가 홈에 도착하지 않았습니다");
+                }
+                _sequenceServiceVM.HZHome = StepState.Completed;
+                _sequenceServiceVM.HzHome = StepState.Completed;
+
+                _sequenceServiceVM.InitializeProgress = 75;
+
+                // 6. Header Home X, T 축
+                var hx = motionDevice.FindMotionByName(MotionExtensions.H_X);
+                var ht= motionDevice.FindMotionByName(MotionExtensions.H_T);
+                var xt = new List<IAxis> { hx, ht };
+
+                _sequenceServiceVM.HXHome = StepState.InProgress;
+                _sequenceServiceVM.HTHome = StepState.InProgress;
+                var hxtResult = await MotionExtensions.HomeAsync(_sequenceHelper, xt, ct);
+                if (!hxtResult)
+                {
+                    _sequenceServiceVM.HXHome = StepState.Failed;
+                    _sequenceServiceVM.HTHome = StepState.Failed;
+                    throw new Exception("[Initialize] Header X,T가 홈에 도착하지 않았습니다");
+                }
+                _sequenceServiceVM.HXHome = StepState.Completed;
+                _sequenceServiceVM.HTHome = StepState.Completed;
+
+                _sequenceServiceVM.InitializeProgress = 85;
+
+                // 7.  Y Axis Home 
+                var dy = motionDevice.FindMotionByName(MotionExtensions.D_Y);
+                var py = motionDevice.FindMotionByName(MotionExtensions.P_Y);
+                var wy = motionDevice.FindMotionByName(MotionExtensions.W_Y);
+                var wt = motionDevice.FindMotionByName(MotionExtensions.W_T);
+                var yAxis = new List<IAxis> { dy, py, wy, wt };
+
+                _sequenceServiceVM.DYHome = StepState.InProgress;
+                _sequenceServiceVM.PYHome = StepState.InProgress;
+                _sequenceServiceVM.WYHome = StepState.InProgress;
+                _sequenceServiceVM.WTHome = StepState.InProgress;
+                var yResult = await MotionExtensions.HomeAsync(_sequenceHelper, yAxis, ct);
+                if (!yResult)
+                {
+                    _sequenceServiceVM.DYHome = StepState.Failed;
+                    _sequenceServiceVM.PYHome = StepState.Failed;
+                    _sequenceServiceVM.WYHome = StepState.Failed;
+                    _sequenceServiceVM.WTHome = StepState.Failed;
+                    throw new Exception("[Initialize] Header X,T가 홈에 도착하지 않았습니다");
+                }
+                _sequenceServiceVM.DYHome = StepState.Completed;
+                _sequenceServiceVM.PYHome = StepState.Completed;
+                _sequenceServiceVM.WYHome = StepState.Completed;
+                _sequenceServiceVM.WTHome = StepState.Completed;
+                _sequenceServiceVM.InitializeProgress = 100;
+            }
+            catch (OperationCanceledException)
+            {
+
+                _logger.Information("MachineInitAsync가 취소되었습니다.");
+                throw;
+            }
+            catch (ErrorException ex)
+            {
+                await _alarmService.SetAlarm(ex.ErrorCode);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "MachineInitAsync 중 오류 발생");
+                throw;
             }
         }
 

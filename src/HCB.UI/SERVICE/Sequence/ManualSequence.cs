@@ -15,13 +15,12 @@ namespace HCB.UI
     public partial class SequenceService : BackgroundService
     {
         public const string LOAD_POSITION = "LOAD";
-       
+
         public async Task DTableLoadComplete(CancellationToken ct)
         {
             try
             {
-                await _sequenceHelper.DTableVacuumAll(eOnOff.On, ct);
-
+                await _sequenceHelper.DTableVacuumAll(eOnOff.On, ct).ConfigureAwait(false);
             }
             catch (Exception e)
             {

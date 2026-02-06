@@ -225,7 +225,9 @@
   <Compile Include="SERVICE\Sequence\StepSequence.cs" />
   <Compile Include="SERVICE\Sequence\WaferSequence.cs" />
   <Compile Include="SERVICE\SystemMainService.cs" />
+  <Compile Include="SERVICE\ViewModels\InitializeServiceVM.cs" />
   <Compile Include="SERVICE\ViewModels\SequenceServiceVM.cs" />
+  <Compile Include="SERVICE\ViewModels\WaferAlignServiceVM.cs" />
   <Compile Include="SUB UI\Alarm\SetAlarmView.xaml.cs" />
   <Compile Include="SUB UI\Behavior\BlinkBehavior.cs" />
   <Compile Include="SUB UI\CreateModal\PromptModal.xaml.cs" />

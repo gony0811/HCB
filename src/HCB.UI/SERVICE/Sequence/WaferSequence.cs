@@ -70,46 +70,68 @@ namespace HCB.UI
             try
             {
                 _logger.Information("Wafer Align Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                //EQStatusCheck();
 
                 string[] xy = { MotionExtensions.W_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
 
-                // Wafer Center Align
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                await MotionsMove(xy, MotionExtensions.WAFER_CENTER_POSITION , ct);
-                await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+                await ExecuteStepAsync(
+                    async () =>
+                    {
+                        await Init_Head(ct);
+                        await MotionsMove(xy, MotionExtensions.WAFER_CENTER_POSITION, ct);
+                        await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+                        // TODO: 비전 측정
+                    },
+                    s => _sequenceServiceVM.WaferCenterMeasure = s,
+                    "Wafer Center Align",
+                    ct
+                );
 
-                // TODO: 비전 측정
+                await ExecuteStepAsync(
+                    async () =>
+                    {
+                        await Init_Head(ct);
+                        await MotionsMove(xy, MotionExtensions.WAFER_LEFT_POSITION, ct);
+                        await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+                        // TODO: 비전 측정
+                    },
+                    s => _sequenceServiceVM.WaferLeftMeasure = s,
+                    "Wafer Left Align",
+                    ct
+                );
 
-                // Wafer Left Align
-                await Init_Head(ct);
-                await MotionsMove(xy, MotionExtensions.WAFER_LEFT_POSITION, ct);
-                await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+                await ExecuteStepAsync(
+                    async () =>
+                    {
+                        await Init_Head(ct);
+                        await MotionsMove(xy, MotionExtensions.WAFER_RIGHT_POSITION, ct);
+                        await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+                        // TODO: 비전 측정
+                    },
+                    s => _sequenceServiceVM.WaferRightMeasure = s,
+                    "Wafer Right Align",
+                    ct
+                );
 
-                // TODO: 비전 측정
-
-                //Wafer Right Align
-                await Init_Head(ct);
-                await MotionsMove(xy, MotionExtensions.WAFER_RIGHT_POSITION, ct);
-                await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
-
-                // TODO: 비전 측정
-                await Init_Head(ct);
-                // TODO: 오차 보정
-
-            }
-            catch (Exception e)
-            {
-
+                await ExecuteStepAsync(
+                    async () =>
+                    {
+                        await Init_Head(ct);
+                        // TODO: 오차 보정 계산 + 이동
+                    },
+                    s => _sequenceServiceVM.WaferAlign = s,
+                    "Wafer Final Align",
+                    ct
+                );
             }
             finally
             {
+                _sequenceServiceVM.IsWaferAlign = true;
                 _logger.Information("Wafer Align End");
             }
-
         }
+
     }
 }
