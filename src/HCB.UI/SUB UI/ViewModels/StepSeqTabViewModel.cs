@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace HCB.UI
 {
@@ -23,6 +24,13 @@ namespace HCB.UI
         private SequenceHelper _sequenceHelper;
         [ObservableProperty]
         private bool isInitializing;
+
+        private List<DieData> _waferData;
+        public List<DieData> WaferData
+        {
+            get => _waferData;
+            set { _waferData = value; OnPropertyChanged(); }
+        }
 
         [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> dTableList = new ObservableCollection<SensorIoItemViewModel>();
@@ -57,6 +65,7 @@ namespace HCB.UI
                     
                 }
             }
+            WaferData = GenerateWafer(100, 100);
         }
 
         [RelayCommand(CanExecute = nameof(CanStartInitialize))]
@@ -241,7 +250,52 @@ namespace HCB.UI
             await SequenceService.StepMoveWaferCenter(_cts.Token);
             await SequenceService.StepWaferAlign(_cts.Token);
         }
+        private List<DieData> GenerateWafer(int rows, int cols)
+        {
+            var list = new List<DieData>();
+            double centerX = cols / 2.0;
+            double centerY = rows / 2.0;
+            double radius = Math.Min(rows, cols) / 2.0;
 
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    // 원형 웨이퍼 영역 안에 있는지 계산 (피타고라스 정리)
+                    double distance = Math.Sqrt(Math.Pow(c - centerX, 2) + Math.Pow(r - centerY, 2));
+
+                    if (distance < radius)
+                    {
+                        list.Add(new DieData
+                        {
+                            Row = r,
+                            Col = c,
+                            DieBrush = Brushes.DimGray, // 기본 색상
+                            Information = $"Die [{r}, {c}] - Ready"
+                        });
+                    }
+                }
+            }
+            return list;
+        }
+
+        // 특정 조건(예: 테스트 완료)에 따라 데이터를 한 번에 업데이트하는 예시
+        [RelayCommand]
+        public void UpdateTestResults()
+        {
+            var random = new Random();
+            // 기존 리스트를 바탕으로 새로운 리스트 생성 (참조 변경)
+            var newList = new List<DieData>(WaferData);
+
+            foreach (var die in newList)
+            {
+                die.DieBrush = random.Next(0, 10) > 1 ? Brushes.LimeGreen : Brushes.Red;
+                die.Information = die.DieBrush == Brushes.Red ? "Status: Fail" : "Status: Pass";
+            }
+
+            // 새로운 리스트 주소를 할당 -> Dependency Property 콜백 실행됨
+            WaferData = newList;
+        }
         //[RelayCommand]
         //private void Step1Stop()
         //{

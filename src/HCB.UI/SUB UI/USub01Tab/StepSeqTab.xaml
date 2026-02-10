@@ -111,7 +111,58 @@
             </Grid>
         </telerik:RadTabItem>
 
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="2. LOADING" Margin="1">
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="2. WAFER" Margin="1">
+            <Grid local:GridHelper.Rows="Auto, *, Auto"  Margin="20" >
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="Wafer Align" FontSize="28" FontWeight="Bold" Foreground="#4A69BD"/>
+                    <Rectangle Height="2" Fill="#3498DB" Margin="0,5,0,0"/>
+                    <TextBlock Text="Wafer Align Sequence" FontSize="14" Foreground="#7F8C8D" Margin="0,5,0,20"/>
+                </StackPanel>
+
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1">
+                    <Grid local:GridHelper.Columns="Auto, *">
+                        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="진행도" FontSize="18" Grid.Column="0" Margin="2">
+                            <StackPanel>
+                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferCenterMeasure}" Margin="{StaticResource ControlMargin}"/>
+                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Center Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                                </WrapPanel>
+
+                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferLeftMeasure}" Margin="{StaticResource ControlMargin}"/>
+                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Left Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                                </WrapPanel>
+                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferRightMeasure}" Margin="{StaticResource ControlMargin}"/>
+                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Right Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                                </WrapPanel>
+                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
+                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferAlign}" Margin="{StaticResource ControlMargin}"/>
+                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Wafer Align" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
+                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </telerik:GroupBox>
+                        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="측정 Image" FontSize="18" Grid.Column="1" Margin="2">
+                            <Border Width="500" Height="500"></Border>
+                        </telerik:GroupBox>
+                    </Grid>
+                </Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2" Margin="{StaticResource ControlMargin}">
+                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferAlignCommand}">
+                        <telerik:HighlightTextBlock Text="START"/>
+                    </telerik:RadButton>
+
+                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding StopCommand}">
+                        <telerik:HighlightTextBlock Text="STOP"/>
+                    </telerik:RadButton>
+                </StackPanel>
+            </Grid>
+        </telerik:RadTabItem>
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="3. DIE" Margin="1">
             <Grid local:GridHelper.Rows="Auto, *"  Margin="20" >
                 <StackPanel Grid.Row="0">
                     <TextBlock Text="Loading" FontSize="28" FontWeight="Bold" Foreground="#4A69BD"/>
@@ -168,14 +219,21 @@
                         </Grid>
                     </telerik:GroupBox>
                     <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="WAFER" FontSize="18" Grid.Column="1" Margin="2">
-                        <Grid>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="{StaticResource ControlMargin}">
+                        <Grid local:GridHelper.Rows="*, Auto">
+                            <Grid>
+                                <local:WaferMapControl ItemsSource="{Binding WaferData}"/>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="{StaticResource ControlMargin}" Grid.Row="1">
                                 <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferLoadCommand}">
                                     <telerik:HighlightTextBlock Text="Load"/>
                                 </telerik:RadButton>
 
                                 <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferCompleteCommand}">
                                     <telerik:HighlightTextBlock Text="Complete"/>
+                                </telerik:RadButton>
+
+                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding UpdateTestResultsCommand}">
+                                    <telerik:HighlightTextBlock Text="TEST"/>
                                 </telerik:RadButton>
                             </StackPanel>
                         </Grid>
@@ -184,57 +242,7 @@
             </Grid>
         </telerik:RadTabItem>
 
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="3. WAFER ALIGN" Margin="1">
-            <Grid local:GridHelper.Rows="Auto, *, Auto"  Margin="20" >
-                <StackPanel Grid.Row="0">
-                    <TextBlock Text="Wafer Align" FontSize="28" FontWeight="Bold" Foreground="#4A69BD"/>
-                    <Rectangle Height="2" Fill="#3498DB" Margin="0,5,0,0"/>
-                    <TextBlock Text="Wafer Align Sequence" FontSize="14" Foreground="#7F8C8D" Margin="0,5,0,20"/>
-                </StackPanel>
-
-                <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1">
-                    <Grid local:GridHelper.Columns="Auto, *">
-                        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="진행도" FontSize="18" Grid.Column="0" Margin="2">
-                            <StackPanel>
-                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferCenterMeasure}" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Center Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
-                                </WrapPanel>
-
-                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferLeftMeasure}" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Left Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
-                                </WrapPanel>
-                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferRightMeasure}" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Right Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
-                                </WrapPanel>
-                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferAlign}" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Wafer Align" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
-                                </WrapPanel>
-                            </StackPanel>
-                        </telerik:GroupBox>
-                        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="측정 Image" FontSize="18" Grid.Column="1" Margin="2">
-                            <Border Width="500" Height="500"></Border>
-                        </telerik:GroupBox>
-                    </Grid>
-                </Grid>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2" Margin="{StaticResource ControlMargin}">
-                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferAlignCommand}">
-                        <telerik:HighlightTextBlock Text="START"/>
-                    </telerik:RadButton>
-
-                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding StopCommand}">
-                        <telerik:HighlightTextBlock Text="STOP"/>
-                    </telerik:RadButton>
-                </StackPanel>
-            </Grid>
-        </telerik:RadTabItem>
+        
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="4. BONDING" Margin="1">
             <Grid local:GridHelper.Rows="Auto, *, Auto"  Margin="20" >
                 <StackPanel Grid.Row="0">
