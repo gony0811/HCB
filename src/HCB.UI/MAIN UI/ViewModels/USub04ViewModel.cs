@@ -9,129 +9,132 @@ using System.Drawing.Printing;
 using System.Linq;
 using System.Threading.Tasks;
 
-[ViewModel(Lifetime.Scoped)]
-public partial class USub04ViewModel : ObservableObject, IDisposable
+namespace HCB.UI
 {
-    private readonly AlarmHistoryRepository alarmHistoryRepository;
-    private readonly AlarmService alarmService;
-
-    [ObservableProperty]
-    private ObservableCollection<AlarmHistoryDto> alarmHistoryList = new();
-
-    [ObservableProperty]
-    private AlarmHistoryDto selectedHistory;
-
-    // ================ 페이징 및 검색 =========================
-    [ObservableProperty] private int pageSize = 20;
-    [ObservableProperty] private int totalCount;
-    [ObservableProperty] private int currentPageIndex = 0;
-
-    [ObservableProperty] private DateTime startSearchDate = DateTime.Now.AddDays(-7); // 기본값 일주일 전
-    [ObservableProperty] private DateTime endSearchDate = DateTime.Now;
-    [ObservableProperty] private string searchText = string.Empty;
-    // ========================================================= 
-
-    private bool isLoading;
-
-    public USub04ViewModel(
-        AlarmService alarmService,
-        AlarmHistoryRepository alarmHistoryRepository)
+    [ViewModel(Lifetime.Scoped)]
+    public partial class USub04ViewModel : ObservableObject, IDisposable
     {
-        this.alarmService = alarmService;
-        this.alarmHistoryRepository = alarmHistoryRepository;
+        private readonly AlarmHistoryRepository alarmHistoryRepository;
+        private readonly AlarmService alarmService;
 
-        alarmService.AlarmHistoryAdded += OnAlarmHistoryAdded;
-        alarmService.AlarmHistoryReset += OnAlarmHistoryReset;
+        [ObservableProperty]
+        private ObservableCollection<AlarmHistoryDto> alarmHistoryList = new();
 
-        _ = LoadPageData();
-    }
+        [ObservableProperty]
+        private AlarmHistoryDto selectedHistory;
 
-    partial void OnCurrentPageIndexChanged(int value)
-    {
-        _ = LoadPageData();
-    }
+        // ================ 페이징 및 검색 =========================
+        [ObservableProperty] private int pageSize = 20;
+        [ObservableProperty] private int totalCount;
+        [ObservableProperty] private int currentPageIndex = 0;
 
-    [RelayCommand]
-    public async Task HistoryCreate()
-    {
-        await alarmService.SetAlarm(1);
-    }
+        [ObservableProperty] private DateTime startSearchDate = DateTime.Now.AddDays(-7); // 기본값 일주일 전
+        [ObservableProperty] private DateTime endSearchDate = DateTime.Now;
+        [ObservableProperty] private string searchText = string.Empty;
+        // ========================================================= 
 
-    [RelayCommand]
-    public async Task AllReset()
-    {
-        await alarmService.ResetAllAlarms();
-    }
+        private bool isLoading;
 
-    public async Task LoadPageData()
-    {
-        if (isLoading) return;
-
-        try
+        public USub04ViewModel(
+            AlarmService alarmService,
+            AlarmHistoryRepository alarmHistoryRepository)
         {
-            isLoading = true;
+            this.alarmService = alarmService;
+            this.alarmHistoryRepository = alarmHistoryRepository;
 
-            // 종료 날짜의 시간을 23:59:59로 설정하여 해당 날짜 전체를 포함
-            var endDateTime = EndSearchDate.Date.AddDays(1).AddTicks(-1);
-            var startDateTime = StartSearchDate.Date;
+            alarmService.AlarmHistoryAdded += OnAlarmHistoryAdded;
+            alarmService.AlarmHistoryReset += OnAlarmHistoryReset;
 
-            TotalCount = await alarmService.GetSearchCount(startDateTime, endDateTime, SearchText);
-            AlarmHistoryList = await alarmService.SearchAlarmHistory(
-                startDateTime, endDateTime, SearchText, CurrentPageIndex + 1, PageSize);
+            _ = LoadPageData();
         }
-        catch (Exception ex)
+
+        partial void OnCurrentPageIndexChanged(int value)
         {
-            // 로깅 추가
+            _ = LoadPageData();
         }
-        finally
+
+        [RelayCommand]
+        public async Task HistoryCreate()
         {
-            isLoading = false;
+            await alarmService.SetAlarm(1);
         }
-    }
 
-    [RelayCommand]
-    public async Task Search()
-    {
-        CurrentPageIndex = 0; // 검색 시 첫 페이지로 이동
-        await LoadPageData();
-    }
-
-    /* ============================
-     * Event Handlers
-     * ============================ */
-    private void OnAlarmHistoryAdded(AlarmHistoryDto dto)
-    {
-        App.Current.Dispatcher.Invoke(() =>
+        [RelayCommand]
+        public async Task AllReset()
         {
-            TotalCount++;
+            await alarmService.ResetAllAlarms();
+        }
 
-            // 최신 페이지에서만 실시간 반영
-            if (CurrentPageIndex == 0)
+        public async Task LoadPageData()
+        {
+            if (isLoading) return;
+
+            try
             {
-                AlarmHistoryList.Insert(0, dto);
+                isLoading = true;
 
-                if (AlarmHistoryList.Count > PageSize)
-                    AlarmHistoryList.RemoveAt(PageSize);
+                // 종료 날짜의 시간을 23:59:59로 설정하여 해당 날짜 전체를 포함
+                var endDateTime = EndSearchDate.Date.AddDays(1).AddTicks(-1);
+                var startDateTime = StartSearchDate.Date;
+
+                TotalCount = await alarmService.GetSearchCount(startDateTime, endDateTime, SearchText);
+                AlarmHistoryList = await alarmService.SearchAlarmHistory(
+                    startDateTime, endDateTime, SearchText, CurrentPageIndex + 1, PageSize);
             }
-        });
-    }
-
-    private void OnAlarmHistoryReset(int historyId)
-    {
-        App.Current.Dispatcher.Invoke(() =>
-        {
-            var target = AlarmHistoryList.FirstOrDefault(x => x.Id == historyId);
-            if (target != null)
+            catch (Exception ex)
             {
-                AlarmHistoryList.Remove(target);
-                TotalCount--;
+                // 로깅 추가
             }
-        });
-    }
+            finally
+            {
+                isLoading = false;
+            }
+        }
 
-    public void Dispose()
-    {
-        alarmService.AlarmHistoryAdded -= OnAlarmHistoryAdded;
-        alarmService.AlarmHistoryReset -= OnAlarmHistoryReset;
+        [RelayCommand]
+        public async Task Search()
+        {
+            CurrentPageIndex = 0; // 검색 시 첫 페이지로 이동
+            await LoadPageData();
+        }
+
+        /* ============================
+         * Event Handlers
+         * ============================ */
+        private void OnAlarmHistoryAdded(AlarmHistoryDto dto)
+        {
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                TotalCount++;
+
+                // 최신 페이지에서만 실시간 반영
+                if (CurrentPageIndex == 0)
+                {
+                    AlarmHistoryList.Insert(0, dto);
+
+                    if (AlarmHistoryList.Count > PageSize)
+                        AlarmHistoryList.RemoveAt(PageSize);
+                }
+            });
+        }
+
+        private void OnAlarmHistoryReset(int historyId)
+        {
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                var target = AlarmHistoryList.FirstOrDefault(x => x.Id == historyId);
+                if (target != null)
+                {
+                    AlarmHistoryList.Remove(target);
+                    TotalCount--;
+                }
+            });
+        }
+
+        public void Dispose()
+        {
+            alarmService.AlarmHistoryAdded -= OnAlarmHistoryAdded;
+            alarmService.AlarmHistoryReset -= OnAlarmHistoryReset;
+        }
     }
 }
