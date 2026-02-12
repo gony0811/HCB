@@ -51,7 +51,12 @@ namespace HCB.UI
                 {
                     var data = (DigitalInput)io;
 
-                    data.ValueChanged += DI_ValueChanged;
+                    data.ValueChanged += ValueChanged;
+                }
+                else if (io is not null && io.IoType == Data.Entity.Type.IoType.DigitalOutput)
+                {
+                    var data = (DigitalOutput)io;
+                    data.ValueChanged += ValueChanged;
                 }
             }
             catch (Exception ex)
@@ -62,7 +67,7 @@ namespace HCB.UI
 
         }
 
-        private void DI_ValueChanged(object? sender, ValueChangedEventArgs<object> e)
+        private void ValueChanged(object? sender, ValueChangedEventArgs<object> e)
         {
             IsChecked = (bool)e.NewValue;
         }
