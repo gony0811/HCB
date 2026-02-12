@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Drawing.Printing;
 using System.Linq;
 using System.Threading.Tasks;
+
 namespace HCB.UI
 {
     [ViewModel(Lifetime.Scoped)]
