@@ -112,7 +112,9 @@ namespace HCB.UI
             }
 
             SplashScreenUpdate("백그라운드 서비스 시작", 30);
+            var systemService = _host.Services.GetRequiredService<SystemMainService>();
 
+            await systemService.StartAsync();
             await _host.StartAsync();
 
             var deviceManager = _host.Services.GetRequiredService<DeviceManager>();
