@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
-using HCB.UI.DEVICE.Core;
 using Serilog;
 using System;
 using System.Collections.Generic;

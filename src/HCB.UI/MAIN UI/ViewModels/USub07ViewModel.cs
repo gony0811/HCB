@@ -2,7 +2,6 @@
 using HCB.Data.Entity.Type;
 using HCB.Data.Repository;
 using HCB.IoC;
-using HCB.UI.DEVICE.Core;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
