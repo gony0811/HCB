@@ -16,12 +16,12 @@ namespace HCB.UI
             try
             {
                 _logger.Information("Wafer Loading Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                //EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                string[] motions = { MotionExtensions.W_Y, MotionExtensions.H_X };
+                string[] motions = { MotionExtensions.W_Y };
                 await MotionsMove(motions, MotionExtensions.WAFER_LOADING, ct);
                 await Task.Delay(3000, ct);
 

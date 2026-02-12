@@ -19,23 +19,16 @@
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="0. PRE-TEST" Margin="1">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
-                    <Button Content="WAFER LOAD" Command="{Binding WaferLoadTestCommand}" Margin="2" Width="100" Height="80"/>
-                    <Button Content="WAFER LOAD COMPLETE" Command="{Binding WaferLoadTestCommand}" Margin="2" Width="150" Height="80"/>
-                    <Button Content="DIE LOAD" Command="{Binding WaferLoadTestCommand}" Margin="2" Width="100" Height="80"/>
-                    <Button Content="DIE LOAD COMPLETE" Command="{Binding WaferLoadTestCommand}" Margin="2" Width="150" Height="80"/>
+                    <Button Content="WAFER LOAD" Command="{Binding WaferLoadCommand}" Margin="2" Width="100" Height="80"/>
+                    <Button Content="WAFER LOAD COMPLETE" Command="{Binding WaferLoadCommand}" Margin="2" Width="150" Height="80"/>
+                    <Button Content="DIE LOAD" Command="{Binding DieLoadCommand}" Margin="2" Width="100" Height="80"/>
                 </StackPanel>
                 <TextBlock Text="DIE PICKUP" TextAlignment="Center" FontSize="20"></TextBlock>
-                <Grid local:GridHelper.Columns="*, *, *" local:GridHelper.Rows="*, *, *" HorizontalAlignment="Center">
-                    <Button Content="#1"></Button>
-                    <Button Content="#2" Grid.Column="1"></Button>
-                    <Button Content="#3"  Grid.Column="2"></Button>
-                    <Button Content="#4"></Button>
-                    <Button Content="#5"></Button>
-                    <Button Content="#6"></Button>
-                    <Button Content="#7"></Button>
-                    <Button Content="#8"></Button>
-                    <Button Content="#9"></Button>
-                </Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="DiePickUp" Command="{Binding DiePickupCommand}" Margin="10"/>
+                    <Button Content="BottomVision" Command="{Binding BottomVisionCommand}" Margin="10"/>
+                    <Button Content="Bonding" Command="{Binding BondingCommand}" Margin="10"/>
+                </StackPanel>
             </StackPanel>
             
             
@@ -137,7 +130,7 @@
             </Grid>
         </telerik:RadTabItem>
 
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="2. Loading" Margin="1">
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="2. LOADING" Margin="1">
             <Grid local:GridHelper.Rows="Auto, *"  Margin="20" >
                 <StackPanel Grid.Row="0">
                     <TextBlock Text="Loading" FontSize="28" FontWeight="Bold" Foreground="#4A69BD"/>

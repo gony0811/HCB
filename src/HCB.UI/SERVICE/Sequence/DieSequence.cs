@@ -16,29 +16,28 @@ namespace HCB.UI
             try
             {
                 _logger.Information("Die Loading Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                //EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
 
                 var DY = motionDevice?.FindMotionByName(MotionExtensions.D_Y);
-                var HX = motionDevice?.FindMotionByName(MotionExtensions.H_X);
+                //var HX = motionDevice?.FindMotionByName(MotionExtensions.H_X);
 
                 if (DY == null) throw new Exception("D Table Y axis not found in motion device.");
-                if (HX == null) throw new Exception("H Table X axis not found in motion device.");
+                //if (HX == null) throw new Exception("H Table X axis not found in motion device.");
 
-                Task moveHX = _sequenceHelper.MoveAsync(HX.MotorNo, MotionExtensions.DIE_LOADING, ct);
+                //Task moveHX = _sequenceHelper.MoveAsync(HX.MotorNo, MotionExtensions.DIE_LOADING, ct);
                 Task moveDY = _sequenceHelper.MoveAsync(DY.MotorNo, MotionExtensions.DIE_LOADING, ct);
 
                 // 작업 동시에 수행
-                await Task.WhenAll(moveHX, moveDY);
+                await Task.WhenAll(moveDY);
 
-                await Task.Delay(3000, ct);
+                await Task.Delay(100, ct);
 
                 // Vacuum Off
                 await _sequenceHelper.DTableVacuumAll(eOnOff.Off, ct);
-
             }
             catch (OperationCanceledException)
             {
@@ -61,12 +60,13 @@ namespace HCB.UI
             try
             {
                 _logger.Information("Die Carrier Align Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                //EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
                 string[] xy = { MotionExtensions.D_Y, MotionExtensions.H_X };
-                string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+                //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+                string[] z = { MotionExtensions.H_Z};
 
                 // DIE CARRIER ALIGN 1  위치로 이동 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
@@ -78,14 +78,14 @@ namespace HCB.UI
                 // DIE CARRIER ALIGN 2  위치로 이동 
                 await Init_Head(ct);
                 await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_2, ct);
-                await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+                await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
 
                 // TODO: 비전 측정
 
                 // DIE CARRIER ALIGN 2  위치로 이동 
                 await Init_Head(ct);
                 await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_3, ct);
-                await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+                await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
                 // TODO: 비전 측정
                 await Init_Head(ct);
 
@@ -105,16 +105,19 @@ namespace HCB.UI
             try
             {
                 _logger.Information("Die pickup Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                //EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
-                string t = MotionExtensions.H_T;
-                string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+                //string t = MotionExtensions.H_T;
+                //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+                string[] z = { MotionExtensions.H_Z };
 
                 List<(string Motion, string Position)> request = new List<(string Motion, string Position)>();
+
                 int row = (vacNum - 1) / size + 1;
                 int col = (vacNum - 1) % size + 1;
+
                 request.Add((MotionExtensions.H_X, $"DIE_COLUMN_{col}"));
                 request.Add((MotionExtensions.D_Y, $"DIE_ROW_{row}"));
 
@@ -124,9 +127,9 @@ namespace HCB.UI
                 // TODO: 비전 측정 및 각도 계산 
                 await MotionsMove(z, MotionExtensions.PICKUP_STANBY, ct);
                 // TODO: T 축 보정
-                await MotionsMove(MotionExtensions.h_z, MotionExtensions.DIE_PICKUP, ct);
+                //await MotionsMove(MotionExtensions.h_z, MotionExtensions.DIE_PICKUP, ct);
                 // TODO: DIE picker vacuum on
-                await MotionsMove(MotionExtensions.h_z, MotionExtensions.PICKUP_STANBY, ct);
+                //await MotionsMove(MotionExtensions.h_z, MotionExtensions.PICKUP_STANBY, ct);
             }
             catch (Exception e)
             {

@@ -38,9 +38,6 @@ namespace HCB.UI
         private string selectedWaferSize;
 
         [ObservableProperty]
-        private ImageSource waferImage;
-
-        [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> dTableList = new ObservableCollection<SensorIoItemViewModel>();
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private List<string> dTableNameList = new List<string>()
@@ -64,15 +61,15 @@ namespace HCB.UI
 
             var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
 
-            //if (ioDevice != null)
-            //{
-            //    for (var i = 0; i < dTableNameList.Count; i++)
-            //    {
-            //        var result = ioManager.CreateIoVM(dTableNameList[i], dIoNameList[i], dTableNameList[i]);
-            //        if (result != null) DTableList.Add(result);
-                    
-            //    }
-            //}
+            if (ioDevice != null)
+            {
+                for (var i = 0; i < dTableNameList.Count; i++)
+                {
+                    var result = ioManager.CreateIoVM(dTableNameList[i], dIoNameList[i], dTableNameList[i]);
+                    if (result != null) DTableList.Add(result);
+
+                }
+            }
 
             SelectedWaferSize = "12x12";   // 기본 선택
             ApplyWaferSize(SelectedWaferSize);
@@ -166,6 +163,7 @@ namespace HCB.UI
                 _cts = new CancellationTokenSource();
 
                 await SequenceService.DTableLoadComplete(_cts.Token);
+               
             }
             catch (OperationCanceledException)
             {
@@ -181,6 +179,52 @@ namespace HCB.UI
         }
 
         [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task DiePickup()
+        {
+            try
+            {
+                _cts?.Cancel();
+                _cts = new CancellationTokenSource();
+
+                await SequenceService.DTablePickup(1, _cts.Token);
+                _dialogService.ShowMessage("DIE PICKUP 완료", "DIE PICKUP 완료");
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                InitializeCommand.NotifyCanExecuteChanged();
+            }
+        }
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task BottomVision()
+        {
+            try
+            {
+                _cts?.Cancel();
+                _cts = new CancellationTokenSource();
+
+                await SequenceService.BottomVision(_cts.Token);
+                _dialogService.ShowMessage("Bottom Vision완료", "Bottom Vision 완료");
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                InitializeCommand.NotifyCanExecuteChanged();
+            }
+        }
+        
+
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
         public async Task WaferLoad()
         {
             try
@@ -190,8 +234,6 @@ namespace HCB.UI
                 _cts = new CancellationTokenSource();
 
                 await SequenceService.WTableLoading(_cts.Token);
-
-
             }
             catch (OperationCanceledException)
             {
@@ -252,6 +294,32 @@ namespace HCB.UI
                 InitializeCommand.NotifyCanExecuteChanged();
             }
         }
+
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task Bonding()
+        {
+            try
+            {
+                IsInitializing = true;
+                _cts?.Cancel();
+                _cts = new CancellationTokenSource();
+
+                await SequenceService.Bonding(_cts.Token);
+                _dialogService.ShowMessage("Bonding 완료", "Bonding 완료");
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                IsInitializing = false;
+                InitializeCommand.NotifyCanExecuteChanged();
+            }
+        }
+
 
         [RelayCommand]
         private async Task Step1Start()

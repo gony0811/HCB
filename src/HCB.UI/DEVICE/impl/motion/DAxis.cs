@@ -56,7 +56,7 @@ namespace HCB.UI
         public DAxis(ILogger logger)
         {
             this.logger = logger.ForContext<DAxis>();
-            HomeTimeout = 10000;
+            HomeTimeout = 1000 * 60 * 5;
 
             /// InpositionRange 기본값 설정
             if (unit == UnitType.mm)

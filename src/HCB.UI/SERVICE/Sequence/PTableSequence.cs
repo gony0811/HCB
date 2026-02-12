@@ -16,12 +16,13 @@ namespace HCB.UI
             try
             {
                 _logger.Information("Bottom Vision Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                //EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
                 
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
-                string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+                //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+                string[] z = { MotionExtensions.H_Z };
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 await MotionsMove(xy, MotionExtensions.BTM_VISION_LOW, ct);

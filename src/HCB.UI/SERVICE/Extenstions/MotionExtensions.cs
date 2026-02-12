@@ -170,7 +170,7 @@ namespace HCB.UI
 
             await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
 
-            bool result = await helper.WaitUntilAsync( () => axis.InPosition, 10000, ct,
+            bool result = await helper.WaitUntilAsync( () => axis.InPosition, 60000, ct,
                 $"Axis {axis.Name} Move to {positionName} Timeout"
             );
         }

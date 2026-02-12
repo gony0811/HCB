@@ -36,7 +36,7 @@ namespace HCB.UI
             }
         }
 
-        public SensorIoItemViewModel CreateIoVM(string address, string name, string label="", string description="", bool isReadOnly = false)
+        public SensorIoItemViewModel? CreateIoVM(string address, string name, string label="", string description="", bool isReadOnly = false)
         {
             try
             {
@@ -53,7 +53,7 @@ namespace HCB.UI
             {
                 _logger.Error("Io Address Not Found");
             }
-            return new SensorIoItemViewModel();
+            return null;
         }
     }
 }
