@@ -111,7 +111,92 @@
             </Grid>
         </telerik:RadTabItem>
 
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="2. WAFER" Margin="1">
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="2. Loading" Margin="1">
+            <Grid local:GridHelper.Rows="Auto, *"  Margin="20" >
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="Loading" FontSize="28" FontWeight="Bold" Foreground="#4A69BD"/>
+                    <Rectangle Height="2" Fill="#3498DB" Margin="0,5,0,0"/>
+                    <TextBlock Text="Die &amp; Wafer Loading" FontSize="14" Foreground="#7F8C8D" Margin="0,5,0,20"/>
+                </StackPanel>
+
+                <Grid local:GridHelper.Columns="*, *" Grid.Row="1">
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="DIE" FontSize="18" Grid.Column="0" Margin="2">
+                        <Grid  HorizontalAlignment="Center" VerticalAlignment="Center" local:GridHelper.Rows="Auto, Auto">
+                            <ItemsControl ItemsSource="{Binding DTableList}" Margin="5">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <telerik:RadUniformGrid Columns="3" Margin="5" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+
+                                <!-- 📌 각 셀의 디자인 -->
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type local:SensorIoItemViewModel}">
+                                        <Border BorderBrush="#16233B"
+                                        BorderThickness="0"
+                                        CornerRadius="6">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <telerik:HighlightTextBlock Text="{Binding Name}"
+                                                                    Margin="5"
+                                                                    HorizontalAlignment="Right"
+                                                                    VerticalAlignment="Center"
+                                                                    Foreground="White"
+                                                                    FontWeight="SemiBold"
+                                                                    FontSize="18"/>
+                                                <!-- 토글 -->
+                                                <local:IoPillToggle
+                                            Grid.Column="1"
+                                            IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                            IsReadOnly="True"
+                                            Command="{Binding ToggleCommand}"
+                                            CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                            <!-- 센서 이름 -->
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="1" Margin="{StaticResource ControlMargin}">
+                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding DieLoadCommand}">
+                                    <telerik:HighlightTextBlock Text="Load"/>
+                                </telerik:RadButton>
+
+                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding DieCompleteCommand}">
+                                    <telerik:HighlightTextBlock Text="Complete"/>
+                                </telerik:RadButton>
+                            </StackPanel>
+                        </Grid>
+                    </telerik:GroupBox>
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="WAFER" FontSize="18" Grid.Column="1" Margin="2">
+                        <Grid local:GridHelper.Rows="*, Auto">
+                            <Grid>
+                                <local:WaferMapControl ItemsSource="{Binding WaferData}"/>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="{StaticResource ControlMargin}" Grid.Row="1">
+                                <telerik:RadComboBox 
+                                    Width="100"
+                                    Height="30"
+                                    Margin="{StaticResource ControlMargin}"
+                                    ItemsSource="{Binding WaferSizeList}"
+                                    SelectedItem="{Binding SelectedWaferSize, Mode=TwoWay}"
+                                    Style="{StaticResource RadComboBoxStyle}"/>
+                                
+                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferLoadCommand}">
+                                    <telerik:HighlightTextBlock Text="Load"/>
+                                </telerik:RadButton>
+
+                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferCompleteCommand}">
+                                    <telerik:HighlightTextBlock Text="Complete"/>
+                                </telerik:RadButton>
+                            </StackPanel>
+                        </Grid>
+                    </telerik:GroupBox>
+                </Grid>
+            </Grid>
+        </telerik:RadTabItem>
+
+
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="3. WAFER ALIGN" Margin="1">
             <Grid local:GridHelper.Rows="Auto, *, Auto"  Margin="20" >
                 <StackPanel Grid.Row="0">
                     <TextBlock Text="Wafer Align" FontSize="28" FontWeight="Bold" Foreground="#4A69BD"/>
@@ -120,7 +205,7 @@
                 </StackPanel>
 
                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1">
-                    <Grid local:GridHelper.Columns="Auto, *">
+                    <Grid local:GridHelper.Columns="Auto, *" local:GridHelper.Rows="*, Auto">
                         <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="진행도" FontSize="18" Grid.Column="0" Margin="2">
                             <StackPanel>
                                 <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
@@ -149,99 +234,22 @@
                         <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="측정 Image" FontSize="18" Grid.Column="1" Margin="2">
                             <Border Width="500" Height="500"></Border>
                         </telerik:GroupBox>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.ColumnSpan="2" Grid.Row="2" Margin="{StaticResource ControlMargin}">
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferAlignCommand}">
+                                <telerik:HighlightTextBlock Text="START"/>
+                            </telerik:RadButton>
+
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding StopCommand}">
+                                <telerik:HighlightTextBlock Text="STOP"/>
+                            </telerik:RadButton>
+                        </StackPanel>
                     </Grid>
                 </Grid>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2" Margin="{StaticResource ControlMargin}">
-                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferAlignCommand}">
-                        <telerik:HighlightTextBlock Text="START"/>
-                    </telerik:RadButton>
-
-                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding StopCommand}">
-                        <telerik:HighlightTextBlock Text="STOP"/>
-                    </telerik:RadButton>
-                </StackPanel>
+                
             </Grid>
         </telerik:RadTabItem>
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="3. DIE" Margin="1">
-            <Grid local:GridHelper.Rows="Auto, *"  Margin="20" >
-                <StackPanel Grid.Row="0">
-                    <TextBlock Text="Loading" FontSize="28" FontWeight="Bold" Foreground="#4A69BD"/>
-                    <Rectangle Height="2" Fill="#3498DB" Margin="0,5,0,0"/>
-                    <TextBlock Text="Die &amp; Wafer Loading" FontSize="14" Foreground="#7F8C8D" Margin="0,5,0,20"/>
-                </StackPanel>
-
-                <Grid local:GridHelper.Columns="*, *" Grid.Row="1">
-                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="DIE" FontSize="18" Grid.Column="0" Margin="2">
-                        <Grid  HorizontalAlignment="Center" VerticalAlignment="Center" local:GridHelper.Rows="Auto, Auto">
-                            <ItemsControl ItemsSource="{Binding DTableList}" Margin="5">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <telerik:RadUniformGrid Columns="3" Margin="5" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-
-                                <!-- 📌 각 셀의 디자인 -->
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type local:SensorIoItemViewModel}">
-                                        <Border BorderBrush="#16233B"
-                                                BorderThickness="0"
-                                                CornerRadius="6">
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <telerik:HighlightTextBlock Text="{Binding Name}"
-                                                                            Margin="5"
-                                                                            HorizontalAlignment="Right"
-                                                                            VerticalAlignment="Center"
-                                                                            Foreground="White"
-                                                                            FontWeight="SemiBold"
-                                                                            FontSize="18"/>
-                                                <!-- 토글 -->
-                                                <local:IoPillToggle
-                                                    Grid.Column="1"
-                                                    IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                                    IsReadOnly="True"
-                                                    Command="{Binding ToggleCommand}"
-                                                    CommandParameter="{Binding}"/>
-                                            </StackPanel>
-                                            <!-- 센서 이름 -->
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="1" Margin="{StaticResource ControlMargin}">
-                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding DieLoadCommand}">
-                                    <telerik:HighlightTextBlock Text="Load"/>
-                                </telerik:RadButton>
-
-                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding DieCompleteCommand}">
-                                    <telerik:HighlightTextBlock Text="Complete"/>
-                                </telerik:RadButton>
-                            </StackPanel>
-                        </Grid>
-                    </telerik:GroupBox>
-                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="WAFER" FontSize="18" Grid.Column="1" Margin="2">
-                        <Grid local:GridHelper.Rows="*, Auto">
-                            <Grid>
-                                <local:WaferMapControl ItemsSource="{Binding WaferData}"/>
-                            </Grid>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="{StaticResource ControlMargin}" Grid.Row="1">
-                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferLoadCommand}">
-                                    <telerik:HighlightTextBlock Text="Load"/>
-                                </telerik:RadButton>
-
-                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferCompleteCommand}">
-                                    <telerik:HighlightTextBlock Text="Complete"/>
-                                </telerik:RadButton>
-
-                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding UpdateTestResultsCommand}">
-                                    <telerik:HighlightTextBlock Text="TEST"/>
-                                </telerik:RadButton>
-                            </StackPanel>
-                        </Grid>
-                    </telerik:GroupBox>
-                </Grid>
-            </Grid>
-        </telerik:RadTabItem>
-
+        
         
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="4. BONDING" Margin="1">
             <Grid local:GridHelper.Rows="Auto, *, Auto"  Margin="20" >
@@ -252,24 +260,39 @@
                 </StackPanel>
 
                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1" local:GridHelper.Columns="*, *, *">
-                    <StackPanel>
-                        <Button Content="#1 Pickup" Margin="2"/>
-                        <Button Content="#2 Pickup" Margin="2"/>
-                        <Button Content="#3 Pickup" Margin="2"/>
-                        <Button Content="#4 Pickup" Margin="2"/>
-                        <Button Content="#5 Pickup" Margin="2"/>
-                        <Button Content="#6 Pickup" Margin="2"/>
-                        <Button Content="#7 Pickup" Margin="2"/>
-                        <Button Content="#8 Pickup" Margin="2"/>
-                        <Button Content="#9 Pickup" Margin="2"/>   
-                    </StackPanel>
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="정보" FontSize="18" Grid.Column="0" Margin="2" Width="300">
+                        <Grid local:GridHelper.Columns="*, *" local:GridHelper.Rows="Auto, Auto">
+                            <Border BorderBrush="Gray" BorderThickness="1">
+                                <TextBlock Text="DIE Num" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="22" FontWeight="Bold"/>
+                            </Border>
+                            <Border BorderBrush="Gray" BorderThickness="1" Grid.Column="1">
+                                <TextBlock Text="1" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="22" FontWeight="Bold"/>
+                            </Border>
+                            <Border BorderBrush="Gray" BorderThickness="1" Grid.Row="1">
+                                <TextBlock Text="DIE Type" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="22" FontWeight="Bold"/>
+                            </Border>
+                            <Border BorderBrush="Gray" BorderThickness="1" Grid.Column="1" Grid.Row="1">
+                                <TextBlock Text="Top" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="22" FontWeight="Bold"/>
+                            </Border>
+                        </Grid>
+                    </telerik:GroupBox>
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="DIE PICKUP" FontSize="18" Grid.Column="1" Margin="2">
+                        <Grid  local:GridHelper.Columns="1*, 1*, 1*" local:GridHelper.Rows="1*, 1*, 1*">
+                            <Button Content="#1" Width="80" Height="80" Margin="2" />
+                            <Button Content="#2" Width="80" Height="80" Margin="2" Grid.Column="1"/>
+                            <Button Content="#3" Width="80" Height="80" Margin="2" Grid.Column="2"/>
+                            <Button Content="#4" Width="80" Height="80" Margin="2" Grid.Row="1"/>
+                            <Button Content="#5" Width="80" Height="80" Margin="2" Grid.Row="1" Grid.Column="1"/>
+                            <Button Content="#6" Width="80" Height="80" Margin="2" Grid.Row="1" Grid.Column="2"/>
+                            <Button Content="#7" Width="80" Height="80" Margin="2" Grid.Row="2"/>
+                            <Button Content="#8" Width="80" Height="80" Margin="2" Grid.Row="2" Grid.Column="1"/>
+                            <Button Content="#9" Width="80" Height="80" Margin="2" Grid.Row="2" Grid.Column="2"/>
+                        </Grid>
+                    </telerik:GroupBox>
 
-                    <StackPanel Grid.Column="1">
-                        <Button Content="Carrier Align" Margin="2"></Button>
-                        <Button Content="Bottom Vision" Margin="2"></Button>
-                        <Button Content="Bonding Align" Margin="2"></Button>
-                        <Button Content="Bonding" Margin="2"></Button>
-                    </StackPanel>
+                    <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="DIE PICKUP" FontSize="18" Grid.Column="2" Margin="2" Width="350">
+                        <local:WaferMapControl ItemsSource="{Binding WaferData}"/>
+                    </telerik:GroupBox>
                 </Grid>
             </Grid>
         </telerik:RadTabItem>

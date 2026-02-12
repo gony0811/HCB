@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HCB.UI.DEVICE.Core
+namespace HCB.UI
 {
     [Service(Lifetime.Singleton)] // 싱글톤으로 관리
     public class IOManager
@@ -36,7 +36,7 @@ namespace HCB.UI.DEVICE.Core
             }
         }
 
-        public SensorIoItemViewModel? CreateIoVM(string address, string name, string label="", string description="", bool isReadOnly = false)
+        public SensorIoItemViewModel CreateIoVM(string address, string name, string label="", string description="", bool isReadOnly = false)
         {
             try
             {
@@ -53,7 +53,7 @@ namespace HCB.UI.DEVICE.Core
             {
                 _logger.Error("Io Address Not Found");
             }
-            return null;
+            return new SensorIoItemViewModel();
         }
     }
 }

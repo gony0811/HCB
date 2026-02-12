@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
-using HCB.UI.DEVICE.Core;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -32,6 +31,15 @@ namespace HCB.UI
             set { _waferData = value; OnPropertyChanged(); }
         }
 
+        public ObservableCollection<string> WaferSizeList { get; } =
+                new ObservableCollection<string> { "12x12", "4x4" };
+
+        [ObservableProperty]
+        private string selectedWaferSize;
+
+        [ObservableProperty]
+        private ImageSource waferImage;
+
         [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> dTableList = new ObservableCollection<SensorIoItemViewModel>();
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
@@ -56,16 +64,18 @@ namespace HCB.UI
 
             var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
 
-            if (ioDevice != null)
-            {
-                for (var i = 0; i < dTableNameList.Count; i++)
-                {
-                    var result = ioManager.CreateIoVM(dTableNameList[i], dIoNameList[i], dTableNameList[i]);
-                    if (result != null) DTableList.Add(result);
+            //if (ioDevice != null)
+            //{
+            //    for (var i = 0; i < dTableNameList.Count; i++)
+            //    {
+            //        var result = ioManager.CreateIoVM(dTableNameList[i], dIoNameList[i], dTableNameList[i]);
+            //        if (result != null) DTableList.Add(result);
                     
-                }
-            }
-            WaferData = GenerateWafer(100, 100);
+            //    }
+            //}
+
+            SelectedWaferSize = "12x12";   // 기본 선택
+            ApplyWaferSize(SelectedWaferSize);
         }
 
         [RelayCommand(CanExecute = nameof(CanStartInitialize))]
@@ -296,6 +306,26 @@ namespace HCB.UI
             // 새로운 리스트 주소를 할당 -> Dependency Property 콜백 실행됨
             WaferData = newList;
         }
+
+        partial void OnSelectedWaferSizeChanged(string value)
+        {
+            ApplyWaferSize(value);
+        }
+
+        private void ApplyWaferSize(string size)
+        {
+            switch (size)
+            {
+                case "12x12":
+                    WaferData = GenerateWafer(12, 12);
+                    break;
+
+                case "4x4":
+                    WaferData = GenerateWafer(4, 4);
+                    break;
+            }
+        }
+
         //[RelayCommand]
         //private void Step1Stop()
         //{
