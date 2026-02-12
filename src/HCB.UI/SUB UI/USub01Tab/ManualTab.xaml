@@ -19,7 +19,11 @@
                                   Margin="5"                          
                                   Grid.Row="0" 
                                   Grid.Column="0">
-                    <StackPanel Orientation="Vertical" Margin="5">
+                    <Grid Margin="5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <telerik:RadGridView
                                              Style="{StaticResource RadGridViewStyle}"
                                              ItemsSource="{Binding DyAxis.PositionList}"
@@ -42,7 +46,7 @@
                                     DataMemberBinding="{Binding Position, StringFormat=F3}"
                                     Width="100"
                                     SortMemberPath="Location"/>
-                                    <telerik:GridViewDataColumn Header="속도"
+                                <telerik:GridViewDataColumn Header="속도"
                                     DataMemberBinding="{Binding Speed, StringFormat=F2}"
                                     Width="100"
                                     SortMemberPath="Speed"/>
@@ -76,9 +80,8 @@
                             </telerik:RadGridView.Columns>
                         </telerik:RadGridView>
 
-                        <local:MotorStateControl DataContext="{Binding DyAxis}" Margin="5"/>
-                    </StackPanel>
-                    
+                        <local:MotorStateControl DataContext="{Binding DyAxis}" Grid.Row="1" Margin="5"/>
+                    </Grid>
                 </telerik:GroupBox>
             </Grid>
             
@@ -89,7 +92,11 @@
                                   Header="P-Y"
                                   Margin="5"
                                   Grid.Row="0" Grid.Column="0">
-                    <StackPanel Orientation="Vertical" Margin="5">
+                    <Grid Margin="5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <telerik:RadGridView    Style="{StaticResource RadGridViewStyle}"
                                                 ItemsSource="{Binding PyAxis.PositionList}"
                                                 FontSize="16"
@@ -132,15 +139,15 @@
                                                                     Margin="2">
                                                 </telerik:RadButton>
                                             </StackPanel>
-                                            
+
                                         </DataTemplate>
                                     </telerik:GridViewDataColumn.CellTemplate>
                                 </telerik:GridViewDataColumn>
                             </telerik:RadGridView.Columns>
                         </telerik:RadGridView>
 
-                        <local:MotorStateControl DataContext="{Binding PyAxis}" Margin="5"/>
-                    </StackPanel>
+                        <local:MotorStateControl DataContext="{Binding PyAxis}" Grid.Row="1" Margin="5"/>
+                    </Grid>
 
                 </telerik:GroupBox>
             </Grid>
@@ -151,7 +158,11 @@
                     <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="H-X"
           Margin="4"
           Grid.Row="0">
-                        <StackPanel Orientation="Vertical" Margin="5">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <telerik:RadGridView
                             Style="{StaticResource RadGridViewStyle}"
                             ItemsSource="{Binding BxAxis.PositionList}"
@@ -207,8 +218,8 @@
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 
-                            <local:MotorStateControl DataContext="{Binding BxAxis}" Margin="5"/>
-                        </StackPanel>
+                            <local:MotorStateControl DataContext="{Binding BxAxis}" Grid.Row="1" Margin="5"/>
+                        </Grid>
                     </telerik:GroupBox>
                         
                 </Grid>
@@ -216,7 +227,11 @@
                     <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="H-Z"
                     Margin="5"
                     Grid.Row="0" Grid.RowSpan="2">
-                        <StackPanel Orientation="Vertical" Margin="5">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <telerik:RadGridView
                               Style="{StaticResource RadGridViewStyle}"
                               ItemsSource="{Binding Bz1Axis.PositionList}"
@@ -273,14 +288,18 @@
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 
-                            <local:MotorStateControl DataContext="{Binding Bz1Axis}" Margin="5"/>
-                        </StackPanel>
+                            <local:MotorStateControl DataContext="{Binding Bz1Axis}" Grid.Row="1" Margin="5"/>
+                        </Grid>
                     </telerik:GroupBox>
                 </Grid>
                 <Grid local:GridHelper.Rows="*, Auto" Grid.Column="2">
                     <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="h-z"
                                     Margin="4" Grid.Row="0" Grid.RowSpan="2">
-                        <StackPanel Orientation="Vertical" Margin="5">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <telerik:RadGridView
                                   Style="{StaticResource RadGridViewStyle}"
                                   ItemsSource="{Binding Bz2Axis.PositionList}"
@@ -337,8 +356,8 @@
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 
-                            <local:MotorStateControl DataContext="{Binding Bz2Axis}" Margin="5"/>
-                        </StackPanel>
+                            <local:MotorStateControl DataContext="{Binding Bz2Axis}" Grid.Row="1" Margin="5"/>
+                        </Grid>
                     </telerik:GroupBox>
                 </Grid>
             </Grid>
@@ -349,9 +368,11 @@
                     <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="W-Y"
                                 Margin="4"
                                 Grid.Row="0" Grid.RowSpan="2">
-                        <StackPanel Orientation="Vertical" Margin="5">
-
-
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <telerik:RadGridView
                                 Style="{StaticResource RadGridViewStyle}"
                                 ItemsSource="{Binding WyAxis.PositionList}"
@@ -409,15 +430,19 @@
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 
-                            <local:MotorStateControl DataContext="{Binding WyAxis}" Margin="5"/>
-                        </StackPanel>
+                            <local:MotorStateControl DataContext="{Binding WyAxis}" Grid.Row="1" Margin="5"/>
+                        </Grid>
                     </telerik:GroupBox>
                 </Grid>
                 <Grid local:GridHelper.Rows="*, Auto" Grid.Column="1">
                     <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="W-T"
                                 Margin="4"
                                 Grid.Row="0" Grid.RowSpan="2">
-                        <StackPanel Orientation="Vertical" Margin="5">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <telerik:RadGridView
                                 Style="{StaticResource RadGridViewStyle}"
                                 ItemsSource="{Binding WtAxis.PositionList}"
@@ -475,8 +500,8 @@
                                 </telerik:RadGridView.Columns>
                             </telerik:RadGridView>
 
-                            <local:MotorStateControl DataContext="{Binding WtAxis}" Margin="5"/>
-                        </StackPanel>
+                            <local:MotorStateControl DataContext="{Binding WtAxis}" Grid.Row="1" Margin="5"/>
+                        </Grid>
                     </telerik:GroupBox>
                 </Grid>
                 

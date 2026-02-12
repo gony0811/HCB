@@ -101,17 +101,6 @@
                                            Grid.Row="2" Grid.ColumnSpan="2"
                                            Content="검색"
                                            Command="{Binding SearchCommand}" />
-
-                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Grid.Row="3" Grid.ColumnSpan="2"
-                                            Content="알람 히스토리 생성"
-                                            Margin="0,12,0,0"
-                                            HorizontalAlignment="Stretch"
-                                            Command="{Binding HistoryCreateCommand}"/>
-                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Grid.Row="4" Grid.ColumnSpan="2"
-                                            Content="All Reset"
-                                            Margin="0,12,0,0"
-                                            HorizontalAlignment="Stretch"
-                                            Command="{Binding AllResetCommand}"/>
                         
                     </Grid>
                 </telerik:GroupBox>

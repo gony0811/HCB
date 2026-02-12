@@ -25,29 +25,27 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+
+                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding InitializeCommand}">
+                        <telerik:HighlightTextBlock Text="Initialize"/>
+                    </telerik:RadButton>
+
+                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding WaferLoadCommand}">
+                        <telerik:HighlightTextBlock Text="Wafer Load"/>
+                    </telerik:RadButton>
+
+                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding DieLoadCommand}">
+                        <telerik:HighlightTextBlock Text="Die Load"/>
+                    </telerik:RadButton>
+
+
                     <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding StepWaferAlignCommand}">
                         <telerik:HighlightTextBlock Text="Wafer Align"/>
                     </telerik:RadButton>
                     <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding StepDieAlignCommand}">
                         <telerik:HighlightTextBlock Text="Die Align"/>
                     </telerik:RadButton>
-                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding StepDieAlignCommand}">
-                        <telerik:HighlightTextBlock Text="Die Align"/>
-                    </telerik:RadButton>
-                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding ServoAllOnCommand}">
-                        <telerik:HighlightTextBlock Text="Servo All On"/>
-                    </telerik:RadButton>
-
-                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding ServoAllOffCommand}">
-                        <telerik:HighlightTextBlock Text="Servo All Off"/>
-                    </telerik:RadButton>
-
-                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding WaferPinDownCommand}">
-                        <telerik:HighlightTextBlock Text="Wafer pin down"/>
-                    </telerik:RadButton>
-                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="150" Height="50" Margin="4" Command="{Binding WaferPinUpCommand}">
-                        <telerik:HighlightTextBlock Text="Wafer pin up"/>
-                    </telerik:RadButton>
+                    
                 </StackPanel>
             </Grid>
         </telerik:RadTabItem>

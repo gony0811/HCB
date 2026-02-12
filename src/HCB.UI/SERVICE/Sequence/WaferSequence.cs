@@ -11,64 +11,105 @@ namespace HCB.UI
 {
     public partial class SequenceService : BackgroundService
     {
-        public async Task<bool> WaferLoad(CancellationToken ct)
+        public async Task WTableLoading(CancellationToken ct)
         {
-            var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-            var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
-
-            string[] readyAxis = { "H_Z", "h_z", "H_X"};
-            string loadingAxis = "W_Y";
             try
             {
-                // Set Ready
-                for(int i =0; i < readyAxis.Length; i++)
-                {
-                    var motion = motionDevice.FindMotionByName(readyAxis[i]);
-                    var position = motion.PositionList.FirstOrDefault(x => x.Name == "READY");
-                    if (position == null) throw new Exception($"{readyAxis[i]} Motion에 READY Position을 등록해주세요");
-                    await position.AbsoluteMove();
+                _logger.Information("Wafer Loading Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
-                    await _sequenceHelper.WaitUntilAsync(() =>
-                    {
-                        return motion.InPosition;
-                    }, 60000, ct, $"[Initialize] {motion.Name} 축이 READY Position에 도달하지 못했습니다");
-                }
+                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
-                // Set Load
-                var wyAxis = motionDevice.FindMotionByName(loadingAxis);
-                var wyLoadPosition = wyAxis.PositionList.FirstOrDefault(x => x.Name == "READY");
-                if (wyLoadPosition == null) throw new Exception($"{loadingAxis} Motion에 READY Position을 등록해주세요");
-                await wyLoadPosition.AbsoluteMove();
-                await _sequenceHelper.WaitUntilAsync(() =>
-                {
-                    return wyAxis.InPosition;
-                }, 60000, ct, $"[Initialize] {wyAxis.Name} 축이 READY Position에 도달하지 못했습니다");
+                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+                string[] motions = { MotionExtensions.W_Y, MotionExtensions.H_X };
+                await MotionsMove(motions, MotionExtensions.WAFER_LOADING, ct);
+                await Task.Delay(3000, ct);
 
-                // Wafer Vacuum off
-                string[] waferVac =
-                {
-                    IoExtensions.DO_WTABLE_VAC_1_ON, IoExtensions.DO_WTABLE_VAC_2_ON, IoExtensions.DO_WTABLE_VAC_3_ON, IoExtensions.DO_WTABLE_VAC_4_ON, IoExtensions.DO_WTABLE_VAC_5_ON
-                };
-                for (int i = 0; i < waferVac.Length; i++)
-                {
-                    ioDevice.SetDigital(waferVac[i], false);  
-                }
+                // Vacuum Off
+                await _sequenceHelper.WTableVacuumAll(eOnOff.Off, ct);
 
-                // Wafer Pin Up
-                bool pinDown = await ioDevice.SetDigitalAsync(IoExtensions.DI_WTABLE_LIFT_PIN_DOWN, false);
-                if (!pinDown) throw new Exception("[Initialize] Wafer Loading Pin DOWN 상태 해제 실패");
-
-                bool pinUp = await ioDevice.SetDigitalAsync(IoExtensions.DI_WTABLE_LIFT_PIN_UP, true);
-                if (!pinUp) throw new Exception("[Initialize] Wafer Loading Pin UP 동작 실패");
-
-                return true;
+                // Wafer Pin UP
+                await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
             }
-            catch(Exception e)
+            catch (OperationCanceledException)
             {
-                _logger.Error($"{e.Message}");
-                _logger.Error("Wafer Load에 실패했습니다. 작업을 종료합니다");
-                return false;
+                _logger.Information("Wafer Loading Canceled");
+                return;
             }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, ex.Message);
+                return;
+            }
+            finally
+            {
+                _logger.Information("Wafer Loading End");
+            }
+        }
+
+        public async Task WTableLoadComplete(CancellationToken ct)
+        {
+            try
+            {
+                // 1. Wafer pin down 
+                await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
+
+                // 2. wafer vacuum on
+                await _sequenceHelper.WTableVacuumAll(eOnOff.On, ct);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
+            }
+
+        }
+
+
+        public async Task WTableAlign(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Wafer Align Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+
+                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+                string[] xy = { MotionExtensions.W_Y, MotionExtensions.H_X };
+                string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+
+                // Wafer Center Align
+                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+                await MotionsMove(xy, MotionExtensions.WAFER_CENTER_POSITION , ct);
+                await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+
+                // TODO: 비전 측정
+
+                // Wafer Left Align
+                await Init_Head(ct);
+                await MotionsMove(xy, MotionExtensions.WAFER_LEFT_POSITION, ct);
+                await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+
+                // TODO: 비전 측정
+
+                //Wafer Right Align
+                await Init_Head(ct);
+                await MotionsMove(xy, MotionExtensions.WAFER_RIGHT_POSITION, ct);
+                await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+
+                // TODO: 비전 측정
+                await Init_Head(ct);
+                // TODO: 오차 보정
+
+            }
+            catch (Exception e)
+            {
+
+            }
+            finally
+            {
+                _logger.Information("Wafer Align End");
+            }
+
         }
     }
 }

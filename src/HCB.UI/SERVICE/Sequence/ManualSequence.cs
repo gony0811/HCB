@@ -15,69 +15,7 @@ namespace HCB.UI
     public partial class SequenceService : BackgroundService
     {
         public const string LOAD_POSITION = "LOAD";
-        public async Task DTableLoading(CancellationToken ct)
-        {
-            try
-            {
-                var status = _operationService.Status;
-                if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Auto || status.Alarm == AlarmState.HEAVY)
-                {
-                    _logger.Warning("Cannot execute DTableLoading: Sequence Service is not in Manual Standby Status.");
-                    return;
-                }
-
-                _logger.Information("Die Loading Start");
-
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-
-                var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // D Table Y축 
-                var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); // H Table X축
-                var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 
-                var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); // H Table Z축 
-                
-                if (d_y == null || H_X == null || H_Z == null || h_z == null)
-                {
-                    string errorMsg = "";
-                    if (d_y == null) errorMsg += "[D_Y] ";
-                    if (H_X == null) errorMsg += "[H_X] ";
-                    if (H_Z == null) errorMsg += "[H_Z] ";
-                    if (h_z == null) errorMsg += "[h_z] ";
-                    throw new Exception(errorMsg + "축을 찾을 수 없습니다");
-                }
-
-                // 모션 로딩 위치로 이동
-                await Task.WhenAll(
-                    _sequenceHelper.MoveAsync(H_Z.MotorNo, LOAD_POSITION, ct),
-                    _sequenceHelper.MoveAsync(h_z.MotorNo, LOAD_POSITION, ct)
-                );
-
-                await Task.Run(async () =>
-                {
-                    await _sequenceHelper.MoveAsync(H_X.MotorNo, LOAD_POSITION, ct);
-                    await _sequenceHelper.MoveAsync(d_y.MotorNo, LOAD_POSITION, ct);
-                });
-
-                await Task.Delay(3000, ct);
-
-                await _sequenceHelper.DTableVacuumAll(eOnOff.Off, ct);
-
-
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.Information("Die Loading Canceled");
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, ex.Message);
-                return;
-            }
-            finally
-            {
-                _logger.Information("Die Loading End");
-            }
-        }
-
+       
         public async Task DTableLoadComplete(CancellationToken ct)
         {
             try
@@ -141,80 +79,9 @@ namespace HCB.UI
             }
         }
 
-        public async Task WTableLoading(CancellationToken ct)
-        {
-            try
-            {
-                var status = _operationService.Status;
-                if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Auto || status.Alarm == AlarmState.HEAVY)
-                {
-                    _logger.Warning("Cannot execute WTableLoading: Sequence Service is not in Manual Standby Status.");
-                    return;
-                }
+        
 
-                _logger.Information("Wafer Loading Start");
-
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-
-
-                var w_y = motionDevice?.FindMotionByName(MotionExtensions.W_Y); 
-                var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); 
-                var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); 
-                var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); 
-
-
-                if (w_y == null) throw new Exception("W Table Y axis not found in motion device.");
-                if (H_X == null) throw new Exception("H Table X axis not found in motion device.");
-                if (H_Z == null) throw new Exception("H Table Z axis not found in motion device.");
-                if (h_z == null) throw new Exception("h Table z axis not found in motion device.");
-
-                // 모션 로딩 위치로 이동
-                await Task.WhenAll(
-                    _sequenceHelper.MoveAsync(H_Z.MotorNo, LOAD_POSITION, ct),
-                    _sequenceHelper.MoveAsync(h_z.MotorNo, LOAD_POSITION, ct)
-                );    
-                await _sequenceHelper.MoveAsync(H_X.MotorNo, LOAD_POSITION, ct);
-                await _sequenceHelper.MoveAsync(w_y.MotorNo, LOAD_POSITION, ct);
-
-                await Task.Delay(3000, ct);
-
-                // Vacuum Off
-                await _sequenceHelper.WTableVacuumAll(eOnOff.Off, ct);
-
-                // Wafer Pin UP
-                await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.Information("Wafer Loading Canceled");
-                return;
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, ex.Message);
-                return;
-            }
-            finally
-            {
-                _logger.Information("Wafer Loading End");
-            }
-        }
-
-        public async Task WTableLoadComplete(CancellationToken ct)
-        {
-            try
-            {
-                // 1. Wafer pin down 
-                await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
-
-                // 2. wafer vacuum on
-                await _sequenceHelper.WTableVacuumAll(eOnOff.On, ct);
-            }catch(Exception e)
-            {
-                _logger.Error(e, e.Message);
-            }
-            
-        }
+        
 
         private bool CheckDiePresentOnDTable()
         {
@@ -290,8 +157,6 @@ namespace HCB.UI
                     _sequenceHelper.MoveAsync(MotionExtensions.H_Z, MotionExtensions.READY_POSITION, ct),
                     _sequenceHelper.MoveAsync(MotionExtensions.h_z, MotionExtensions.READY_POSITION, ct)
                 );
-
-
 
                 await Task.WhenAll(
                     _sequenceHelper.MoveAsync(MotionExtensions.H_X, diePositionName, ct),

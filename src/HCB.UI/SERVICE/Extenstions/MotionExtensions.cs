@@ -135,7 +135,7 @@ namespace HCB.UI
             if (axis == null || position == null)
             {
                 helper.Log(LogLevel.Critical, $"Axis with ID {motorNo} or Position {positionName} not found.");
-                return;
+                throw new Exception($"Axis with ID {motorNo} or Position {positionName} not found.");
             }
 
             if (helper.IsSimulation)
@@ -148,10 +148,7 @@ namespace HCB.UI
 
             await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
 
-            await helper.WaitUntilAsync(
-                () => axis.InPosition,
-                10000,
-                ct,
+            bool result = await helper.WaitUntilAsync( () => axis.InPosition, 10000, ct,
                 $"Axis {axis.Name} Move to {positionName} Timeout"
             );
         }
@@ -174,12 +171,8 @@ namespace HCB.UI
 
             await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
 
-            await helper.WaitUntilAsync(
-                () => axis.InPosition,
-                10000,
-                ct,
-                $"Axis {axis.Name} Move to {positionName} Timeout"
-            );
+            bool result = await helper.WaitUntilAsync( () => axis.InPosition, 10000, ct, $"Axis {axis.Name} Move to {positionName} Timeout" );
+            if (!result) throw new Exception("Timeout");
         }
 
         public static async Task AbsoluteMoveAsync(this ISequenceHelper helper, int motorNo, double velocity, double position, CancellationToken ct)

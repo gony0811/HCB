@@ -256,25 +256,50 @@ namespace HCB.UI
             {
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
             }
-            device.SetDigital(DO_WTABLE_LIFT_PIN_UP, upDown == eUpDown.Up? true : false, helper.IsSimulation);
-            device.SetDigital(DO_WTABLE_LIFT_PIN_DOWN, upDown == eUpDown.Down? true : false, helper.IsSimulation);
 
-            if (helper.IsSimulation)
+            try
             {
-                device.SetDigital(DI_WTABLE_LIFT_PIN_UP, upDown == eUpDown.Up ? true : false, helper.IsSimulation);
-                device.SetDigital(DI_WTABLE_LIFT_PIN_DOWN, upDown == eUpDown.Down ? true : false, helper.IsSimulation);
+                if (upDown == eUpDown.Up)
+                {
+                    device.SetDigital(DO_WTABLE_LIFT_PIN_DOWN, false, helper.IsSimulation);
+                    await Task.Delay(500);
+                    device.SetDigital(DO_WTABLE_LIFT_PIN_UP, true, helper.IsSimulation);
+                }else
+                {
+                    device.SetDigital(DO_WTABLE_LIFT_PIN_UP, false, helper.IsSimulation);
+                    await Task.Delay(500);
+                    device.SetDigital(DO_WTABLE_LIFT_PIN_DOWN, true, helper.IsSimulation);
+                }
+                
+            }catch(Exception ex)
+            {
+                helper.Log(LogLevel.Critical, $"Io Device error");
             }
 
-            while (ct.IsCancellationRequested == false)
-            {
-                await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
-                await helper.WaitUntilAsync(
-                    () => device.GetDigital(DI_WTABLE_LIFT_PIN_UP) == (upDown == eUpDown.Up) && device.GetDigital(DI_WTABLE_LIFT_PIN_DOWN) == (upDown == eUpDown.Down),
-                    3000,
-                    ct,
-                    $"W-TABLE LIFT PIN UP/DOWN = {upDown} Timeout"
-                );
-            }
+            //var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
+            //if (device == null)
+            //{
+            //    helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
+            //}
+            //device.SetDigital(DO_WTABLE_LIFT_PIN_UP, upDown == eUpDown.Up? true : false, helper.IsSimulation);
+            //device.SetDigital(DO_WTABLE_LIFT_PIN_DOWN, upDown == eUpDown.Down? true : false, helper.IsSimulation);
+
+            //if (helper.IsSimulation)
+            //{
+            //    device.SetDigital(DI_WTABLE_LIFT_PIN_UP, upDown == eUpDown.Up ? true : false, helper.IsSimulation);
+            //    device.SetDigital(DI_WTABLE_LIFT_PIN_DOWN, upDown == eUpDown.Down ? true : false, helper.IsSimulation);
+            //}
+
+            //while (ct.IsCancellationRequested == false)
+            //{
+            //    await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
+            //    await helper.WaitUntilAsync(
+            //        () => device.GetDigital(DI_WTABLE_LIFT_PIN_UP) == (upDown == eUpDown.Up) && device.GetDigital(DI_WTABLE_LIFT_PIN_DOWN) == (upDown == eUpDown.Down),
+            //        3000,
+            //        ct,
+            //        $"W-TABLE LIFT PIN UP/DOWN = {upDown} Timeout"
+            //    );
+            //}
         }
 
         public static void StartLampOnOff(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)

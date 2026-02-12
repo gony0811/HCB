@@ -29,6 +29,7 @@
                     <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
                 </Grid.ColumnDefinitions>
                 <Border BorderBrush="Transparent" BorderThickness="1">
                     <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Name}"
@@ -37,15 +38,19 @@
                    Foreground="White"
                    Margin="0,0,10,0"/>
                 </Border>
-                
+
 
                 <Button Content="SERVO ON"
                         Grid.Column="1"
                         Command="{Binding ServoOnCommand}"
                         Margin="4,0"/>
-
-                <Button Content="HOME"
+                <Button Content="SERVO OFF"
                         Grid.Column="2"
+                        Command="{Binding ServoOffCommand}"
+                        Margin="4,0"
+                        />
+                <Button Content="HOME"
+                        Grid.Column="3"
                         Command="{Binding HomeCommand}"
                         Margin="4,0"/>
             </Grid>

@@ -62,11 +62,6 @@
                         CommandParameter="ENGINEER" 
                         Margin="4" Height="40"/>
 
-                <Button Content="관리자" 
-                        Command="{Binding LoginCommand}" 
-                        CommandParameter="ADMIN" 
-                        Margin="4" Height="40"/>
-
                 <Button Content="서비스 엔지니어" 
                         Command="{Binding LoginCommand}" 
                         CommandParameter="SERVICE_ENGINEER" 
