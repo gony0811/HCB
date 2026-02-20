@@ -29,6 +29,10 @@
                     <Button Content="BottomVision" Command="{Binding BottomVisionCommand}" Margin="10"/>
                     <Button Content="Bonding" Command="{Binding BondingCommand}" Margin="10"/>
                 </StackPanel>
+                <TextBlock Text="DRY RUN" TextAlignment="Center" FontSize="20"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Dry Run" Margin="10" Command="{Binding DryRunCommand}"/>
+                </StackPanel>
             </StackPanel>
             
             

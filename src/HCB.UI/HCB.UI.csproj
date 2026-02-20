@@ -24,6 +24,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
+    <PackageReference Include="NetMQ" Version="4.0.2.2" />
     <PackageReference Include="PropertyTools.Wpf" Version="3.1.0" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
@@ -228,6 +229,14 @@
   <Compile Include="SERVICE\Sequence\StepSequence.cs" />
   <Compile Include="SERVICE\Sequence\WaferSequence.cs" />
   <Compile Include="SERVICE\SystemMainService.cs" />
+  <Compile Include="SERVICE\Tcp\EqpCommunicationService.cs" />
+  <Compile Include="SERVICE\Tcp\EqpTcpServer.cs" />
+  <Compile Include="SERVICE\Tcp\ItcpcCommunicator.cs" />
+  <Compile Include="SERVICE\Tcp\MessageFactory.cs" />
+  <Compile Include="SERVICE\Tcp\TcpCommunicator.cs" />
+  <Compile Include="SERVICE\Tcp\TcpMessage.cs" />
+  <Compile Include="SERVICE\Tcp\TcpSession.cs" />
+  <Compile Include="SERVICE\Tcp\TcpSettings.cs" />
   <Compile Include="SERVICE\ViewModels\InitializeServiceVM.cs" />
   <Compile Include="SERVICE\ViewModels\SequenceServiceVM.cs" />
   <Compile Include="SERVICE\ViewModels\WaferAlignServiceVM.cs" />

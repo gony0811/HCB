@@ -121,7 +121,7 @@ namespace HCB.UI
             await helper.DelayAsync(100, ct); // Small delay to ensure the home command is processed
             await helper.WaitUntilAsync(
                 () => axis.IsHomeDone,
-                20000,
+                60000,
                 ct,
                 $"Axis {axis.Name} Homing Timeout"
             );
@@ -137,7 +137,7 @@ namespace HCB.UI
                 await helper.DelayAsync(100, ct).ConfigureAwait(false);
 
                 await Task.WhenAll(axes.Select(a =>
-                    helper.WaitUntilAsync(() => a.IsHomeDone, 20000, ct, $"Axis {a.Name} Homing Timeout")
+                    helper.WaitUntilAsync(() => a.IsHomeDone, 60000, ct, $"Axis {a.Name} Homing Timeout")
                 )).ConfigureAwait(false);
 
                 return true;
@@ -175,6 +175,7 @@ namespace HCB.UI
             );
         }
 
+
         public static async Task MoveAsync(this ISequenceHelper helper, string motorName, string positionName, CancellationToken ct)
         {
             var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByName(motorName);
@@ -193,7 +194,7 @@ namespace HCB.UI
 
             await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
 
-            bool result = await helper.WaitUntilAsync( () => axis.InPosition, 10000, ct, $"Axis {axis.Name} Move to {positionName} Timeout" );
+            bool result = await helper.WaitUntilAsync( () => axis.InPosition, 60000, ct, $"Axis {axis.Name} Move to {positionName} Timeout" );
             if (!result) throw new Exception("Timeout");
         }
 
@@ -219,7 +220,7 @@ namespace HCB.UI
 
             await helper.WaitUntilAsync(
                 () => axis.InPosition,
-                10000,
+                60000,
                 ct,
                 $"Axis {axis.Name} Move to {position} Timeout"
             );
@@ -247,10 +248,47 @@ namespace HCB.UI
 
             await helper.WaitUntilAsync(
                 () => axis.InPosition,
-                10000,
+                60000,
                 ct,
                 $"Axis {axis.Name} Relative Move as {distance} Timeout"
             );
         }
+
+        public static async Task<bool> RelativeMoveAsync(this ISequenceHelper helper, string motorName, double velocity, double distance, CancellationToken ct)
+        {
+            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByName(motorName);
+
+            if (axis == null)
+            {
+                helper.Log(LogLevel.Critical, $"Axis with No {motorName} not found.");
+                return false;
+            }
+
+            if (helper.IsSimulation)
+            {
+                helper.Log(LogLevel.Information, $"[Simulation] Axis {axis.Name} Relative Move by Distance {distance} at Speed {velocity}");
+                return false;
+            }
+            velocity = velocity <= 0 ? axis.LimitMaxSpeed + axis.LimitMinSpeed / 2.0 : velocity;
+
+            double targetPosition = axis.CurrentPosition + distance;
+
+            distance = targetPosition > axis.LimitMaxPosition
+                       ? axis.LimitMaxPosition - axis.CurrentPosition // 남은 거리만큼만 이동
+                       : distance;                                     // 원래 입력된 거리 유지
+
+            await axis.Move(MoveType.Relative, jerk: 100, velocity, distance);
+
+            await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
+
+            return await helper.WaitUntilAsync(
+                () => axis.InPosition,
+                60000,
+                ct,
+                $"Axis {axis.Name} Relative Move as {distance} Timeout"
+            );
+        }
+
+
     }
 }

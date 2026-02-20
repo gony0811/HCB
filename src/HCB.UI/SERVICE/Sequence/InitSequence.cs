@@ -17,9 +17,6 @@ namespace HCB.UI
     public partial class SequenceService : BackgroundService
     {
         public const string READY_POSITION = "READY";
-
-
-        
         public bool Init_PreCheck(CancellationToken ct)
         {
             bool dieVacResult = false;

@@ -79,6 +79,10 @@ namespace HCB.UI
             await userService.InitializeAsync();
             SplashScreenUpdate("데이터베이스 연결 및 초기화 완료", 25);
 
+            SplashScreenUpdate("VISION 통신 서비스 시작", 30);
+            var tcpService = _host.Services.GetRequiredService<EqpCommunicationService>();
+            tcpService.Start();
+
             if (result == MessageBoxResult.Yes)
             {
                 await InitializeApplicationAsync();

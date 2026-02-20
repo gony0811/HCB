@@ -42,12 +42,12 @@ namespace HCB.UI
             catch (OperationCanceledException)
             {
                 _logger.Information("Die Loading Canceled");
-                return;
+                throw new OperationCanceledException();
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, ex.Message);
-                return;
+                throw new Exception(ex.Message);
             }
             finally
             {
@@ -94,7 +94,7 @@ namespace HCB.UI
             }
             catch (Exception e)
             {
-
+                throw new Exception(e.Message);
             }
 
         }

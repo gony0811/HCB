@@ -10,6 +10,7 @@ namespace HCB.UI
 {
     public enum Availability
     {
+        IDLE,
         Down,
         Up
     }
