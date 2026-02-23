@@ -394,6 +394,46 @@ namespace HCB.UI
             }
         }
 
+
+        [RelayCommand]
+        public async Task DryRun()
+        {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
+
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    for (int dieNumber = 1; dieNumber <= 9; dieNumber++)
+                    {
+                        token.ThrowIfCancellationRequested();
+
+                        // 1. DTable에서 Die 픽업
+                        await SequenceService.DTablePickup(dieNumber, token);
+
+                        // 2. PTable로 이동 후 Align
+                        await SequenceService.BottomVision(token);
+
+                        // 3. Wafer에 본딩
+                        await SequenceService.Bonding(token);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // 정지 버튼으로 인한 취소 처리
+            }
+            catch (Exception ex)
+            {
+                // 예외 처리
+            }
+        }
+
+
+
+
         //[RelayCommand]
         //private void Step1Stop()
         //{
