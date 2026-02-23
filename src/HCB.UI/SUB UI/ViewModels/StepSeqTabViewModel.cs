@@ -105,11 +105,13 @@ namespace HCB.UI
         }
         // 중지 명령
         [RelayCommand]
-        public void Stop()
+        public async Task Stop()
         {
             if (_cts != null && !_cts.IsCancellationRequested)
             {
                 _cts.Cancel(); // 토큰에 취소 신호 전달
+                var device = _deviceManager.GetDevice<PowerPmacDevice>("PMAC");
+                await device.StopAsync();
                 SequenceServiceVM.SystemCheck = StepState.Idle;
                 SequenceServiceVM.ServoOn = StepState.Idle;
                 SequenceServiceVM.HZBreakOff = StepState.Idle;

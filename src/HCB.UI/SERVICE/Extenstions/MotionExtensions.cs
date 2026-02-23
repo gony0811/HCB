@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Telerik.Windows.Documents.Fixed.Model.Data;
@@ -16,7 +17,7 @@ namespace HCB.UI
 
         public static async Task Servo(this ISequenceHelper helper, int motorNo, bool ready, CancellationToken ct)
         {
-            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(motorNo);
+            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>("PMAC").FindMotionByMotorIndex(motorNo);
             if (axis == null)
             {
                 helper.Log(LogLevel.Critical, $"Axis with No. {motorNo} not found.");

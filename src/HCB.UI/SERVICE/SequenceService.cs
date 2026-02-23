@@ -76,7 +76,8 @@ namespace HCB.UI
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            //_logger.Information("SequenceService is stopping.");
+            _logger.Information("SequenceService is stopping.");
+            
 
             //_timer.Change(Timeout.Infinite, Timeout.Infinite); // 타이머 중지
 

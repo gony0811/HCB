@@ -179,6 +179,20 @@ namespace HCB.UI
                 }
             }
         }
+        
+        public async Task StopAsync()
+        {
+            foreach (var motion in MotionList)
+            {
+                try
+                {
+                    await motion.MoveStop();
+                }catch(Exception e)
+                {
+                    throw new Exception("Stop 명령중 에러 발생");
+                }
+            }
+        }
 
         public Task RefreshStatus_()
         {          
