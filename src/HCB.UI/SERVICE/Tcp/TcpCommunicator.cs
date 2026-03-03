@@ -1,24 +1,25 @@
-﻿using System;
+using NetMQ;
+using NetMQ.Sockets;
+using System;
 using System.Collections.Concurrent;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HCB.UI
-{ 
+{
+    /// <summary>
+    /// NetMQ DEALER 소켓 기반 클라이언트.
+    /// ROUTER 서버(Vision 또는 외부 시스템)에 연결하여 메시지를 양방향으로 교환한다.
+    /// </summary>
     public class TcpCommunicator : ITcpCommunicator
     {
         private readonly TcpSettings _settings;
-        private TcpClient? _client;
-        private NetworkStream? _stream;
-        private CancellationTokenSource? _cts;
+        private DealerSocket? _socket;
+        private NetMQPoller?  _poller;
+        private NetMQQueue<NetMQMessage>? _sendQueue;
 
-        // responseMessageName → 대기 중인 TCS
         private readonly ConcurrentDictionary<string, TaskCompletionSource<Message>> _pending = new();
-
-        private readonly SemaphoreSlim _sendLock = new(1, 1);
-        private readonly SemaphoreSlim _connectLock = new(1, 1);
 
         private ConnectionState _state = ConnectionState.Disconnected;
 
@@ -35,7 +36,7 @@ namespace HCB.UI
             }
         }
 
-        public event EventHandler<Message>? MessageReceived;
+        public event EventHandler<Message>?         MessageReceived;
         public event EventHandler<ConnectionState>? ConnectionStateChanged;
 
         public TcpCommunicator(TcpSettings settings)
@@ -44,81 +45,78 @@ namespace HCB.UI
         }
 
         // ─── 연결 ────────────────────────────────────────────────
-        public async Task ConnectAsync(CancellationToken ct = default)
+        public Task ConnectAsync(CancellationToken ct = default)
         {
-            await _connectLock.WaitAsync(ct);
-            try
+            if (State == ConnectionState.Connected) return Task.CompletedTask;
+
+            State   = ConnectionState.Connecting;
+            _socket = new DealerSocket();
+            _socket.Connect($"tcp://{_settings.Host}:{_settings.Port}");
+
+            _sendQueue = new NetMQQueue<NetMQMessage>();
+            _sendQueue.ReceiveReady += (_, _) =>
             {
-                if (State == ConnectionState.Connected) return;
-                State = ConnectionState.Connecting;
+                while (_sendQueue.TryDequeue(out var msg, TimeSpan.Zero))
+                    _socket!.SendMultipartMessage(msg);
+            };
 
-                _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                _client = new TcpClient();
+            _socket.ReceiveReady += OnReceiveReady;
 
-                using var timeout = new CancellationTokenSource(_settings.ConnectTimeout);
-                using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, ct);
+            _poller = new NetMQPoller { _socket, _sendQueue };
+            _poller.RunAsync();
 
-                await _client.ConnectAsync(_settings.Host, _settings.Port, linked.Token);
-                _stream = _client.GetStream();
-                State = ConnectionState.Connected;
-
-                _ = Task.Run(() => ReceiveLoopAsync(_cts.Token), _cts.Token);
-            }
-            catch (Exception ex)
-            {
-                State = ConnectionState.Disconnected;
-                throw new Exception($"연결 실패 [{_settings.Host}:{_settings.Port}]: {ex.Message}", ex);
-            }
-            finally
-            {
-                _connectLock.Release();
-            }
+            State = ConnectionState.Connected;
+            return Task.CompletedTask;
         }
 
-        public async Task DisconnectAsync()
+        public Task DisconnectAsync()
         {
-            _cts?.Cancel();
-            State = ConnectionState.Disconnected;
-            _stream?.Close();
-            _client?.Close();
-
             foreach (var kv in _pending)
                 kv.Value.TrySetCanceled();
             _pending.Clear();
 
-            await Task.CompletedTask;
+            _poller?.Stop();
+            _poller?.Dispose();
+            _sendQueue?.Dispose();
+            _socket?.Close();
+            _socket?.Dispose();
+
+            State = ConnectionState.Disconnected;
+            return Task.CompletedTask;
         }
 
         // ─── 전송 ────────────────────────────────────────────────
-        public async Task SendAsync(Message message, CancellationToken ct = default)
+        public Task SendAsync(Message message, CancellationToken ct = default)
         {
             EnsureConnected();
 
             message.Header ??= new MessageHeader();
             message.Header.UnitName = _settings.UnitName;
-            message.Header.Time = DateTime.Now;
+            message.Header.Time     = DateTime.Now;
 
-            var data = Encoding.UTF8.GetBytes(message.ToXml());
+            // DEALER 송신 형태: [content] (identity 프레임 없음)
+            var frames = new NetMQMessage();
+            frames.Append(message.ToXml(), Encoding.UTF8);
 
-            await _sendLock.WaitAsync(ct);
-            try { await _stream!.WriteAsync(data, 0, data.Length, ct); }
-            finally { _sendLock.Release(); }
+            _sendQueue!.Enqueue(frames);
+            return Task.CompletedTask;
         }
 
         // ─── 요청-응답 ───────────────────────────────────────────
         public async Task<RequestResult> RequestAsync(
-            Message request,
-            string? responseMessageName = null,
-            TimeSpan? timeout = null,
-            CancellationToken ct = default)
+            Message   request,
+            string?   responseMessageName = null,
+            TimeSpan? timeout             = null,
+            CancellationToken ct          = default)
         {
             EnsureConnected();
 
-            var reqName = request.Header?.MessageName
+            var reqName     = request.Header?.MessageName
                               ?? throw new ArgumentException("MessageName이 설정되지 않았습니다.");
-        var responseKey = responseMessageName ?? reqName.Replace("REQUEST", "REPLY", StringComparison.OrdinalIgnoreCase);
+            var responseKey = responseMessageName
+                              ?? reqName.Replace("REQUEST", "REPLY", StringComparison.OrdinalIgnoreCase);
 
-        var tcs = new TaskCompletionSource<Message>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs = new TaskCompletionSource<Message>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             if (!_pending.TryAdd(responseKey, tcs))
                 throw new InvalidOperationException($"동일 responseKey({responseKey})의 요청이 이미 진행 중입니다.");
@@ -147,41 +145,19 @@ namespace HCB.UI
             }
         }
 
-        // ─── 수신 루프 ───────────────────────────────────────────
-        private async Task ReceiveLoopAsync(CancellationToken ct)
+        // ─── 수신 (폴러 스레드에서 호출됨) ─────────────────────
+        private void OnReceiveReady(object? sender, NetMQSocketEventArgs e)
         {
-            var sb = new StringBuilder();
-            var buf = new byte[_settings.ReceiveBufferSize];
-            var delimiter = _settings.MessageDelimiter;
-
             try
             {
-                while (!ct.IsCancellationRequested && _stream is not null)
-                {
-                    int read = await _stream.ReadAsync(buf, 0, buf.Length, ct);
-                    if (read == 0) break;
-
-                    sb.Append(Encoding.UTF8.GetString(buf, 0, read));
-
-                    string raw = sb.ToString();
-                    int idx;
-                    while ((idx = raw.IndexOf(delimiter, StringComparison.Ordinal)) >= 0)
-                    {
-                        int end = idx + delimiter.Length;
-                        string chunk = raw[..end];
-                        raw = raw[end..];
-                        HandleIncoming(chunk);
-                    }
-                    sb.Clear();
-                    sb.Append(raw);
-                }
+                // DEALER 수신 형태: [content] (identity 없음)
+                var frames = e.Socket.ReceiveMultipartMessage();
+                var xml    = frames[frames.FrameCount - 1].ConvertToString(Encoding.UTF8);
+                HandleIncoming(xml);
             }
-            catch (OperationCanceledException) { }
-            catch
+            catch (Exception ex)
             {
-                State = ConnectionState.Disconnected;
-                if (_settings.AutoReconnect)
-                    _ = Task.Run(ReconnectLoopAsync, CancellationToken.None);
+                Console.WriteLine($"[TcpCommunicator] 수신 오류: {ex.Message}");
             }
         }
 
@@ -189,13 +165,13 @@ namespace HCB.UI
         {
             try
             {
-                var msg = Message.FromXml(xml);
+                var msg     = Message.FromXml(xml);
                 var msgName = msg.Header?.MessageName ?? string.Empty;
 
                 if (_pending.TryRemove(msgName, out var tcs))
-                    tcs.TrySetResult(msg);          // 대기 중인 Request에 응답
+                    tcs.TrySetResult(msg);
                 else
-                    MessageReceived?.Invoke(this, msg); // Push 메시지
+                    MessageReceived?.Invoke(this, msg);
             }
             catch (Exception ex)
             {
@@ -203,39 +179,12 @@ namespace HCB.UI
             }
         }
 
-        // ─── 재연결 ──────────────────────────────────────────────
-        private async Task ReconnectLoopAsync()
-        {
-            while (State != ConnectionState.Connected)
-            {
-                State = ConnectionState.Reconnecting;
-                await Task.Delay(_settings.ReconnectInterval);
-                try
-                {
-                    _client?.Dispose();
-                    _client = new TcpClient();
-                    await _client.ConnectAsync(_settings.Host, _settings.Port);
-                    _stream = _client.GetStream();
-                    State = ConnectionState.Connected;
-                    _cts = new CancellationTokenSource();
-                    _ = Task.Run(() => ReceiveLoopAsync(_cts.Token));
-                }
-                catch { /* 재시도 */ }
-            }
-        }
-
         private void EnsureConnected()
         {
             if (State != ConnectionState.Connected)
-                throw new InvalidOperationException("TCP 연결이 되어 있지 않습니다.");
+                throw new InvalidOperationException("ZMQ 연결이 되어 있지 않습니다.");
         }
 
-        public void Dispose()
-        {
-            _ = DisconnectAsync();
-            _sendLock.Dispose();
-            _connectLock.Dispose();
-            _cts?.Dispose();
-        }
+        public void Dispose() => _ = DisconnectAsync();
     }
 }

@@ -121,9 +121,9 @@
                             <StackPanel HorizontalAlignment="Left">
                                 <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="레벨"/>
                                 <telerik:RadComboBox
-                                    ItemsSource="{Binding Source={StaticResource AlarmLevelValues}}"
-                                    SelectedItem="{Binding Level, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    Width="200" Height="28" Style="{StaticResource RadComboBoxStyle}">
+                                        ItemsSource="{Binding Source={StaticResource AlarmLevelValues}}"
+                                        SelectedItem="{Binding Level, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Width="200" Height="28" Style="{StaticResource RadComboBoxStyle}">  
                                 </telerik:RadComboBox>
                             </StackPanel>
                         </Border>

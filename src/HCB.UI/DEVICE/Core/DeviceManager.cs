@@ -19,13 +19,14 @@ namespace HCB.UI
         private readonly ILogger _logger;
         private readonly DeviceRepository _deviceRepository;
         private readonly IDeviceFactory _deviceFactory;
+        private AxisInterlockService interlockService;
 
-        public DeviceManager(ILogger logger, DeviceRepository deviceRepository, IDeviceFactory deviceFactory)
+        public DeviceManager(ILogger logger, DeviceRepository deviceRepository, IDeviceFactory deviceFactory, AxisInterlockService interlockService)
         {
             _logger = logger.ForContext<DeviceManager>();
             _deviceRepository = deviceRepository;
             _deviceFactory = deviceFactory;
-
+            this.interlockService = interlockService;
             _ = LoadFromDatabaseAsync();
         }
         public ObservableCollection<IDevice> Devices { get; } = new ObservableCollection<IDevice>();
@@ -349,7 +350,7 @@ namespace HCB.UI
 
         private DAxis ConvertToDMotion(MotionEntity m, IMotionDevice runtime)
         {
-            var dm = new DAxis(this._logger)
+            var dm = new DAxis(this._logger, interlockService)
             {
                 Id = m.Id,
                 Name = m.Name,

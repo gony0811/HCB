@@ -4,7 +4,6 @@ using Serilog;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Telerik.Windows.Controls;
 
 namespace HCB.UI
@@ -89,6 +88,28 @@ namespace HCB.UI
                 _logger.Warning("[MarkPosition] 결과 NG");
         }
 
+        // AutoFocusing 요청 : AF방식 협의 필요 ( 미완성 )
+        public async Task RequestAFStart()
+        {
+            var request = MessageFactory.Create(
+                messageName: "REQUEST-AF-START",
+                unitName: "EQP",
+                content: null
+            );
+            var result = await _server.RequestAsync(request);
+
+            if (!result.Success)
+            {
+                _logger.Warning($"[MarkPosition] 요청 실패: {result.ErrorMessage}");
+                return;
+            }
+
+            var response = VisionMarkPositionResponse.Parse(result.Response!.Data?.Content);
+            if (response.Result == Result.OK)
+                _logger.Information($"X={response.X}, Y={response.Y}, Theta={response.Theta}, Score={response.Score}");
+            else
+                _logger.Warning("[MarkPosition] 결과 NG");
+        }
 
         // AutoFocusing 요청
         public async Task RequestAutoFocusing(CancellationToken ct = default)
@@ -101,7 +122,6 @@ namespace HCB.UI
 
             await _server.SendAsync(request, ct);
         }
-
         #endregion
 
         #region VISION -> EQP
@@ -113,10 +133,36 @@ namespace HCB.UI
             {
                 switch(msgName)
                 {
-                    case "REQUEST-EQP-STATUS":
+                    // 설비 상태 정보 요청
+                    case "REQUEST-UNIT-STATUS":
                         await ReplyEqpStatus();
                         break;
-                    case "COMMAND-MOTION-MOVE":
+                    // 현재 레시피 확인 요청 "REQUEST-CURRENT-RECIPE"
+                    
+                    // Z축 이동 
+                    case "REQUEST-AF-ZMOVE":
+                        break;
+                    // Auto Focusing End
+
+                    case "REPLY-AF-END":
+                        break;
+
+                    // X축 제어 + 
+                    case "REQUEST-MOTION-PLUS-X":
+                        await HandleMotionMove(msg);
+                        break;
+                    // X축 제어 -
+                    case "REQUEST-MOTION-MINUS-X":
+                        await HandleMotionMove(msg);
+                        break;
+
+                    // Z축 제어 +
+                    case "REQUEST-MOTION-PLUS-Z":
+                        await HandleMotionMove(msg);
+                        break;
+
+                    // Z축 제어 -
+                    case "REQUEST-MOTION-MINUS-Z":
                         await HandleMotionMove(msg);
                         break;
                 }
@@ -137,32 +183,50 @@ namespace HCB.UI
             await _server.SendAsync(request, ct);
         }
 
+        private async Task ReplyAFEnd(Message msg, CancellationToken ct = default)
+        {
+            
+        }
+
         private async Task HandleMotionMove(Message msg, CancellationToken ct = default)
         {
-            var xml = XElement.Parse($"<DATA>{msg.Data?.Content}</DATA>");
-            var args = new MotionMoveCommand
+            var msgName = msg.Header?.MessageName ?? "";
+            var reply = msgName.Replace("REQUEST-", "REPLY-");
+            // 메시지명에서 축 이름과 방향 파싱
+            // 예: REQUEST-MOTION-PLUS-X   → H_X,  +1
+            //     REQUEST-MOTION-MINUS-Z  → H_Z,  -1
+            //     REQUEST-MOTION-PLUS-DY  → H_DY, +1
+            //     REQUEST-MOTION-MINUS-PY → H_PY, -1
+            //     REQUEST-MOTION-PLUS-WY  → H_WY, +1
+            string axisName = msgName switch
             {
-                Axis = xml.Element("AXIS")?.Value ?? "",
-                Direction = xml.Element("DIRECTION")?.Value ?? "",
-                Distance = double.TryParse(xml.Element("DISTANCE")?.Value, out var d) ? d : 0,
+                _ when msgName.EndsWith("-X")  => MotionExtensions.H_X,
+                _ when msgName.EndsWith("-DY") => MotionExtensions.D_Y,
+                _ when msgName.EndsWith("-PY") => MotionExtensions.P_Y,
+                _ when msgName.EndsWith("-WY") => MotionExtensions.W_Y,
+                _ when msgName.EndsWith("-Z")  => MotionExtensions.H_Z,
+                _ => throw new ArgumentException($"알 수 없는 축: {msgName}")
             };
+           
+            int sign = msgName.Contains("-PLUS-") ? 1 : -1;
+            string direction = sign > 0 ? "PLUS" : "MINUS";
 
-            int direction = args.Direction.Equals("MINUS") ? -1 : 1;
-            double distance = args.Distance * direction;
+            // Data에는 이동 거리(double) 값만 전달됨
+            double distance = double.TryParse(msg.Data?.Content, out var d) ? d : 0;
+            double signedDistance = distance * sign;
 
-            bool result = await sequenceHelper.RelativeMoveAsync(args.Axis, 0, distance, ct);
+            bool result = await sequenceHelper.RelativeMoveAsync(axisName, 0, signedDistance, ct);
 
-            // ✅ Fix 4: args 값 재사용 (XML 중복 파싱 제거)
             var responseContent = new MotionMoveResult
             {
-                Axis = args.Axis,
-                Direction = args.Direction,
-                Distance = args.Distance,
+                Axis = axisName,
+                Direction = direction,
+                Distance = distance,
                 Result = result
             };
 
             var response = MessageFactory.Create(
-                messageName: "COMPLETED-MOTION-MOVE",
+                messageName: reply,
                 unitName: "EQP",
                 content: responseContent.ToXml()
             );
