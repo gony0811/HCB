@@ -55,5 +55,6 @@ namespace HCB.UI
         Task EStop();    // 비상 정지
 
         Task Home();
+        void ReleaseInterlock();
     }
 }

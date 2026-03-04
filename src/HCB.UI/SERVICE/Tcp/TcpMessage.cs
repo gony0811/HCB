@@ -188,15 +188,15 @@ namespace HCB.UI
     }
     public class MotionMoveResult
     {
-        public string Axis { get; set; }
-        public string Direction { get; set; }
-        public double Distance { get; set; }
+        //public string Axis { get; set; }
+        //public string Direction { get; set; }
+        //public double Distance { get; set; }
         public bool Result { get; set; }
 
         public string ToXml() =>
-            $"<AXIS>{Axis}</AXIS>" +
-            $"<DIRECTION>{Direction}</DIRECTION>" +
-            $"<DISTANCE>{Distance}</DISTANCE>" +
+            //$"<AXIS>{Axis}</AXIS>" +
+            //$"<DIRECTION>{Direction}</DIRECTION>" +
+            //$"<DISTANCE>{Distance}</DISTANCE>" +
             $"<RESULT>{(Result ? "OK" : "NG")}</RESULT>";
     }
 }

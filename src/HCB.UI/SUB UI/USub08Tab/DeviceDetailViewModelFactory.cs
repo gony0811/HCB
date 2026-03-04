@@ -18,6 +18,7 @@ namespace HCB.UI
         private readonly MotionParameterRepository parameterRepository;
         private readonly MotionPositionRepository positionRepository;
         private readonly IoDataRepository ioDataRepository;
+        private AxisInterlockService interlockService;
 
 		public DeviceDetailViewModelFactory(
             ILogger logger,
@@ -25,7 +26,8 @@ namespace HCB.UI
             MotionRepository motionRepository,
             MotionParameterRepository parameterRepository,
             MotionPositionRepository positionRepository,
-            IoDataRepository ioDataRepository)
+            IoDataRepository ioDataRepository,
+            AxisInterlockService interlockService)
         {
             this.logger = logger;
             this.dialogService = dialogService;
@@ -33,12 +35,13 @@ namespace HCB.UI
             this.parameterRepository = parameterRepository;
             this.positionRepository = positionRepository;
             this.ioDataRepository = ioDataRepository;
+            this.interlockService = interlockService;
         }
 
         public IDeviceDetailViewModel Create(IDevice device)
         {
             if (device is IMotionDevice m)
-                return new MotionDeviceDetailViewModel(logger ,m,dialogService, motionRepository, parameterRepository, positionRepository);
+                return new MotionDeviceDetailViewModel(logger ,m,dialogService, motionRepository, parameterRepository, positionRepository, interlockService);
             else if (device is IIoDevice i)
                 return new IoDeviceDetatilViewModel(logger, i, dialogService ,ioDataRepository);
             else

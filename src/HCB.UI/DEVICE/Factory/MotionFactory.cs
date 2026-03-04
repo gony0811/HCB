@@ -12,9 +12,9 @@ namespace HCB.UI
         // =============================================================
         // MotionEntity → DMotion
         // =============================================================
-        public static DAxis ToRuntime(ILogger logger, MotionEntity e, IMotionDevice device)
+        public static DAxis ToRuntime(ILogger logger, IInterlockService interlockService, MotionEntity e, IMotionDevice device)
         {
-            var dm = new DAxis(logger)
+            var dm = new DAxis(logger, interlockService)
             {
                 Id = e.Id,
                 Name = e.Name,

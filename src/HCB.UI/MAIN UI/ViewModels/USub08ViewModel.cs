@@ -20,7 +20,7 @@ namespace HCB.UI
     public partial class USub08ViewModel : ObservableObject
     {
         private readonly DialogService _dialogService;
-
+        private AxisInterlockService interlockService;
         private ILogger logger;
         private readonly DeviceManager deviceManager;
         private readonly DeviceDetailViewModelFactory deviceDetailViewModelFactory;
@@ -29,7 +29,7 @@ namespace HCB.UI
         [ObservableProperty] private IDevice selectedDevice;
         [ObservableProperty] private IDeviceDetailViewModel selectedDetailViewModel;
 
-        public USub08ViewModel(ILogger logger, DeviceManager deviceManager, DeviceDetailViewModelFactory deviceDetailViewModelFactory, DialogService dialogService)
+        public USub08ViewModel(ILogger logger, DeviceManager deviceManager, DeviceDetailViewModelFactory deviceDetailViewModelFactory, DialogService dialogService, AxisInterlockService interlockService)
         {
             this._dialogService = dialogService;
             this.logger = logger.ForContext<USub08ViewModel>();
@@ -37,6 +37,7 @@ namespace HCB.UI
             this.deviceDetailViewModelFactory = deviceDetailViewModelFactory;
             DeviceList = deviceManager.Devices;
             SelectedDevice = DeviceList.FirstOrDefault();
+            this.interlockService = interlockService;
         }
 
         partial void OnSelectedDeviceChanged(IDevice value)
@@ -57,7 +58,7 @@ namespace HCB.UI
                 {
                     case DeviceType.MotionController:
                         var detail = vm.ExtraSetting as MotionDeviceDetailCreateVM;
-                        var motionDevice = new PowerPmacDevice(logger)
+                        var motionDevice = new PowerPmacDevice(logger, interlockService)
                         {
                             Name = vm.Name,
                             DeviceType = vm.DeviceType,

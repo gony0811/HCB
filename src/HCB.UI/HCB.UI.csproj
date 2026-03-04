@@ -62,6 +62,9 @@
   <Page Include="MAIN UI\USub07.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="MAIN UI\VisionPage.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\Alarm\SetAlarmView.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -181,7 +184,9 @@
   <Compile Include="DEVICE\Factory\IDeviceFactory.cs" />
   <Compile Include="DEVICE\Factory\IoDataFactory.cs" />
   <Compile Include="DEVICE\impl\motion\MotionStatusStream.cs" />
+  <Compile Include="DEVICE\Interface\AxisInterlockService.cs" />
   <Compile Include="DEVICE\Interface\device\IMotionDevice.cs" />
+  <Compile Include="DEVICE\Interface\IInterlockService.cs" />
   <Compile Include="DEVICE\Interface\IIoData.cs" />
   <Compile Include="DEVICE\Interface\device\IIoDevice.cs" />
   <Compile Include="DEVICE\impl\AbstractIoBase.cs" />
@@ -206,6 +211,7 @@
   <Compile Include="MAIN UI\ViewModels\USub05ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub06ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub07ViewModel.cs" />
+  <Compile Include="MAIN UI\VisionPage.xaml.cs" />
   <Compile Include="SERVICE\ExceptionType\ErrorException.cs" />
   <Compile Include="SERVICE\Extenstions\IoExtensions.cs" />
   <Compile Include="SERVICE\Extenstions\MotionConstants.cs" />
@@ -235,7 +241,6 @@
   <Compile Include="SERVICE\Tcp\MessageFactory.cs" />
   <Compile Include="SERVICE\Tcp\TcpCommunicator.cs" />
   <Compile Include="SERVICE\Tcp\TcpMessage.cs" />
-  <Compile Include="SERVICE\Tcp\TcpSession.cs" />
   <Compile Include="SERVICE\Tcp\TcpSettings.cs" />
   <Compile Include="SERVICE\ViewModels\InitializeServiceVM.cs" />
   <Compile Include="SERVICE\ViewModels\SequenceServiceVM.cs" />

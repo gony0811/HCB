@@ -20,6 +20,7 @@ namespace HCB.UI
         private readonly DialogService _dialogService;
         private readonly DeviceManager _deviceManager;
         private IOManager ioManager;
+        private EqpCommunicationService eqpCommunicationService;
 
         public SequenceServiceVM SequenceServiceVM { get; }
         private SequenceHelper _sequenceHelper;
@@ -52,7 +53,7 @@ namespace HCB.UI
             IoExtensions.DO_DTABLE_VAC_1_ON, IoExtensions.DO_DTABLE_VAC_2_ON, IoExtensions.DO_DTABLE_VAC_3_ON, IoExtensions.DO_DTABLE_VAC_4_ON, IoExtensions.DO_DTABLE_VAC_5_ON, IoExtensions.DO_DTABLE_VAC_6_ON, IoExtensions.DO_DTABLE_VAC_7_ON, IoExtensions.DO_DTABLE_VAC_8_ON, IoExtensions.DO_DTABLE_VAC_9_ON,
         };
 
-        public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM, SequenceService sequenceService, SequenceHelper sequenceHelper, DeviceManager deviceManager, IOManager ioManager, DialogService dialogService)
+        public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM, SequenceService sequenceService, SequenceHelper sequenceHelper, DeviceManager deviceManager, IOManager ioManager, DialogService dialogService, EqpCommunicationService eqpCommunicationService)
         {
             this.SequenceServiceVM = sequenceServiceVM;
             this.SequenceService = sequenceService;
@@ -60,7 +61,7 @@ namespace HCB.UI
             this._deviceManager = deviceManager;
             this.ioManager = ioManager;
             this._dialogService = dialogService;
-
+            this.eqpCommunicationService = eqpCommunicationService;
             var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
 
             if (ioDevice != null)
@@ -435,6 +436,18 @@ namespace HCB.UI
             }
         }
 
+
+        // 통신 테스트 버튼
+        [RelayCommand]
+        public async Task HeartBeat()
+        {
+            try
+            {
+                bool result = await eqpCommunicationService.HeartBeat();
+                Console.WriteLine(result);
+            }
+            catch(Exception e)
+            {
         [RelayCommand(CanExecute = nameof(CanStartInitialize))]
         public async Task WPinDown()
         {
@@ -442,6 +455,8 @@ namespace HCB.UI
             _cts = new CancellationTokenSource();
             await SequenceService.WTablePinControll(eUpDown.Down, _cts.Token);
 
+            }
+        }
         }
         [RelayCommand(CanExecute = nameof(CanStartInitialize))]
         public async Task WPinUp()

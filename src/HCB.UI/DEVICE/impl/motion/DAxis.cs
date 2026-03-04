@@ -7,18 +7,23 @@ using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Telerik.Windows.Documents.Fixed.Model.Data;
 
 namespace HCB.UI
 {
     public partial class DAxis : ObservableObject, IAxis
     {
-        private readonly ILogger logger;
+        private readonly ILogger _logger;
 
+        // ── 인터락 서비스 (외부 주입 또는 내부 생성) ──────────────────
+        private readonly IInterlockService _interlock;
+
+        // ── 인터락 경고 마진 (단위는 축 단위와 동일) ──────────────────
+        /// <summary>한계값 기준으로 이 값 이내에 들어오면 Warning 이벤트 발생</summary>
+        public double InterlockWarningMargin { get; set; } = 1.0;
+
+        // ── ObservableProperty ─────────────────────────────────────────
         [ObservableProperty] private int id;
         [ObservableProperty] private string name;
         [ObservableProperty] private int motorNo;
@@ -35,8 +40,8 @@ namespace HCB.UI
 
         [ObservableProperty] private IMotionDevice device;
 
-        [ObservableProperty] public ObservableCollection<DMotionParameter> parameterList = new ObservableCollection<DMotionParameter>();
-        [ObservableProperty] public ObservableCollection<DMotionPosition> positionList = new ObservableCollection<DMotionPosition>();
+        [ObservableProperty] public ObservableCollection<DMotionParameter> parameterList = new();
+        [ObservableProperty] public ObservableCollection<DMotionPosition> positionList = new();
 
         [ObservableProperty] private bool isEnabled;
         [ObservableProperty] private bool isBusy;
@@ -50,25 +55,121 @@ namespace HCB.UI
         [ObservableProperty] private double currentSpeed;
         [ObservableProperty] private double setSpeed = 0;
         [ObservableProperty] private double commandPosition;
-        [ObservableProperty] private double currentPosition;
 
-
-        public DAxis(ILogger logger)
+        // currentPosition 이 바뀔 때마다 인터락 체크
+        private double _currentPosition;
+        public double CurrentPosition
         {
-            this.logger = logger.ForContext<DAxis>();
+            get => _currentPosition;
+            set
+            {
+                if (SetProperty(ref _currentPosition, value))
+                    CheckInterlock(value);
+            }
+        }
+
+        // ── 인터락 상태 (UI 바인딩용) ──────────────────────────────────
+        [ObservableProperty] private InterlockState interlockState = InterlockState.Normal;
+        [ObservableProperty] private bool isInterlocked = false;
+
+        // ── 생성자 ─────────────────────────────────────────────────────
+        public DAxis(ILogger logger, IInterlockService interlockService)
+        {
+            _logger = logger.ForContext<DAxis>();
+            _interlock = interlockService;
+
             HomeTimeout = 1000 * 60 * 5;
 
-            /// InpositionRange 기본값 설정
-            if (unit == UnitType.mm)
-            {
-                InpositionRange = 0.001;
-            }
-            else if (unit == UnitType.um)
-            {
-                InpositionRange = 1;
-            }
-            
+            // InpositionRange 기본값
+            InpositionRange = unit == UnitType.um ? 1.0 : 0.001;
+
+            // 인터락 이벤트 구독
+            _interlock.InterlockTriggered += OnInterlockTriggered;
+            _interlock.InterlockReleased += OnInterlockReleased;
         }
+
+        // ── 인터락 체크 ────────────────────────────────────────────────
+        /// <summary>
+        /// CurrentPosition 이 변경될 때마다 호출됩니다.
+        /// 범위를 벗어나면 인터락 서비스가 원자적으로 락을 설정하고
+        /// 즉시 MoveStop 을 호출합니다.
+        /// </summary>
+        private void CheckInterlock(double position)
+        {
+            // 한계값이 설정되지 않은 경우 스킵
+            if (LimitMinPosition == 0 && LimitMaxPosition == 0) return;
+
+            var state = _interlock.Check(
+                Name, MotorNo,
+                position,
+                LimitMinPosition, LimitMaxPosition,
+                InterlockWarningMargin);
+
+            InterlockState = state;
+            IsInterlocked = state == InterlockState.Locked;
+
+            if (state == InterlockState.Locked)
+            {
+                // 비동기 정지 명령 (fire-and-forget, 로그만 남김)
+                _ = EmergencyStopAsync();
+            }
+        }
+
+        private async Task EmergencyStopAsync()
+        {
+            try
+            {
+                await EStop();
+                _logger.Warning($"[INTERLOCK] {Name} 축 비상 정지 실행 완료");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, $"[INTERLOCK] {Name} 축 비상 정지 중 오류");
+            }
+        }
+
+        // ── 인터락 수동 해제 ───────────────────────────────────────────
+        [RelayCommand]
+        public void ReleaseInterlock()
+        {
+            // 축이 안전 범위 안에 있는지 먼저 확인
+            if (CurrentPosition < LimitMinPosition || CurrentPosition > LimitMaxPosition)
+            {
+                _logger.Warning($"[INTERLOCK] {Name} 축이 아직 한계 범위 밖에 있습니다. 해제 불가.");
+                return;
+            }
+
+            _interlock.TryRelease();
+        }
+
+        // ── 인터락 이벤트 핸들러 ──────────────────────────────────────
+        private void OnInterlockTriggered(object? sender, InterlockEventArgs e)
+        {
+            // 이 축에서 발생한 이벤트만 처리
+            if (e.MotorNo != MotorNo) return;
+
+            _logger.Error($"[INTERLOCK] {e.Message}");
+
+            Application.Current?.Dispatcher.InvokeAsync(() =>
+            {
+                MessageBox.Show(
+                    $"인터락 발생!\n\n축: {e.AxisName}\n현재 위치: {e.Value:F4}\n한계값: {e.Limit:F4}\n발생 시각: {e.OccurredAt:HH:mm:ss.fff}",
+                    "인터락 경고",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            });
+        }
+
+        private void OnInterlockReleased(object? sender, EventArgs e)
+        {
+            _logger.Information($"[INTERLOCK] {Name} 축 인터락 해제됨");
+            InterlockState = InterlockState.Normal;
+            IsInterlocked = false;
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 기존 명령 메서드 (변경 없음 - 인터락과 독립 동작)
+        // ══════════════════════════════════════════════════════════════
 
         [RelayCommand]
         public async Task Home()
@@ -78,44 +179,34 @@ namespace HCB.UI
                 string cmd = string.Format("ENABLE PLC {0:D}", HommingProgramNumber);
                 await Device.SendCommand(cmd);
 
-                Stopwatch timeout = new Stopwatch();
-
-                timeout.Start();
+                var timeout = Stopwatch.StartNew();
 
                 while (true)
                 {
                     await Task.Delay(100);
 
-                    if (IsHomeDone)
-                    {
-                        return;
-                    }
-                    else if (timeout.ElapsedMilliseconds > HomeTimeout)
+                    if (IsHomeDone) return;
+
+                    if (timeout.ElapsedMilliseconds > HomeTimeout)
                     {
                         cmd = string.Format("DISABLE PLC {0:D}", HommingProgramNumber);
                         await Device.SendCommand(cmd);
                         await MoveStop();
-
                         return;
                     }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 MessageBox.Show($"에러: \n {e.Message}");
             }
-            
         }
-
 
         [RelayCommand]
         public async Task<bool> ServoOn()
         {
+            if (Device?.IsConnected != true) return false;
 
-            if (Device?.IsConnected != true)
-            {
-                return false;
-            }
             string command = $"#{MotorNo}J/";
 
             if (IsEnabled) return true;
@@ -124,55 +215,26 @@ namespace HCB.UI
             {
                 await Device.SendCommand(command);
                 await Task.Delay(1000);
-                
-                if (IsEnabled) 
-                {
-                    logger.Information($"{Name}: Servo On Success");
-                }else
-                {
+
+                if (IsEnabled)
+                    _logger.Information($"{Name}: Servo On Success");
+                else
                     throw new Exception("Servo On Failed");
-                }
+
                 return IsEnabled;
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
-                logger.Error($"{Name}: Servo On Failed");
+                _logger.Error($"{Name}: Servo On Failed - {ex.Message}");
                 return false;
             }
-            //// 2. 현재 상태에 따른 명령 생성 및 사전 처리
-            //string command = IsEnabled
-            //    ? $"#{MotorNo}K"  // Servo On -> Off 시퀀스
-            //    : $"#{MotorNo}J/";   // Servo Off -> On 시퀀스
-
-            //if (IsEnabled)
-            //{
-            //    IsHomeDone = false; 
-            //}
-
-            //try
-            //{
-            //    await Device.SendCommand(command);
-            //    await Task.Delay(1000);
-            //    logger.Information($"{Name}: {(IsEnabled ? "Servo ON" : "Servo Off")}");
-            //    return IsEnabled;
-            //}
-            //catch (Exception ex)
-            //{
-            //    // 로그 기록 및 사용자 알림 (예시)
-            //    logger.Error(ex, "Servo Command 전송 실패");
-            //    // dialogService.ShowMessage("통신 에러", ex.Message);
-            //}
-
-            //return IsEnabled;
         }
 
         [RelayCommand]
         public async Task<bool> ServoOff()
         {
+            if (Device?.IsConnected != true) return false;
 
-            if (Device?.IsConnected != true)
-            {
-                return false;
-            }
             string command = $"#{MotorNo}K/";
 
             if (!IsEnabled) return false;
@@ -181,134 +243,103 @@ namespace HCB.UI
             {
                 await Device.SendCommand(command);
                 await Task.Delay(1000);
+
                 if (!IsEnabled)
-                {
-                    logger.Information($"{Name}: Servo Off Success");
-                }
+                    _logger.Information($"{Name}: Servo Off Success");
                 else
-                {
                     throw new Exception("Servo Off Fail");
-                }
+
                 return true;
             }
             catch (Exception ex)
             {
-                logger.Information($"{Name}: Servo Off Failed");
+                _logger.Information($"{Name}: Servo Off Failed - {ex.Message}");
                 return false;
             }
         }
 
         public Task ServoReady(bool ready)
         {
-            if (!ready)
-            {
-                this.IsHomeDone = false;
-            }
+            if (!ready) IsHomeDone = false;
 
-            string cmd = string.Empty;
+            string cmd = ready
+                ? string.Format("#{0}J/", MotorNo)
+                : string.Format("#{0}K", MotorNo);
 
-            if (ready)
-            {
-                
-                //cmd = string.Format("#{0}J/ #{0}$", MotorNo);
-
-                cmd = string.Format("#{0}J/", MotorNo);
-            }
-            else
-            {
-                cmd = string.Format("#{0}K", MotorNo);
-            }
-
-            if (Device?.IsConnected == true && Device?.IsEnabled == true)
-            {
-                return Device.SendCommand(cmd);              
-            }
-            else
-            {
-                return Task.CompletedTask;
-            }     
+            return (Device?.IsConnected == true && Device?.IsEnabled == true)
+                ? Device.SendCommand(cmd)
+                : Task.CompletedTask;
         }
 
         public async Task Move(MoveType moveType, double velocity, double position)
         {
-            this.logger.Information($"{Name}, {moveType.ToString()}, Velocity: {velocity}, Position: {position}");
+            // 인터락 상태에서는 이동 명령 차단
+            if (_interlock.IsLocked)
+            {
+                _logger.Warning($"[INTERLOCK] {Name} 축 이동 차단됨 (인터락 활성)");
+                return;
+            }
+
+            _logger.Information($"{Name}, {moveType}, Velocity: {velocity}, Position: {position}");
 
             var setPos = position * EncoderCountPerUnit;
 
             if (Device?.IsConnected != true && Device?.IsEnabled != true)
             {
-                this.logger.Information($"{Name} Axis is not available.");
+                _logger.Information($"{Name} Axis is not available.");
                 return;
             }
 
-            // 속도 설정 (공통)
-            string speedCmd = $"Motor[{MotorNo}].JogSpeed={velocity}";
-            await Device.SendCommand(speedCmd);
+            await Device.SendCommand($"Motor[{MotorNo}].JogSpeed={velocity}");
 
-            string moveCmd;
-
-            if (moveType == MoveType.Absolute)
-            {
-                // 절대 위치 이동 명령 (J=절대위치)
-                moveCmd = $"#{MotorNo}J={setPos}";
-            }
-            else if (moveType == MoveType.Relative)
-            {
-                // 상대 위치 이동 명령 (J^이동거리)
-                // PMAC에서 ^ 기호는 현재 위치 기준 증분(Incremental) 이동을 의미합니다.
-                moveCmd = $"#{MotorNo}J^{setPos}";
-            }
-            else
-            {
-                throw new NotImplementedException($"{moveType} Move is not implemented.");
-            }
+            string moveCmd = moveType == MoveType.Absolute
+                ? $"#{MotorNo}J={setPos}"
+                : moveType == MoveType.Relative
+                    ? $"#{MotorNo}J^{setPos}"
+                    : throw new NotImplementedException($"{moveType} Move is not implemented.");
 
             await Device.SendCommand(moveCmd);
         }
 
         public async Task Move(MoveType moveType, double jerk, double velocity, double position)
         {
-            this.logger.Information($"{Name}, {moveType.ToString()}, Velocity: {velocity}, Position: {position}");
+            if (_interlock.IsLocked)
+            {
+                _logger.Warning($"[INTERLOCK] {Name} 축 이동 차단됨 (인터락 활성)");
+                return;
+            }
+
+            _logger.Information($"{Name}, {moveType}, Velocity: {velocity}, Position: {position}");
 
             var setPos = position * EncoderCountPerUnit;
 
             if (Device?.IsConnected != true && Device?.IsEnabled != true)
             {
-                this.logger.Information($"{Name} Axis is not available.");
+                _logger.Information($"{Name} Axis is not available.");
                 return;
             }
 
-            string jerkCmd = $"Motor[{MotorNo}].Jerk={jerk}";
-            await Device.SendCommand(jerkCmd);
+            await Device.SendCommand($"Motor[{MotorNo}].Jerk={jerk}");
+            await Device.SendCommand($"Motor[{MotorNo}].JogSpeed={velocity}");
 
-            // 속도 설정 (공통)
-            string speedCmd = $"Motor[{MotorNo}].JogSpeed={velocity}";
-            await Device.SendCommand(speedCmd);
-
-            string moveCmd;
-
-            if (moveType == MoveType.Absolute)
-            {
-                // 절대 위치 이동 명령 (J=절대위치)
-                moveCmd = $"#{MotorNo}J={setPos}";
-            }
-            else if (moveType == MoveType.Relative)
-            {
-                // 상대 위치 이동 명령 (J^이동거리)
-                // PMAC에서 ^ 기호는 현재 위치 기준 증분(Incremental) 이동을 의미합니다.
-                moveCmd = $"#{MotorNo}J^{setPos}";
-            }
-            else
-            {
-                throw new NotImplementedException($"{moveType} Move is not implemented.");
-            }
+            string moveCmd = moveType == MoveType.Absolute
+                ? $"#{MotorNo}J={setPos}"
+                : moveType == MoveType.Relative
+                    ? $"#{MotorNo}J^{setPos}"
+                    : throw new NotImplementedException($"{moveType} Move is not implemented.");
 
             await Device.SendCommand(moveCmd);
         }
 
         public Task JogMove(JogMoveType moveType, double jogSpeed)
         {
-             this.logger.Information($"{Name}, {moveType.ToString()}, JogSpeed: {jogSpeed}");
+            if (_interlock.IsLocked)
+            {
+                _logger.Warning($"[INTERLOCK] {Name} 축 Jog 이동 차단됨 (인터락 활성)");
+                return Task.CompletedTask;
+            }
+
+            _logger.Information($"{Name}, {moveType}, JogSpeed: {jogSpeed}");
 
             try
             {
@@ -316,25 +347,21 @@ namespace HCB.UI
                 {
                     if (moveType == JogMoveType.Stop)
                     {
-                        string stopCmd = string.Format("#{0:D}J/", MotorNo);
-                        return Device.SendCommand(stopCmd);
+                        return Device.SendCommand($"#{MotorNo:D}J/");
                     }
                     else
                     {
-                        string direction = (moveType == JogMoveType.Plus ? "+" : "-");
-                        // Motor[x].JogSpeed={속도} 와 #{x}J/ 를 공백으로 구분하여 한 번에 전송
+                        string direction = moveType == JogMoveType.Plus ? "+" : "-";
                         string cmd = string.Format("Motor[{0}].JogSpeed={1} #{0}J{2}", MotorNo, jogSpeed, direction);
-                        //string cmd = string.Format("Motor[{0}].JogSpeed={1} #{0}J/", MotorNo, jogSpeed);
-                        //string cmd = string.Format("#{0:D}J/", MotorNo);
-
                         return Device.SendCommand(cmd);
-                    }    
+                    }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                
+                _logger.Error(e, $"{Name} JogMove 오류");
             }
+
             return Task.CompletedTask;
         }
 
@@ -342,28 +369,18 @@ namespace HCB.UI
         {
             string cmd = string.Format("#{0:D}J/", MotorNo);
 
-            if (Device?.IsConnected == true && Device?.IsEnabled == true)
-            {
-                return Device.SendCommand(cmd);
-            }
-            else
-            {
-                return Task.CompletedTask;
-            }
+            return (Device?.IsConnected == true && Device?.IsEnabled == true)
+                ? Device.SendCommand(cmd)
+                : Task.CompletedTask;
         }
 
         public Task EStop()
         {
             string cmd = string.Format("#{0:D}J/", MotorNo);
 
-            if (Device?.IsConnected == true && Device?.IsEnabled == true)
-            {
-                return Device.SendCommand(cmd);
-            }
-            else
-            {
-                return Task.CompletedTask;
-            }
+            return (Device?.IsConnected == true && Device?.IsEnabled == true)
+                ? Device.SendCommand(cmd)
+                : Task.CompletedTask;
         }
     }
 }

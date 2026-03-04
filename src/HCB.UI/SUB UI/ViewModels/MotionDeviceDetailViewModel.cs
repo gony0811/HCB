@@ -26,7 +26,7 @@ namespace HCB.UI
         private readonly MotionRepository motionRepository;
         private readonly MotionParameterRepository parameterRepository;
         private readonly MotionPositionRepository positionRepository;
-
+        private AxisInterlockService interlockService;
         [ObservableProperty] private IMotionDevice device;
 
         [ObservableProperty] private IAxis selectedMotion;
@@ -38,7 +38,8 @@ namespace HCB.UI
             DialogService dialogService,
             MotionRepository motionRepository,
             MotionParameterRepository parameterRepository,
-            MotionPositionRepository positionRepository)
+            MotionPositionRepository positionRepository,
+            AxisInterlockService interlockService)
         {
             this.logger = logger.ForContext<MotionDeviceDetailViewModel>();
             this.dialogService = dialogService;
@@ -49,6 +50,7 @@ namespace HCB.UI
             Device = device;
             SelectedMotion = Device.MotionList.FirstOrDefault();
             SelectedParam = SelectedMotion != null ? SelectedMotion.ParameterList.FirstOrDefault() : null;
+            this.interlockService = interlockService;
         }
 
         [RelayCommand]
@@ -77,7 +79,7 @@ namespace HCB.UI
                 try
                 {
                     var resultEntity = await motionRepository.AddAsync(entity);
-                    Device.MotionList.Add(MotionFactory.ToRuntime(this.logger, resultEntity, Device));
+                    Device.MotionList.Add(MotionFactory.ToRuntime(this.logger, interlockService, resultEntity, Device));
                     
                 }catch (Exception e)
                 {

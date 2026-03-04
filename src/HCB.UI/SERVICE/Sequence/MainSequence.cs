@@ -11,8 +11,6 @@ namespace HCB.UI
 {
     public partial class SequenceService : BackgroundService
     {
-
-
         public async Task MachineStartAsync(CancellationToken ct)
         {
             try

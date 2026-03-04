@@ -2,9 +2,10 @@
 using HCB.IoC;
 using Serilog;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
+using Telerik.Licensing.Json;
 using Telerik.Windows.Controls;
 
 namespace HCB.UI
@@ -39,6 +40,15 @@ namespace HCB.UI
 
         #region EQP -> VISION
         // ─── EQP → Vision 요청 ───────────────────────────────────
+        // HEART BEAT
+        public async Task<bool> HeartBeat(CancellationToken ct = default)
+        {
+            var request = MessageFactory.Create("HEARTBEAT", "EQP");
+            var result = await _server.RequestAsync(request, ct: ct);
+
+            return result.Success;
+        }
+
         // 비전 상태 정보 요청
         public async Task RequestVisionStatus(CancellationToken ct = default)
         {
@@ -89,6 +99,28 @@ namespace HCB.UI
                 _logger.Warning("[MarkPosition] 결과 NG");
         }
 
+        // AutoFocusing 요청 : AF방식 협의 필요 ( 미완성 )
+        public async Task RequestAFStart()
+        {
+            var request = MessageFactory.Create(
+                messageName: "REQUEST-AF-START",
+                unitName: "EQP",
+                content: null
+            );
+            var result = await _server.RequestAsync(request);
+
+            if (!result.Success)
+            {
+                _logger.Warning($"[MarkPosition] 요청 실패: {result.ErrorMessage}");
+                return;
+            }
+
+            var response = VisionMarkPositionResponse.Parse(result.Response!.Data?.Content);
+            if (response.Result == Result.OK)
+                _logger.Information($"X={response.X}, Y={response.Y}, Theta={response.Theta}, Score={response.Score}");
+            else
+                _logger.Warning("[MarkPosition] 결과 NG");
+        }
 
         // AutoFocusing 요청
         public async Task RequestAutoFocusing(CancellationToken ct = default)
@@ -101,7 +133,6 @@ namespace HCB.UI
 
             await _server.SendAsync(request, ct);
         }
-
         #endregion
 
         #region VISION -> EQP
@@ -113,12 +144,41 @@ namespace HCB.UI
             {
                 switch(msgName)
                 {
-                    case "REQUEST-EQP-STATUS":
+                    // 설비 상태 정보 요청
+                    case "REQUEST-UNIT-STATUS":
                         await ReplyEqpStatus();
                         break;
-                    case "COMMAND-MOTION-MOVE":
+                    // 현재 레시피 확인 요청 "REQUEST-CURRENT-RECIPE"
+                    
+                    // Z축 이동 
+                    case "REQUEST-AF-ZMOVE":
+                        break;
+                    // Auto Focusing End
+
+                    case "REPLY-AF-END":
+                        break;
+
+                    case "REQUEST-MOTION-MOVE":
                         await HandleMotionMove(msg);
                         break;
+                    //// X축 제어 + 
+                    //case "REQUEST-MOTION-PLUS-X":
+                    //    await HandleMotionMove(msg);
+                    //    break;
+                    //// X축 제어 -
+                    //case "REQUEST-MOTION-MINUS-X":
+                    //    await HandleMotionMove(msg);
+                    //    break;
+
+                    //// Z축 제어 +
+                    //case "REQUEST-MOTION-PLUS-Z":
+                    //    await HandleMotionMove(msg);
+                    //    break;
+
+                    //// Z축 제어 -
+                    //case "REQUEST-MOTION-MINUS-Z":
+                    //    await HandleMotionMove(msg);
+                    //    break;
                 }
             }catch(Exception e)
             {
@@ -137,32 +197,47 @@ namespace HCB.UI
             await _server.SendAsync(request, ct);
         }
 
+        private async Task ReplyAFEnd(Message msg, CancellationToken ct = default)
+        {
+            
+        }
+
         private async Task HandleMotionMove(Message msg, CancellationToken ct = default)
         {
-            var xml = XElement.Parse($"<DATA>{msg.Data?.Content}</DATA>");
-            var args = new MotionMoveCommand
+            var msgName = msg.Header?.MessageName ?? "";
+            var reply = msgName.Replace("REQUEST-", "REPLY-");
+            var request = msg.Data?.ToXml();
+
+            string axis = request.Element("AXIS")?.Value ?? "";
+            string direction = request.Element("DIRECTION")?.Value ?? "";
+            double distance = double.TryParse(request.Element("DISTANCE")?.Value, out var dist) ? dist : 0;
+
+            // 유효한 AXIS / DIRECTION 검증
+            var validAxes = new HashSet<string> { "H-X", "H-Z", "H-T", "D-Y", "P-Y", "W-Y", "W-T" };
+            var validDirections = new HashSet<string> { "PLUS", "MINUS" };
+
+            bool result = false;
+
+            if (request != null
+                && validAxes.Contains(axis)
+                && validDirections.Contains(direction.ToUpperInvariant()))
             {
-                Axis = xml.Element("AXIS")?.Value ?? "",
-                Direction = xml.Element("DIRECTION")?.Value ?? "",
-                Distance = double.TryParse(xml.Element("DISTANCE")?.Value, out var d) ? d : 0,
-            };
+                double sign = direction.Equals("PLUS", StringComparison.OrdinalIgnoreCase) ? 1.0 : -1.0;
+                double signedDistance = distance * sign;
 
-            int direction = args.Direction.Equals("MINUS") ? -1 : 1;
-            double distance = args.Distance * direction;
+                result = await sequenceHelper.RelativeMoveAsync(axis, 0, signedDistance, ct);
+            }
 
-            bool result = await sequenceHelper.RelativeMoveAsync(args.Axis, 0, distance, ct);
-
-            // ✅ Fix 4: args 값 재사용 (XML 중복 파싱 제거)
             var responseContent = new MotionMoveResult
             {
-                Axis = args.Axis,
-                Direction = args.Direction,
-                Distance = args.Distance,
+                //Axis = axis,
+                //Direction = direction,
+                //Distance = distance,
                 Result = result
             };
 
             var response = MessageFactory.Create(
-                messageName: "COMPLETED-MOTION-MOVE",
+                messageName: reply,
                 unitName: "EQP",
                 content: responseContent.ToXml()
             );
