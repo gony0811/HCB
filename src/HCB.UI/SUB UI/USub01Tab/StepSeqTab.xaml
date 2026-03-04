@@ -34,6 +34,13 @@
                     <Button Content="Dry Run" Margin="10" Command="{Binding DryRunCommand}"/>
                     <Button Content="Stop" Margin="10" Command="{Binding StopCommand}"/>
                 </StackPanel>
+
+                <TextBlock Text="TCP" TextAlignment="Center" FontSize="20"/>
+                
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="HeartBeat" Margin="10" Command="{Binding HeartBeatCommand}"></Button>
+                </StackPanel>
+                
             </StackPanel>
             
             

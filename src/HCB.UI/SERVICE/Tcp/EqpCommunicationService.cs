@@ -2,8 +2,10 @@
 using HCB.IoC;
 using Serilog;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Telerik.Licensing.Json;
 using Telerik.Windows.Controls;
 
 namespace HCB.UI
@@ -38,6 +40,15 @@ namespace HCB.UI
 
         #region EQP -> VISION
         // ─── EQP → Vision 요청 ───────────────────────────────────
+        // HEART BEAT
+        public async Task<bool> HeartBeat(CancellationToken ct = default)
+        {
+            var request = MessageFactory.Create("HEARTBEAT", "EQP");
+            var result = await _server.RequestAsync(request, ct: ct);
+
+            return result.Success;
+        }
+
         // 비전 상태 정보 요청
         public async Task RequestVisionStatus(CancellationToken ct = default)
         {
@@ -147,24 +158,27 @@ namespace HCB.UI
                     case "REPLY-AF-END":
                         break;
 
-                    // X축 제어 + 
-                    case "REQUEST-MOTION-PLUS-X":
+                    case "REQUEST-MOTION-MOVE":
                         await HandleMotionMove(msg);
                         break;
-                    // X축 제어 -
-                    case "REQUEST-MOTION-MINUS-X":
-                        await HandleMotionMove(msg);
-                        break;
+                    //// X축 제어 + 
+                    //case "REQUEST-MOTION-PLUS-X":
+                    //    await HandleMotionMove(msg);
+                    //    break;
+                    //// X축 제어 -
+                    //case "REQUEST-MOTION-MINUS-X":
+                    //    await HandleMotionMove(msg);
+                    //    break;
 
-                    // Z축 제어 +
-                    case "REQUEST-MOTION-PLUS-Z":
-                        await HandleMotionMove(msg);
-                        break;
+                    //// Z축 제어 +
+                    //case "REQUEST-MOTION-PLUS-Z":
+                    //    await HandleMotionMove(msg);
+                    //    break;
 
-                    // Z축 제어 -
-                    case "REQUEST-MOTION-MINUS-Z":
-                        await HandleMotionMove(msg);
-                        break;
+                    //// Z축 제어 -
+                    //case "REQUEST-MOTION-MINUS-Z":
+                    //    await HandleMotionMove(msg);
+                    //    break;
                 }
             }catch(Exception e)
             {
@@ -192,36 +206,33 @@ namespace HCB.UI
         {
             var msgName = msg.Header?.MessageName ?? "";
             var reply = msgName.Replace("REQUEST-", "REPLY-");
-            // 메시지명에서 축 이름과 방향 파싱
-            // 예: REQUEST-MOTION-PLUS-X   → H_X,  +1
-            //     REQUEST-MOTION-MINUS-Z  → H_Z,  -1
-            //     REQUEST-MOTION-PLUS-DY  → H_DY, +1
-            //     REQUEST-MOTION-MINUS-PY → H_PY, -1
-            //     REQUEST-MOTION-PLUS-WY  → H_WY, +1
-            string axisName = msgName switch
+            var request = msg.Data?.ToXml();
+
+            string axis = request.Element("AXIS")?.Value ?? "";
+            string direction = request.Element("DIRECTION")?.Value ?? "";
+            double distance = double.TryParse(request.Element("DISTANCE")?.Value, out var dist) ? dist : 0;
+
+            // 유효한 AXIS / DIRECTION 검증
+            var validAxes = new HashSet<string> { "H-X", "H-Z", "H-T", "D-Y", "P-Y", "W-Y", "W-T" };
+            var validDirections = new HashSet<string> { "PLUS", "MINUS" };
+
+            bool result = false;
+
+            if (request != null
+                && validAxes.Contains(axis)
+                && validDirections.Contains(direction.ToUpperInvariant()))
             {
-                _ when msgName.EndsWith("-X")  => MotionExtensions.H_X,
-                _ when msgName.EndsWith("-DY") => MotionExtensions.D_Y,
-                _ when msgName.EndsWith("-PY") => MotionExtensions.P_Y,
-                _ when msgName.EndsWith("-WY") => MotionExtensions.W_Y,
-                _ when msgName.EndsWith("-Z")  => MotionExtensions.H_Z,
-                _ => throw new ArgumentException($"알 수 없는 축: {msgName}")
-            };
-           
-            int sign = msgName.Contains("-PLUS-") ? 1 : -1;
-            string direction = sign > 0 ? "PLUS" : "MINUS";
+                double sign = direction.Equals("PLUS", StringComparison.OrdinalIgnoreCase) ? 1.0 : -1.0;
+                double signedDistance = distance * sign;
 
-            // Data에는 이동 거리(double) 값만 전달됨
-            double distance = double.TryParse(msg.Data?.Content, out var d) ? d : 0;
-            double signedDistance = distance * sign;
-
-            bool result = await sequenceHelper.RelativeMoveAsync(axisName, 0, signedDistance, ct);
+                result = await sequenceHelper.RelativeMoveAsync(axis, 0, signedDistance, ct);
+            }
 
             var responseContent = new MotionMoveResult
             {
-                Axis = axisName,
-                Direction = direction,
-                Distance = distance,
+                //Axis = axis,
+                //Direction = direction,
+                //Distance = distance,
                 Result = result
             };
 
