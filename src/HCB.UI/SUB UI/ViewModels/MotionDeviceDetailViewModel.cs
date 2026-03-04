@@ -26,7 +26,7 @@ namespace HCB.UI
         private readonly MotionRepository motionRepository;
         private readonly MotionParameterRepository parameterRepository;
         private readonly MotionPositionRepository positionRepository;
-        private AxisInterlockService interlockService;
+
         [ObservableProperty] private IMotionDevice device;
 
         [ObservableProperty] private IAxis selectedMotion;
@@ -34,12 +34,11 @@ namespace HCB.UI
 
         public MotionDeviceDetailViewModel(
             ILogger logger,
-            IMotionDevice device, 
+            IMotionDevice device,
             DialogService dialogService,
             MotionRepository motionRepository,
             MotionParameterRepository parameterRepository,
-            MotionPositionRepository positionRepository,
-            AxisInterlockService interlockService)
+            MotionPositionRepository positionRepository)
         {
             this.logger = logger.ForContext<MotionDeviceDetailViewModel>();
             this.dialogService = dialogService;
@@ -50,7 +49,6 @@ namespace HCB.UI
             Device = device;
             SelectedMotion = Device.MotionList.FirstOrDefault();
             SelectedParam = SelectedMotion != null ? SelectedMotion.ParameterList.FirstOrDefault() : null;
-            this.interlockService = interlockService;
         }
 
         [RelayCommand]
@@ -79,17 +77,19 @@ namespace HCB.UI
                 try
                 {
                     var resultEntity = await motionRepository.AddAsync(entity);
-                    Device.MotionList.Add(MotionFactory.ToRuntime(this.logger, interlockService, resultEntity, Device));
-                    
-                }catch (Exception e)
+                    Device.MotionList.Add(MotionFactory.ToRuntime(this.logger, resultEntity, Device));
+
+                }
+                catch (Exception e)
                 {
                     dialogService.ShowMessage("모션 생성에 실패했습니다.", e.Message);
                 }
-            }else
+            }
+            else
             {
                 dialogService.ShowMessage("취소", "모션 생성을 취소했습니다");
             }
-            
+
         }
 
 
@@ -120,7 +120,7 @@ namespace HCB.UI
             };
 
             bool? result = await dialogService.ShowEditDialog(vm);
-            if(result == true)
+            if (result == true)
             {
                 var entity = vm.ToEntity();
                 entity.Id = SelectedMotion.Id;
@@ -139,18 +139,19 @@ namespace HCB.UI
                     dto.Unit = entity.Unit;
 
                     dialogService.ShowMessage("업데이트 완료", "모션이 저장 되었습니다");
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     dialogService.ShowMessage("에러", "모션 업데이트 중 에러 발생");
                 }
             }
-            
+
         }
 
-        [RelayCommand] 
+        [RelayCommand]
         public async Task MotionParameterCreate()
         {
-            if (SelectedMotion == null ||  SelectedMotion.Id == 0)
+            if (SelectedMotion == null || SelectedMotion.Id == 0)
             {
                 dialogService.ShowMessage("모션 선택", "모션을 먼저 선택하세요");
             }
@@ -158,7 +159,7 @@ namespace HCB.UI
             var vm = new MotionParameterCreateVM();
 
             bool? result = await dialogService.ShowEditDialog(vm);
-            
+
             if (result == true)
             {
                 var entity = vm.ToEntity();
@@ -204,7 +205,7 @@ namespace HCB.UI
                 dialogService.ShowMessage("선택 오류", "수정할 파라미터를 선택하세요");
                 return;
             }
-            
+
 
             // 수정용 ViewModel 생성
             var vm = new MotionParameterCreateVM

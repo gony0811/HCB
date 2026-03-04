@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Telerik.Licensing.Json;
 using Telerik.Windows.Controls;
 
@@ -205,44 +206,99 @@ namespace HCB.UI
         private async Task HandleMotionMove(Message msg, CancellationToken ct = default)
         {
             var msgName = msg.Header?.MessageName ?? "";
-            var reply = msgName.Replace("REQUEST-", "REPLY-");
-            var request = msg.Data?.ToXml();
-
-            string axis = request.Element("AXIS")?.Value ?? "";
-            string direction = request.Element("DIRECTION")?.Value ?? "";
-            double distance = double.TryParse(request.Element("DISTANCE")?.Value, out var dist) ? dist : 0;
-
-            // 유효한 AXIS / DIRECTION 검증
-            var validAxes = new HashSet<string> { "H-X", "H-Z", "H-T", "D-Y", "P-Y", "W-Y", "W-T" };
-            var validDirections = new HashSet<string> { "PLUS", "MINUS" };
+            var replyName = msgName.Replace("REQUEST-", "REPLY-");
 
             bool result = false;
+            string axis = "";
+            string direction = "";
+            double distance = 0;
 
-            if (request != null
-                && validAxes.Contains(axis)
-                && validDirections.Contains(direction.ToUpperInvariant()))
+            try
             {
-                double sign = direction.Equals("PLUS", StringComparison.OrdinalIgnoreCase) ? 1.0 : -1.0;
-                double signedDistance = distance * sign;
+                // 1. Data.Content 내부의 XML 문자열 파싱 (핵심 수정 부분)
+                if (!string.IsNullOrEmpty(msg.Data?.Content))
+                {
+                    // 루트가 없는 여러 태그를 읽기 위해 <R>로 감싸서 파싱
+                    var innerXml = XElement.Parse($"<R>{msg.Data.Content}</R>");
 
-                result = await sequenceHelper.RelativeMoveAsync(axis, 0, signedDistance, ct);
+                    axis = innerXml.Element("AXIS")?.Value ?? "";
+                    direction = (innerXml.Element("DIRECTION")?.Value ?? "").ToUpperInvariant();
+                    distance = double.TryParse(innerXml.Element("DISTANCE")?.Value, out var d) ? d : 0;
+
+                    // 2. 유효성 검증
+                    var validAxes = new HashSet<string> { "H_X", "H_Z", "H_T", "D_Y", "P_Y", "W_Y", "W_T" };
+                    var validDirections = new HashSet<string> { "PLUS", "MINUS" };
+
+                    if (validAxes.Contains(axis.ToUpperInvariant()) && validDirections.Contains(direction))
+                    {
+                        // 3. 실제 이동 로직 수행
+                        double sign = direction == "PLUS" ? 1.0 : -1.0;
+                        double signedDistance = distance * sign;
+
+                        // 시퀀스 헬퍼 호출
+                        result = await sequenceHelper.RelativeMoveAsync(axis, 0, signedDistance, ct);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // 로그 기록 (예: _logger.LogError(ex, "Motion Move Error");)
+                result = false;
             }
 
-            var responseContent = new MotionMoveResult
-            {
-                //Axis = axis,
-                //Direction = direction,
-                //Distance = distance,
-                Result = result
-            };
+            // 4. 응답 메시지 생성 및 전송
+            var responseContent = new MotionMoveResult { Result = result };
 
             var response = MessageFactory.Create(
-                messageName: reply,
+                messageName: replyName,
                 unitName: "EQP",
-                content: responseContent.ToXml()
+                content: responseContent.ToXml() // MotionMoveResult가 XML 문자열을 반환한다고 가정
             );
+
             await _server.SendAsync(response);
         }
+
+        //private async Task HandleMotionMove(Message msg, CancellationToken ct = default)
+        //{
+        //    var msgName = msg.Header?.MessageName ?? "";
+        //    var reply = msgName.Replace("REQUEST-", "REPLY-");
+        //    var request = msg.Data.ToXml();
+
+        //    string axis = request.Element("AXIS")?.Value ?? "";
+        //    string direction = request.Element("DIRECTION")?.Value ?? "";
+        //    double distance = double.TryParse(request.Element("DISTANCE")?.Value, out var dist) ? dist : 0;
+
+        //    // 유효한 AXIS / DIRECTION 검증
+        //    var validAxes = new HashSet<string> { "H-X", "H-Z", "H-T", "D-Y", "P-Y", "W-Y", "W-T" };
+        //    var validDirections = new HashSet<string> { "PLUS", "MINUS" };
+
+        //    bool result = false;
+
+        //    if (request != null
+        //        && validAxes.Contains(axis)
+        //        && validDirections.Contains(direction.ToUpperInvariant()))
+        //    {
+        //        double sign = direction.Equals("PLUS", StringComparison.OrdinalIgnoreCase) ? 1.0 : -1.0;
+        //        double signedDistance = distance * sign;
+
+        //        result = await sequenceHelper.RelativeMoveAsync(axis, 0, signedDistance, ct);
+        //    }
+
+        //    var responseContent = new MotionMoveResult
+        //    {
+        //        //Axis = axis,
+        //        //Direction = direction,
+        //        //Distance = distance,
+        //        Result = result
+        //    };
+
+        //    var response = MessageFactory.Create(
+        //        messageName: reply,
+        //        unitName: "EQP",
+        //        content: responseContent.ToXml()
+        //    );
+        //    await _server.SendAsync(response);
+        //}
         #endregion
 
         public void Dispose() => _server.Dispose();

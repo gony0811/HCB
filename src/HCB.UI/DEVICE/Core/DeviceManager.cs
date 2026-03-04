@@ -19,14 +19,13 @@ namespace HCB.UI
         private readonly ILogger _logger;
         private readonly DeviceRepository _deviceRepository;
         private readonly IDeviceFactory _deviceFactory;
-        private AxisInterlockService interlockService;
 
-        public DeviceManager(ILogger logger, DeviceRepository deviceRepository, IDeviceFactory deviceFactory, AxisInterlockService interlockService)
+        public DeviceManager(ILogger logger, DeviceRepository deviceRepository, IDeviceFactory deviceFactory)
         {
             _logger = logger.ForContext<DeviceManager>();
             _deviceRepository = deviceRepository;
             _deviceFactory = deviceFactory;
-            this.interlockService = interlockService;
+
             _ = LoadFromDatabaseAsync();
         }
         public ObservableCollection<IDevice> Devices { get; } = new ObservableCollection<IDevice>();
@@ -44,7 +43,7 @@ namespace HCB.UI
                         .ThenInclude(md => md.MotionList)
                             .ThenInclude(m => m.ParameterList) // MotionEntity의 ParameterList도 포함
                     .Include(d => d.IoDeviceDetail)
-                        .ThenInclude(iod => iod.IoDataList)                            
+                        .ThenInclude(iod => iod.IoDataList)
             );
 
             foreach (var entity in deviceEntities)
@@ -248,16 +247,17 @@ namespace HCB.UI
 
         public async Task<bool> RemoveDevice(int id)
         {
-            var device = Devices.FirstOrDefault(d => d.Id== id);
+            var device = Devices.FirstOrDefault(d => d.Id == id);
             if (device == null) return false;
             try
             {
                 await _deviceRepository.Remove(device.Id);
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 throw new Exception(ex.Message);
             }
-            
+
             Devices.Remove(device);
             return true;
         }
@@ -350,7 +350,7 @@ namespace HCB.UI
 
         private DAxis ConvertToDMotion(MotionEntity m, IMotionDevice runtime)
         {
-            var dm = new DAxis(this._logger, interlockService)
+            var dm = new DAxis(this._logger)
             {
                 Id = m.Id,
                 Name = m.Name,

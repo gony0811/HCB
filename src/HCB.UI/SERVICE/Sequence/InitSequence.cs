@@ -60,7 +60,7 @@ namespace HCB.UI
                 }
 
                 // Die 잔류 자재 유무 결과 확인
-                if (waferVacResult) throw new Exception("Die에 잔류한 자재가 있습니다");
+                if (waferVacResult) throw new Exception("Wafer에 잔류한 자재가 있습니다");
 
                 // ------------------ Picker -----------------------------------
                 if (ioDevice.GetDigital(IoExtensions.DI_HEADER_VAC_EJECTOR))
@@ -103,7 +103,6 @@ namespace HCB.UI
                 return false;
             }
         }
-
 
         public async Task Init_ServoAllOff(CancellationToken ct)
         {

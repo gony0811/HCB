@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Telerik.Windows.Documents.Fixed.Model.Actions;
 using Telerik.Windows.Documents.Flow.FormatProviders.Html;
 using static System.Net.WebRequestMethods;
 
@@ -61,6 +62,7 @@ namespace HCB.UI
             {
                 _logger.Error(ex, "[INTERLOCK] 전체 축 비상 정지 중 오류");
             }
+        }
         //public async Task RefreshStatus()
         //{
         //    foreach (var motion in MotionList)
@@ -150,6 +152,8 @@ namespace HCB.UI
         {
             foreach (var motion in MotionList)
             {
+                try
+                {
                     // 1. 해당 축에 필요한 데이터만 묶어서 요청
                     var sb = new System.Text.StringBuilder();
                     sb.Append($"Motor[{motion.MotorNo}].Status[0] ");
@@ -157,42 +161,25 @@ namespace HCB.UI
                     sb.Append($"Motor[{motion.MotorNo}].ActPos ");
                     sb.Append($"Motor[{motion.MotorNo}].DesPos ");
                     sb.Append($"Motor[{motion.MotorNo}].InPos"); // PMAC 내부 InPos 상태 직접 요청
-                    // 1. 쿼리 생성
-                    var sb = new StringBuilder();
-                    sb.Append($"Motor[{motion.MotorNo}].Status[0] ");
-                    sb.Append($"Motor[{motion.MotorNo}].HomePos ");
-                    sb.Append($"Motor[{motion.MotorNo}].ActPos ");
-                    sb.Append($"Motor[{motion.MotorNo}].DesPos ");
-                    sb.Append($"Motor[{motion.MotorNo}].DesPos ");
-                    sb.Append($"Motor[{motion.MotorNo}].InPos"); // PMAC 내부 InPos 상태 직접 요청
 
+                    // 2. 비동기 전송 및 응답 수신
+                    string strResponse = await SendCommand<string>(sb.ToString());
                     var values = strResponse.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    // 3. 파싱
-                    var values = strResponse.Split(
-                        new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    string strResponse = await SendCommand<string>(sb.ToString());
                     // 데이터 개수 검증 (5개의 값이 들어와야 함)
                     if (values.Length < 5)
                     {
                         Console.WriteLine($"Motion[{motion.MotorNo}] 데이터 응답 부족: {values.Length}개");
                         continue;
                     }
-                    if (values.Length < 4) continue;
-                        continue;
 
-                    double homePosV = Convert.ToDouble(values[1]);
-                    double actPosV = Convert.ToDouble(values[2]);
-                    double desPosV = Convert.ToDouble(values[3]);
-
+                    // 3. 데이터 파싱 및 변환
+                    uint status0 = Convert.ToUInt32(values[0].Replace("$", ""), 16);
                     double homePosVal = Convert.ToDouble(values[1]);
                     double actPosVal = Convert.ToDouble(values[2]);
                     double desPosVal = Convert.ToDouble(values[3]);
                     int inPosRaw = Convert.ToInt32(values[4]); // 1: 정지(InPos), 0: 이동중
-                    double homePos = homePosV / motion.EncoderCountPerUnit;
-                    double actPos = actPosV / motion.EncoderCountPerUnit;
-                    double desPos = desPosV / motion.EncoderCountPerUnit;
-                    double actPosVal = Convert.ToDouble(values[2]);
+
                     // 단위 변환 및 위치 계산
                     double scale = motion.EncoderCountPerUnit;
                     motion.CurrentPosition = (actPosVal - homePosVal) / scale;
@@ -204,67 +191,30 @@ namespace HCB.UI
                     motion.IsError = (status0 & 0x01000000) != 0;     // Bit 24: AmpFault
                     motion.IsPlusLimit = (status0 & 0x10000000) != 0; // Bit 28: PlusLimit
                     motion.IsMinusLimit = (status0 & 0x20000000) != 0;// Bit 29: MinusLimit
-                    // CurrentPosition setter 에서 DAxis.CheckInterlock() 가 자동 호출됩니다.
-                    motion.CurrentPosition = actPos - homePos;
-                    motion.CommandPosition = desPos - homePos;
 
-                    // ── 상태 비트 파싱 ────────────────────────────────
-                    motion.IsEnabled = (status0 & 0x00002000) != 0;  // Bit13 ClosedLoop
-                    motion.IsHomeDone = (status0 & 0x00008000) != 0;  // Bit15 HomeComplete
-                    motion.IsError = (status0 & 0x01000000) != 0;  // Bit24 AmpFault
-                    motion.IsPlusLimit = (status0 & 0x10000000) != 0;  // Bit28
-                    motion.IsMinusLimit = (status0 & 0x20000000) != 0;  // Bit29
-
-                    bool isInPosBit = (status0 & 0x00000800) != 0;   // Bit11 InPos
-                    motion.IsBusy = !isInPosBit;
-                    motion.IsError = (status0 & 0x01000000) != 0;     // Bit 24: AmpFault
                     // 5. [핵심] Motor[i].InPos 기반 최종 상태 결정
                     // PMAC이 판단한 InPos 값을 그대로 적용 (매우 정확함)
                     motion.InPosition = (inPosRaw == 1);
 
                     // InPosition이면 Busy가 아님
                     motion.IsBusy = !motion.InPosition;
-                    bool isPosDiffOk = Math.Abs(motion.CommandPosition - motion.CurrentPosition)
-                                        <= motion.InpositionRange;
-                    motion.InPosition = isInPosBit && isPosDiffOk;
-
-                    // ── 인터락 체크 (DeviceLevel 2중 안전) ───────────
-                    // DAxis.CurrentPosition setter 에서 이미 체크하지만,
-                    // Device 수준에서 한 번 더 검사하여 이중으로 보장합니다.
-                    CheckInterlockForAxis(motion);
-
-                    // InPosition이면 Busy가 아님
-                    motion.IsBusy = !motion.InPosition;
-                    // 한 축이 실패해도 로그만 남기고 다음 축으로 넘어감
-                    Console.WriteLine($"Motion[{motion.MotorNo}] Update Error: {ex.Message}");
-                    _logger.Error(ex, "Motion[{MotorNo}] Update Error", motion.MotorNo);
+                }
+                catch (Exception ex)
                 {
                     // 한 축이 실패해도 로그만 남기고 다음 축으로 넘어감
                     Console.WriteLine($"Motion[{motion.MotorNo}] Update Error: {ex.Message}");
-        public async Task StopAsync()
-
+                }
+            }
+        }
         /// <summary>
         /// Device 수준 인터락 체크.
         /// DAxis 에 IInterlockService 가 직접 주입되었으므로
         /// 여기서는 추가 로그 및 하드웨어 리미트 연동만 처리합니다.
         /// </summary>
         private void CheckInterlockForAxis(IAxis motion)
-            }
+        { 
         }
-        public async Task StopAsync()
-        {
-            // 하드웨어 리미트 스위치 동작 시 인터락 강제 설정
-            if (motion.IsPlusLimit || motion.IsMinusLimit)
-            {
-                string limitType = motion.IsPlusLimit ? "Plus" : "Minus";
-                _logger.Error(
-                    "[INTERLOCK HW LIMIT] {Name}(Motor#{No}) {Type} 리미트 스위치 동작",
-                    motion.Name, motion.MotorNo, limitType);
-
-                // IAxis 의 인터락 서비스에 직접 접근하는 대신 EStop 호출
-                _ = motion.EStop();
-            }
-        }
+        
 
         // ══════════════════════════════════════════════════════════════
         // 기존 메서드 (변경 없음)
@@ -322,18 +272,20 @@ namespace HCB.UI
 
             return Task.CompletedTask;
         }
-
         public async Task StopAsync()
         {
             foreach (var motion in MotionList)
             {
-                try
+                // 하드웨어 리미트 스위치 동작 시 인터락 강제 설정
+                if (motion.IsPlusLimit || motion.IsMinusLimit)
                 {
-                    await motion.MoveStop();
-                }
-                catch (Exception e)
-                {
-                    throw new Exception("Stop 명령중 에러 발생", e);
+                    string limitType = motion.IsPlusLimit ? "Plus" : "Minus";
+                    _logger.Error(
+                        "[INTERLOCK HW LIMIT] {Name}(Motor#{No}) {Type} 리미트 스위치 동작",
+                        motion.Name, motion.MotorNo, limitType);
+
+                    // IAxis 의 인터락 서비스에 직접 접근하는 대신 EStop 호출
+                    _ = motion.EStop();
                 }
             }
         }

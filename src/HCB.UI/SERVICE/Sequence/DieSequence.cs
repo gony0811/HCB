@@ -109,9 +109,9 @@ namespace HCB.UI
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
-                //string t = MotionExtensions.H_T;
-                //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
-                string[] z = { MotionExtensions.H_Z };
+                string t = MotionExtensions.H_T;
+                string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+                //string[] z = { MotionExtensions.H_Z };
 
                 List<(string Motion, string Position)> request = new List<(string Motion, string Position)>();
 

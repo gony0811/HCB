@@ -241,14 +241,14 @@ namespace HCB.UI
             }
             string doOn = $"DO_WTABLE_VAC_{channel}_ON";
             string doRelease = $"DO_WTABLE_VAC_{channel}_RELEASE";
-            string doN2Blow = $"DO_WTABLE_N2_BLOW";
+            //string doN2Blow = $"DO_WTABLE_N2_BLOW";
             string diPressureSwitch = $"DI_WTABLE_VAC_PRESSURE_SWITCH";
 
             try
             {
                 device.SetDigital(doOn, bOnOff, helper.IsSimulation);
                 device.SetDigital(doRelease, !bOnOff, helper.IsSimulation);
-                device.SetDigital(doN2Blow, !bOnOff, helper.IsSimulation); // N2 Blow is the opposite of Vacuum On/Off
+                //device.SetDigital(doN2Blow, !bOnOff, helper.IsSimulation); // N2 Blow is the opposite of Vacuum On/Off
 
                 if (helper.IsSimulation)
                 {
@@ -270,7 +270,7 @@ namespace HCB.UI
             );
 
 
-            device.SetDigital(doN2Blow, false, helper.IsSimulation); // Ensure N2 Blow is turned off after operation
+            //device.SetDigital(doN2Blow, false, helper.IsSimulation); // Ensure N2 Blow is turned off after operation
         }
 
         public static async Task WTableLiftPin(this ISequenceHelper helper, eUpDown upDown, CancellationToken ct)
