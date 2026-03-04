@@ -51,11 +51,11 @@ namespace HCB.UI
         {
             try
             {
-                // 1. Wafer pin down 
-                await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
-
-                // 2. wafer vacuum on
+                // Vacuum Off
                 await _sequenceHelper.WTableVacuumAll(eOnOff.On, ct);
+
+                // Wafer Pin UP
+                await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct);
             }
             catch (Exception e)
             {
@@ -63,6 +63,19 @@ namespace HCB.UI
             }
 
         }
+
+        // TODO : 지우기. 
+        public async Task WTablePinControll(eUpDown eUpDown, CancellationToken ct)
+        {
+            try
+            {
+                await _sequenceHelper.WTableLiftPin(eUpDown, ct);
+            }catch(Exception e)
+            {
+                _logger.Error(e, e.Message);
+            }
+        }
+
 
 
         public async Task WTableAlign(CancellationToken ct)

@@ -57,6 +57,7 @@ namespace HCB.UI
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 await MotionsMove(xy, MotionExtensions.BONDING, ct);
+                await MotionsMove(z, MotionExtensions.BONDING, ct);
                 
                 // TODO : BONDING 
             }

@@ -122,10 +122,12 @@ namespace HCB.UI
                 request.Add((MotionExtensions.D_Y, $"DIE_ROW_{row}"));
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+                await Task.Delay(50, ct);
                 await MotionsMove(request, ct);
+                await Task.Delay(50, ct);
                 await MotionsMove(z, MotionExtensions.TOP_DIE_VISION, ct);
                 // TODO: 비전 측정 및 각도 계산 
-                await MotionsMove(z, MotionExtensions.PICKUP_STANBY, ct);
+                //await MotionsMove(z, MotionExtensions.PICKUP_STANBY, ct);
                 // TODO: T 축 보정
                 //await MotionsMove(MotionExtensions.h_z, MotionExtensions.DIE_PICKUP, ct);
                 // TODO: DIE picker vacuum on

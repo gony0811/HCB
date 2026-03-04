@@ -46,6 +46,7 @@ namespace HCB.UI
         {
             try
             {
+                _operationService.SetRun(RunStop.Run);
                 setState(StepState.InProgress);
                 await action();
                 setState(StepState.Completed);
@@ -61,6 +62,10 @@ namespace HCB.UI
                 setState(StepState.Failed);
                 _logger.Error(ex, $"{stepName} Failed");
                 throw;
+            }
+            finally
+            {
+                await StopAsync(ct);
             }
         }
 
@@ -78,7 +83,16 @@ namespace HCB.UI
         {
             _logger.Information("SequenceService is stopping.");
             
-
+            try
+            {
+                var device = _deviceManager.GetDevice<PowerPmacDevice>("PMAC");
+                await device.StopAsync();
+                _operationService.SetRun(RunStop.Stop);
+            }catch(Exception e)
+            {
+                _logger.Error($"Stop Sequence error: {e.Message}");
+            }
+            
             //_timer.Change(Timeout.Infinite, Timeout.Infinite); // 타이머 중지
 
             //// 현재 실행 중인 폴링 작업이 있다면 완료될 때까지 대기

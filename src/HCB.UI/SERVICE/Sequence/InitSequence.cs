@@ -104,6 +104,7 @@ namespace HCB.UI
             }
         }
 
+
         public async Task Init_ServoAllOff(CancellationToken ct)
         {
             try
@@ -122,6 +123,7 @@ namespace HCB.UI
             }
         }
 
+        
         public async Task<bool> SensorOnOff(string sensorName, CancellationToken ct)
         {
             var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
@@ -167,6 +169,7 @@ namespace HCB.UI
                 Task HZ = _sequenceHelper.MoveAsync(H_Z.MotorNo, MotionExtensions.HEAD_SAFETY, ct);
                 //Task hz = _sequenceHelper.MoveAsync(h_z.MotorNo, MotionExtensions.HEAD_SAFETY, ct);
                 await Task.WhenAll(HZ);
+                await Task.Delay(50);
 
             }
             catch (OperationCanceledException)
@@ -201,35 +204,76 @@ namespace HCB.UI
         public async Task MotionsMove(string[] motions, string positionName, CancellationToken ct)
         {
             var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-            var tasks = new List<Task>();
+            var targetMotions = new List<IAxis>();
 
             foreach (var item in motions)
             {
                 var motion = motionDevice?.FindMotionByName(item);
-                if (motion == null)
-                    throw new KeyNotFoundException($"[Motion Error] '{item}' 축을 찾을 수 없습니다.");
+                if (motion == null) throw new KeyNotFoundException($"[Motion Error] '{item}' 축을 찾을 수 없습니다.");
 
-                tasks.Add(_sequenceHelper.MoveAsync(motion.MotorNo, positionName, ct));
+                var position = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
+                if (position == null) throw new Exception($"[Position Error] '{item}' 위치 정보 없음");
+
+                targetMotions.Add(motion);
+                await motion.Move(MoveType.Absolute, 100, position.Speed, position.Position);
             }
 
-            await Task.WhenAll(tasks);
+            // [보강 1] 이동 시작 보장: 모든 축이 '이동 중(InPosition == false)' 상태로 진입할 때까지 대기
+            // PMAC 통신 주기에 따라 명령 후 InPosition 비트가 바뀌는 데 시간이 걸릴 수 있습니다.
+            // 최대 100ms 정도만 기다리되, 하나라도 시작되면 다음 단계로 넘어가 도착을 기다립니다.
+            int retry = 0;
+            while (targetMotions.All(m => m.InPosition) && retry < 5)
+            {
+                await Task.Delay(20, ct);
+                retry++;
+            }
+
+            // [보강 2] 모든 축의 이동 완료 대기
+            await _sequenceHelper.WaitUntilAsync(() =>
+                targetMotions.All(m => m.InPosition),
+                60000, ct,
+                $"[Motion Timeout] {string.Join(", ", motions)} 이동 시간 초과"
+            );
+
+            await Task.Delay(200);
         }
 
         public async Task MotionsMove(IEnumerable<(string Motion, string Position)> motionPosition, CancellationToken ct)
         {
             var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-            var tasks = new List<Task>();
+            var targetMotions = new List<IAxis>();
 
+            // 1. 모든 축에 대해 '이동 명령' 전송
             foreach (var (motionName, positionName) in motionPosition)
             {
                 var motion = motionDevice?.FindMotionByName(motionName);
-                if (motion == null)
-                    throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+                if (motion == null) throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
 
-                tasks.Add(_sequenceHelper.MoveAsync(motion.MotorNo, positionName, ct));
+                targetMotions.Add(motion);
+                var pos = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
+
+                // 명령 전송 직후 바로 다음 축 명령을 내림으로써 동시성 확보
+                await motion.Move(MoveType.Absolute, 100, pos.Speed, pos.Position);
             }
 
-            await Task.WhenAll(tasks);
+            // 2. [핵심] 이동 시작 확인 (Leading Edge Sync)
+            // PMAC 통신 주기에 따라 InPosition이 False로 바뀌는 데 시간이 걸림.
+            // 최소한 하나 이상의 축이 "이동 중" 상태로 진입할 때까지 대기하여 시퀀스 겹침 방지.
+            int startCheckRetry = 0;
+            while (targetMotions.All(m => m.InPosition) && startCheckRetry < 10)
+            {
+                // RefreshStatus가 돌 수 있는 시간을 짧게 줌 (통상 10~20ms)
+                await Task.Delay(20, ct);
+                startCheckRetry++;
+            }
+
+            // 3. 모든 축의 최종 이동 완료 대기 (Trailing Edge Sync)
+            bool result = await _sequenceHelper.WaitUntilAsync(() =>
+                targetMotions.All(m => m.InPosition),
+                60000, ct,
+                $"[Multi-axis Move Timeout] {string.Join(", ", targetMotions.Select(x => x.Name))} 이동 실패"
+            );
+            await Task.Delay(200);
         }
 
         public void EQStatusCheck()
@@ -374,6 +418,47 @@ namespace HCB.UI
                 throw;
             }
         }
+
+        public async Task All_Home(CancellationToken ct)
+        {
+            try
+            {
+                var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                // 1. Header Home Z축
+                var HZ = motionDevice.FindMotionByName(MotionExtensions.H_Z);
+                var hz = motionDevice.FindMotionByName(MotionExtensions.h_z);
+                var head = new List<IAxis> { HZ, hz };
+
+                var headHomeResult = await MotionExtensions.HomeAsync(_sequenceHelper, head, ct);
+                if (!headHomeResult)
+                {
+                    throw new Exception("[Initialize] Header가 홈에 도착하지 않았습니다");
+                }
+
+                // 2. Header Home X, T 축
+                var hx = motionDevice.FindMotionByName(MotionExtensions.H_X);
+                var ht = motionDevice.FindMotionByName(MotionExtensions.H_T);
+                var dy = motionDevice.FindMotionByName(MotionExtensions.D_Y);
+                var py = motionDevice.FindMotionByName(MotionExtensions.P_Y);
+                var wy = motionDevice.FindMotionByName(MotionExtensions.W_Y);
+                var wt = motionDevice.FindMotionByName(MotionExtensions.W_T);
+                var xyt = new List<IAxis> { hx, ht, dy, py, wy, wt };
+
+                var xytResult = await MotionExtensions.HomeAsync(_sequenceHelper, xyt, ct);
+                if (!xytResult)
+                {
+                    throw new Exception("[Initialize] X축 및 Y축이 홈에 도착하지 않았습니다");
+                }
+
+
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+
+
 
         //public async Task Init_PTable(CancellationToken ct)
         //{

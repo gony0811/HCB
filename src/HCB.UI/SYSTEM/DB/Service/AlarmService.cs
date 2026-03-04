@@ -187,7 +187,7 @@ namespace HCB.UI
 
             // DB 일괄 업데이트 (성능 최적화)
             await alarmHistoryRepository.UpdateRange(activeAlarms);
-
+            
             // UI 통지를 위해 개별 이벤트 발생
             foreach (var entity in activeAlarms)
             {
@@ -195,7 +195,7 @@ namespace HCB.UI
             }
 
             operationService.Status.Alarm = AlarmState.NO_ALARM;
-
+            //UpdateEQStatus(AlarmLevel.NORMAL);
             this.currentAlarms.Clear();
         }
 
@@ -283,7 +283,7 @@ namespace HCB.UI
             {
                 AlarmLevel.HEAVY => Availability.Down,
                 AlarmLevel.LIGHT => Availability.Up,
-                _ => Availability.Down
+                _ => Availability.Up
             };
 
             operationService.SetAlarm(alarm);

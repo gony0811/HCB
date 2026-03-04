@@ -1,12 +1,14 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
+using Serilog.Core;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using Telerik.Windows.Documents.Spreadsheet.Expressions.Functions;
 
 namespace HCB.UI
 {
@@ -110,8 +112,7 @@ namespace HCB.UI
             if (_cts != null && !_cts.IsCancellationRequested)
             {
                 _cts.Cancel(); // 토큰에 취소 신호 전달
-                var device = _deviceManager.GetDevice<PowerPmacDevice>("PMAC");
-                await device.StopAsync();
+                await SequenceService.StopAsync(_cts.Token);
                 SequenceServiceVM.SystemCheck = StepState.Idle;
                 SequenceServiceVM.ServoOn = StepState.Idle;
                 SequenceServiceVM.HZBreakOff = StepState.Idle;
@@ -274,6 +275,9 @@ namespace HCB.UI
             }
         }
 
+        
+
+
         [RelayCommand(CanExecute = nameof(CanStartInitialize))]
         public async Task WaferAlign() { 
             try
@@ -414,10 +418,8 @@ namespace HCB.UI
 
                         // 1. DTable에서 Die 픽업
                         await SequenceService.DTablePickup(dieNumber, token);
-
-                        // 2. PTable로 이동 후 Align
+                        //// 2. PTable로 이동 후 Align
                         await SequenceService.BottomVision(token);
-
                         // 3. Wafer에 본딩
                         await SequenceService.Bonding(token);
                     }
@@ -433,7 +435,38 @@ namespace HCB.UI
             }
         }
 
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task WPinDown()
+        {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            await SequenceService.WTablePinControll(eUpDown.Down, _cts.Token);
 
+        }
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task WPinUp()
+        {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            await SequenceService.WTablePinControll(eUpDown.Up, _cts.Token);
+
+        }
+
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task AllHome()
+        {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            try
+            {
+                await SequenceService.Init_ServoAllOn(_cts.Token);
+                await SequenceService.All_Home(_cts.Token);
+            }catch(Exception e)
+            {
+                
+            }
+            
+        }
 
 
         //[RelayCommand]
@@ -442,78 +475,78 @@ namespace HCB.UI
         //    cts?.Cancel();
         //}
 
-        //[RelayCommand]
-        //private async Task Step2Start()
-        //{
-        //    _cts = new CancellationTokenSource();
-        //    await SequenceService.StepMoveDTableCenter(_cts.Token);
-        //    await SequenceService.StepDieCarrierAlign(_cts.Token);
-        //    await SequenceService.StepDiePickUp(    _cts.Token);
-        //}
+            //[RelayCommand]
+            //private async Task Step2Start()
+            //{
+            //    _cts = new CancellationTokenSource();
+            //    await SequenceService.StepMoveDTableCenter(_cts.Token);
+            //    await SequenceService.StepDieCarrierAlign(_cts.Token);
+            //    await SequenceService.StepDiePickUp(    _cts.Token);
+            //}
 
-        //[RelayCommand]
-        //private void Step2Stop()
-        //{
-        //    _cts?.Cancel();
-        //}
+            //[RelayCommand]
+            //private void Step2Stop()
+            //{
+            //    _cts?.Cancel();
+            //}
 
-        //[RelayCommand]
-        //private async Task Step3Start()
-        //{
-        //    cts = new CancellationTokenSource();
-        //    await SequenceService.StepMovePTableCenter(cts.Token);
-        //    await SequenceService.StepLeftFiducialMarkAlign(cts.Token);
-        //    await SequenceService.StepRightFiducialMarkAlign(cts.Token);
-        //    await SequenceService.StepCalculateFiducialMarkPosition(cts.Token);
-        //    await SequenceService.StepLeftDieMarkDetect(cts.Token);
-        //    await SequenceService.StepRightDieMarkDetect(cts.Token);
-        //    await SequenceService.StepDieAlignment(cts.Token);
-        //}
+            //[RelayCommand]
+            //private async Task Step3Start()
+            //{
+            //    cts = new CancellationTokenSource();
+            //    await SequenceService.StepMovePTableCenter(cts.Token);
+            //    await SequenceService.StepLeftFiducialMarkAlign(cts.Token);
+            //    await SequenceService.StepRightFiducialMarkAlign(cts.Token);
+            //    await SequenceService.StepCalculateFiducialMarkPosition(cts.Token);
+            //    await SequenceService.StepLeftDieMarkDetect(cts.Token);
+            //    await SequenceService.StepRightDieMarkDetect(cts.Token);
+            //    await SequenceService.StepDieAlignment(cts.Token);
+            //}
 
-        //[RelayCommand]
-        //private void Step3Stop()
-        //{
-        //    cts?.Cancel();
-        //}
+            //[RelayCommand]
+            //private void Step3Stop()
+            //{
+            //    cts?.Cancel();
+            //}
 
-        //[RelayCommand]
-        //private async Task Step4Start()
-        //{
-        //    cts = new CancellationTokenSource();
-        //    await SequenceService.StepMoveBondingPosition(cts.Token);
-        //    await SequenceService.StepWaferLogicMarkDetecting(cts.Token);
-        //    await SequenceService.StepDieFinalAlign(cts.Token);
-        //    await SequenceService.StepBondingProcess(cts.Token);
-        //}
+            //[RelayCommand]
+            //private async Task Step4Start()
+            //{
+            //    cts = new CancellationTokenSource();
+            //    await SequenceService.StepMoveBondingPosition(cts.Token);
+            //    await SequenceService.StepWaferLogicMarkDetecting(cts.Token);
+            //    await SequenceService.StepDieFinalAlign(cts.Token);
+            //    await SequenceService.StepBondingProcess(cts.Token);
+            //}
 
-        //[RelayCommand]
-        //private void Step4Stop()
-        //{
-        //    cts?.Cancel();
-        //}
+            //[RelayCommand]
+            //private void Step4Stop()
+            //{
+            //    cts?.Cancel();
+            //}
 
-        //[RelayCommand]
-        //public async Task ServoAllOn(CancellationToken ct)
-        //{
-        //    await SequenceService.Init_ServoAllOn(ct);
-        //}
+            //[RelayCommand]
+            //public async Task ServoAllOn(CancellationToken ct)
+            //{
+            //    await SequenceService.Init_ServoAllOn(ct);
+            //}
 
-        //[RelayCommand]
-        //public async Task ServoAllOff(CancellationToken ct)
-        //{
-        //    await SequenceService.Init_ServoAllOff(ct);
-        //}
+            //[RelayCommand]
+            //public async Task ServoAllOff(CancellationToken ct)
+            //{
+            //    await SequenceService.Init_ServoAllOff(ct);
+            //}
 
-        //[RelayCommand]
-        //public async Task WaferPinUp(CancellationToken ct)
-        //{
-        //    await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct); // W-Table 리프트 핀 다운
-        //}
-        //[RelayCommand]
-        //public async Task WaferPinDown(CancellationToken ct)
-        //{
-        //    await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct); // W-Table 리프트 핀 다운
-        //}
+            //[RelayCommand]
+            //public async Task WaferPinUp(CancellationToken ct)
+            //{
+            //    await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct); // W-Table 리프트 핀 다운
+            //}
+            //[RelayCommand]
+            //public async Task WaferPinDown(CancellationToken ct)
+            //{
+            //    await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct); // W-Table 리프트 핀 다운
+            //}
 
         private bool CanStartInitialize() => !IsInitializing;
     }

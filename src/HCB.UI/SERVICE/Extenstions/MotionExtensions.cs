@@ -155,27 +155,29 @@ namespace HCB.UI
             var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(motorNo);
             var position = axis.PositionList.FirstOrDefault(p => p.Name == positionName);
 
-            if (axis == null || position == null)
-            {
-                helper.Log(LogLevel.Critical, $"Axis with ID {motorNo} or Position {positionName} not found.");
-                throw new Exception($"Axis with ID {motorNo} or Position {positionName} not found.");
-            }
-
             if (helper.IsSimulation)
             {
-                helper.Log(LogLevel.Information, $"[Simulation] Axis {axis.Name} Move to {positionName} at Speed {position.Speed}, Position {position.Position}");
+                helper.Log(LogLevel.Information, $"[Simulation] {axis.Name} -> {positionName}");
                 return;
             }
 
+            // 1. 이동 명령
             await axis.Move(MoveType.Absolute, jerk: 100, position.Speed, position.Position);
 
-            await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
+            // 2. [중요] 축이 실제로 움직이기 시작할 때까지 대기 (InPosition이 false가 되거나 Busy가 true가 될 때까지)
+            // PMAC 통신 속도에 따라 명령 후 상태 반영까지 수 ms~수십 ms가 걸릴 수 있습니다.
+            int retry = 0;
+            while (axis.InPosition && retry < 10) // 최대 100ms 정도 대기 (상태 변화 확인)
+            {
+                await Task.Delay(10, ct);
+                retry++;
+            }
 
-            bool result = await helper.WaitUntilAsync( () => axis.InPosition, 60000, ct,
-                $"Axis {axis.Name} Move to {positionName} Timeout"
+            // 3. 이제 실제로 "도착"할 때까지 대기
+            bool result = await helper.WaitUntilAsync(() => axis.InPosition, 60000, ct,
+                $"Axis {axis.Name} Move Timeout"
             );
         }
-
 
         public static async Task MoveAsync(this ISequenceHelper helper, string motorName, string positionName, CancellationToken ct)
         {

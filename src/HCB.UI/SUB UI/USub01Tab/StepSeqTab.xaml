@@ -29,6 +29,14 @@
                     <Button Content="BottomVision" Command="{Binding BottomVisionCommand}" Margin="10"/>
                     <Button Content="Bonding" Command="{Binding BondingCommand}" Margin="10"/>
                 </StackPanel>
+                <TextBlock Text="단위 테스트" TextAlignment="Center" FontSize="20"></TextBlock>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="ALL HOME" Command="{Binding AllHomeCommand}" Margin="10"/>
+                    <Button Content="WVacSwitch" Command="{Binding WVacOnCommand}" Margin="10"/>
+                    <Button Content="DVacSwitch" Command="{Binding DVacOnCommand}" Margin="10"/>
+                    <Button Content="PinUp" Command="{Binding WPinUpCommand}" Margin="10"/>
+                    <Button Content="PinDown" Command="{Binding WPinDownCommand}" Margin="10"/>
+                </StackPanel>
                 <TextBlock Text="DRY RUN" TextAlignment="Center" FontSize="20"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <Button Content="Dry Run" Margin="10" Command="{Binding DryRunCommand}"/>
