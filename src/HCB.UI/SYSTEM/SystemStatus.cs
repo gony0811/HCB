@@ -36,6 +36,7 @@ namespace HCB.UI
         HEAVY
     }
 
+
     public class EQStatus
     {
         public Availability Availability { get; set; } = Availability.Up;

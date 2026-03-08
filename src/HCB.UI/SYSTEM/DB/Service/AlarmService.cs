@@ -195,7 +195,7 @@ namespace HCB.UI
             }
 
             operationService.Status.Alarm = AlarmState.NO_ALARM;
-            //UpdateEQStatus(AlarmLevel.NORMAL);
+            UpdateEQStatus(AlarmLevel.NORMAL);
             this.currentAlarms.Clear();
         }
 

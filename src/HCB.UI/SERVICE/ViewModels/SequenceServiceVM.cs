@@ -59,6 +59,13 @@ namespace HCB.UI
         private OperationMode operationMode;
 
 
+        // 비전 상태
+        [ObservableProperty]
+        private bool visionStatus;  // 1: 연결중, 0: 연결 끊김
+
+        [ObservableProperty]
+        private bool visionAlarm;   // 1: 알람 발생, 0: 알람 없음
+
         /// <summary>
         /// SEMI-AUTO SEQUENCE : WAFER ALIGN
         /// STEP 1 : Wafer Center Move

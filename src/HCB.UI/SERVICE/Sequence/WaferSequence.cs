@@ -86,58 +86,51 @@ namespace HCB.UI
 
                 //EQStatusCheck();
 
+                // 추가: Wafer & Die 존재 여부 확인 
+                // 1. 있을 경우 정상 진행 
+                // 2. 없을 경우 에러 발생
+
                 string[] xy = { MotionExtensions.W_Y, MotionExtensions.H_X };
-                string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+                string[] z = { MotionExtensions.H_Z};
+
+                // Wafer Align 촬영 전 Z축을 저배율 촬영 가능한 위치까지 옮긴다. 이후 고정된 상태에서 촬영을 실시한다. 
+                // 주의: H_Z축 NAME: WAFER_ALIGN_LOW의 위치는 WAFER 척과 부딪히지 않는 선에서 설정하도록 한다.
+                await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
+                
+                // WAFER ALIGN은 4번의 촬영을 실시한다.
+                // 1 2 
+                // 3 4
+                // 1번축 
+                await MotionsMove(xy, MotionExtensions.WAFER_ALIGN_1, ct);
+                // TODO: 이미지촬영 1
+                
+                // 2번축
+                await MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_ALIGN_2, ct);
+                // TODO: 이미지촬영 2
+
+                // 4번축
+                await MotionsMove(xy, MotionExtensions.WAFER_ALIGN_2, ct);
+                // TODO: 이미지촬영 4
+
+                // 3번축
+                await MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_ALIGN_1, ct);
+                // TODO: 이미지촬영 3
+
 
                 await ExecuteStepAsync(
                     async () =>
                     {
-                        await Init_Head(ct);
-                        await MotionsMove(xy, MotionExtensions.WAFER_CENTER_POSITION, ct);
-                        await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
-                        // TODO: 비전 측정
-                    },
-                    s => _sequenceServiceVM.WaferCenterMeasure = s,
-                    "Wafer Center Align",
-                    ct
-                );
-
-                await ExecuteStepAsync(
-                    async () =>
-                    {
-                        await Init_Head(ct);
-                        await MotionsMove(xy, MotionExtensions.WAFER_LEFT_POSITION, ct);
-                        await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
-                        // TODO: 비전 측정
-                    },
-                    s => _sequenceServiceVM.WaferLeftMeasure = s,
-                    "Wafer Left Align",
-                    ct
-                );
-
-                await ExecuteStepAsync(
-                    async () =>
-                    {
-                        await Init_Head(ct);
-                        await MotionsMove(xy, MotionExtensions.WAFER_RIGHT_POSITION, ct);
-                        await MotionsMove(z, MotionExtensions.WAFER_ALIGN_LOW, ct);
-                        // TODO: 비전 측정
-                    },
-                    s => _sequenceServiceVM.WaferRightMeasure = s,
-                    "Wafer Right Align",
-                    ct
-                );
-
-                await ExecuteStepAsync(
-                    async () =>
-                    {
-                        await Init_Head(ct);
                         // TODO: 오차 보정 계산 + 이동
                     },
                     s => _sequenceServiceVM.WaferAlign = s,
                     "Wafer Final Align",
                     ct
                 );
+            }
+            catch(Exception e)
+            {
+                _logger.Warning("Wafer Align 실패");
+                _logger.Warning(e.Message);
             }
             finally
             {

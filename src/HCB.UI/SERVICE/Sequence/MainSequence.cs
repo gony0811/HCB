@@ -11,7 +11,7 @@ namespace HCB.UI
 {
     public partial class SequenceService : BackgroundService
     {
-        public async Task MachineStartAsync(CancellationToken ct)
+        public async Task MachineStartAsync(int topDie, int btmDie, CancellationToken ct)
         {
             try
             {
@@ -19,13 +19,25 @@ namespace HCB.UI
 
                 var Status = _operationService.Status;
 
-                if (Status.Availability == Availability.Down || Status.Run == RunStop.Run || Status.Operation == OperationMode.Manual || Status.Alarm == AlarmState.HEAVY)
+                if (Status.Availability == Availability.Down)
                 {
                     _logger.Warning("Cannot execute MachineStartAsync: Sequence Service is not in Auto Standby Status.");
                     return;
                 }
 
-                await Task.Delay(3000, ct);
+                // 1. Btm Die 
+                var BtmDieAlign = await DTableCarrierAlign(btmDie, ct);
+                await DTablePickup(btmDie, BtmDieAlign, ct);
+                await BtmDieDrop(ct);
+                await Init_Head(ct);
+
+                //2.TopDie
+                var TopDieAlign = await DTableCarrierAlign(topDie, ct);
+                await DTablePickup(topDie, TopDieAlign, ct);
+
+                // 3. 고배율 보정
+                var topDieVisionResults = await TopDieVision(ct);
+                await TopDieDrop(ct);
             }
             catch (OperationCanceledException)
             {

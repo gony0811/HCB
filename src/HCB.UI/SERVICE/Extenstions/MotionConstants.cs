@@ -33,8 +33,12 @@ namespace HCB.UI
         public const string BTM_VISION_HIGH = "BTM_VISION_HIGH";
         public const string DIE_CARRIER_ALIGN_LOW = "DIE_CARRIER_ALIGN_LOW";
         public const string WAFER_ALIGN_LOW = "WAFER_ALIGN_LOW";
+        public const string WAFER_ALIGN_1 = "WAFER_ALIGN_1";
+        public const string WAFER_ALIGN_2 = "WAFER_ALIGN_2";
+        public const string WAFER_ALIGN_3 = "WAFER_ALIGN_3";
         public const string TOP_DIE_VISION = "TOP_DIE_VISION";
         public const string PICKUP_STANBY = "PICKUP_STANBY";
+        
 
         // h-z
         public const string DIE_PICKUP = "DIE_PICKUP";
@@ -81,5 +85,12 @@ namespace HCB.UI
         public const string DIE_7_PICK_POSITION = "DIE_7_PICK";
         public const string DIE_8_PICK_POSITION = "DIE_8_PICK";
         public const string DIE_9_PICK_POSITION = "DIE_9_PICK";
+        public const string DIE_VISION_LOW= "DIE_VISION_LOW";
+
+        public const string ORIGIN = "ORIGIN";
+        public const string P_LEFT_FIDUCIAL_HIGH = "P_LEFT_FIDUCIAL_HIGH";
+        public const string P_RIGHT_FIDUCIAL_HIGH = "P_RIGHT_FIDUCIAL_HIGH";
+        public const string P_LEFT_CORNER_HIGH = "P_LEFT_CORNER_HIGH";
+        public const string P_RIGHT_CORNER_HIGH = "P_RIGHT_CORNER_HIGH";
     }
 }

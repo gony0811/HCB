@@ -19,6 +19,7 @@ namespace HCB.UI
         private readonly SequenceService SequenceService;
         private readonly DialogService _dialogService;
         private readonly DeviceManager _deviceManager;
+        private readonly EqpCommunicationService eqpCommunicationService;
         private IOManager ioManager;
 
         public SequenceServiceVM SequenceServiceVM { get; }
@@ -52,7 +53,9 @@ namespace HCB.UI
             IoExtensions.DO_DTABLE_VAC_1_ON, IoExtensions.DO_DTABLE_VAC_2_ON, IoExtensions.DO_DTABLE_VAC_3_ON, IoExtensions.DO_DTABLE_VAC_4_ON, IoExtensions.DO_DTABLE_VAC_5_ON, IoExtensions.DO_DTABLE_VAC_6_ON, IoExtensions.DO_DTABLE_VAC_7_ON, IoExtensions.DO_DTABLE_VAC_8_ON, IoExtensions.DO_DTABLE_VAC_9_ON,
         };
 
-        public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM, SequenceService sequenceService, SequenceHelper sequenceHelper, DeviceManager deviceManager, IOManager ioManager, DialogService dialogService)
+        public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM, SequenceService sequenceService, SequenceHelper sequenceHelper, DeviceManager deviceManager, IOManager ioManager, DialogService dialogService
+           , EqpCommunicationService eqpCommunicationService
+            )
         {
             this.SequenceServiceVM = sequenceServiceVM;
             this.SequenceService = sequenceService;
@@ -60,7 +63,7 @@ namespace HCB.UI
             this._deviceManager = deviceManager;
             this.ioManager = ioManager;
             this._dialogService = dialogService;
-
+            this.eqpCommunicationService = eqpCommunicationService;
             var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
 
             if (ioDevice != null)
@@ -182,28 +185,7 @@ namespace HCB.UI
             }
         }
 
-        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
-        public async Task DiePickup()
-        {
-            try
-            {
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-
-                await SequenceService.DTablePickup(1, _cts.Token);
-                _dialogService.ShowMessage("DIE PICKUP 완료", "DIE PICKUP 완료");
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                InitializeCommand.NotifyCanExecuteChanged();
-            }
-        }
+        
         [RelayCommand(CanExecute = nameof(CanStartInitialize))]
         public async Task BottomVision()
         {
@@ -419,7 +401,7 @@ namespace HCB.UI
                         token.ThrowIfCancellationRequested();
 
                         // 1. DTable에서 Die 픽업
-                        await SequenceService.DTablePickup(dieNumber, token);
+                        await SequenceService.DTablePickup(dieNumber, null, token);
                         //// 2. PTable로 이동 후 Align
                         await SequenceService.BottomVision(token);
                         // 3. Wafer에 본딩
@@ -462,7 +444,8 @@ namespace HCB.UI
             try
             {
                 await SequenceService.Init_ServoAllOn(_cts.Token);
-                await SequenceService.All_Home(_cts.Token);
+
+                //await SequenceService.All_Home(_cts.Token);
             }
             catch (Exception e)
             {
@@ -471,6 +454,47 @@ namespace HCB.UI
 
         }
 
+        [RelayCommand]
+        public async Task RequestAlign()
+        {
+            try
+            {
+                var result = await eqpCommunicationService.RequestVisionMarkPosition(MarkType.WAFERALIGNMARK, CameraType.HC_LOW);
+                Console.WriteLine(result.ToString);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            
+        }
+        [RelayCommand]
+        public async Task RequestAFStart()
+        {
+            try
+            {
+                var result = await eqpCommunicationService.RequestAFStart(CameraType.HC_LOW);
+                Console.WriteLine(result);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        [RelayCommand]
+        public async Task ReplyAFEnd()
+        {
+            try
+            {
+                var result = await eqpCommunicationService.RequestAFStart(CameraType.HC_LOW);
+                Console.WriteLine(result);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
 
         //[RelayCommand]
         //private void Step1Stop()

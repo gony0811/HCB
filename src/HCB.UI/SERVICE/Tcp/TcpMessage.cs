@@ -120,13 +120,13 @@ namespace HCB.UI
 
     public class VisionMarkPositionResponse
     {
-        public MarkType MarkType { get; set; }
-        public CameraType CameraType { get; set; }
+        //public MarkType MarkType { get; set; }
+        //public CameraType CameraType { get; set; }
         public Result Result { get; set; }
         public double X { get; set; }
         public double Y { get; set; }
         public double Theta { get; set; }
-        public double Score { get; set; }
+        //public double Score { get; set; }
 
         public static VisionMarkPositionResponse Parse(string? content)
         {
@@ -137,14 +137,14 @@ namespace HCB.UI
             {
                 var xml = XElement.Parse($"<DATA>{content}</DATA>");
 
-                if (Enum.TryParse(xml.Element("MARKTYPE")?.Value, out MarkType mt)) response.MarkType = mt;
-                if (Enum.TryParse(xml.Element("CAMERATYPE")?.Value, out CameraType ct)) response.CameraType = ct;
-                if (Enum.TryParse(xml.Element("r")?.Value, out Result r)) response.Result = r;
+                //if (Enum.TryParse(xml.Element("MARKTYPE")?.Value, out MarkType mt)) response.MarkType = mt;
+                //if (Enum.TryParse(xml.Element("CAMERATYPE")?.Value, out CameraType ct)) response.CameraType = ct;
+                if (Enum.TryParse(xml.Element("RESULT")?.Value, out Result r)) response.Result = r;
 
                 if (double.TryParse(xml.Element("X")?.Value, out double x)) response.X = x;
                 if (double.TryParse(xml.Element("Y")?.Value, out double y)) response.Y = y;
                 if (double.TryParse(xml.Element("THETA")?.Value, out double theta)) response.Theta = theta;
-                if (double.TryParse(xml.Element("SCORE")?.Value, out double score)) response.Score = score;
+                //if (double.TryParse(xml.Element("SCORE")?.Value, out double score)) response.Score = score;
             }
             catch (Exception ex)
             {
@@ -176,7 +176,7 @@ namespace HCB.UI
     public enum Result
     {
         OK, 
-        FAILED
+        NG
     }
 
 

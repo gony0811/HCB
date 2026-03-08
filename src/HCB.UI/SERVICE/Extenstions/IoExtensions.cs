@@ -141,29 +141,35 @@ namespace HCB.UI
         /// <param name="onOff"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public static async Task HeadPickerVacuum(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
+        public static async Task<bool> HeadPickerVacuum(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
         {
-            var bOnOff = onOff == eOnOff.On ? true : false;
+            var bOnOff = onOff == eOnOff.On;
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
-
             if (device == null)
             {
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
+                return false; // device null이면 종료
             }
 
             device.SetDigital(DO_HEADER_EJECTOR_VAC_ON, bOnOff);
-            device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, !bOnOff);
-
-            while (ct.IsCancellationRequested == false)
+            if (bOnOff)
             {
-                await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
-                await helper.WaitUntilAsync(
-                    () => device.GetDigital(DI_HEADER_VAC_EJECTOR) == bOnOff,
-                    3000,
-                    ct,
-                    $"{DO_HEADER_EJECTOR_VAC_ON} = {onOff} Timeout"
-                );
+                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, false);
+            }else
+            {
+                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, true);
+                await Task.Delay(100);
+                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, false);
             }
+
+            await helper.DelayAsync(100, ct); // 명령 처리 대기
+
+            return await helper.WaitUntilAsync(
+                () => device.GetDigital(DI_HEADER_VAC_EJECTOR) == bOnOff,
+                5000,
+                ct,
+                $"{DO_HEADER_EJECTOR_VAC_ON} = {onOff} Timeout"
+            );
         }
 
         public static async Task DTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
@@ -176,6 +182,7 @@ namespace HCB.UI
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
+
 
         public static async Task DTableVacuum(this ISequenceHelper helper, int channel, eOnOff onOff, CancellationToken ct)
         {
@@ -194,8 +201,18 @@ namespace HCB.UI
             string diPressureSwitch = $"DI_DTABLE_VAC_{channel}_PRESSURE_SWITCH";
             try
             {
-                device.SetDigital(doOn, bOnOff, helper.IsSimulation);
-                device.SetDigital(doRelease, !bOnOff, helper.IsSimulation);
+                if (onOff == eOnOff.On)
+                {
+                    device.SetDigital(doOn, true, helper.IsSimulation);
+                    device.SetDigital(doRelease, false, helper.IsSimulation);
+                }
+                else if (onOff == eOnOff.Off) 
+                {
+                    device.SetDigital(doOn, false, helper.IsSimulation);
+                    device.SetDigital(doRelease, true, helper.IsSimulation);
+                    await Task.Delay(200, ct);
+                    device.SetDigital(doRelease, false, helper.IsSimulation);
+                }
 
                 if (helper.IsSimulation)
                     device.SetDigital(diPressureSwitch, bOnOff, helper.IsSimulation);
@@ -241,14 +258,23 @@ namespace HCB.UI
             }
             string doOn = $"DO_WTABLE_VAC_{channel}_ON";
             string doRelease = $"DO_WTABLE_VAC_{channel}_RELEASE";
-            //string doN2Blow = $"DO_WTABLE_N2_BLOW";
             string diPressureSwitch = $"DI_WTABLE_VAC_PRESSURE_SWITCH";
 
             try
             {
-                device.SetDigital(doOn, bOnOff, helper.IsSimulation);
-                device.SetDigital(doRelease, !bOnOff, helper.IsSimulation);
-                //device.SetDigital(doN2Blow, !bOnOff, helper.IsSimulation); // N2 Blow is the opposite of Vacuum On/Off
+                if (onOff == eOnOff.On)
+                {
+                    device.SetDigital(doOn, true, helper.IsSimulation);
+                    device.SetDigital(doRelease, false, helper.IsSimulation);
+                }
+                else
+                {
+                    device.SetDigital(doOn, false, helper.IsSimulation);
+                    device.SetDigital(doRelease, true, helper.IsSimulation);
+                    await Task.Delay(200);
+                    device.SetDigital(doRelease, false, helper.IsSimulation);
+                }
+                    
 
                 if (helper.IsSimulation)
                 {
@@ -268,9 +294,6 @@ namespace HCB.UI
                 ct,
                 $"{doOn} = {onOff} Timeout"
             );
-
-
-            //device.SetDigital(doN2Blow, false, helper.IsSimulation); // Ensure N2 Blow is turned off after operation
         }
 
         public static async Task WTableLiftPin(this ISequenceHelper helper, eUpDown upDown, CancellationToken ct)

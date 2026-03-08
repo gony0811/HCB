@@ -59,7 +59,7 @@ namespace HCB.UI
 
                         if (status.Availability == Availability.Down) return;
 
-                        await MonitoringSafety(_cancellationTokenSource.Token);
+                        //await MonitoringSafety(_cancellationTokenSource.Token);
 
                         await InterlockMotion(_cancellationTokenSource.Token);
 

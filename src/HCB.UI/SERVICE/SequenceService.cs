@@ -22,11 +22,12 @@ namespace HCB.UI
         private readonly AlarmService _alarmService;
         private readonly SequenceServiceVM _sequenceServiceVM;
         private readonly bool _simulation;
+        private readonly EqpCommunicationService communicationService;
         private readonly SemaphoreSlim _pollingLock = new SemaphoreSlim(1, 1);
 
         private CancellationToken _stopToken = CancellationToken.None;
 
-        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, AlarmService alarmService, SequenceServiceVM sequenceServiceVM)
+        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, AlarmService alarmService, SequenceServiceVM sequenceServiceVM, EqpCommunicationService communicationService)
         {
             _logger = logger.ForContext<SequenceService>();
             _deviceManager = deviceManager;
@@ -35,7 +36,7 @@ namespace HCB.UI
             _alarmService = alarmService;
             _sequenceServiceVM = sequenceServiceVM;
             _simulation = dataOptions.Simulation;
-            
+            this.communicationService = communicationService;
         }
 
         private async Task ExecuteStepAsync(

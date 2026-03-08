@@ -1,5 +1,6 @@
 ﻿using MediaFoundation.MFPlayer;
 using Microsoft.Extensions.Hosting;
+using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace HCB.UI
 {
     public partial class SequenceService : BackgroundService
     {
-        public async Task DTableLoading(CancellationToken ct)
+        public async Task  DTableLoading(CancellationToken ct)
         {
             try
             {
@@ -55,7 +56,7 @@ namespace HCB.UI
             }
         }
 
-        public async Task DTableCarrierAlign(CancellationToken ct)
+        public async Task<VisionMarkPositionResponse> DTableCarrierAlign(int vacNum, CancellationToken ct)
         {
             try
             {
@@ -66,31 +67,17 @@ namespace HCB.UI
 
                 string[] xy = { MotionExtensions.D_Y, MotionExtensions.H_X };
                 //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
-                string[] z = { MotionExtensions.H_Z};
 
-                // DIE CARRIER ALIGN 1  위치로 이동 
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_1, ct);
-                await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
-
-                // TODO: 비전 측정
-
-                // DIE CARRIER ALIGN 2  위치로 이동 
+                // 안전한 위치 셋업
                 await Init_Head(ct);
-                await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_2, ct);
-                await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
-
-                // TODO: 비전 측정
-
-                // DIE CARRIER ALIGN 2  위치로 이동 
-                await Init_Head(ct);
-                await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_3, ct);
-                await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
-                // TODO: 비전 측정
-                await Init_Head(ct);
-
-                // TODO: 오차 보정
-
+                _logger.Information("Die Align 시작");
+                await MotionsMove(xy, $"DIE_ALIGN_{vacNum}", ct);
+                await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);
+                await MotionsMove(MotionExtensions.H_T, 0, ct);
+                var diePickupAlign = await communicationService.RequestVisionMarkPosition(MarkType.DIEPICKUPMARK, CameraType.HC_LOW);
+                
+                _logger.Information("Die Align 종료");
+                return diePickupAlign;
             }
             catch (Exception e)
             {
@@ -99,46 +86,87 @@ namespace HCB.UI
 
         }
 
-        // Size : N x N 배열의 사이즈를 의미
-        public async Task DTablePickup(int vacNum, CancellationToken ct, int size = 3)
+        public async Task DTablePickup(int vacNum, VisionMarkPositionResponse? correction, CancellationToken ct)
         {
             try
             {
                 _logger.Information("Die pickup Start");
                 //EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);                
+                //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
 
-                string t = MotionExtensions.H_T;
-                string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
-                //string[] z = { MotionExtensions.H_Z };
-
-                List<(string Motion, string Position)> request = new List<(string Motion, string Position)>();
-
-                int row = (vacNum - 1) / size + 1;
-                int col = (vacNum - 1) % size + 1;
-
-                request.Add((MotionExtensions.H_X, $"DIE_COLUMN_{col}"));
-                request.Add((MotionExtensions.D_Y, $"DIE_ROW_{row}"));
+                string[] xy = { MotionExtensions.H_X, MotionExtensions.D_Y};
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                await Task.Delay(50, ct);
-                await MotionsMove(request, ct);
-                await Task.Delay(50, ct);
-                await MotionsMove(z, MotionExtensions.TOP_DIE_VISION, ct);
-                // TODO: 비전 측정 및 각도 계산 
-                //await MotionsMove(z, MotionExtensions.PICKUP_STANBY, ct);
-                // TODO: T 축 보정
-                //await MotionsMove(MotionExtensions.h_z, MotionExtensions.DIE_PICKUP, ct);
-                // TODO: DIE picker vacuum on
-                //await MotionsMove(MotionExtensions.h_z, MotionExtensions.PICKUP_STANBY, ct);
+                await MotionsMove(xy, $"DIE_PICKUP_{vacNum}", ct);
+                
+                // 보정값만큼 상대 이동
+                var results = await Task.WhenAll(
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, correction?.X ?? 0, ct),
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, correction?.Y ?? 0, ct),
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, correction?.Theta ?? 0, ct)
+                );
+
+                if (!results.All(r => r)) throw new Exception("동작실패");
+               
+                await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_PICKUP, ct);
+                await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
+                await _sequenceHelper.DTableVacuum(vacNum, eOnOff.Off, ct);
+                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+                await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
             }
             catch (Exception e)
             {
-
+                throw new Exception(e.Message);
             }
 
         }
+
+      
+        //public async Task DTableCarrierAlign(CancellationToken ct)
+        //{
+        //    try
+        //    {
+        //        _logger.Information("Die Carrier Align Start");
+        //        //EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+
+        //        var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+        //        string[] xy = { MotionExtensions.D_Y, MotionExtensions.H_X };
+        //        string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+        //        //string[] z = { MotionExtensions.H_Z};
+
+        //        // DIE CARRIER ALIGN 1  위치로 이동 
+
+        //        await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_1, ct);
+        //        await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
+
+        //        // TODO: 비전 측정
+
+        //        // DIE CARRIER ALIGN 2  위치로 이동 
+        //        await Init_Head(ct);
+        //        await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_2, ct);
+        //        await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
+
+        //        // TODO: 비전 측정
+
+        //        // DIE CARRIER ALIGN 2  위치로 이동 
+        //        await Init_Head(ct);
+        //        await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_3, ct);
+        //        await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
+        //        // TODO: 비전 측정
+        //        await Init_Head(ct);
+
+        //        // TODO: 오차 보정
+
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        throw new Exception(e.Message);
+        //    }
+
+        //}
 
     }
 }

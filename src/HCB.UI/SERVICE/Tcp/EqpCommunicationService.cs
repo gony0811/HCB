@@ -1,6 +1,7 @@
 ﻿using HCB.Data.Entity;
 using HCB.IoC;
 using Serilog;
+using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -8,6 +9,8 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Telerik.Licensing.Json;
 using Telerik.Windows.Controls;
+using Telerik.Windows.Controls.DataVisualization.Map.BingRest;
+using Telerik.Windows.Diagrams.Core;
 
 namespace HCB.UI
 {
@@ -20,24 +23,97 @@ namespace HCB.UI
         // EQP Service
         private SequenceServiceVM sequenceServiceVM;
         private SequenceHelper sequenceHelper;
+        private AlarmService alarmService;
+
+        // HeartBeat
+        private Timer? _heartbeatTimer;
+        private readonly TimeSpan _heartbeatInterval = TimeSpan.FromSeconds(3);
+        private readonly TimeSpan _heartbeatTimeout = TimeSpan.FromSeconds(5);
+        private int _heartbeatRunning = 0; // 중복 실행 방지 (0=idle, 1=running)
 
         public ConnectionState State => _server.State;
 
-        public EqpCommunicationService(ILogger logger, SequenceServiceVM sequenceServiceVM, SequenceHelper sequenceHelper)
+        public EqpCommunicationService(ILogger logger, SequenceServiceVM sequenceServiceVM, SequenceHelper sequenceHelper, AlarmService alarmService)
         {
             _logger = logger;
             this.sequenceServiceVM = sequenceServiceVM;
             this.sequenceHelper = sequenceHelper;
+            this.alarmService = alarmService;
 
             var settings = new TcpSettings();
             _server = new EqpTcpServer(settings);
             _server.MessageReceived += OnMessageReceived;
-            _server.ConnectionStateChanged += (_, state) => _logger.Information($"[EQP] 연결 상태: {state}");
+            _server.ConnectionStateChanged += OnConnectionStateChanged;
             _server.LogMessage += (_, msg) => _logger.Information($"[EQP] {msg}");
         }
 
         public void Start() => _server.Start();
-        public void Stop() => _server.Stop();
+        public void Stop()
+        {
+            StopHeartbeat();
+            _server.Stop();
+        }
+
+        // ─── HeartBeat 타이머 ────────────────────────────────────
+
+        private void OnConnectionStateChanged(object? sender, ConnectionState state)
+        {
+            _logger.Information($"[EQP] 연결 상태: {state}");
+
+            if (state == ConnectionState.Connected)
+                StartHeartbeat();
+            else
+                StopHeartbeat();
+        }
+
+        private void StartHeartbeat()
+        {
+            StopHeartbeat();
+            _heartbeatTimer = new Timer(
+                callback: _ => _ = SendHeartbeatAsync(),
+                state: null,
+                dueTime: _heartbeatInterval, // 첫 전송은 연결 후 3초 뒤
+                period: _heartbeatInterval
+            );
+            _logger.Information("[HeartBeat] 타이머 시작 (간격: 3s, 타임아웃: 5s)");
+        }
+
+        private void StopHeartbeat()
+        {
+            _heartbeatTimer?.Dispose();
+            _heartbeatTimer = null;
+        }
+
+        private async Task SendHeartbeatAsync()
+        {
+            // 이전 HeartBeat가 아직 완료되지 않으면 스킵
+            if (Interlocked.CompareExchange(ref _heartbeatRunning, 1, 0) != 0)
+            {
+                _logger.Warning("[HeartBeat] 이전 요청 진행 중 - 스킵");
+                return;
+            }
+
+            try
+            {
+                using var cts = new CancellationTokenSource(_heartbeatTimeout);
+                var success = await HeartBeat(cts.Token);                
+                sequenceServiceVM.VisionStatus = success;    
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Warning($"[HeartBeat] 타임아웃 ({_heartbeatTimeout.TotalSeconds}s 초과)");
+                sequenceServiceVM.VisionStatus = false;
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"[HeartBeat] 오류: {ex.Message}");
+                sequenceServiceVM.VisionStatus = false;
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _heartbeatRunning, 0);
+            }
+        }
 
         #region EQP -> VISION
         // ─── EQP → Vision 요청 ───────────────────────────────────
@@ -50,17 +126,38 @@ namespace HCB.UI
             return result.Success;
         }
 
-        // 비전 상태 정보 요청
-        public async Task RequestVisionStatus(CancellationToken ct = default)
+        public async Task<bool> RequestAFStart(CameraType cameraType, CancellationToken ct = default)
         {
-            var request = MessageFactory.Create("REQUEST-VISION-SATATUS", "EQP");
-            var result = await _server.RequestAsync(request, ct: ct);
+            var request = MessageFactory.Create("REQUEST_AF_START", "EQP", $"<CAMERATYPE>{cameraType}</CAMERATYPE>");
+            var result = await _server.RequestAsync(request, "REQUEST_AF_END", TimeSpan.FromSeconds(60), ct: ct);
 
-            if (!result.Success)
-                _logger.Warning($"[VisionStatus] 요청 실패: {result.ErrorMessage}");
-            else
-                _logger.Information(result.Response!.Data?.Content ?? "");
+            var afResult = ParseResult(result);
+            await NotifyAFEnd(afResult, ct);
+            return afResult == Result.OK;
         }
+
+        private Result ParseResult(RequestResult result)
+        {
+            if (!result.Success) return Result.NG;
+            try
+            {
+                var content = result.Response!.Data?.Content;
+                var xml = XElement.Parse($"<DATA>{content}</DATA>");
+                return Enum.TryParse(xml.Element("RESULT")?.Value, out Result r) ? r : Result.NG;
+            }
+            catch
+            {
+                return Result.NG;
+            }
+        }
+
+        private async Task NotifyAFEnd(Result afResult, CancellationToken ct)
+        {
+            var resultStr = afResult == Result.OK ? "OK" : "NG";
+            var end = MessageFactory.Create("RESPONSE_AF_END", "EQP", $"<RESULT>{resultStr}</RESULT>");
+            await _server.RequestAsync(end, ct: ct);
+        }
+
 
         // 레시피 변경 요청
         public async Task RequestRecipeChange(string recipeId, CancellationToken ct = default)
@@ -78,62 +175,31 @@ namespace HCB.UI
                 _logger.Information(result.Response!.Data?.Content ?? "");
         }
 
-        public async Task RequestVisionMarkPosition(MarkType markType, CameraType cameraType)
+        // Align 요청
+        public async Task<VisionMarkPositionResponse> RequestVisionMarkPosition(MarkType markType, CameraType cameraType)
         {
             var request = MessageFactory.Create(
-                messageName: "REQUEST-VISIONMARK-POSITION",
+                messageName: "REQUEST_VISIONMARK_POSITION",
                 unitName: "EQP",
                 content: $"<MARKTYPE>{markType}</MARKTYPE><CAMERATYPE>{cameraType}</CAMERATYPE>"
             );
-            var result = await _server.RequestAsync(request);
+            var result = await _server.RequestAsync(request, timeout: TimeSpan.FromSeconds(10));
 
             if (!result.Success)
             {
                 _logger.Warning($"[MarkPosition] 요청 실패: {result.ErrorMessage}");
-                return;
+                return new VisionMarkPositionResponse { Result = Result.NG };
             }
 
             var response = VisionMarkPositionResponse.Parse(result.Response!.Data?.Content);
             if (response.Result == Result.OK)
-                _logger.Information($"X={response.X}, Y={response.Y}, Theta={response.Theta}, Score={response.Score}");
+                return new VisionMarkPositionResponse { Result = response.Result, X = response.X, Y = response.Y, Theta = response.Theta };
             else
-                _logger.Warning("[MarkPosition] 결과 NG");
+                return new VisionMarkPositionResponse { Result = Result.NG };
         }
 
-        // AutoFocusing 요청 : AF방식 협의 필요 ( 미완성 )
-        public async Task RequestAFStart()
-        {
-            var request = MessageFactory.Create(
-                messageName: "REQUEST-AF-START",
-                unitName: "EQP",
-                content: null
-            );
-            var result = await _server.RequestAsync(request);
+        
 
-            if (!result.Success)
-            {
-                _logger.Warning($"[MarkPosition] 요청 실패: {result.ErrorMessage}");
-                return;
-            }
-
-            var response = VisionMarkPositionResponse.Parse(result.Response!.Data?.Content);
-            if (response.Result == Result.OK)
-                _logger.Information($"X={response.X}, Y={response.Y}, Theta={response.Theta}, Score={response.Score}");
-            else
-                _logger.Warning("[MarkPosition] 결과 NG");
-        }
-
-        // AutoFocusing 요청
-        public async Task RequestAutoFocusing(CancellationToken ct = default)
-        {
-            var request = MessageFactory.Create(
-                    messageName: "REQUEST-AUTOFOCUS-START",
-                    unitName: "EQP",
-                    content: null
-            );
-
-            await _server.SendAsync(request, ct);
-        }
         #endregion
 
         #region VISION -> EQP
@@ -143,164 +209,146 @@ namespace HCB.UI
             _logger.Information($"[EQP] Vision 명령 수신: {msgName}");
             try
             {
-                switch(msgName)
+                switch (msgName)
                 {
-                    // 설비 상태 정보 요청
-                    case "REQUEST-UNIT-STATUS":
-                        await ReplyEqpStatus();
+                    // 비전 상태 정보 보고
+                    case "REQUEST_VISION_STATUS":
+                        await ReplyEqpStatus(msg);
                         break;
                     // 현재 레시피 확인 요청 "REQUEST-CURRENT-RECIPE"
-                    
-                    // Z축 이동 
-                    case "REQUEST-AF-ZMOVE":
-                        break;
-                    // Auto Focusing End
 
-                    case "REPLY-AF-END":
-                        break;
 
-                    case "REQUEST-MOTION-MOVE":
+                    case "REQUEST_MOTION_MOVE":
                         await HandleMotionMove(msg);
                         break;
-                    //// X축 제어 + 
-                    //case "REQUEST-MOTION-PLUS-X":
-                    //    await HandleMotionMove(msg);
-                    //    break;
-                    //// X축 제어 -
-                    //case "REQUEST-MOTION-MINUS-X":
-                    //    await HandleMotionMove(msg);
-                    //    break;
-
-                    //// Z축 제어 +
-                    //case "REQUEST-MOTION-PLUS-Z":
-                    //    await HandleMotionMove(msg);
-                    //    break;
-
-                    //// Z축 제어 -
-                    //case "REQUEST-MOTION-MINUS-Z":
-                    //    await HandleMotionMove(msg);
-                    //    break;
                 }
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 _logger.Warning($"VISION 통신 중 에러 발생 {e.Message}");
             }
         }
 
-        private async Task ReplyEqpStatus(CancellationToken ct = default)
-        {
-            var request = MessageFactory.Create(
-                messageName: "REPLY-EQP-STATUS",
-                unitName: "EQP",
-                content: $"<UNITSTATUS>{sequenceServiceVM.Availability.ToString()}</UNITSTATUS>"
-            );
-
-            await _server.SendAsync(request, ct);
-        }
-
-        private async Task ReplyAFEnd(Message msg, CancellationToken ct = default)
-        {
-            
-        }
-
-        private async Task HandleMotionMove(Message msg, CancellationToken ct = default)
+        private async Task ReplyEqpStatus(Message msg, CancellationToken ct = default)
         {
             var msgName = msg.Header?.MessageName ?? "";
-            var replyName = msgName.Replace("REQUEST-", "REPLY-");
-
-            bool result = false;
-            string axis = "";
-            string direction = "";
-            double distance = 0;
+            var replyName = msgName.Replace("REQUEST_", "REPLY_");
 
             try
             {
-                // 1. Data.Content 내부의 XML 문자열 파싱 (핵심 수정 부분)
                 if (!string.IsNullOrEmpty(msg.Data?.Content))
                 {
-                    // 루트가 없는 여러 태그를 읽기 위해 <R>로 감싸서 파싱
                     var innerXml = XElement.Parse($"<R>{msg.Data.Content}</R>");
 
-                    axis = innerXml.Element("AXIS")?.Value ?? "";
-                    direction = (innerXml.Element("DIRECTION")?.Value ?? "").ToUpperInvariant();
-                    distance = double.TryParse(innerXml.Element("DISTANCE")?.Value, out var d) ? d : 0;
-
-                    // 2. 유효성 검증
-                    var validAxes = new HashSet<string> { "H_X", "H_Z", "H_T", "D_Y", "P_Y", "W_Y", "W_T" };
-                    var validDirections = new HashSet<string> { "PLUS", "MINUS" };
-
-                    if (validAxes.Contains(axis.ToUpperInvariant()) && validDirections.Contains(direction))
+                    string alarmStatus = innerXml.Element("ALARM")?.Value ?? "";
+                    if (alarmStatus.Equals("UP"))
                     {
-                        // 3. 실제 이동 로직 수행
-                        double sign = direction == "PLUS" ? 1.0 : -1.0;
-                        double signedDistance = distance * sign;
-
-                        // 시퀀스 헬퍼 호출
-                        result = await sequenceHelper.RelativeMoveAsync(axis, 0, signedDistance, ct);
+                        sequenceServiceVM.VisionAlarm = true;
+                    }
+                    else if(alarmStatus.Equals("DOWN"))
+                    {
+                        sequenceServiceVM.VisionAlarm = false;
+                        await alarmService.SetAlarm("E0030");
                     }
                 }
             }
             catch (Exception ex)
             {
-                // 로그 기록 (예: _logger.LogError(ex, "Motion Move Error");)
-                result = false;
+                _logger.Error(ex.Message);
             }
 
-            // 4. 응답 메시지 생성 및 전송
-            var responseContent = new MotionMoveResult { Result = result };
+            var responseContent = new MotionMoveResult { Result = true };
 
             var response = MessageFactory.Create(
                 messageName: replyName,
                 unitName: "EQP",
-                content: responseContent.ToXml() // MotionMoveResult가 XML 문자열을 반환한다고 가정
+                content: responseContent.ToXml()
             );
 
             await _server.SendAsync(response);
         }
 
-        //private async Task HandleMotionMove(Message msg, CancellationToken ct = default)
+        //public async Task<bool> ReplyAFEnd(Message msg, CancellationToken ct = default)
         //{
         //    var msgName = msg.Header?.MessageName ?? "";
-        //    var reply = msgName.Replace("REQUEST-", "REPLY-");
-        //    var request = msg.Data.ToXml();
-
-        //    string axis = request.Element("AXIS")?.Value ?? "";
-        //    string direction = request.Element("DIRECTION")?.Value ?? "";
-        //    double distance = double.TryParse(request.Element("DISTANCE")?.Value, out var dist) ? dist : 0;
-
-        //    // 유효한 AXIS / DIRECTION 검증
-        //    var validAxes = new HashSet<string> { "H-X", "H-Z", "H-T", "D-Y", "P-Y", "W-Y", "W-T" };
-        //    var validDirections = new HashSet<string> { "PLUS", "MINUS" };
-
-        //    bool result = false;
-
-        //    if (request != null
-        //        && validAxes.Contains(axis)
-        //        && validDirections.Contains(direction.ToUpperInvariant()))
+        //    var replyName = msgName.Replace("REQUEST_", "REPLY_");
+        //    Result result = Result.NG;
+        //    try
         //    {
-        //        double sign = direction.Equals("PLUS", StringComparison.OrdinalIgnoreCase) ? 1.0 : -1.0;
-        //        double signedDistance = distance * sign;
-
-        //        result = await sequenceHelper.RelativeMoveAsync(axis, 0, signedDistance, ct);
+        //        if (!string.IsNullOrEmpty(msg.Data?.Content))
+        //        {
+        //            var xml = msg.Data?.ToXml();
+                    
+        //            if (Enum.TryParse(xml?.Element("RESULT")?.Value, out Result r))
+        //                result = r;
+        //        }
         //    }
-
-        //    var responseContent = new MotionMoveResult
+        //    catch (Exception ex)
         //    {
-        //        //Axis = axis,
-        //        //Direction = direction,
-        //        //Distance = distance,
-        //        Result = result
-        //    };
+        //        _logger.Error(ex.Message);
+        //    }finally
+        //    {
+        //        var responseContent = new MotionMoveResult { Result = true };
 
-        //    var response = MessageFactory.Create(
-        //        messageName: reply,
-        //        unitName: "EQP",
-        //        content: responseContent.ToXml()
-        //    );
-        //    await _server.SendAsync(response);
+        //        var response = MessageFactory.Create(
+        //            messageName: replyName,
+        //            unitName: "EQP",
+        //            content: responseContent.ToXml()
+        //        );
+        //        await _server.SendAsync(response);
+        //    }
+        //    return result == Result.OK;
+
+
         //}
+
+        private async Task HandleMotionMove(Message msg, CancellationToken ct = default)
+        {
+            var msgName = msg.Header?.MessageName ?? "";
+            var replyName = msgName.Replace("REQUEST_", "REPLY_");
+
+            Result result = Result.NG;
+            string axis = "";
+            double distance = 0;
+
+            try
+            {
+                if (!string.IsNullOrEmpty(msg.Data?.Content))
+                {
+                    var innerXml = XElement.Parse($"<R>{msg.Data.Content}</R>");
+
+                    axis = innerXml.Element("AXIS")?.Value ?? "";
+                    distance = double.TryParse(innerXml.Element("DISTANCE")?.Value, out var d) ? d : 0;
+
+                    var validAxes = new HashSet<string> { "H_X", "H_Z", "H_T", "D_Y", "P_Y", "W_Y", "W_T" };
+
+                    if (validAxes.Contains(axis.ToUpperInvariant()))
+                    {
+                        result = await sequenceHelper.RelativeMoveAsync(axis, 0, distance, ct) ? Result.OK : Result.NG;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result = Result.NG;
+            }
+
+            var currentPosition = sequenceHelper.CurrentPosition(axis);
+            var r = result == Result.OK ? "OK": "NG";
+            var response = MessageFactory.Create(
+                messageName: replyName,
+                unitName: "EQP",
+                content:$"<RESULT>{result}</RESULT><DISTANCE>{currentPosition}</DISTANCE>"
+            );
+
+            await _server.SendAsync(response);
+        }
         #endregion
 
-        public void Dispose() => _server.Dispose();
+        public void Dispose()
+        {
+            StopHeartbeat();
+            _server.Dispose();
+        }
     }
 }

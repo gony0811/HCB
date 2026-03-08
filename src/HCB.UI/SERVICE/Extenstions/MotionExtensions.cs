@@ -14,7 +14,6 @@ namespace HCB.UI
     public static partial class MotionExtensions
     {
 
-
         public static async Task Servo(this ISequenceHelper helper, int motorNo, bool ready, CancellationToken ct)
         {
             var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>("PMAC").FindMotionByMotorIndex(motorNo);
@@ -292,6 +291,11 @@ namespace HCB.UI
             );
         }
 
+        public static double CurrentPosition(this ISequenceHelper helper, string motorName)
+        {
+            var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByName(motorName);
+            return axis.CurrentPosition;
+        }
 
     }
 }

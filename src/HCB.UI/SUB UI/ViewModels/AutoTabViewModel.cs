@@ -1,8 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using Telerik.Windows.Controls;
 
 namespace HCB.UI
 {
@@ -28,6 +31,9 @@ namespace HCB.UI
 
         [ObservableProperty]
         private bool isStopping;
+
+        [ObservableProperty]
+        private bool isInitialize;
 
         public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, OperationService operationService, SequenceService sequenceService, AlarmService alarmService)
         {
@@ -64,63 +70,53 @@ namespace HCB.UI
         }
 
         [RelayCommand]
-        public async Task MachineInit()
+        public void MachineInit()
         {
-            
-            //try
-            //{
-            //    IsInitializing = true;
+            Task.Run(async () =>
+            {
+                IsInitializing = true;
+                try
+                {
+                    await this._sequenceService.MachineInitAsync(_cancellationTokenSource.Token);
+                    await this._sequenceService.Init_Load(_cancellationTokenSource.Token);
+                    await this._sequenceService.WaferAndDieLoading(eOnOff.Off, _cancellationTokenSource.Token);
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        RadWindow.Confirm(new DialogParameters
+                        {
+                            Header = "로딩중",
+                            Content = "로딩 완료 후 확인을 눌러주세요",
+                            Closed = async (s, e) =>
+                            {
+                                if (e.DialogResult == true)
+                                {
+                                    await _sequenceService.WaferAndDieLoading(eOnOff.On, _cancellationTokenSource.Token);
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
+                                        RadWindow.Alert("로딩이 완료되었습니다");
+                                    });
+                                }
+                                else
+                                {
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
+                                        RadWindow.Alert("로딩이 취소되었습니다");
+                                    });
+                                }
+                            }
+                        });
+                    });
+                }
+                catch(Exception e)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        RadWindow.Alert(e.Message);
+                    });
+                }
 
-            //    // 시스템 체크
-            //    _sequenceServiceVM.SystemCheck = StepState.InProgress;
-            //    var systemCheckResult = await this._sequenceService.Init_PreCheck(_cancellationTokenSource.Token);
-            //    if (systemCheckResult)
-            //    {
-            //        _sequenceServiceVM.SystemCheck = StepState.Completed;
-            //    }else
-            //    {
-            //        _sequenceServiceVM.SystemCheck = StepState.Failed;
-            //        return;
-            //    }
-
-            //    // 전체 서보온 
-            //    _sequenceServiceVM.ServoOn = StepState.InProgress;
-            //    var servoOnResult = await this._sequenceService.Init_ServoAllOn(_cancellationTokenSource.Token);
-            //    if (servoOnResult)
-            //    {
-            //        _sequenceServiceVM.ServoOn = StepState.Completed;
-            //    }
-            //    else
-            //    {
-            //        _sequenceServiceVM.ServoOn = StepState.Failed;
-            //        return;
-            //    }
-
-            //    // H-Z Break Off
-            //    _sequenceServiceVM.HZBreakOff = StepState.InProgress;
-            //    var breakOnOffResult =  await _sequenceService.SensorOnOff(IoExtensions.DO_ZIMM_SOL_ON, _cancellationTokenSource.Token);
-            //    if (breakOnOffResult)
-            //    {
-            //        _sequenceServiceVM.HZBreakOff = StepState.Completed;
-            //    }
-            //    else
-            //    {
-            //        _sequenceServiceVM.HZBreakOff = StepState.Failed;
-            //        return;
-            //    }
-
-            //    // All Home 
-            //    string[] axes = { "H_Z", "h_z", "H_X", "H_T", "D_Y", "W_Y", "W_T", "P_Y" };
-
-            //   _sequenceHelper.
-
-
-
-            //}
-            //finally
-            //{
-            //    IsInitializing = false;
-            //}
+                IsInitializing = false;
+            });
         }
 
         [RelayCommand]
@@ -128,9 +124,16 @@ namespace HCB.UI
         {
             Task.Run(async () => { 
                 IsRunning = true;
-                await this._sequenceService.MachineStartAsync(_cancellationTokenSource.Token); 
-                IsRunning = false;
+                try
+                {
+                    await this._sequenceService.MachineStartAsync(1, 7, _cancellationTokenSource.Token);
+                }catch(Exception e)
+                {
+                    
+                }
+                
             });
+            IsRunning = false;
         }
 
         [RelayCommand]

@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Telerik.Windows.Controls;
+using Telerik.Windows.Documents.Fixed.Model.Data;
+using static NetMQ.NetMQSelector;
 
 namespace HCB.UI
 {
@@ -191,13 +193,64 @@ namespace HCB.UI
         public async Task MotionsMove(string motionName, string positionName, CancellationToken ct)
         {
             var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-            var tasks = new List<Task>();
-
             var motion = motionDevice?.FindMotionByName(motionName);
+
             if (motion == null)
                 throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
 
-            await _sequenceHelper.MoveAsync(motion.MotorNo, positionName, ct);
+            var position = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
+            if (position == null)
+                throw new Exception($"[Position Error] '{positionName}' 위치 정보 없음");
+
+            // 이동 명령
+            await motion.Move(MoveType.Absolute, 100, position.Speed, position.Position);
+
+            // InPosition 안정화 대기 (이동 시작 직후 InPosition이 false로 전환될 때까지 대기)
+            int retry = 0;
+            while (motion.InPosition && retry < 5)
+            {
+                await Task.Delay(20, ct);
+                retry++;
+            }
+
+            // 이동 완료 대기
+            await _sequenceHelper.WaitUntilAsync(
+                () => motion.InPosition,
+                60000, ct,
+                $"[Motion Timeout] '{motionName}' 이동 시간 초과"
+            );
+
+            await Task.Delay(200, ct);
+        }
+
+        public async Task MotionsMove(string motionName, double position, CancellationToken ct)
+        {
+            var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var motion = motionDevice?.FindMotionByName(motionName);
+
+            if (motion == null)
+                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+
+            
+            // 이동 명령
+            await motion.Move(MoveType.Absolute, 100, motion.LimitMaxSpeed / 2, position);
+
+            // InPosition 안정화 대기 (이동 시작 직후 InPosition이 false로 전환될 때까지 대기)
+            int retry = 0;
+            while (motion.InPosition && retry < 5)
+            {
+                await Task.Delay(20, ct);
+                retry++;
+            }
+
+            // 이동 완료 대기
+            await _sequenceHelper.WaitUntilAsync(
+                () => motion.InPosition,
+                60000, ct,
+                $"[Motion Timeout] '{motionName}' 이동 시간 초과"
+            );
+
+            await Task.Delay(200, ct);
         }
 
         public async Task MotionsMove(string[] motions, string positionName, CancellationToken ct)
@@ -292,7 +345,7 @@ namespace HCB.UI
                 _sequenceServiceVM.InitializeProgress = 0;
                 var status = _operationService.Status;
 
-                if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Manual || status.Alarm == AlarmState.HEAVY)
+                if (status.Availability == Availability.Down || status.Run == RunStop.Run)
                 {
                     this._logger.Warning("MachineInitAsync를 실행할 수 없습니다: 설비 상태가 다운 상태 입니다. 알람을 조치하고 설비를 리셋하십시요.");
                     return;
@@ -304,13 +357,13 @@ namespace HCB.UI
                 var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
 
                 // 1. PreCheck 
-                _sequenceServiceVM.SystemCheck = StepState.InProgress;
-                bool preCheck = Init_PreCheck(ct);
-                if (preCheck == false)
-                {
-                    _sequenceServiceVM.SystemCheck = StepState.Failed;
-                    throw new Exception("[Initialize] PRE-CHECK 실패");
-                }
+                //_sequenceServiceVM.SystemCheck = StepState.InProgress;
+                //bool preCheck = Init_PreCheck(ct);
+                //if (preCheck == false)
+                //{
+                //    _sequenceServiceVM.SystemCheck = StepState.Failed;
+                //    throw new Exception("[Initialize] PRE-CHECK 실패");
+                //}
                 _sequenceServiceVM.SystemCheck = StepState.Completed;
                 _sequenceServiceVM.InitializeProgress = 15;
 
@@ -329,18 +382,18 @@ namespace HCB.UI
                 _sequenceServiceVM.InitializeProgress = 45;
                 // 4. H-Z BREAK OFF
                 _sequenceServiceVM.HZBreakOff = StepState.InProgress;
-                bool breakResult = await ioDevice.SetDigitalAsync(IoExtensions.DO_ZIMM_SOL_ON, true);
-                if (!breakResult)
-                {
-                    _sequenceServiceVM.HZBreakOff = StepState.Failed;
-                    throw new Exception("[Initialize] H-Z축의 브레이크가 OFF 되지 않았습니다");
-                }
+                ioDevice.SetDigital(IoExtensions.DO_ZIMM_SOL_ON, true);
+                //if (!breakResult)
+                //{
+                //    _sequenceServiceVM.HZBreakOff = StepState.Failed;
+                //    throw new Exception("[Initialize] H-Z축의 브레이크가 OFF 되지 않았습니다");
+                //}
                 _sequenceServiceVM.HZBreakOff = StepState.Completed;
                 _sequenceServiceVM.InitializeProgress = 60;
                 // 5. Header Home Z축
                 var HZ = motionDevice.FindMotionByName(MotionExtensions.H_Z);
-                var hz = motionDevice.FindMotionByName(MotionExtensions.h_z);
-                var head = new List<IAxis> { HZ, hz };
+                //var hz = motionDevice.FindMotionByName(MotionExtensions.h_z);
+                var head = new List<IAxis> { HZ };
 
                 _sequenceServiceVM.HZHome = StepState.InProgress;
                 _sequenceServiceVM.HzHome = StepState.InProgress;
@@ -418,181 +471,61 @@ namespace HCB.UI
             }
         }
 
-        public async Task All_Home(CancellationToken ct)
+       public async Task Init_Load(CancellationToken ct = default)
         {
             try
             {
-                var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                // 1. Header Home Z축
-                var HZ = motionDevice.FindMotionByName(MotionExtensions.H_Z);
-                var hz = motionDevice.FindMotionByName(MotionExtensions.h_z);
-                var head = new List<IAxis> { HZ, hz };
+                string[] xy = { MotionExtensions.D_Y, MotionExtensions.H_X, MotionExtensions.W_Y, MotionExtensions.W_T, MotionExtensions.H_T };
+                string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
 
-                var headHomeResult = await MotionExtensions.HomeAsync(_sequenceHelper, head, ct);
-                if (!headHomeResult)
-                {
-                    throw new Exception("[Initialize] Header가 홈에 도착하지 않았습니다");
-                }
-
-                // 2. Header Home X, T 축
-                var hx = motionDevice.FindMotionByName(MotionExtensions.H_X);
-                var ht = motionDevice.FindMotionByName(MotionExtensions.H_T);
-                var dy = motionDevice.FindMotionByName(MotionExtensions.D_Y);
-                var py = motionDevice.FindMotionByName(MotionExtensions.P_Y);
-                var wy = motionDevice.FindMotionByName(MotionExtensions.W_Y);
-                var wt = motionDevice.FindMotionByName(MotionExtensions.W_T);
-                var xyt = new List<IAxis> { hx, ht, dy, py, wy, wt };
-
-                var xytResult = await MotionExtensions.HomeAsync(_sequenceHelper, xyt, ct);
-                if (!xytResult)
-                {
-                    throw new Exception("[Initialize] X축 및 Y축이 홈에 도착하지 않았습니다");
-                }
-
-
+                await MotionsMove(z, MotionExtensions.LOAD_POSITION, ct);
+                await MotionsMove(xy, MotionExtensions.LOAD_POSITION, ct);
             }
-            catch (Exception e)
+            catch (OperationCanceledException)
             {
 
+                _logger.Information("Initialize가 취소되었습니다.");
+                throw;
+            }
+            catch (ErrorException ex)
+            {
+                await _alarmService.SetAlarm(ex.ErrorCode);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Initialize 중 오류 발생");
+                throw;
             }
         }
 
+        public async Task WaferAndDieLoading(eOnOff onOff, CancellationToken ct = default)
+        {
+            try
+            {
+                if (onOff == eOnOff.Off)
+                {
+                    await _sequenceHelper.DTableVacuumAll(eOnOff.Off, ct);
+                    await _sequenceHelper.WTableVacuumAll(eOnOff.Off, ct);
+                    await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
+                }else
+                {
+                    await _sequenceHelper.DTableVacuumAll(eOnOff.On, ct);
+                    await _sequenceHelper.WTableVacuumAll(eOnOff.On, ct);
+                    await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct);
+                }
 
+                   
 
-        //public async Task Init_PTable(CancellationToken ct)
-        //{
-        //    try
-        //    {
-        //        this._logger.Debug("P-Table 초기화 시작");
-
-        //        var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-        //        var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
-        //        // P Table 초기화 로직 구현
-        //        var p_y = motionDevice?.FindMotionByName(MotionExtensions.P_Y); // P Table Y축 (예시)
-        //        var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // Head Z축 (예시)
-        //        var headSafetyHeight = H_Z?.PositionList.FirstOrDefault((m) => m.Name == "READY")?.Position;
-
-        //        if (p_y is null)
-        //        {
-        //            throw new Exception("P_Y axis not found in motion device.");
-        //        }
-
-        //        // 초기화 전에 서보 온, 홈 완료, 정지상태 확인
-        //        if (p_y.IsEnabled == false || p_y.IsHomeDone != true || p_y.IsBusy)
-        //        {
-        //            throw new Exception("P-Table 초기화 실패: 서보가 켜져 있지 않거나, 홈이 완료되지 않았거나, 축이 움직이고 있습니다.");
-        //        }
-        //        else if (H_Z?.CurrentPosition <= (headSafetyHeight - H_Z?.InpositionRange)) // Head가 안전 높이보다 낮은 경우 (0에 가까우면 높은 위치)
-        //        {
-        //            throw new Exception("P-Table 초기화 실패: Head Z축이 안전 높이 이상에 있지 않습니다.");
-        //        }
-        //        else
-        //        {
-        //            await _sequenceHelper.MoveAsync(p_y.MotorNo, READY_POSITION, ct);
-        //        }
-        //    }
-        //    catch (OperationCanceledException)
-        //    {
-        //        _logger.Information("P-Table 초기화가 취소되었습니다.");
-        //        throw;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.Error(ex, "P-Table 초기화 중 오류 발생");
-        //        throw;
-        //    }
-        //}
-
-        //public async Task Init_WTable(CancellationToken ct)
-        //{
-        //    try
-        //    {
-        //        this._logger.Debug("W-Table 초기화 시작");
-
-        //        var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-        //        var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
-
-        //        // Die Table 초기화 로직 구현
-        //        var w_y = motionDevice?.FindMotionByName(MotionExtensions.W_Y); // Die Table Y축 (예시)
-
-        //        if (w_y is null)
-        //        {
-        //            throw new Exception("w_y axis not found in motion device.");
-        //        }
-
-        //        // 서보 온
-        //        if (!w_y.IsEnabled)
-        //            await _sequenceHelper.Servo(w_y.MotorNo, true, ct);
-
-        //        // Wafer Table 홈 위치로 이동 (예시 위치명: "InitPosition")
-        //        if (!w_y.IsHomeDone && w_y.InPosition)
-        //        {
-        //            await _sequenceHelper.HomeAsync(w_y.MotorNo, ct);
-        //        }
-
-        //        // 대기 위치로 이동
-
-        //        if (w_y.InPosition)
-        //        {
-        //            await _sequenceHelper.MoveAsync(w_y.MotorNo, READY_POSITION, ct);
-        //        }
-        //    }
-        //    catch (OperationCanceledException)
-        //    {
-        //        _logger.Information("W-Table 초기화가 취소되었습니다.");
-        //        throw;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.Error(ex, "W-Table 초기화 중 오류 발생");
-        //        throw;
-        //    }
-        //}
-
-        //public async Task Init_DTable(CancellationToken ct)
-        //{
-        //    try
-        //    {
-        //        this._logger.Debug("D-Table 초기화 시작");
-
-        //        var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-        //        var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
-
-        //        // Die Table 초기화 로직 구현
-        //        var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // Die Table Y축 (예시)
-
-        //        if (d_y is null)
-        //        {
-        //            throw new Exception("d_y axis not found in motion device.");
-        //        }
-
-        //        // 서보 온
-        //        if (!d_y.IsEnabled)
-        //            await _sequenceHelper.Servo(d_y.MotorNo, true, ct);
-
-        //        // Die Table 홈 위치로 이동 (예시 위치명: "InitPosition")
-        //        if (!d_y.IsHomeDone && d_y.InPosition)
-        //        {
-        //            await _sequenceHelper.HomeAsync(d_y.MotorNo, ct);
-        //        }
-
-        //        // 대기 위치로 이동
-
-        //        if (d_y.InPosition)
-        //        {
-        //            await _sequenceHelper.MoveAsync(d_y.MotorNo, READY_POSITION, ct);
-        //        }
-        //    }
-        //    catch (OperationCanceledException)
-        //    {
-        //        _logger.Information("DTableSequece: InitializeAsync가 취소되었습니다.");
-        //        throw;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.Error(ex, "DTableSequece: InitializeAsync 중 오류 발생");
-        //        throw;
-        //    }
-        //}
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("작업이 취소되었습니다");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Initialize 중 오류 발생");
+                throw;
+            }
+        }
     }
 }
