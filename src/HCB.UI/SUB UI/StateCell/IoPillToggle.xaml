@@ -56,17 +56,20 @@
                     <!-- ON -->
                     <Trigger Property="IsChecked" Value="True">
                         <Setter TargetName="indicator" Property="BorderThickness" Value="0"/>
+                        <Setter TargetName="indicator" Property="Background" Value="#FF28A745"/>
 
-                        <Setter TargetName="lbl"  Property="Text"        Value="{Binding OnText, ElementName=root}"/>
-                        <Setter TargetName="lbl"  Property="Foreground"  Value="#FF28A745"/>
+                        <Setter TargetName="lbl" Property="Text"       Value="{Binding OnText, ElementName=root}"/>
+                        <Setter TargetName="lbl" Property="Foreground" Value="#FF28A745"/>
                     </Trigger>
 
+                    <!-- OFF -->
                     <Trigger Property="IsChecked" Value="False">
-                        <Setter TargetName="indicator" Property="BorderBrush" Value="#FFDC3545"/>
+                        <Setter TargetName="indicator" Property="Background"      Value="Transparent"/>
+                        <Setter TargetName="indicator" Property="BorderBrush"     Value="#FFDC3545"/>
                         <Setter TargetName="indicator" Property="BorderThickness" Value="2"/>
 
-                        <Setter TargetName="lbl"  Property="Text"        Value="{Binding OffText, ElementName=root}"/>
-                        <Setter TargetName="lbl"  Property="Foreground"  Value="#FFDC3545"/>
+                        <Setter TargetName="lbl" Property="Text"       Value="{Binding OffText, ElementName=root}"/>
+                        <Setter TargetName="lbl" Property="Foreground" Value="#FFDC3545"/>
                     </Trigger>
 
                 </ControlTemplate.Triggers>

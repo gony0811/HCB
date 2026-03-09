@@ -27,8 +27,8 @@ namespace HCB.UI
 
         // HeartBeat
         private Timer? _heartbeatTimer;
-        private readonly TimeSpan _heartbeatInterval = TimeSpan.FromSeconds(3);
-        private readonly TimeSpan _heartbeatTimeout = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _heartbeatInterval = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _heartbeatTimeout = TimeSpan.FromSeconds(20);
         private int _heartbeatRunning = 0; // 중복 실행 방지 (0=idle, 1=running)
 
         public ConnectionState State => _server.State;
@@ -44,7 +44,7 @@ namespace HCB.UI
             _server = new EqpTcpServer(settings);
             _server.MessageReceived += OnMessageReceived;
             _server.ConnectionStateChanged += OnConnectionStateChanged;
-            _server.LogMessage += (_, msg) => _logger.Information($"[EQP] {msg}");
+            //_server.LogMessage += (_, msg) => _logger.Information($"[EQP] {msg}");
         }
 
         public void Start() => _server.Start();
@@ -89,7 +89,7 @@ namespace HCB.UI
             // 이전 HeartBeat가 아직 완료되지 않으면 스킵
             if (Interlocked.CompareExchange(ref _heartbeatRunning, 1, 0) != 0)
             {
-                _logger.Warning("[HeartBeat] 이전 요청 진행 중 - 스킵");
+                //_logger.Warning("[HeartBeat] 이전 요청 진행 중 - 스킵");
                 return;
             }
 

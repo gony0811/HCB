@@ -108,62 +108,43 @@ namespace HCB.UI
 
         public Task RefreshStatus()
         {
-
-            foreach (var data in IoDataList)
-            {
-                // 여기서 각 io의 상태를 갱신하는 로직을 구현해야 합니다.
-                try
+            var tasks = IoDataList
+                .Cast<AbstractIoBase>()
+                .Where(io => !(bInitialized && (io.IoType == IoType.DigitalOutput || io.IoType == IoType.AnalogOutput)))
+                .Select(async io =>
                 {
-                    String strCommand = "";
-                    String strResponse = "";
-                    string[] strResponseArry = new string[10];
-
-                    var io = data as AbstractIoBase;
-
-                    strCommand = io.Address;
-
-                    //strCommand = string.Format("{0}{1:D3}", io.Address, io.Index);
-
-                    if (bInitialized && (io.IoType == IoType.DigitalOutput || io.IoType == IoType.AnalogOutput))
+                    try
                     {
-                        continue;
+                        string strCommand = io.Address;
+                        string strResponse = await SendCommand<string>(strCommand);
+
+                        switch (io.IoType)
+                        {
+                            case IoType.AnalogOutput:
+                                (io as AnalogOutput).Value = double.Parse(strResponse);
+                                break;
+                            case IoType.AnalogInput:
+                                (io as AnalogInput).Value = double.Parse(strResponse);
+                                break;
+                            case IoType.DigitalOutput:
+                                (io as DigitalOutput).Value = uint.Parse(strResponse) > 0;
+                                break;
+                            case IoType.DigitalInput:
+                                (io as DigitalInput).Value = uint.Parse(strResponse) > 0;
+                                break;
+                        }
                     }
-
-                    strResponse = SendCommand<string>(strCommand).Result;     
-
-                    switch (io.IoType)
+                    catch (Exception ex)
                     {
-                        case IoType.AnalogOutput:
-                            double aoVal = Double.Parse(strResponse);
-                            (io as AnalogOutput).Value = aoVal;
-                            break;
-                        case IoType.AnalogInput:
-                            double aiVal = Double.Parse(strResponse);
-                            (io as AnalogInput).Value = aiVal;
-                            break;
-                        case IoType.DigitalOutput:
-                            uint doVal = uint.Parse(strResponse);
-                            (io as DigitalOutput).Value = doVal > 0 ? true : false;
-                            break;
-                        case IoType.DigitalInput:
-                            uint diVal = uint.Parse(strResponse);
-                            (io as DigitalInput).Value = diVal > 0 ? true : false;
-                            break;
+                        // 예외 처리 로직
                     }
-                }
-                catch (Exception ex)
-                {
-                    // 예외 처리 로직
-                }
-                finally
-                {
-                    
-                }
-            }
+                });
 
-            if (!bInitialized) bInitialized = true;
-
-            return Task.Delay(10);
+            return Task.WhenAll(tasks)
+                       .ContinueWith(_ =>
+                       {
+                           if (!bInitialized) bInitialized = true;
+                       });
         }
 
         public Task<bool> TestConnection()

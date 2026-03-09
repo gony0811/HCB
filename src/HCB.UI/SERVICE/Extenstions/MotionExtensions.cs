@@ -271,7 +271,7 @@ namespace HCB.UI
                 helper.Log(LogLevel.Information, $"[Simulation] Axis {axis.Name} Relative Move by Distance {distance} at Speed {velocity}");
                 return false;
             }
-            velocity = velocity <= 0 ? axis.LimitMaxSpeed + axis.LimitMinSpeed / 2.0 : velocity;
+            velocity = velocity <= 0 ? axis.LimitMaxSpeed  / 2.0 : velocity;
 
             double targetPosition = axis.CurrentPosition + distance;
 
@@ -294,6 +294,8 @@ namespace HCB.UI
         public static double CurrentPosition(this ISequenceHelper helper, string motorName)
         {
             var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByName(motorName);
+            if (axis == null)
+                throw new ArgumentException($"Axis '{motorName}' not found.");
             return axis.CurrentPosition;
         }
 

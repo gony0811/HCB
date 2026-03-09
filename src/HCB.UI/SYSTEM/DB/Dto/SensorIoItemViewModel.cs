@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
-using Serilog.Core;
 using System;
 
 namespace HCB.UI
@@ -10,32 +9,27 @@ namespace HCB.UI
     {
         private readonly PmacIoDevice _device;
         private ILogger _logger;
-        [ObservableProperty]
-        private string ioName;
 
+        [ObservableProperty] private string ioName;
+        [ObservableProperty] private string name;
         [ObservableProperty]
-        private string name;
+        [NotifyCanExecuteChangedFor(nameof(ToggleCommand))]
+        private bool isReadOnly;
+        [ObservableProperty] private string description;
 
         public SharedIoState SharedState { get; }
-
         public bool IsChecked
         {
             get => SharedState.IsChecked;
             set => SharedState.IsChecked = value;
         }
 
-        [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(ToggleCommand))]
-        private bool isReadOnly;
-
-        [ObservableProperty]
-        private string description;
-
         public SensorIoItemViewModel() { }
 
-        public SensorIoItemViewModel(ILogger logger, string ioName, SharedIoState sharedState, PmacIoDevice pmacIo, string label = "", string description="", bool isReadOnly = false)
+        public SensorIoItemViewModel(ILogger logger, string ioName, SharedIoState sharedState,
+            PmacIoDevice pmacIo, string label = "", string description = "", bool isReadOnly = false)
         {
-            this._logger = logger;
+            _logger = logger;
             try
             {
                 IoName = ioName;
@@ -46,83 +40,60 @@ namespace HCB.UI
                 Description = description;
 
                 var io = _device.FindIoDataByName(IoName);
+                if (io is DigitalInput di)
+                    di.ValueChanged += ValueChanged;
+                else if (io is DigitalOutput dout)
+                    dout.ValueChanged += ValueChanged;
+                else if (io is AnalogInput ai)
+                    ai.ValueChanged += ValueChanged;
+                else if (io is AnalogOutput ao)
+                    ao.ValueChanged += ValueChanged;
 
-                if (io is not null && io.IoType == Data.Entity.Type.IoType.DigitalInput)
+                SharedState.PropertyChanged += (s, e) =>
                 {
-                    var data = (DigitalInput)io;
-
-                    data.ValueChanged += ValueChanged;
-                }
-                else if (io is not null && io.IoType == Data.Entity.Type.IoType.DigitalOutput)
-                {
-                    var data = (DigitalOutput)io;
-                    data.ValueChanged += ValueChanged;
-                }
+                    if (e.PropertyName == nameof(SharedIoState.IsChecked))
+                        OnPropertyChanged(nameof(IsChecked));
+                };
             }
             catch (Exception ex)
             {
-                // Log the exception or handle it as needed
-                
+                _logger?.Error(ex, "SensorIoItemViewModel init failed: {IoName}", ioName);
             }
-
         }
 
         private void ValueChanged(object? sender, ValueChangedEventArgs<object> e)
         {
-            IsChecked = (bool)e.NewValue;
+            SharedState.IsChecked = (bool)e.NewValue;
         }
 
-
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanToggle))]
         public void Toggle()
         {
             if (IsReadOnly) return;
             try
             {
                 _device.SetDigital(IoName, IsChecked);
-            }catch(Exception e)
-            {
-                _logger.Error(e.Message);
             }
-            
+            catch (Exception e)
+            {
+                _logger.Error(e, "Toggle failed: {IoName}", IoName);
+            }
         }
 
         public void On()
         {
             if (IsReadOnly) return;
-            try
-            {
-                _device.SetDigital(IoName, true);
-            }catch(Exception e)
-            {
-                _logger.Error(e.Message);
-            }
-            
-        } 
+            try { _device.SetDigital(IoName, true); }
+            catch (Exception e) { _logger.Error(e, "On failed: {IoName}", IoName); }
+        }
 
         public void Off()
         {
             if (IsReadOnly) return;
-            try
-            {
-                _device.SetDigital(IoName, false);
-            }catch(Exception e)
-            {
-                _logger.Error(e.Message);
-            }
-            
+            try { _device.SetDigital(IoName, false); }
+            catch (Exception e) { _logger.Error(e, "Off failed: {IoName}", IoName); }
         }
 
         private bool CanToggle() => !IsReadOnly;
-
-        // ReadOnly가 바뀌면 CanExecute 새로고침
-        //partial void OnIsCheckedChanged(bool oldValue, bool newValue)
-        //{
-        //    if (!IsReadOnly)
-        //    {
-        //        // _ioService.WriteOutput(Name, newValue);
-        //    }
-        //}
     }
-
 }

@@ -31,8 +31,33 @@ namespace HCB.UI
         {
             this.device = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
             var ioList = await ioRepository.ListAsync(x => x.IsEnabled);
-            foreach (var io in ioList) {
-                _sharedIoStates.Add(io.Name, new SharedIoState { IsChecked = device.GetDigital(io.Name)});
+
+            foreach (var io in ioList)
+            {
+                _sharedIoStates[io.Name] = new SharedIoState { IsChecked = device.GetDigital(io.Name) };
+
+                // IoDataList의 실제 IO 객체와 SharedIoState를 연결
+                var ioData = device.IoDataList
+                                   .Cast<AbstractIoBase>()
+                                   .FirstOrDefault(x => x.Name == io.Name);
+
+                if (ioData is AbstractDigital digitalIo)
+                {
+                    // IO 값 변경 시 SharedIoState 자동 동기화
+                    digitalIo.PropertyChanged += (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(AbstractDigital.Value))
+                            _sharedIoStates[io.Name].IsChecked = digitalIo.Value;
+                    };
+                }
+                else if (ioData is AbstractAnalog analogIo)
+                {
+                    analogIo.PropertyChanged += (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(AbstractAnalog.Value))
+                            _sharedIoStates[io.Name].IsChecked = analogIo.Value > 0;
+                    };
+                }
             }
         }
 
