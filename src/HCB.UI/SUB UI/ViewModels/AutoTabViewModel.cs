@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -120,20 +121,48 @@ namespace HCB.UI
         }
 
         [RelayCommand]
-        public void MachineRun()
+        public async Task MachineRun()
         {
-            Task.Run(async () => { 
-                IsRunning = true;
-                try
+            // RelayCommand는 이미 UI 스레드에서 실행됨
+            // Dispatcher 불필요 — 그냥 직접 열면 됨
+            var tcs = new TaskCompletionSource<bool>();
+            int top = 0, bot = 0;
+
+            var dialog = new VacuumSelector();
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+
+            dialog.Closed += (s, e) =>
+            {
+                if (dialog.DialogResult == true
+                    && dialog.TopDieVacuum.HasValue
+                    && dialog.BotDieVacuum.HasValue)
                 {
-                    await this._sequenceService.MachineStartAsync(1, 5, _cancellationTokenSource.Token);
-                }catch(Exception e)
-                {
-                    
+                    top = dialog.TopDieVacuum.Value;
+                    bot = dialog.BotDieVacuum.Value;
+                    tcs.SetResult(true);
                 }
-                
-            });
-            IsRunning = false;
+                else
+                {
+                    tcs.SetResult(false);
+                }
+            };
+
+            dialog.ShowDialog(); // UI 스레드에서 직접 호출
+
+            bool confirmed = await tcs.Task;
+            if (!confirmed) return;
+
+            IsRunning = true;
+            try
+            {
+                await _sequenceService.MachineStartAsync(top, bot, _cancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex) { }
+            finally
+            {
+                IsRunning = false;
+            }
         }
 
         [RelayCommand]
