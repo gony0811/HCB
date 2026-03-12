@@ -152,24 +152,16 @@ namespace HCB.UI
             }
 
             device.SetDigital(DO_HEADER_EJECTOR_VAC_ON, bOnOff);
-            if (bOnOff)
-            {
-                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, false);
-            }else
-            {
-                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, true);
-                await Task.Delay(100);
-                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, false);
-            }
+            
+            await helper.DelayAsync(600, ct); // 명령 처리 대기
 
-            await helper.DelayAsync(100, ct); // 명령 처리 대기
-
-            return await helper.WaitUntilAsync(
-                () => device.GetDigital(DI_HEADER_VAC_EJECTOR) == bOnOff,
-                5000,
-                ct,
-                $"{DO_HEADER_EJECTOR_VAC_ON} = {onOff} Timeout"
-            );
+            //return await helper.WaitUntilAsync(
+            //    () => device.GetDigital(DI_HEADER_VAC_EJECTOR) == bOnOff,
+            //    300,
+            //    ct,
+            //    $"{DO_HEADER_EJECTOR_VAC_ON} = {onOff} Timeout"
+            //);
+            return true;
         }
 
         public static async Task DTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
@@ -198,24 +190,23 @@ namespace HCB.UI
 
             string doOn = $"DO_DTABLE_VAC_{channel}_ON";
             string doRelease = $"DO_DTABLE_VAC_{channel}_RELEASE";
-            string diPressureSwitch = $"DI_DTABLE_VAC_{channel}_PRESSURE_SWITCH";
+            //string diPressureSwitch = $"DI_DTABLE_VAC_{channel}_PRESSURE_SWITCH";
             try
             {
                 if (onOff == eOnOff.On)
                 {
                     device.SetDigital(doOn, true, helper.IsSimulation);
-                    device.SetDigital(doRelease, false, helper.IsSimulation);
                 }
                 else if (onOff == eOnOff.Off) 
                 {
                     device.SetDigital(doOn, false, helper.IsSimulation);
-                    device.SetDigital(doRelease, true, helper.IsSimulation);
-                    await Task.Delay(200, ct);
-                    device.SetDigital(doRelease, false, helper.IsSimulation);
+                    //device.SetDigital(doRelease, true, helper.IsSimulation);
+                    //await Task.Delay(200, ct);
+                    //device.SetDigital(doRelease, false, helper.IsSimulation);
                 }
 
-                if (helper.IsSimulation)
-                    device.SetDigital(diPressureSwitch, bOnOff, helper.IsSimulation);
+                //if (helper.IsSimulation)
+                //    device.SetDigital(diPressureSwitch, bOnOff, helper.IsSimulation);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
@@ -228,12 +219,12 @@ namespace HCB.UI
             await helper.DelayAsync(100, ct).ConfigureAwait(false);
 
             // 조건 만족될 때까지 대기(성공하면 여기서 끝)
-            await helper.WaitUntilAsync(
-                () => device.GetDigital(diPressureSwitch) == bOnOff,
-                3000,
-                ct,
-                $"{doOn} = {onOff} Timeout"
-            ).ConfigureAwait(false);
+            //await helper.WaitUntilAsync(
+            //    () => device.GetDigital(diPressureSwitch) == bOnOff,
+            //    3000,
+            //    ct,
+            //    $"{doOn} = {onOff} Timeout"
+            //).ConfigureAwait(false);
         }
 
         public static async Task WTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
@@ -288,12 +279,12 @@ namespace HCB.UI
             }
             
             await helper.DelayAsync(100, ct); // Small delay to ensure the servo on command is processed
-            await helper.WaitUntilAsync(
-                () => device.GetDigital(diPressureSwitch) == bOnOff,
-                3000,
-                ct,
-                $"{doOn} = {onOff} Timeout"
-            );
+            //await helper.WaitUntilAsync(
+            //    () => device.GetDigital(diPressureSwitch) == bOnOff,
+            //    3000,
+            //    ct,
+            //    $"{doOn} = {onOff} Timeout"
+            //);
         }
 
         public static async Task WTableLiftPin(this ISequenceHelper helper, eUpDown upDown, CancellationToken ct)

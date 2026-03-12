@@ -26,18 +26,19 @@ namespace HCB.UI
                 }
 
                 // 1. Btm Die 
+                // #1. BTM DIE 가 놓인 VACUUM위치로 저배율 카메라를 이동시킨다.
                 var BtmDieAlign = await DTableCarrierAlign(btmDie, ct);
-                await DTablePickup(btmDie, BtmDieAlign, ct);
-                await BtmDieDrop(ct);
+                await DTableBTMPickup(btmDie, BtmDieAlign, ct);
+                await BtmDieDrop(1, ct);
                 await Init_Head(ct);
 
-                //2.TopDie
+                ////2.TopDie
                 var TopDieAlign = await DTableCarrierAlign(topDie, ct);
-                await DTablePickup(topDie, TopDieAlign, ct);
+                await DTableTOPPickup(topDie, TopDieAlign, ct);
 
-                // 3. 고배율 보정
+                //// 3. 고배율 보정
                 var topDieVisionResults = await TopDieVision(ct);
-                await TopDieDrop(ct);
+                //await TopDieDrop(ct);
             }
             catch (OperationCanceledException)
             {
@@ -53,6 +54,38 @@ namespace HCB.UI
             finally
             {
                 _logger.Information("Auto Run End");
+            }
+        }
+
+
+        public async Task DieAlignAndPick(int dVac, CancellationToken ct)
+        {
+            try
+            {
+                var BtmDieAlign = await DTableCarrierAlign(dVac, ct);
+                await DTableBTMPickup(dVac, BtmDieAlign, ct);
+            }catch(Exception e)
+            {
+                _logger.Error(e.Message);
+            }
+        }
+
+        public async Task BTMPlace(CancellationToken ct)
+        {
+            await BtmDieDrop(1, ct);
+            await Init_Head(ct);
+        }
+
+        public async Task TopDieAlignAndPick(int dVac, CancellationToken ct)
+        {
+            try
+            {
+                var topDieAlign = await DTableCarrierAlign(dVac, ct);
+                await DTableTOPPickup(dVac, topDieAlign, ct);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e.Message);
             }
         }
 

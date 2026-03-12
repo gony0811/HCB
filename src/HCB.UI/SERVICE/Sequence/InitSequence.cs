@@ -159,17 +159,16 @@ namespace HCB.UI
                 var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
                 // Head 초기화 로직 구현
                 var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // Head Z(L)축 (예시)
-                //var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); // Head Z(S)축 (예시)
+                var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); // Head Z(S)축 (예시)
 
-                if (H_Z is null || !H_Z.IsEnabled || !H_Z.IsHomeDone) throw new Exception("H_Z축이 준비되지 않았습니다. H_Z축 Servo On, Home 실행여부를 확인하십시요.");
-                //if (h_z is null || !h_z.IsEnabled || !h_z.IsHomeDone) throw new Exception("h_z축이 준비되지 않았습니다. h_z축 Servo On, Home 실행여부를 확인하십시요.");
+                if (H_Z is null || !H_Z.IsEnabled) throw new Exception("H_Z축이 준비되지 않았습니다. H_Z축 Servo On, Home 실행여부를 확인하십시요.");
+                if (h_z is null || !h_z.IsEnabled) throw new Exception("h_z축이 준비되지 않았습니다. h_z축 Servo On, Home 실행여부를 확인하십시요.");
 
                 if (H_Z.IsBusy ) throw new Exception("Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
+                if (h_z.IsBusy ) throw new Exception("Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
 
                 // Head Z축 안전 위치로 이동
-                Task HZ = _sequenceHelper.MoveAsync(H_Z.MotorNo, MotionExtensions.HEAD_SAFETY, ct);
-                //Task hz = _sequenceHelper.MoveAsync(h_z.MotorNo, MotionExtensions.HEAD_SAFETY, ct);
-                await Task.WhenAll(HZ);
+                await MotionsMove([MotionExtensions.H_Z, MotionExtensions.h_z], MotionExtensions.HEAD_SAFETY, ct);
                 await Task.Delay(50);
 
             }
@@ -331,7 +330,7 @@ namespace HCB.UI
         public void EQStatusCheck()
         {
             var status = _operationService.Status;
-            if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Auto || status.Alarm == AlarmState.HEAVY)
+            if (status.Availability == Availability.Down || status.Run == RunStop.Run)
             {
                 _logger.Warning("Cannot execute WTableLoading: Sequence Service is not in Manual Standby Status.");
                 throw new Exception("Cannot execute WTableLoading");

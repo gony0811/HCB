@@ -44,17 +44,24 @@
                 </StackPanel>
 
                 <TextBlock Text="TCP" TextAlignment="Center" FontSize="20"/>
-                
+
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <Button Content="Align 요청" Margin="10" Command="{Binding RequestAlignCommand}"></Button>
                     <Button Content="AF 요청" Margin="10" Command="{Binding RequestAFStartCommand}"></Button>
                     <Button Content="Align 요청" Margin="10" Command="{Binding RequestAlign}"></Button>
                 </StackPanel>
-                
+
+                <TextBlock Text="시퀀스 테스트" TextAlignment="Center" FontSize="20">
+
+                </TextBlock>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="BTM DIe PICKUP" Margin="10" Command="{Binding BTMPickCommand}"/>
+                    <Button Content="BTM DIe PICKUP" Margin="10" Command="{Binding BTMPlaceCommand}"/>
+                    <Button Content="TOP DIe PICKUP" Margin="10" Command="{Binding TopPickCommand}"/>
+                    <Button Content="PTableAlign" Margin="10" Command="{Binding PTableAlignCommand}"/>
+                </StackPanel>
             </StackPanel>
-            
-            
-            
+
         </telerik:RadTabItem>
                            
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="1. INITIALIZE" Margin="1">

@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
         xmlns:local="clr-namespace:HCB.UI"
+        WindowState="Maximized"
         mc:Ignorable="d"                
         Style="{StaticResource RadWindowStyle}"
         WindowStartupLocation="CenterScreen"

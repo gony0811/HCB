@@ -70,43 +70,45 @@ namespace HCB.UI
             }
         }
 
-        public async Task TopDieDrop(CancellationToken ct)
-        {
-            bool result = false;
-            VisionMarkPositionResponse waferLeftAlign;
-            VisionMarkPositionResponse waferRightAlign;
+        //public async Task TopDieDrop(CancellationToken ct)
+        //{
+        //    bool result = false;
+        //    VisionMarkPositionResponse waferLeftAlign;
+        //    VisionMarkPositionResponse waferRightAlign;
 
-            await Init_Head(ct);            
-            await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_LEFT", ct);
-            await MotionsMove(MotionExtensions.H_Z, "W_TABLE_CORNER_SHOT", ct);
-            result = await communicationService.RequestAFStart(CameraType.HC1_HIGH, ct);
-            if (!result) throw new Exception("AF Failed");
-            waferLeftAlign = await communicationService.RequestVisionMarkPosition(MarkType.WAFERALIGNMARK, CameraType.HC1_HIGH);
+        //    await Init_Head(ct);            
+        //    await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_LEFT", ct);
+        //    await MotionsMove(MotionExtensions.H_Z, "W_TABLE_CORNER_SHOT", ct);
+        //    result = await communicationService.RequestAFStart(CameraType.HC1_HIGH, ct);
+        //    if (!result) throw new Exception("AF Failed");
+        //    waferLeftAlign = await communicationService.RequestVisionMarkPosition(MarkType.CORNER, CameraType.HC1_HIGH,);
 
-            await Init_Head(ct);
-            await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_RIGHT", ct); 
-            await MotionsMove(MotionExtensions.H_Z, "W_TABLE_CORNER_SHOT", ct);
-            result = await communicationService.RequestAFStart(CameraType.HC2_HIGH, ct);
-            if (!result) throw new Exception("AF Failed");
-            waferRightAlign = await communicationService.RequestVisionMarkPosition(MarkType.WAFERALIGNMARK, CameraType.HC2_HIGH);
+        //    await Init_Head(ct);
+        //    await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_RIGHT", ct); 
+        //    await MotionsMove(MotionExtensions.H_Z, "W_TABLE_CORNER_SHOT", ct);
+        //    result = await communicationService.RequestAFStart(CameraType.HC2_HIGH, ct);
+        //    if (!result) throw new Exception("AF Failed");
+        //    waferRightAlign = await communicationService.RequestVisionMarkPosition(MarkType.CORNER, CameraType.HC2_HIGH);
 
-            await Init_Head(ct);
-            await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+        //    await Init_Head(ct);
+        //    await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
 
-            // TODO: 보정
-            await MotionsMove(MotionExtensions.H_Z, "TOP_DIE_DROP", ct);
-            await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
-        }
+        //    // TODO: 보정
+        //    await MotionsMove(MotionExtensions.H_Z, "TOP_DIE_DROP", ct);
+        //    await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
+        //}
 
-        public async Task BtmDieDrop(CancellationToken ct)
+        public async Task BtmDieDrop(int vacNum, CancellationToken ct)
         {
             // W-Table로 이동
             await Init_Head(ct);
             await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
-            await MotionsMove(MotionExtensions.H_Z, "BTM_DIE_DROP", ct);
-            await _sequenceHelper.WTableVacuum(2, eOnOff.On, ct);
-            await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
-
+            await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", ct);
+            await MotionsMove(MotionExtensions.H_Z, "BTM_DIE_PLACE", ct);
+            await _sequenceHelper.WTableVacuum(vacNum, eOnOff.On, ct);
+            bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
+            if (!result) throw new Exception("HeadPicker를 확인해주세요");
+            
         }
     }
 }

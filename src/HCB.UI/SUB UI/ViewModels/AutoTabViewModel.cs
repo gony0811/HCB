@@ -126,7 +126,7 @@ namespace HCB.UI
                 IsRunning = true;
                 try
                 {
-                    await this._sequenceService.MachineStartAsync(1, 7, _cancellationTokenSource.Token);
+                    await this._sequenceService.MachineStartAsync(1, 5, _cancellationTokenSource.Token);
                 }catch(Exception e)
                 {
                     

@@ -13,9 +13,9 @@ namespace HCB.UI
         public UMain()
         {
             InitializeComponent();
-
             // 디자인 타임에만 스타일 적용 (선택 사항)
             StyleManager.SetTheme(this, new Windows11Theme());
+
         }
 
         public UMain(UMainViewModel vm) : this()

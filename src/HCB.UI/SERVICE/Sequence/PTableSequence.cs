@@ -54,47 +54,64 @@ namespace HCB.UI
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
                 var result = false;
-                VisionMarkPositionResponse leftFidAlign;
-                VisionMarkPositionResponse leftCorner;
-                VisionMarkPositionResponse rightFidAlign;
-                VisionMarkPositionResponse rightCorner;
+                VisionMarkPositionResponse leftFid;
+                VisionMarkPositionResponse leftAlign;
+                VisionMarkPositionResponse rightFid;
+                VisionMarkPositionResponse rightAlign;
 
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
 
-                // Left Fiducial 고배율 오토 포커싱
+                // 우측 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                await MotionsMove(xy, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
-                await MotionsMove(z, MotionExtensions.BTM_VISION_HIGH, ct);
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, ct);
-                if (!result) throw new Exception("오토포커싱 실패");
-                leftFidAlign =  await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIALMARK, CameraType.PC_HIGH);
+                await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
+                await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
+                rightFid = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "RIGHT");
+                await MotionsMove(z, MotionExtensions.P_RIGHT_ALIGN_HIGH, ct);
+                rightAlign= await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "RIGHT");
 
-                // Left Corner 고배율 오토 포커싱
-                await Init_Head(ct);
-                await MotionsMove(xy, MotionExtensions.P_LEFT_CORNER_HIGH, ct);
-                await MotionsMove(z, MotionExtensions.BTM_VISION_HIGH, ct);
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, ct);
-                if (!result) throw new Exception("오토포커싱 실패");
-                leftCorner = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIALMARK, CameraType.PC_HIGH);
+                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+                await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
+                await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
+                leftFid = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "LEFT");
+                await MotionsMove(z, MotionExtensions.P_LEFT_ALIGN_HIGH, ct);
+                rightAlign = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "LEFT");
+             
 
-                // Right Corner 고배율 오토 포커싱
-                await Init_Head(ct);
-                await MotionsMove(xy, MotionExtensions.P_RIGHT_CORNER_HIGH, ct);
-                await MotionsMove(z, MotionExtensions.BTM_VISION_HIGH, ct);
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, ct);
-                if (!result) throw new Exception("오토포커싱 실패");
-                rightFidAlign = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIALMARK, CameraType.PC_HIGH);
 
-                // Right Fiducial 고배율 오토 포커싱
-                await Init_Head(ct);
-                await MotionsMove(xy, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
-                await MotionsMove(z, MotionExtensions.BTM_VISION_HIGH, ct);
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, ct);
-                if (!result) throw new Exception("오토포커싱 실패");
-                rightCorner = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIALMARK, CameraType.PC_HIGH);
+                //// Left Fiducial 고배율 오토 포커싱
+                //await MotionsMove(xy, MotionExtensions.P_RIGHT, ct);
+                //await MotionsMove(z, MotionExtensions.BTM_VISION_HIGH, ct);
+                //result = await communicationService.RequestAFStart(CameraType.PC_HIGH, ct);
+                //if (!result) throw new Exception("오토포커싱 실패");
+                //leftFidAlign =  await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH);
 
-                return new List<VisionMarkPositionResponse>() { leftFidAlign, leftCorner, rightFidAlign, rightCorner };
+                //// Left Corner 고배율 오토 포커싱
+                //await Init_Head(ct);
+                //await MotionsMove(xy, MotionExtensions.P_LEFT_CORNER_HIGH, ct);
+                //await MotionsMove(z, MotionExtensions.BTM_VISION_HIGH, ct);
+                //result = await communicationService.RequestAFStart(CameraType.PC_HIGH, ct);
+                //if (!result) throw new Exception("오토포커싱 실패");
+                //leftCorner = await communicationService.RequestVisionMarkPosition(MarkType.CORNER, CameraType.PC_HIGH);
+
+                //// Right Corner 고배율 오토 포커싱
+                //await Init_Head(ct);
+                //await MotionsMove(xy, MotionExtensions.P_RIGHT_CORNER_HIGH, ct);
+                //await MotionsMove(z, MotionExtensions.BTM_VISION_HIGH, ct);
+                //result = await communicationService.RequestAFStart(CameraType.PC_HIGH, ct);
+                //if (!result) throw new Exception("오토포커싱 실패");
+                //rightFidAlign = await communicationService.RequestVisionMarkPosition(MarkType.CORNER, CameraType.PC_HIGH);
+
+                //// Right Fiducial 고배율 오토 포커싱
+                //await Init_Head(ct);
+                //await MotionsMove(xy, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
+                //await MotionsMove(z, MotionExtensions.BTM_VISION_HIGH, ct);
+                //result = await communicationService.RequestAFStart(CameraType.PC_HIGH, ct);
+                //if (!result) throw new Exception("오토포커싱 실패");
+                //rightCorner = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH);
+
+                //return new List<VisionMarkPositionResponse>() { leftFid, leftAlign, rightFid, rightAlign };
+                return new List<VisionMarkPositionResponse>();
             }
             catch (Exception e)
             {

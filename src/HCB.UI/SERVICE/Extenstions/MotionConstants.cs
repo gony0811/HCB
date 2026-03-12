@@ -42,6 +42,9 @@ namespace HCB.UI
 
         // h-z
         public const string DIE_PICKUP = "DIE_PICKUP";
+        public const string BTM_DIE_PICKUP = "BTM_DIE_PICKUP";
+        public const string TOP_DIE_PICKUP = "TOP_DIE_PICKUP";
+        public const string DIE_PICKUP_STANBY = "DIE_PICKUP_STANBY";
 
         // 사용 축: H-X, D-Y
         public const string DIE_CARRIER_ALIGN_1 = "DIE_CARRIER_ALIGN_1";
@@ -90,7 +93,10 @@ namespace HCB.UI
         public const string ORIGIN = "ORIGIN";
         public const string P_LEFT_FIDUCIAL_HIGH = "P_LEFT_FIDUCIAL_HIGH";
         public const string P_RIGHT_FIDUCIAL_HIGH = "P_RIGHT_FIDUCIAL_HIGH";
-        public const string P_LEFT_CORNER_HIGH = "P_LEFT_CORNER_HIGH";
-        public const string P_RIGHT_CORNER_HIGH = "P_RIGHT_CORNER_HIGH";
+        public const string P_LEFT_ALIGN_HIGH = "P_LEFT_ALIGN_HIGH";
+        public const string P_RIGHT_ALIGN_HIGH = "P_RIGHT_ALIGN_HIGH";
+        public const string P_LEFT_HIGH = "P_LEFT_HIGH";
+        public const string P_RIGHT_HIGH = "P_RIGHT_HIGH";
+
     }
 }

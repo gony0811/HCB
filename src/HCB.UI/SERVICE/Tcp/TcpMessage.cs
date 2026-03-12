@@ -156,11 +156,10 @@ namespace HCB.UI
     }
     public enum MarkType
     {
-        WAFERALIGNMARK,
-        DIEPICKUPMARK,
-        FIDUCIALMARK,
-        WAFERBONDMARK,
-        DIEALIGNMARK,
+        DIE_CENTER,
+        FIDUCIAL,
+        CORNER,
+        ALIGN_MARK
     }
     
     public enum CameraType
@@ -168,7 +167,6 @@ namespace HCB.UI
         HC_LOW,
         HC1_HIGH,
         HC2_HIGH,
-
         PC_LOW,
         PC_HIGH
     }

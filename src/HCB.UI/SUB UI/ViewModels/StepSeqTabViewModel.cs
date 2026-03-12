@@ -459,7 +459,7 @@ namespace HCB.UI
         {
             try
             {
-                var result = await eqpCommunicationService.RequestVisionMarkPosition(MarkType.WAFERALIGNMARK, CameraType.HC_LOW);
+                var result = await eqpCommunicationService.RequestVisionMarkPosition(MarkType.DIE_CENTER, CameraType.HC_LOW,"");
                 Console.WriteLine(result.ToString);
             }
             catch (Exception e)
@@ -496,6 +496,38 @@ namespace HCB.UI
             }
         }
 
+        [RelayCommand]
+        public async Task BTMPick()
+        {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            await SequenceService.DieAlignAndPick(9, _cts.Token);
+        }
+
+
+        [RelayCommand]
+        public async Task BTMPlace()
+        {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            await SequenceService.BTMPlace(_cts.Token);
+        }
+
+        [RelayCommand]
+        public async Task TopPick()
+        {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            await SequenceService.TopDieAlignAndPick(5, _cts.Token);
+        }
+
+        [RelayCommand]
+        public async Task PTableAlign()
+        {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            var topDieVisionResults = await SequenceService.TopDieVision(_cts.Token);
+        }
         //[RelayCommand]
         //private void Step1Stop()
         //{
