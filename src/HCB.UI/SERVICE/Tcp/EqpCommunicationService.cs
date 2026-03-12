@@ -206,19 +206,20 @@ namespace HCB.UI
         private async void OnMessageReceived(object? sender, Message msg)
         {
             var msgName = msg.Header?.MessageName ?? "";
-            _logger.Information($"[EQP] Vision 명령 수신: {msgName}");
             try
             {
                 switch (msgName)
                 {
                     // 비전 상태 정보 보고
                     case "REQUEST_VISION_STATUS":
+                        _logger.Information($"[EQP] Vision 명령 수신: {msgName}");
                         await ReplyEqpStatus(msg);
                         break;
                     // 현재 레시피 확인 요청 "REQUEST-CURRENT-RECIPE"
 
 
                     case "REQUEST_MOTION_MOVE":
+                        _logger.Information($"[EQP] Vision 명령 수신: {msgName}");
                         await HandleMotionMove(msg);
                         break;
                 }

@@ -8,20 +8,20 @@ using System.Threading.Tasks;
 
 namespace HCB.UI
 {
-    /// <summary>
-    /// NetMQ DEALER 소켓 기반 클라이언트.
-    /// ROUTER 서버(Vision 또는 외부 시스템)에 연결하여 메시지를 양방향으로 교환한다.
-    /// </summary>
     public class TcpCommunicator : ITcpCommunicator
     {
         private readonly TcpSettings _settings;
         private DealerSocket? _socket;
-        private NetMQPoller?  _poller;
+        private NetMQPoller? _poller;
         private NetMQQueue<NetMQMessage>? _sendQueue;
 
         private readonly ConcurrentDictionary<string, TaskCompletionSource<Message>> _pending = new();
 
         private ConnectionState _state = ConnectionState.Disconnected;
+
+        // ── 고정 Identity ─────────────────────────────────────────
+        // 재연결 시 서버가 동일 클라이언트로 인식하도록 UnitName 기반 고정값 사용
+        private readonly byte[] _identity;
 
         public string UnitName => _settings.UnitName;
 
@@ -36,12 +36,15 @@ namespace HCB.UI
             }
         }
 
-        public event EventHandler<Message>?         MessageReceived;
+        public event EventHandler<Message>? MessageReceived;
         public event EventHandler<ConnectionState>? ConnectionStateChanged;
 
         public TcpCommunicator(TcpSettings settings)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+
+            // UnitName → 고정 Identity (재연결해도 서버가 같은 클라이언트로 인식)
+            _identity = Encoding.UTF8.GetBytes(_settings.UnitName);
         }
 
         // ─── 연결 ────────────────────────────────────────────────
@@ -49,8 +52,21 @@ namespace HCB.UI
         {
             if (State == ConnectionState.Connected) return Task.CompletedTask;
 
-            State   = ConnectionState.Connecting;
+            // 이전 리소스 정리 (비정상 종료 후 재연결 시 필수)
+            CleanupSocket();
+
+            State = ConnectionState.Connecting;
             _socket = new DealerSocket();
+
+            // ★ 핵심: 고정 Identity 설정 — 재연결해도 서버가 동일 클라이언트로 인식
+            _socket.Options.Identity = _identity;
+
+            // ★ 재연결 관련 옵션
+            _socket.Options.Linger = TimeSpan.Zero;      // 종료 시 미전송 메시지 즉시 폐기
+            _socket.Options.ReconnectInterval = TimeSpan.FromMilliseconds(500);  // 자동 재연결 간격
+            _socket.Options.SendHighWatermark = 100;
+            _socket.Options.ReceiveHighWatermark = 100;
+
             _socket.Connect($"tcp://{_settings.Host}:{_settings.Port}");
 
             _sendQueue = new NetMQQueue<NetMQMessage>();
@@ -71,18 +87,42 @@ namespace HCB.UI
 
         public Task DisconnectAsync()
         {
+            // 대기 중인 모든 요청 취소
             foreach (var kv in _pending)
                 kv.Value.TrySetCanceled();
             _pending.Clear();
 
-            _poller?.Stop();
-            _poller?.Dispose();
-            _sendQueue?.Dispose();
-            _socket?.Close();
-            _socket?.Dispose();
+            CleanupSocket();
 
             State = ConnectionState.Disconnected;
             return Task.CompletedTask;
+        }
+
+        // ★ 소켓 정리 — ConnectAsync / DisconnectAsync 양쪽에서 호출
+        private void CleanupSocket()
+        {
+            try
+            {
+                _poller?.Stop();
+                _poller?.Dispose();
+                _poller = null;
+            }
+            catch { /* 이미 정지된 경우 무시 */ }
+
+            try
+            {
+                _sendQueue?.Dispose();
+                _sendQueue = null;
+            }
+            catch { }
+
+            try
+            {
+                _socket?.Close();
+                _socket?.Dispose();
+                _socket = null;
+            }
+            catch { }
         }
 
         // ─── 전송 ────────────────────────────────────────────────
@@ -92,9 +132,8 @@ namespace HCB.UI
 
             message.Header ??= new MessageHeader();
             message.Header.UnitName = _settings.UnitName;
-            message.Header.Time     = DateTime.Now;
+            message.Header.Time = DateTime.Now;
 
-            // DEALER 송신 형태: [content] (identity 프레임 없음)
             var frames = new NetMQMessage();
             frames.Append(message.ToXml(), Encoding.UTF8);
 
@@ -104,14 +143,14 @@ namespace HCB.UI
 
         // ─── 요청-응답 ───────────────────────────────────────────
         public async Task<RequestResult> RequestAsync(
-            Message   request,
-            string?   responseMessageName = null,
-            TimeSpan? timeout             = null,
-            CancellationToken ct          = default)
+            Message request,
+            string? responseMessageName = null,
+            TimeSpan? timeout = null,
+            CancellationToken ct = default)
         {
             EnsureConnected();
 
-            var reqName     = request.Header?.MessageName
+            var reqName = request.Header?.MessageName
                               ?? throw new ArgumentException("MessageName이 설정되지 않았습니다.");
             var responseKey = responseMessageName
                               ?? reqName.Replace("REQUEST", "REPLY", StringComparison.OrdinalIgnoreCase);
@@ -145,14 +184,13 @@ namespace HCB.UI
             }
         }
 
-        // ─── 수신 (폴러 스레드에서 호출됨) ─────────────────────
+        // ─── 수신 ────────────────────────────────────────────────
         private void OnReceiveReady(object? sender, NetMQSocketEventArgs e)
         {
             try
             {
-                // DEALER 수신 형태: [content] (identity 없음)
                 var frames = e.Socket.ReceiveMultipartMessage();
-                var xml    = frames[frames.FrameCount - 1].ConvertToString(Encoding.UTF8);
+                var xml = frames[frames.FrameCount - 1].ConvertToString(Encoding.UTF8);
                 HandleIncoming(xml);
             }
             catch (Exception ex)
@@ -165,7 +203,7 @@ namespace HCB.UI
         {
             try
             {
-                var msg     = Message.FromXml(xml);
+                var msg = Message.FromXml(xml);
                 var msgName = msg.Header?.MessageName ?? string.Empty;
 
                 if (_pending.TryRemove(msgName, out var tcs))

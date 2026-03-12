@@ -2,18 +2,13 @@ using NetMQ;
 using NetMQ.Sockets;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HCB.UI
 {
-    /// <summary>
-    /// NetMQ ROUTER 소켓 기반 EQP 서버.
-    /// Vision(DEALER 클라이언트)이 연결하면 메시지를 양방향으로 교환한다.
-    /// 소켓은 NetMQPoller 전용 스레드에서만 조작하며,
-    /// 외부 스레드의 전송 요청은 NetMQQueue를 경유한다.
-    /// </summary>
     public class EqpTcpServer : IDisposable
     {
         private readonly TcpSettings _settings;
@@ -21,17 +16,18 @@ namespace HCB.UI
         private NetMQPoller? _poller;
         private NetMQQueue<NetMQMessage>? _sendQueue;
 
-        // 마지막으로 메시지를 보낸 Vision 클라이언트의 ZMQ identity 프레임
         private byte[]? _clientId;
 
-        // 응답 대기 중인 RequestAsync 요청들 (responseMessageName → TCS)
+        // ★ 마지막 메시지 수신 시각 — 클라이언트 재연결 감지에 사용
+        private DateTime _lastReceivedAt = DateTime.MinValue;
+
         private readonly ConcurrentDictionary<string, TaskCompletionSource<Message>> _pending = new();
 
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
 
-        public event EventHandler<Message>?          MessageReceived;
-        public event EventHandler<ConnectionState>?  ConnectionStateChanged;
-        public event EventHandler<string>?           LogMessage;
+        public event EventHandler<Message>? MessageReceived;
+        public event EventHandler<ConnectionState>? ConnectionStateChanged;
+        public event EventHandler<string>? LogMessage;
 
         public EqpTcpServer(TcpSettings settings)
         {
@@ -41,10 +37,9 @@ namespace HCB.UI
         // ─── 서버 시작/중지 ──────────────────────────────────────
         public void Start()
         {
-            _socket    = new RouterSocket();
+            _socket = new RouterSocket();
             _sendQueue = new NetMQQueue<NetMQMessage>();
 
-            // 전송 큐 → 소켓 (폴러 스레드에서 실행되므로 스레드 안전)
             _sendQueue.ReceiveReady += (_, _) =>
             {
                 while (_sendQueue.TryDequeue(out var frames, TimeSpan.Zero))
@@ -76,17 +71,15 @@ namespace HCB.UI
             Log("EQP ZMQ 서버 중지");
         }
 
-        // ─── EQP → Vision 전송 ───────────────────────────────────
-        /// <summary>메시지를 전송 큐에 적재한다 (비동기, 논블로킹).</summary>
+        // ─── 전송 ────────────────────────────────────────────────
         public Task SendAsync(Message message, CancellationToken ct = default)
         {
             EnsureConnected();
 
             message.Header ??= new MessageHeader();
             message.Header.UnitName = _settings.UnitName;
-            message.Header.Time     = DateTime.Now;
+            message.Header.Time = DateTime.Now;
 
-            // ROUTER 송신 형태: [identity][content]
             var frames = new NetMQMessage();
             frames.Append(_clientId!);
             frames.Append(message.ToXml(), Encoding.UTF8);
@@ -95,16 +88,15 @@ namespace HCB.UI
             return Task.CompletedTask;
         }
 
-        /// <summary>메시지를 전송하고 응답 메시지를 기다린다.</summary>
         public async Task<RequestResult> RequestAsync(
-            Message      request,
-            string?      responseMessageName = null,
-            TimeSpan?    timeout             = null,
-            CancellationToken ct             = default)
+            Message request,
+            string? responseMessageName = null,
+            TimeSpan? timeout = null,
+            CancellationToken ct = default)
         {
             EnsureConnected();
 
-            var reqName     = request.Header?.MessageName
+            var reqName = request.Header?.MessageName
                               ?? throw new ArgumentException("MessageName이 설정되지 않았습니다.");
             var responseKey = responseMessageName
                               ?? reqName.Replace("REQUEST", "REPLY", StringComparison.OrdinalIgnoreCase);
@@ -143,19 +135,41 @@ namespace HCB.UI
         {
             try
             {
-                // ROUTER 수신 형태: [identity][content]
                 var frames = e.Socket.ReceiveMultipartMessage();
                 if (frames.FrameCount < 2) return;
 
-                var id  = frames[0].ToByteArray();
+                var id = frames[0].ToByteArray();
                 var xml = frames[frames.FrameCount - 1].ConvertToString(Encoding.UTF8);
 
-                // 첫 메시지 수신 시 Vision 접속으로 간주
-                if (_clientId is null)
+                _lastReceivedAt = DateTime.Now;
+
+                // ★ 핵심 수정: 최초 연결 OR 재연결(identity 변경 포함) 모두 감지
+                bool isNewClient = _clientId is null;
+                bool isReconnect = _clientId is not null && !_clientId.SequenceEqual(id);
+
+                if (isNewClient || isReconnect)
                 {
+                    if (isReconnect)
+                    {
+                        Log($"Vision 재연결 감지 (이전: {BitConverter.ToString(_clientId!)}" +
+                            $" → 신규: {BitConverter.ToString(id)})");
+
+                        // 재연결 시 대기 중인 이전 요청 전부 취소
+                        foreach (var kv in _pending)
+                            kv.Value.TrySetCanceled();
+                        _pending.Clear();
+
+                        // ★ Disconnected → Connected 순서로 전환해야
+                        //   EqpCommunicationService에서 StopHeartbeat → StartHeartbeat 재호출됨
+                        SetState(ConnectionState.Disconnected);
+                    }
+                    else
+                    {
+                        Log($"Vision 최초 접속: {BitConverter.ToString(id)}");
+                    }
+
                     _clientId = id;
                     SetState(ConnectionState.Connected);
-                    Log($"Vision 접속: {BitConverter.ToString(id)}");
                 }
 
                 HandleIncoming(xml);
@@ -170,10 +184,9 @@ namespace HCB.UI
         {
             try
             {
-                var msg     = Message.FromXml(xml);
+                var msg = Message.FromXml(xml);
                 var msgName = msg.Header?.MessageName ?? string.Empty;
 
-                // RequestAsync 대기 중인 응답이면 TCS로 전달, 아니면 이벤트 발행
                 if (_pending.TryRemove(msgName, out var tcs))
                     tcs.TrySetResult(msg);
                 else
