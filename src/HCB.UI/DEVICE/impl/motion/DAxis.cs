@@ -354,17 +354,15 @@ namespace HCB.UI
             }
         }
 
-        public Task EStop()
+        public async Task EStop()
         {
-            string cmd = string.Format("#{0:D}J/", MotorNo);
+            // 로컬 변수로 캡처하여 경쟁 조건 방지
+            var device = Device;
 
-            if (Device?.IsConnected == true && Device?.IsEnabled == true)
+            if (device?.IsConnected == true && device?.IsEnabled == true)
             {
-                return Device.SendCommand(cmd);
-            }
-            else
-            {
-                return Task.CompletedTask;
+                string cmd = $"#{MotorNo:D}J/";
+                await device.SendCommand(cmd);
             }
         }
     }

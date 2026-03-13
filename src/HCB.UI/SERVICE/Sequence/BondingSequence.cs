@@ -110,5 +110,18 @@ namespace HCB.UI
             if (!result) throw new Exception("HeadPicker를 확인해주세요");
             
         }
+
+        public async Task TopDieDrop(CancellationToken ct)
+        {
+            // W-Table로 이동
+            await Init_Head(ct);
+            await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+            await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", ct);
+            await MotionsMove(MotionExtensions.H_Z, "TOP_DIE_PLACE", ct);
+            bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
+            await Task.Delay(1000);
+            if (!result) throw new Exception("HeadPicker를 확인해주세요");
+
+        }
     }
 }

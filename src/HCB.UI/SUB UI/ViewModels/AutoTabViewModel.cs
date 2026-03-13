@@ -166,12 +166,25 @@ namespace HCB.UI
         }
 
         [RelayCommand]
-        public void MachineStop()
+        public async Task MachineStop()
         {
+            if (IsStopping) return; // 중복 호출 방어
+
             IsStopping = true;
-            _cancellationTokenSource.Cancel();
-            _cancellationTokenSource = new();
-            IsStopping = false;
+
+            var oldCts = _cancellationTokenSource;
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            try
+            {
+                oldCts.Cancel();
+                await _sequenceService.StopAsync(oldCts.Token);
+            }
+            finally
+            {
+                oldCts.Dispose();
+                IsStopping = false;
+            }
         }
 
         [RelayCommand]

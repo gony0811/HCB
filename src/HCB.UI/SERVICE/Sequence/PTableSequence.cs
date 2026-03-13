@@ -62,21 +62,33 @@ namespace HCB.UI
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
 
-                // 우측 
+                
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+
+                // 우측 피듀셜마크 이동
                 await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
                 rightFid = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "RIGHT");
+                VisionResult(rightFid);
+
+
+                // 우측 얼라인마크 이동
                 await MotionsMove(z, MotionExtensions.P_RIGHT_ALIGN_HIGH, ct);
                 rightAlign= await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "RIGHT");
+                VisionResult(rightAlign);
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+
+                // 좌측 피듀셜마크 이동 
                 await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
                 leftFid = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "LEFT");
+                VisionResult(leftFid);
+
+                // 좌측 얼라인마크 이동
                 await MotionsMove(z, MotionExtensions.P_LEFT_ALIGN_HIGH, ct);
-                rightAlign = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "LEFT");
-             
+                leftAlign = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "LEFT");
+                VisionResult(leftAlign);
 
 
                 //// Left Fiducial 고배율 오토 포커싱
@@ -117,6 +129,11 @@ namespace HCB.UI
             {
                 throw new Exception(e.Message);
             }
+        }
+
+        public void VisionResult(VisionMarkPositionResponse response)
+        {
+            if (response.Result == Result.NG) throw new Exception("비전 통신 에러");
         }
     }
 }

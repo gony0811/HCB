@@ -274,20 +274,29 @@ namespace HCB.UI
         }
         public async Task StopAsync()
         {
-            foreach (var motion in MotionList)
+            // 모든 축 병렬 정지 (리미트 여부 관계없이)
+            var stopTasks = MotionList.Select(async motion =>
             {
-                // 하드웨어 리미트 스위치 동작 시 인터락 강제 설정
-                if (motion.IsPlusLimit || motion.IsMinusLimit)
+                try
                 {
-                    string limitType = motion.IsPlusLimit ? "Plus" : "Minus";
-                    _logger.Error(
-                        "[INTERLOCK HW LIMIT] {Name}(Motor#{No}) {Type} 리미트 스위치 동작",
-                        motion.Name, motion.MotorNo, limitType);
+                    if (motion.IsPlusLimit || motion.IsMinusLimit)
+                    {
+                        string limitType = motion.IsPlusLimit ? "Plus" : "Minus";
+                        _logger.Error(
+                            "[INTERLOCK HW LIMIT] {Name}(Motor#{No}) {Type} 리미트",
+                            motion.Name, motion.MotorNo, limitType);
+                    }
 
-                    // IAxis 의 인터락 서비스에 직접 접근하는 대신 EStop 호출
-                    _ = motion.EStop();
+                    await motion.EStop(); // 모든 축 정지
                 }
-            }
+                catch (Exception ex)
+                {
+                    _logger.Error("Motor#{No} EStop 실패: {Msg}",
+                        motion.MotorNo, ex.Message);
+                }
+            });
+
+            await Task.WhenAll(stopTasks);
         }
 
         public Task<bool> TestConnection()

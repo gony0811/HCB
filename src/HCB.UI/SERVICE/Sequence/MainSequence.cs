@@ -38,7 +38,8 @@ namespace HCB.UI
 
                 //// 3. 고배율 보정
                 var topDieVisionResults = await TopDieVision(ct);
-                //await TopDieDrop(ct);
+                await TopDieDrop(ct);
+                await Init_Head(ct);
             }
             catch (OperationCanceledException)
             {

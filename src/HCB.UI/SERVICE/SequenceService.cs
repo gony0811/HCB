@@ -74,31 +74,46 @@ namespace HCB.UI
 
             //StatusChanged?.Invoke(this, new StatusChangedEventArgs(EQStatus.Operation, EQStatus.Availability, EQStatus.Run, EQStatus.Alarm));
         }
-
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.Information("SequenceService is stopping.");
-            
+
             try
             {
                 var device = _deviceManager.GetDevice<PowerPmacDevice>("PMAC");
                 await device.StopAsync();
                 _operationService.SetRun(RunStop.Stop);
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 _logger.Error($"Stop Sequence error: {e.Message}");
             }
-            
-            //_timer.Change(Timeout.Infinite, Timeout.Infinite); // 타이머 중지
-
-            //// 현재 실행 중인 폴링 작업이 있다면 완료될 때까지 대기
-            //await _pollingLock.WaitAsync(cancellationToken);
-            //_pollingLock.Release();
-
-            //await DeviceDetatch();
-
-            //await base.StopAsync(cancellationToken);
         }
+
+        //public override async Task StopAsync(CancellationToken cancellationToken)
+        //{
+        //    _logger.Information("SequenceService is stopping.");
+            
+        //    try
+        //    {
+        //        var device = _deviceManager.GetDevice<PowerPmacDevice>("PMAC");
+        //        await device.StopAsync();
+        //        _operationService.SetRun(RunStop.Stop);
+        //    }catch(Exception e)
+        //    {
+        //        _logger.Error($"Stop Sequence error: {e.Message}");
+        //    }
+            
+        //    //_timer.Change(Timeout.Infinite, Timeout.Infinite); // 타이머 중지
+
+        //    //// 현재 실행 중인 폴링 작업이 있다면 완료될 때까지 대기
+        //    //await _pollingLock.WaitAsync(cancellationToken);
+        //    //_pollingLock.Release();
+
+        //    //await DeviceDetatch();
+
+        //    //await base.StopAsync(cancellationToken);
+        //}
 
         
     }

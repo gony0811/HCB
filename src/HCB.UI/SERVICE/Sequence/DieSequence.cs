@@ -100,7 +100,7 @@ namespace HCB.UI
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 var goPickup = await Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, 151.472, ct),
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, 150.553, ct),
                     _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -44.575, ct)
                     //MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct)
                 );
@@ -145,7 +145,7 @@ namespace HCB.UI
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 var goPickup = await Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, 150.583, ct),
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, 150.553, ct),
                     _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -44.564, ct)
                 );
                 await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
@@ -191,7 +191,7 @@ namespace HCB.UI
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 var goPickup = await Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, 150.583, ct),
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, 150.553, ct),
                     _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -44.575, ct)
                 );
                 await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
