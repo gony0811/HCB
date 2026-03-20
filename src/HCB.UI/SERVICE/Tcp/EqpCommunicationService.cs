@@ -126,13 +126,13 @@ namespace HCB.UI
             return result.Success;
         }
 
-        public async Task<bool> RequestAFStart(CameraType cameraType, CancellationToken ct = default)
+        public async Task<bool> RequestAFStart(CameraType cameraType, MarkType markType , CancellationToken ct = default)
         {
-            var request = MessageFactory.Create("REQUEST_AF_START", "EQP", $"<CAMERATYPE>{cameraType}</CAMERATYPE>");
-            var result = await _server.RequestAsync(request, "REQUEST_AF_END", TimeSpan.FromSeconds(60), ct: ct);
+            var request = MessageFactory.Create("REQUEST_AF_START", "EQP", $"<CAMERATYPE>{cameraType}</CAMERATYPE><MARKTYPE>{markType}</MARKTYPE>");
+            var result = await _server.RequestAsync(request, "REQUEST_AF_END", TimeSpan.FromSeconds(30), ct: ct);
 
             var afResult = ParseResult(result);
-            await NotifyAFEnd(afResult, ct);
+            //await NotifyAFEnd(afResult, ct);
             return afResult == Result.OK;
         }
 
@@ -159,7 +159,7 @@ namespace HCB.UI
         }
 
 
-        // 레시피 변경 요청
+        // 레시피 변경 요청  1: 글래스, 2: 실리콘
         public async Task RequestRecipeChange(string recipeId, CancellationToken ct = default)
         {
             var request = MessageFactory.Create(
@@ -199,7 +199,6 @@ namespace HCB.UI
         }
 
         
-
         #endregion
 
         #region VISION -> EQP
@@ -339,7 +338,7 @@ namespace HCB.UI
             var response = MessageFactory.Create(
                 messageName: replyName,
                 unitName: "EQP",
-                content:$"<RESULT>{result}</RESULT><DISTANCE>{currentPosition}</DISTANCE>"
+                content:$"<RESULT>{result}</RESULT><AXIS>{axis.ToUpper()}</AXIS><DISTANCE>{currentPosition}</DISTANCE>"
             );
 
             await _server.SendAsync(response);

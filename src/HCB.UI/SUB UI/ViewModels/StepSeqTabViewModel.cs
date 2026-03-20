@@ -1,14 +1,18 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
-using Serilog.Core;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
+using System.Xml.Linq;
+using Telerik.Windows.Documents.Fixed.Model.Preferences;
 using Telerik.Windows.Documents.Spreadsheet.Expressions.Functions;
+using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
 {
@@ -16,29 +20,102 @@ namespace HCB.UI
     public partial class StepSeqTabViewModel : ObservableObject
     {
         private CancellationTokenSource _cts;
+        private readonly ILogger _logger;
         private readonly SequenceService SequenceService;
         private readonly DialogService _dialogService;
         private readonly DeviceManager _deviceManager;
         private readonly EqpCommunicationService eqpCommunicationService;
         private IOManager ioManager;
 
+        [ObservableProperty]
+        private int topDie = 0;
+
+        [ObservableProperty]
+        private int bottomDie = 0;
+
+        [ObservableProperty]
+        private int pressureTime = 1000;
+
+        [ObservableProperty]
+        private int blowTime = 1000;
+
+        [ObservableProperty]
+        private int waitTime = 8000;
+
+
+        [ObservableProperty]
+        private VisionMarkPositionResponse visionBtmLowAlign;
+
+        [ObservableProperty]
+        private VisionMarkPositionResponse visionTopLowAlign;
+
+        [ObservableProperty]
+        private VisionMarkResult topRightAlign;
+
+        [ObservableProperty]
+        private VisionMarkResult topRightFid;
+
+        [ObservableProperty]
+        private VisionMarkResult topLeftAlign;
+
+        [ObservableProperty]
+        private VisionMarkResult topLeftFid;
+
+        [ObservableProperty]
+        private double errorX;
+        
+        [ObservableProperty]
+        private double errorY;
+
+        [ObservableProperty]
+        private double errorT;
+
+        [ObservableProperty]
+        private DieMeasurement topDieAlign;
+
+        [ObservableProperty]
+        private DieMeasurement topDieFid;
+
+
+        [ObservableProperty]
+        private DieMeasurement bottomDieAlign;
+
+        [ObservableProperty]
+        private DieMeasurement bottomDieFid;
+
         public SequenceServiceVM SequenceServiceVM { get; }
         private SequenceHelper _sequenceHelper;
         [ObservableProperty]
         private bool isInitializing;
 
-        private List<DieData> _waferData;
-        public List<DieData> WaferData
+        [ObservableProperty]
+        private ObservableCollection<DieType> _dieTypeList = new ObservableCollection<DieType>
         {
-            get => _waferData;
-            set { _waferData = value; OnPropertyChanged(); }
-        }
-
-        public ObservableCollection<string> WaferSizeList { get; } =
-                new ObservableCollection<string> { "12x12", "4x4" };
+            DieType.TOP,
+            DieType.BOTTOM
+        };
 
         [ObservableProperty]
-        private string selectedWaferSize;
+        private ObservableCollection<MarkType> _markTypeList = new ObservableCollection<MarkType>
+        {
+            MarkType.ALIGN_MARK,
+            MarkType.FIDUCIAL
+        };
+
+        [ObservableProperty]
+        private ObservableCollection<DirectType> _directTypeList = new ObservableCollection<DirectType>
+        {
+            DirectType.LEFT,
+            DirectType.RIGHT,
+        };
+        [ObservableProperty]
+        private DirectType _selectedDirectType = DirectType.LEFT;
+
+        [ObservableProperty]
+        private MarkType _selectedMarkType = MarkType.ALIGN_MARK;
+
+        [ObservableProperty]
+        private DieType _selectedDieType = DieType.BOTTOM;
 
         [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> dTableList = new ObservableCollection<SensorIoItemViewModel>();
@@ -54,9 +131,10 @@ namespace HCB.UI
         };
 
         public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM, SequenceService sequenceService, SequenceHelper sequenceHelper, DeviceManager deviceManager, IOManager ioManager, DialogService dialogService
-           , EqpCommunicationService eqpCommunicationService
+           , EqpCommunicationService eqpCommunicationService, ILogger logger
             )
         {
+            _logger = logger.ForContext<StepSeqTabViewModel>();
             this.SequenceServiceVM = sequenceServiceVM;
             this.SequenceService = sequenceService;
             this._sequenceHelper = sequenceHelper;
@@ -75,9 +153,6 @@ namespace HCB.UI
 
                 }
             }
-
-            SelectedWaferSize = "12x12";   // 기본 선택
-            ApplyWaferSize(SelectedWaferSize);
         }
 
         [RelayCommand(CanExecute = nameof(CanStartInitialize))]
@@ -136,288 +211,482 @@ namespace HCB.UI
         {
             try
             {
-                IsInitializing = true;
                 _cts?.Cancel();
                 _cts = new CancellationTokenSource();
+                await SequenceService.MotionsMove(MotionExtensions.D_Y, MotionExtensions.LOAD_POSITION, _cts.Token);
+            }
+            catch(Exception e)
+            {
 
-                await SequenceService.DTableLoading(_cts.Token);
-                var result = await _dialogService.ShowConfirmAsync("DIE 로딩중", "로딩이 완료된 후 확인을 눌러주세요");
-                if (result)
+            }
+
+            var tcs = new TaskCompletionSource<bool>();
+
+            var dialog = new VacuumSelector();
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+
+            dialog.Closed += (s, e) =>
+            {
+                if (dialog.DialogResult == true
+                    && dialog.TopDieVacuum.HasValue
+                    && dialog.BotDieVacuum.HasValue)
                 {
-                    await DieComplete();
+                    TopDie = dialog.TopDieVacuum.Value;
+                    BottomDie = dialog.BotDieVacuum.Value;
+                    DTableList[TopDie-1].On();
+                    DTableList[BottomDie-1].On();
+                    tcs.SetResult(true);
+                }
+                else
+                {
+                    tcs.SetResult(false);
+                }
+            };
+
+            dialog.ShowDialog(); // UI 스레드에서 직접 호출
+
+            bool confirmed = await tcs.Task;
+            if (!confirmed) return;
+        }
+
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public void DieReset()
+        {
+            try
+            {
+                _cts?.Cancel();
+                _cts = new CancellationTokenSource();
+                
+                if (TopDie != 0)
+                {
+                    DTableList[TopDie - 1].Off();
+                }
+                if (BottomDie != 0)
+                {
+                    DTableList[BottomDie - 1].Off();
                 }
             }
-            catch (OperationCanceledException)
+            catch (Exception e)
             {
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                IsInitializing = false;
-                InitializeCommand.NotifyCanExecuteChanged();
+
             }
         }
 
         [RelayCommand(CanExecute = nameof(CanStartInitialize))]
-        public async Task DieComplete()
-        {
-            try
-            {
-                IsInitializing = true;
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-
-                await SequenceService.DTableLoadComplete(_cts.Token);
-
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                IsInitializing = false;
-                InitializeCommand.NotifyCanExecuteChanged();
-            }
-        }
-
-        
-        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
-        public async Task BottomVision()
-        {
-            try
-            {
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-
-                await SequenceService.BottomVision(_cts.Token);
-                _dialogService.ShowMessage("Bottom Vision완료", "Bottom Vision 완료");
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                InitializeCommand.NotifyCanExecuteChanged();
-            }
-        }
-
-
-        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
-        public async Task WaferLoad()
-        {
-            try
-            {
-                IsInitializing = true;
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-
-                await SequenceService.WTableLoading(_cts.Token);
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                IsInitializing = false;
-                InitializeCommand.NotifyCanExecuteChanged();
-            }
-        }
-
-        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
-        public async Task WaferComplete()
-        {
-            try
-            {
-                IsInitializing = true;
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-
-                await SequenceService.WTableLoadComplete(_cts.Token);
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                IsInitializing = false;
-                InitializeCommand.NotifyCanExecuteChanged();
-            }
-        }
-
-
-
-
-        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
-        public async Task WaferAlign()
-        {
-            try
-            {
-                IsInitializing = true;
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-
-                await SequenceService.WTableAlign(_cts.Token);
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                IsInitializing = false;
-                InitializeCommand.NotifyCanExecuteChanged();
-            }
-        }
-
-        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
-        public async Task Bonding()
-        {
-            try
-            {
-                IsInitializing = true;
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-
-                await SequenceService.Bonding(_cts.Token);
-                _dialogService.ShowMessage("Bonding 완료", "Bonding 완료");
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                IsInitializing = false;
-                InitializeCommand.NotifyCanExecuteChanged();
-            }
-        }
-
-
-        [RelayCommand]
-        private async Task Step1Start()
-        {
-            _cts = new CancellationTokenSource();
-            await SequenceService.StepMoveWaferCenter(_cts.Token);
-            await SequenceService.StepWaferAlign(_cts.Token);
-        }
-        private List<DieData> GenerateWafer(int rows, int cols)
-        {
-            var list = new List<DieData>();
-            double centerX = cols / 2.0;
-            double centerY = rows / 2.0;
-            double radius = Math.Min(rows, cols) / 2.0;
-
-            for (int r = 0; r < rows; r++)
-            {
-                for (int c = 0; c < cols; c++)
-                {
-                    // 원형 웨이퍼 영역 안에 있는지 계산 (피타고라스 정리)
-                    double distance = Math.Sqrt(Math.Pow(c - centerX, 2) + Math.Pow(r - centerY, 2));
-
-                    if (distance < radius)
-                    {
-                        list.Add(new DieData
-                        {
-                            Row = r,
-                            Col = c,
-                            DieBrush = Brushes.DimGray, // 기본 색상
-                            Information = $"Die [{r}, {c}] - Ready"
-                        });
-                    }
-                }
-            }
-            return list;
-        }
-
-        // 특정 조건(예: 테스트 완료)에 따라 데이터를 한 번에 업데이트하는 예시
-        [RelayCommand]
-        public void UpdateTestResults()
-        {
-            var random = new Random();
-            // 기존 리스트를 바탕으로 새로운 리스트 생성 (참조 변경)
-            var newList = new List<DieData>(WaferData);
-
-            foreach (var die in newList)
-            {
-                die.DieBrush = random.Next(0, 10) > 1 ? Brushes.LimeGreen : Brushes.Red;
-                die.Information = die.DieBrush == Brushes.Red ? "Status: Fail" : "Status: Pass";
-            }
-
-            // 새로운 리스트 주소를 할당 -> Dependency Property 콜백 실행됨
-            WaferData = newList;
-        }
-
-        partial void OnSelectedWaferSizeChanged(string value)
-        {
-            ApplyWaferSize(value);
-        }
-
-        private void ApplyWaferSize(string size)
-        {
-            switch (size)
-            {
-                case "12x12":
-                    WaferData = GenerateWafer(12, 12);
-                    break;
-
-                case "4x4":
-                    WaferData = GenerateWafer(4, 4);
-                    break;
-            }
-        }
-
-
-        [RelayCommand]
-        public async Task DryRun()
+        public async Task DieLowAlign()
         {
             _cts?.Cancel();
+            _cts?.Dispose();
             _cts = new CancellationTokenSource();
-            var token = _cts.Token;
 
             try
             {
-                while (!token.IsCancellationRequested)
+                switch (SelectedDieType)
                 {
-                    for (int dieNumber = 1; dieNumber <= 9; dieNumber++)
-                    {
-                        token.ThrowIfCancellationRequested();
+                    case DieType.BOTTOM:
+                        if (BottomDie == 0)
+                        {
+                            _logger.Information("Bottom Die를 Load해주세요");
+                            return;
+                        }
+                        VisionBtmLowAlign = await SequenceService.DTableCarrierAlign(
+                            BottomDie, MarkType.DIE_CENTER_BOTTOM, _cts.Token);
+                        break;
 
-                        // 1. DTable에서 Die 픽업
-                        await SequenceService.DTablePickup(dieNumber, null, token);
-                        //// 2. PTable로 이동 후 Align
-                        await SequenceService.BottomVision(token);
-                        // 3. Wafer에 본딩
-                        await SequenceService.Bonding(token);
-                    }
+                    case DieType.TOP:
+                        if (TopDie == 0)
+                        {
+                            _logger.Information("Top Die를 Load해주세요");
+                            return;
+                        }
+                        VisionTopLowAlign = await SequenceService.DTableCarrierAlign(
+                            TopDie, MarkType.DIE_CENTER_TOP, _cts.Token);
+                        break;
                 }
             }
             catch (OperationCanceledException)
             {
-                // 정지 버튼으로 인한 취소 처리
+                _logger.Information("DieLowAlign 작업이 취소되었습니다");
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                // 예외 처리
+                _logger.Warning(e.Message);
             }
         }
+
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task DiePickup()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+
+            try
+            {
+                switch (SelectedDieType)
+                {
+                    case DieType.BOTTOM:
+                        if (BottomDie == 0)
+                        {
+                            _logger.Information("Bottom Die를 Load해주세요");
+                            return;
+                        }
+                        if (VisionBtmLowAlign == null)
+                        {
+                            _logger.Information("Bottom Die Align 해주세요");
+                            return;
+                        }
+                        await SequenceService.DTableBTMPickup(BottomDie, VisionBtmLowAlign, _cts.Token);
+                        DTableList[BottomDie - 1].Off();
+                        //BottomDie = 0;
+                        //VisionBtmLowAlign = null;
+                        break;
+
+                    case DieType.TOP:
+                        if (TopDie == 0)
+                        {
+                            _logger.Information("Top Die를 Load해주세요");
+                            return;
+                        }
+                        if (VisionTopLowAlign == null)
+                        {
+                            _logger.Information("Top Die Align 해주세요");
+                            return;
+                        }
+                        await SequenceService.DTableTOPPickup(TopDie, VisionTopLowAlign, _cts.Token);
+                        DTableList[TopDie - 1].Off();
+                        //TopDie = 0;
+                        //VisionTopLowAlign = null;
+                        break;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("DiePickup 작업이 취소되었습니다");
+            }
+            catch (Exception e)
+            {
+                _logger.Warning(e.Message);
+            }
+        }
+
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task DiePlace()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+
+            try
+            {
+                switch (SelectedDieType)
+                {
+                    case DieType.BOTTOM:
+                        await SequenceService.BtmDieDrop(1, _cts.Token);
+                        break;
+
+                    case DieType.TOP:
+                        ErrorX = 0;
+                        ErrorY = 0;
+                        ErrorT = 0;
+                        Dictionary<string, VisionMarkResult> topVisionMarkResult = new Dictionary<string, VisionMarkResult>
+                        {
+                            { "RIGHT_FID", TopRightFid },
+                            { "RIGHT_ALIGN", TopRightAlign },
+                            { "LEFT_FID", TopLeftFid },
+                            { "LEFT_ALIGN", TopLeftAlign }
+                        }; 
+
+                        int[] delayTimes = { PressureTime, BlowTime, WaitTime };
+
+                        await SequenceService.TopDieDrop(topVisionMarkResult, _cts.Token, delayTimes);
+
+
+                        //TopDieAlign.RightX = xyt.rightAlign.StageX;
+                        //TopDieAlign.RightXError= xyt.rightAlign.DxCamToMark;
+                        //TopDieAlign.RightXCorrect = xyt.rightAlign.CenterX;
+
+                        //TopDieAlign.RightY = xyt.rightAlign.StageY;
+                        //TopDieAlign.RightYError = xyt.rightAlign.DyCamToMark;
+                        //TopDieAlign.RightYCorrect = xyt.rightAlign.CenterY;
+
+                        //TopDieAlign.RightX = xyt.rightAlign.StageX;
+                        //TopDieAlign.RightXError = xyt.rightAlign.DxCamToMark;
+                        //TopDieAlign.RightXCorrect = xyt.rightAlign.CenterX;
+
+                        //TopDieAlign.RightX = xyt.rightAlign.StageX;
+                        //TopDieAlign.RightXError = xyt.rightAlign.DxCamToMark;
+                        //TopDieAlign.RightXCorrect = xyt.rightAlign.CenterX;
+
+                        //TopDieAlign.RightX = xyt.rightAlign.StageX;
+                        //TopDieAlign.RightXError = xyt.rightAlign.DxCamToMark;
+                        //TopDieAlign.RightXCorrect = xyt.rightAlign.CenterX;
+
+                        break;
+                }
+                
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("DiePickup 작업이 취소되었습니다");
+            }
+            catch (Exception e)
+            {
+                _logger.Warning(e.Message);
+            }
+        }
+
+        [RelayCommand]
+        public async Task HeaderTest()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+            await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, _cts.Token);
+        }
+
+
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task DieHighAlign()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+
+            try
+            {
+                VisionMarkResult result = (SelectedDieType, SelectedDirectType, SelectedMarkType) switch
+                {
+                    // TOP + RIGHT
+                    (DieType.TOP, DirectType.RIGHT, MarkType.FIDUCIAL) => TopRightFid = await SequenceService.TopDieVisionRightFid(_cts.Token),
+                    (DieType.TOP, DirectType.RIGHT, MarkType.ALIGN_MARK) => TopRightAlign = await SequenceService.TopDieVisionRightAlign(_cts.Token),
+
+                    // TOP + LEFT
+                    (DieType.TOP, DirectType.LEFT, MarkType.FIDUCIAL) => TopLeftFid = await SequenceService.TopDieVisionLeftFid(_cts.Token),
+                    (DieType.TOP, DirectType.LEFT, MarkType.ALIGN_MARK) => TopLeftAlign = await SequenceService.TopDieVisionLeftAlign(_cts.Token),
+
+                    //// BOTTOM + RIGHT
+                    //(DieType.BOTTOM, DirectType.RIGHT, MarkType.FIDUCIAL) => await SequenceService.Bottom(_cts.Token),
+                    //(DieType.BOTTOM, DirectType.RIGHT, MarkType.ALIGN_MARK) => await SequenceService.BottomDieVisionRightAlign(_cts.Token),
+
+                    //// BOTTOM + LEFT
+                    //(DieType.BOTTOM, DirectType.LEFT, MarkType.FIDUCIAL) => await SequenceService.BottomDieVisionLeftFid(_cts.Token),
+                    //(DieType.BOTTOM, DirectType.LEFT, MarkType.ALIGN_MARK) => await SequenceService.BottomDieVisionLeftAlign(_cts.Token),
+
+                    _ => throw new InvalidOperationException($"지원하지 않는 조합: {SelectedDieType}, {SelectedDirectType}, {SelectedMarkType}")
+                };
+
+                _logger.Information($"DieHighAlign 완료: {SelectedDieType} / {SelectedDirectType} / {SelectedMarkType}");
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("DieHighAlign 작업이 취소되었습니다");
+            }
+            catch (Exception e)
+            {
+                _logger.Warning(e.Message);
+            }
+        }
+
+
+
+        //[RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        //public async Task BottomVision()
+        //{
+        //    try
+        //    {
+        //        _cts?.Cancel();
+        //        _cts = new CancellationTokenSource();
+
+        //        await SequenceService.BottomVision(_cts.Token);
+        //        _dialogService.ShowMessage("Bottom Vision완료", "Bottom Vision 완료");
+        //    }
+        //    catch (OperationCanceledException)
+        //    {
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //    }
+        //    finally
+        //    {
+        //        InitializeCommand.NotifyCanExecuteChanged();
+        //    }
+        //}
+
+
+        //[RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        //public async Task WaferLoad()
+        //{
+        //    try
+        //    {
+        //        IsInitializing = true;
+        //        _cts?.Cancel();
+        //        _cts = new CancellationTokenSource();
+
+        //         await SequenceService.WTableLoading(_cts.Token);
+        //    }
+        //    catch (OperationCanceledException)
+        //    {
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //    }
+        //    finally
+        //    {
+        //        IsInitializing = false;
+        //        InitializeCommand.NotifyCanExecuteChanged();
+        //    }
+        //}
+
+        //[RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        //public async Task WaferComplete()
+        //{
+        //    try
+        //    {
+        //        IsInitializing = true;
+        //        _cts?.Cancel();
+        //        _cts = new CancellationTokenSource();
+
+        //        await SequenceService.WTableLoadComplete(_cts.Token);
+        //    }
+        //    catch (OperationCanceledException)
+        //    {
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //    }
+        //    finally
+        //    {
+        //        IsInitializing = false;
+        //        InitializeCommand.NotifyCanExecuteChanged();
+        //    }
+        //}
+
+
+
+
+        //[RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        //public async Task WaferAlign()
+        //{
+        //    try
+        //    {
+        //        IsInitializing = true;
+        //        _cts?.Cancel();
+        //        _cts = new CancellationTokenSource();
+
+        //        await SequenceService.WTableAlign(_cts.Token);
+        //    }
+        //    catch (OperationCanceledException)
+        //    {
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //    }
+        //    finally
+        //    {
+        //        IsInitializing = false;
+        //        InitializeCommand.NotifyCanExecuteChanged();
+        //    }
+        //}
+
+        //[RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        //public async Task Bonding()
+        //{
+        //    try
+        //    {
+        //        IsInitializing = true;
+        //        _cts?.Cancel();
+        //        _cts = new CancellationTokenSource();
+
+        //        await SequenceService.Bonding(_cts.Token);
+        //        _dialogService.ShowMessage("Bonding 완료", "Bonding 완료");
+        //    }
+        //    catch (OperationCanceledException)
+        //    {
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //    }
+        //    finally
+        //    {
+        //        IsInitializing = false;
+        //        InitializeCommand.NotifyCanExecuteChanged();
+        //    }
+        //}
+
+
+        //[RelayCommand]
+        //private async Task Step1Start()
+        //{
+        //    _cts = new CancellationTokenSource();
+        //    await SequenceService.StepMoveWaferCenter(_cts.Token);
+        //    await SequenceService.StepWaferAlign(_cts.Token);
+        //}
+        //private List<DieData> GenerateWafer(int rows, int cols)
+        //{
+        //    var list = new List<DieData>();
+        //    double centerX = cols / 2.0;
+        //    double centerY = rows / 2.0;
+        //    double radius = Math.Min(rows, cols) / 2.0;
+
+        //    for (int r = 0; r < rows; r++)
+        //    {
+        //        for (int c = 0; c < cols; c++)
+        //        {
+        //            // 원형 웨이퍼 영역 안에 있는지 계산 (피타고라스 정리)
+        //            double distance = Math.Sqrt(Math.Pow(c - centerX, 2) + Math.Pow(r - centerY, 2));
+
+        //            if (distance < radius)
+        //            {
+        //                list.Add(new DieData
+        //                {
+        //                    Row = r,
+        //                    Col = c,
+        //                    DieBrush = Brushes.DimGray, // 기본 색상
+        //                    Information = $"Die [{r}, {c}] - Ready"
+        //                });
+        //            }
+        //        }
+        //    }
+        //    return list;
+        //}
+
+        // 특정 조건(예: 테스트 완료)에 따라 데이터를 한 번에 업데이트하는 예시
+
+
+        //[RelayCommand]
+        //public async Task DryRun()
+        //{
+        //    _cts?.Cancel();
+        //    _cts = new CancellationTokenSource();
+        //    var token = _cts.Token;
+
+        //    try
+        //    {
+        //        while (!token.IsCancellationRequested)
+        //        {
+        //            for (int dieNumber = 1; dieNumber <= 9; dieNumber++)
+        //            {
+        //                token.ThrowIfCancellationRequested();
+
+        //                // 1. DTable에서 Die 픽업
+        //                await SequenceService.DTablePickup(dieNumber, null, token);
+        //                //// 2. PTable로 이동 후 Align
+        //                await SequenceService.BottomVision(token);
+        //                // 3. Wafer에 본딩
+        //                await SequenceService.Bonding(token);
+        //            }
+        //        }
+        //    }
+        //    catch (OperationCanceledException)
+        //    {
+        //        // 정지 버튼으로 인한 취소 처리
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // 예외 처리
+        //    }
+        //}
 
         [RelayCommand(CanExecute = nameof(CanStartInitialize))]
         public async Task WPinDown()
@@ -453,81 +722,40 @@ namespace HCB.UI
             }
 
         }
-
-        [RelayCommand]
-        public async Task RequestAlign()
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task RequesRightVisionMark()
         {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
             try
             {
-                var result = await eqpCommunicationService.RequestVisionMarkPosition(MarkType.DIE_CENTER, CameraType.HC_LOW,"");
-                Console.WriteLine(result.ToString);
+                // 397.403, 19.841
+                var rightFid = await eqpCommunicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "RIGHT");
+                
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+
             }
-            
+
         }
-        [RelayCommand]
-        public async Task RequestAFStart()
+        [RelayCommand(CanExecute = nameof(CanStartInitialize))]
+        public async Task RequesLeftVisionMark()
         {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
             try
             {
-                var result = await eqpCommunicationService.RequestAFStart(CameraType.HC_LOW);
-                Console.WriteLine(result);
+
+                var rightFid = await eqpCommunicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "LEFT");
+
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+
             }
         }
 
-        [RelayCommand]
-        public async Task ReplyAFEnd()
-        {
-            try
-            {
-                var result = await eqpCommunicationService.RequestAFStart(CameraType.HC_LOW);
-                Console.WriteLine(result);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-        }
-
-        [RelayCommand]
-        public async Task BTMPick()
-        {
-            _cts?.Cancel();
-            _cts = new CancellationTokenSource();
-            await SequenceService.DieAlignAndPick(9, _cts.Token);
-        }
-
-
-        [RelayCommand]
-        public async Task BTMPlace()
-        {
-            _cts?.Cancel();
-            _cts = new CancellationTokenSource();
-            await SequenceService.BTMPlace(_cts.Token);
-        }
-
-        [RelayCommand]
-        public async Task TopPick()
-        {
-            _cts?.Cancel();
-            _cts = new CancellationTokenSource();
-            await SequenceService.TopDieAlignAndPick(5, _cts.Token);
-        }
-
-        [RelayCommand]
-        public async Task PTableAlign()
-        {
-            _cts?.Cancel();
-            _cts = new CancellationTokenSource();
-            var topDieVisionResults = await SequenceService.TopDieVision(_cts.Token);
-        }
         //[RelayCommand]
         //private void Step1Stop()
         //{

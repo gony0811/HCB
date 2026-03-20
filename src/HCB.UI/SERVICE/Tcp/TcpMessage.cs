@@ -154,8 +154,20 @@ namespace HCB.UI
             return response;
         }
     }
+    public enum DieType
+    {
+        TOP,
+        BOTTOM
+    }
+    public enum DirectType
+    {
+        LEFT,
+        RIGHT
+    }
     public enum MarkType
     {
+        DIE_CENTER_TOP,
+        DIE_CENTER_BOTTOM,
         DIE_CENTER,
         FIDUCIAL,
         CORNER,

@@ -21,7 +21,6 @@ namespace HCB.UI
 
         public RunInformation RunInformation { get; }
         public RunningStatus RunningStatus { get; }
-
         public AlarmService AlarmService { get; }
 
         [ObservableProperty]
@@ -35,6 +34,15 @@ namespace HCB.UI
 
         [ObservableProperty]
         private bool isInitialize;
+
+        [ObservableProperty]
+        private int pressureTime = 1000;
+
+        [ObservableProperty]
+        private int blowTime = 1000;
+
+        [ObservableProperty]
+        private int waitTime = 8000;
 
         public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, OperationService operationService, SequenceService sequenceService, AlarmService alarmService)
         {
@@ -155,7 +163,8 @@ namespace HCB.UI
             IsRunning = true;
             try
             {
-                await _sequenceService.MachineStartAsync(top, bot, _cancellationTokenSource.Token);
+                int[] delayTimes = { PressureTime ,BlowTime, WaitTime };
+                await _sequenceService.MachineStartAsync(top, bot, delayTimes, _cancellationTokenSource.Token);
             }
             catch (OperationCanceledException) { }
             catch (Exception ex) { }
@@ -192,5 +201,6 @@ namespace HCB.UI
         {
             Task.Run(async () => await AlarmService.ResetAllAlarms());
         }
+
     }
 }

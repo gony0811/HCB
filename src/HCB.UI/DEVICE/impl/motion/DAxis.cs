@@ -1,18 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using HCB.Data.Entity;
 using HCB.Data.Entity.Type;
-using HCB.UI.SERVICE.ViewModels;
 using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Telerik.Windows.Documents.Fixed.Model.Data;
-
 namespace HCB.UI
 {
     public partial class DAxis : ObservableObject, IAxis

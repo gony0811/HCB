@@ -56,7 +56,7 @@ namespace HCB.UI
             }
         }
 
-        public async Task<VisionMarkPositionResponse> DTableCarrierAlign(int vacNum, CancellationToken ct)
+        public async Task<VisionMarkPositionResponse> DTableCarrierAlign(int vacNum, MarkType markType, CancellationToken ct)
         {
             try
             {
@@ -74,7 +74,7 @@ namespace HCB.UI
                 await MotionsMove(xy, $"DIE_ALIGN_{vacNum}", ct);
                 await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);
                 
-                var diePickupAlign = await communicationService.RequestVisionMarkPosition(MarkType.DIE_CENTER, CameraType.HC_LOW,"");
+                var diePickupAlign = await communicationService.RequestVisionMarkPosition(markType, CameraType.HC_LOW, "");
                 
                 _logger.Information("Die Align 종료");
                 return diePickupAlign;
@@ -83,53 +83,52 @@ namespace HCB.UI
             {
                 throw new Exception(e.Message);
             }
-
         }
 
-        public async Task DTablePickup(int vacNum, VisionMarkPositionResponse? correction, CancellationToken ct)
-        {
-            try
-            {
-                _logger.Information("Die pickup Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+        //public async Task DTablePickup(int vacNum, VisionMarkPositionResponse? correction, CancellationToken ct)
+        //{
+        //    try
+        //    {
+        //        _logger.Information("Die pickup Start");
+        //        EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);                
-                //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
+        //        var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);                
+        //        //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
 
-                string[] xy = { MotionExtensions.H_X, MotionExtensions.D_Y};
+        //        string[] xy = { MotionExtensions.H_X, MotionExtensions.D_Y};
 
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                var goPickup = await Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, 150.553, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -44.575, ct)
-                    //MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct)
-                );
+        //        await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+        //        var goPickup = await Task.WhenAll(
+        //            _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, 150.553, ct),
+        //            _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -44.575, ct)
+        //            //MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct)
+        //        );
 
-                if (!goPickup.All(r => r)) throw new Exception("픽업 위치로 이동 실패");
+        //        if (!goPickup.All(r => r)) throw new Exception("픽업 위치로 이동 실패");
                 
-                // 보정값만큼 상대 이동
-                var results = await Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, -correction?.X ?? 0, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -correction?.Y ?? 0, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, -correction?.Theta ?? 0, ct)
-                );
+        //        // 보정값만큼 상대 이동
+        //        var results = await Task.WhenAll(
+        //            _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, -correction?.X ?? 0, ct),
+        //            _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -correction?.Y ?? 0, ct),
+        //            _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, -correction?.Theta ?? 0, ct)
+        //        );
 
-                if (!results.All(r => r)) throw new Exception("보정 실패");
+        //        if (!results.All(r => r)) throw new Exception("보정 실패");
                
-                await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_PICKUP, ct);
-                await MotionsMove(MotionExtensions.h_z, MotionExtensions.DIE_PICKUP, ct);
-                var headPicker = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
-                await _sequenceHelper.DTableVacuum(vacNum, eOnOff.Off, ct);
-                if (!headPicker) throw new Exception("Head에 Pick된 Die가 없습니다");
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+        //        await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_PICKUP, ct);
+        //        await MotionsMove(MotionExtensions.h_z, MotionExtensions.DIE_PICKUP, ct);
+        //        var headPicker = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
+        //        await _sequenceHelper.DTableVacuum(vacNum, eOnOff.Off, ct);
+        //        if (!headPicker) throw new Exception("Head에 Pick된 Die가 없습니다");
+        //        await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+        //        await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        throw new Exception(e.Message);
+        //    }
 
-        }
+        //}
 
         public async Task DTableBTMPickup(int vacNum, VisionMarkPositionResponse? correction, CancellationToken ct)
         {
@@ -138,30 +137,53 @@ namespace HCB.UI
                 _logger.Information("Die pickup Start");
                 EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
-
+                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);;
                 string[] xy = { MotionExtensions.H_X, MotionExtensions.D_Y };
+                if (double.TryParse(_recipeService.FindByParam("ShankLowOffsetX").Value, out double xOffset))
+                { }
+                else
+                {
+                    throw new Exception("레시피 ShankLowOffsetX값이 Double타입이 아닙니다");
+                }
+
+                if (double.TryParse(_recipeService.FindByParam("ShankLowOffsetY").Value, out double yOffset))
+                { }
+                else
+                {
+                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
+                }
+                if (double.TryParse(_recipeService.FindByParam("BtmDieThickness").Value, out double btmDieThickness))
+                { }
+                else
+                {
+                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
+                }
+                if (double.TryParse(_recipeService.FindByParam("ShankToDieOffset").Value, out double ShankToDieOffset))
+                { }
+                else
+                {
+                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
+                }
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 var goPickup = await Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, 150.553, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -44.564, ct)
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, xOffset, ct),
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, yOffset, ct)
                 );
                 await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
                 if (!goPickup.All(r => r)) throw new Exception("픽업 위치로 이동 실패");
 
                 // 보정값만큼 상대 이동
                 var results = await Task.WhenAll(
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, -correction?.Theta ?? 0, ct),
                     _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, -correction?.X ?? 0, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -correction?.Y ?? 0, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, -correction?.Theta ?? 0, ct)
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -correction?.Y ?? 0, ct)
                 );
 
                 if (!results.All(r => r)) throw new Exception("보정 실패");
 
                 await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_PICKUP_STANBY, ct);
-                await MotionsMove(MotionExtensions.H_Z, MotionExtensions.BTM_DIE_PICKUP, ct);
+                await MotionsMove(MotionExtensions.H_Z, ShankToDieOffset-btmDieThickness, ct);
 
                 var headPicker = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
                 await Task.Delay(1000);
@@ -185,32 +207,56 @@ namespace HCB.UI
                 EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
-
                 string[] xy = { MotionExtensions.H_X, MotionExtensions.D_Y };
+                if (double.TryParse(_recipeService.FindByParam("ShankLowOffsetX").Value, out double xOffset))
+                { }
+                else
+                {
+                    throw new Exception("레시피 ShankLowOffsetX값이 Double타입이 아닙니다");
+                }
+
+                if (double.TryParse(_recipeService.FindByParam("ShankLowOffsetY").Value, out double yOffset))
+                { }
+                else
+                {
+                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
+                }
+
+                if (double.TryParse(_recipeService.FindByParam("TopDieThickness").Value, out double topDieThickness))
+                { }
+                else
+                {
+                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
+                }
+
+                if (double.TryParse(_recipeService.FindByParam("ShankToDieOffset").Value, out double ShankToDieOffset))
+                { }
+                else
+                {
+                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
+                }
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 var goPickup = await Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, 150.553, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -44.575, ct)
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, xOffset, ct),
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, yOffset, ct)
                 );
+
                 await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
                 if (!goPickup.All(r => r)) throw new Exception("픽업 위치로 이동 실패");
+                await _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, -correction?.Theta ?? 0, ct);
 
                 // 보정값만큼 상대 이동
                 var results = await Task.WhenAll(
                     _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, -correction?.X ?? 0, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -correction?.Y ?? 0, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, -correction?.Theta ?? 0, ct)
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -correction?.Y ?? 0, ct)
                 );
 
                 if (!results.All(r => r)) throw new Exception("보정 실패");
 
-                await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_PICKUP_STANBY, ct);
-                await MotionsMove(MotionExtensions.H_Z, MotionExtensions.TOP_DIE_PICKUP, ct);
+                await MotionsMove(MotionExtensions.H_Z, ShankToDieOffset-topDieThickness, ct);
 
                 var headPicker = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
-                await Task.Delay(1000);
                 await _sequenceHelper.DTableVacuum(vacNum, eOnOff.Off, ct);
                 await Task.Delay(2000);
                 if (!headPicker) throw new Exception("Head에 Pick된 Die가 없습니다");

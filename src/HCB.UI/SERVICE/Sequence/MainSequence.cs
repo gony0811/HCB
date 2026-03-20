@@ -11,7 +11,7 @@ namespace HCB.UI
 {
     public partial class SequenceService : BackgroundService
     {
-        public async Task MachineStartAsync(int topDie, int btmDie, CancellationToken ct)
+        public async Task MachineStartAsync(int topDie, int btmDie, int[] delayMs, CancellationToken ct)
         {
             try
             {
@@ -26,19 +26,21 @@ namespace HCB.UI
                 }
 
                 // 1. Btm Die 
-                // #1. BTM DIE 가 놓인 VACUUM위치로 저배율 카메라를 이동시킨다.
-                var BtmDieAlign = await DTableCarrierAlign(btmDie, ct);
+                 //#1. BTM DIE 가 놓인 VACUUM위치로 저배율 카메라를 이동시킨다.
+                var BtmDieAlign = await DTableCarrierAlign(btmDie, MarkType.DIE_CENTER_BOTTOM, ct);
                 await DTableBTMPickup(btmDie, BtmDieAlign, ct);
                 await BtmDieDrop(1, ct);
                 await Init_Head(ct);
 
                 ////2.TopDie
-                var TopDieAlign = await DTableCarrierAlign(topDie, ct);
+                var TopDieAlign = await DTableCarrierAlign(topDie, MarkType.DIE_CENTER_TOP, ct);
                 await DTableTOPPickup(topDie, TopDieAlign, ct);
 
                 //// 3. 고배율 보정
-                var topDieVisionResults = await TopDieVision(ct);
-                await TopDieDrop(ct);
+                //var topDieVisionResults = await TopDieVision(ct);
+                //await TopDieDrop(topDieVisionResults, ct, delayMs);
+                await TopDieDrop(ct, delayMs);
+                await Task.Delay(1000);
                 await Init_Head(ct);
             }
             catch (OperationCanceledException)
@@ -63,7 +65,7 @@ namespace HCB.UI
         {
             try
             {
-                var BtmDieAlign = await DTableCarrierAlign(dVac, ct);
+                var BtmDieAlign = await DTableCarrierAlign(dVac,MarkType.DIE_CENTER_BOTTOM, ct);
                 await DTableBTMPickup(dVac, BtmDieAlign, ct);
             }catch(Exception e)
             {
@@ -81,7 +83,7 @@ namespace HCB.UI
         {
             try
             {
-                var topDieAlign = await DTableCarrierAlign(dVac, ct);
+                var topDieAlign = await DTableCarrierAlign(dVac, MarkType.DIE_CENTER_TOP, ct);
                 await DTableTOPPickup(dVac, topDieAlign, ct);
             }
             catch (Exception e)

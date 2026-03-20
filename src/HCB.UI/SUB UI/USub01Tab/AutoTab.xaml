@@ -133,10 +133,11 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"></RowDefinition>
                 <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition Height="Auto"></RowDefinition>
             </Grid.RowDefinitions>
             <telerik:GroupBox Header="Running Status" FontSize="14" Style="{StaticResource GroupBoxStyle}" Margin="4">
                 <Grid local:GridHelper.Columns="1*, 1*, 1*, 1*"
-                      local:GridHelper.Rows="1*, 1*, 1*, 1*, 1*, 1*" 
+                      local:GridHelper.Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*" 
                       VerticalAlignment="Center">
 
                     <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource HeaderCell}">
@@ -192,12 +193,42 @@
                     </Border>
 
                     <Border Grid.ColumnSpan="4" Grid.Row="5" Style="{StaticResource Cell}">
-                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="실시간 Auccracy Data 보기"></telerik:RadButton>
+                        <StackPanel>
+                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="실시간 Auccracy Data 보기"></telerik:RadButton>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.ColumnSpan="4" Grid.Row="6" Style="{StaticResource Cell}">
+                        <StackPanel>
+                            
+                        </StackPanel>
                     </Border>
                     
+
+
                 </Grid>
             </telerik:GroupBox>
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="4" HorizontalAlignment="Center">
+
+            <telerik:GroupBox Header="Delay time" FontSize="14" Style="{StaticResource GroupBoxStyle}" Margin="4" Grid.Row="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="PressureTime" FontSize="14" FontWeight="Bold" Grid.Column="0"/>
+                    <TextBox Text="{Binding PressureTime}" Width="120" Grid.Column="1"/>
+
+                    <TextBlock Text="BlowTime" FontSize="14" FontWeight="Bold" Grid.Column="2"/>
+                    <TextBox Text="{Binding BlowTime}" Width="120" Grid.Column="3"/>
+                    <TextBlock Text="WaitTime" FontSize="14" FontWeight="Bold" Grid.Column="4"/>
+                    <TextBox Text="{Binding WaitTime}" Width="120" Grid.Column="5"/>
+                </Grid>
+            </telerik:GroupBox>
+            
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="4" HorizontalAlignment="Center">
                 <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineInitCommand}" Content="INITIAL" Width="120" Height="80" Margin="1"
                  local:BlinkBehavior.IsBlinking="{Binding IsInitializing}"/>
                 <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineRunCommand}" Content="START" Width="120" Height="80" Margin="1"

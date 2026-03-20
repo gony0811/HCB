@@ -141,7 +141,7 @@ namespace HCB.UI
         /// <param name="onOff"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public static async Task<bool> HeadPickerVacuum(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
+        public static async Task<bool> HeadPickerVacuum(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct, int delayMs = 5000)
         {
             var bOnOff = onOff == eOnOff.On;
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
@@ -150,10 +150,18 @@ namespace HCB.UI
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
                 return false; // device null이면 종료
             }
-
-            device.SetDigital(DO_HEADER_EJECTOR_VAC_ON, bOnOff);
             
-            await helper.DelayAsync(600, ct); // 명령 처리 대기
+            if (bOnOff)
+            {
+                device.SetDigital(DO_HEADER_EJECTOR_VAC_ON, true);
+            }
+            else
+            {
+                device.SetDigital(DO_HEADER_EJECTOR_VAC_ON, false);
+                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, true);
+                await Task.Delay(delayMs);
+                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, false);
+            }
 
             //return await helper.WaitUntilAsync(
             //    () => device.GetDigital(DI_HEADER_VAC_EJECTOR) == bOnOff,
@@ -262,7 +270,7 @@ namespace HCB.UI
                 {
                     device.SetDigital(doOn, false, helper.IsSimulation);
                     device.SetDigital(doRelease, true, helper.IsSimulation);
-                    await Task.Delay(200);
+                    await Task.Delay(100);
                     device.SetDigital(doRelease, false, helper.IsSimulation);
                 }
                     

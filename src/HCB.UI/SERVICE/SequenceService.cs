@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Serilog;
 using HCB.IoC;
 using System.Threading;
+using HCB.Data.Repository;
 
 namespace HCB.UI
 {
@@ -19,10 +20,12 @@ namespace HCB.UI
         private readonly bool _simulation;
         private readonly EqpCommunicationService communicationService;
         private readonly SemaphoreSlim _pollingLock = new SemaphoreSlim(1, 1);
+        private readonly RecipeService _recipeService;
 
         private CancellationToken _stopToken = CancellationToken.None;
 
-        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, AlarmService alarmService, SequenceServiceVM sequenceServiceVM, EqpCommunicationService communicationService)
+        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, AlarmService alarmService, 
+            SequenceServiceVM sequenceServiceVM, EqpCommunicationService communicationService, RecipeService recipeService)
         {
             _logger = logger.ForContext<SequenceService>();
             _deviceManager = deviceManager;
@@ -30,6 +33,7 @@ namespace HCB.UI
             _operationService = operationService;
             _alarmService = alarmService;
             _sequenceServiceVM = sequenceServiceVM;
+            _recipeService = recipeService;
             _simulation = dataOptions.Simulation;
             this.communicationService = communicationService;
         }

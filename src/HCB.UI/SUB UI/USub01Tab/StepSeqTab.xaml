@@ -16,50 +16,9 @@
     </UserControl.Resources>
 
     <telerik:RadTabControl Style="{StaticResource RadTabControlStyle}">
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="0. PRE-TEST" Margin="1">
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="0. Setting" Margin="1">
             <StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
-                    <Button Content="WAFER LOAD" Command="{Binding WaferLoadCommand}" Margin="2" Width="100" Height="80"/>
-                    <Button Content="WAFER LOAD COMPLETE" Command="{Binding WaferLoadCommand}" Margin="2" Width="150" Height="80"/>
-                    <Button Content="DIE LOAD" Command="{Binding DieLoadCommand}" Margin="2" Width="100" Height="80"/>
-                </StackPanel>
-                <TextBlock Text="DIE PICKUP" TextAlignment="Center" FontSize="20"></TextBlock>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button Content="DiePickUp" Command="{Binding DiePickupCommand}" Margin="10"/>
-                    <Button Content="BottomVision" Command="{Binding BottomVisionCommand}" Margin="10"/>
-                    <Button Content="Bonding" Command="{Binding BondingCommand}" Margin="10"/>
-                </StackPanel>
-                <TextBlock Text="단위 테스트" TextAlignment="Center" FontSize="20"></TextBlock>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button Content="ALL HOME" Command="{Binding AllHomeCommand}" Margin="10"/>
-                    <Button Content="WVacSwitch" Command="{Binding WVacOnCommand}" Margin="10"/>
-                    <Button Content="DVacSwitch" Command="{Binding DVacOnCommand}" Margin="10"/>
-                    <Button Content="PinUp" Command="{Binding WPinUpCommand}" Margin="10"/>
-                    <Button Content="PinDown" Command="{Binding WPinDownCommand}" Margin="10"/>
-                </StackPanel>
-                <TextBlock Text="DRY RUN" TextAlignment="Center" FontSize="20"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button Content="Dry Run" Margin="10" Command="{Binding DryRunCommand}"/>
-                    <Button Content="Stop" Margin="10" Command="{Binding StopCommand}"/>
-                </StackPanel>
-
-                <TextBlock Text="TCP" TextAlignment="Center" FontSize="20"/>
-
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button Content="Align 요청" Margin="10" Command="{Binding RequestAlignCommand}"></Button>
-                    <Button Content="AF 요청" Margin="10" Command="{Binding RequestAFStartCommand}"></Button>
-                    <Button Content="Align 요청" Margin="10" Command="{Binding RequestAlign}"></Button>
-                </StackPanel>
-
-                <TextBlock Text="시퀀스 테스트" TextAlignment="Center" FontSize="20">
-
-                </TextBlock>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button Content="BTM DIe PICKUP" Margin="10" Command="{Binding BTMPickCommand}"/>
-                    <Button Content="BTM DIe PICKUP" Margin="10" Command="{Binding BTMPlaceCommand}"/>
-                    <Button Content="TOP DIe PICKUP" Margin="10" Command="{Binding TopPickCommand}"/>
-                    <Button Content="PTableAlign" Margin="10" Command="{Binding PTableAlignCommand}"/>
-                </StackPanel>
+            
             </StackPanel>
 
         </telerik:RadTabItem>
@@ -193,11 +152,11 @@
                                                                     FontSize="18"/>
                                                 <!-- 토글 -->
                                                 <local:IoPillToggle
-                                            Grid.Column="1"
-                                            IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                            IsReadOnly="True"
-                                            Command="{Binding ToggleCommand}"
-                                            CommandParameter="{Binding}"/>
+                                                    Grid.Column="1"
+                                                    IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                                    IsReadOnly="True"
+                                                    Command="{Binding ToggleCommand}"
+                                                    CommandParameter="{Binding}"/>
                                             </StackPanel>
                                             <!-- 센서 이름 -->
                                         </Border>
@@ -208,10 +167,10 @@
                                 <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding DieLoadCommand}">
                                     <telerik:HighlightTextBlock Text="Load"/>
                                 </telerik:RadButton>
-
-                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding DieCompleteCommand}">
-                                    <telerik:HighlightTextBlock Text="Complete"/>
+                                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding DieResetCommand}">
+                                    <telerik:HighlightTextBlock Text="Reset"/>
                                 </telerik:RadButton>
+
                             </StackPanel>
                         </Grid>
                     </telerik:GroupBox>
@@ -227,6 +186,7 @@
                                     Margin="{StaticResource ControlMargin}"
                                     ItemsSource="{Binding WaferSizeList}"
                                     SelectedItem="{Binding SelectedWaferSize, Mode=TwoWay}"
+                                    Foreground="Black"
                                     Style="{StaticResource RadComboBoxStyle}"/>
                                 
                                 <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferLoadCommand}">
@@ -244,58 +204,332 @@
         </telerik:RadTabItem>
 
 
-        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="3. WAFER ALIGN" Margin="1">
-            <Grid local:GridHelper.Rows="Auto, *, Auto"  Margin="20" >
-                <StackPanel Grid.Row="0">
-                    <TextBlock Text="Wafer Align" FontSize="28" FontWeight="Bold" Foreground="#4A69BD"/>
-                    <Rectangle Height="2" Fill="#3498DB" Margin="0,5,0,0"/>
-                    <TextBlock Text="Wafer Align Sequence" FontSize="14" Foreground="#7F8C8D" Margin="0,5,0,20"/>
-                </StackPanel>
+        <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="3. ALIGN" Margin="1">
+            <Grid local:GridHelper.Rows="Auto, Auto" Margin="10,6">
 
-                <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1">
-                    <Grid local:GridHelper.Columns="Auto, *" local:GridHelper.Rows="*, Auto">
-                        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="진행도" FontSize="18" Grid.Column="0" Margin="2">
-                            <StackPanel>
-                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferCenterMeasure}" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Center Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
-                                </WrapPanel>
-
-                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferLeftMeasure}" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Left Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
-                                </WrapPanel>
-                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferRightMeasure}" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Right Align 측정" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
-                                </WrapPanel>
-                                <WrapPanel Orientation="Horizontal" Margin="{StaticResource ControlMargin}">
-                                    <local:StepLamp Style="{StaticResource StepLampStyle}" State="{Binding SequenceServiceVM.WaferAlign}" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="Wafer Align" FontSize="16" Width="150" Margin="{StaticResource ControlMargin}"/>
-                                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding SequenceServiceVM.StepWaferCenterMoveElapsedTime}" Width="100" Margin="{StaticResource ControlMargin}"/>
-                                </WrapPanel>
-                            </StackPanel>
-                        </telerik:GroupBox>
-                        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="측정 Image" FontSize="18" Grid.Column="1" Margin="2">
-                            <Border Width="500" Height="500"></Border>
-                        </telerik:GroupBox>
-
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.ColumnSpan="2" Grid.Row="2" Margin="{StaticResource ControlMargin}">
-                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding WaferAlignCommand}">
-                                <telerik:HighlightTextBlock Text="START"/>
-                            </telerik:RadButton>
-
-                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Width="100" Height="30" Margin="{StaticResource ControlMargin}" Command="{Binding StopCommand}">
-                                <telerik:HighlightTextBlock Text="STOP"/>
-                            </telerik:RadButton>
+                <!-- ══════════════════════════════════════════════════════════════ HEADER -->
+                <Border Grid.Row="0" Background="#0D1B2A" CornerRadius="4" Padding="10,6" Margin="0,0,0,6">
+                    <Grid local:GridHelper.Columns="*, Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Rectangle Width="3" Height="18" Fill="#3498DB" RadiusX="1" RadiusY="1" Margin="0,0,8,0"/>
+                            <TextBlock Text="Pick &amp; Place" FontSize="16" FontWeight="Bold" Foreground="#ECF0F1" VerticalAlignment="Center"/>
+                            <Border Background="#1A3A5C" CornerRadius="3" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="Wafer Align Sequence" FontSize="10" Foreground="#3498DB" FontWeight="SemiBold"/>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Ellipse Width="7" Height="7" Fill="#2ECC71" Margin="0,0,5,0"/>
+                            <TextBlock Text="READY" FontSize="10" Foreground="#2ECC71" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
+                </Border>
+
+                <!-- ══════════════════════════════════════════════════════════ MAIN BODY -->
+                <Grid Grid.Row="1" local:GridHelper.Rows="Auto, Auto">
+
+                    <!-- ─────────────────────── ROW 0: DIE ALIGN / PICK UP / PLACE (compact) -->
+                    <Border Grid.Row="0" Background="#0D1B2A" CornerRadius="4" Padding="8,6" Margin="0,0,0,6">
+                        <Grid local:GridHelper.Columns="Auto, 1, *, 1, *">
+
+                            <!-- DIE ALIGN -->
+                            <StackPanel Grid.Column="0" Width="450">
+                                <TextBlock Text="DIE ALIGN" FontSize="14" FontWeight="Bold" Foreground="#3498DB" Margin="0,0,0,4"/>
+                                <!-- 저배율 -->
+                                <Grid local:GridHelper.Columns="34, *, 52" Margin="0,0,0,3">
+                                    <TextBlock Grid.Column="0" Text="저배율" FontSize="12" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                                    <telerik:RadComboBox Grid.Column="1"
+                            ItemsSource="{Binding DieTypeList}" SelectedItem="{Binding SelectedDieType}"
+                            Style="{StaticResource RadComboBoxStyle}" Height="24" Margin="4,0"/>
+                                    <Button Grid.Column="2" Content="보정" Command="{Binding DieLowAlignCommand}"/>
+                                </Grid>
+                                <!-- 고배율 -->
+                                <Grid local:GridHelper.Columns="34, *, *, *, 52">
+                                    <TextBlock Grid.Column="0" Text="고배율" FontSize="12" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                                    <telerik:RadComboBox Grid.Column="1"
+                            ItemsSource="{Binding DieTypeList}" SelectedItem="{Binding SelectedDieType}"
+                            Style="{StaticResource RadComboBoxStyle}" Height="24" Margin="4,0,2,0"/>
+                                    <telerik:RadComboBox Grid.Column="2"
+                            ItemsSource="{Binding DirectTypeList}" SelectedItem="{Binding SelectedDirectType}"
+                            Style="{StaticResource RadComboBoxStyle}" Height="24" Margin="0,0,2,0"/>
+                                    <telerik:RadComboBox Grid.Column="3"
+                            ItemsSource="{Binding MarkTypeList}" SelectedItem="{Binding SelectedMarkType}"
+                            Style="{StaticResource RadComboBoxStyle}" Height="24" Margin="0,0,4,0"/>
+                                    <Button Grid.Column="4" Content="보정"  Command="{Binding DieHighAlignCommand}"/>
+                                </Grid>
+                                <!-- Coord readout (RIGHT/LEFT X Y) -->
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="X" FontSize="9" FontWeight="Bold" Foreground="#3498DB" HorizontalAlignment="Center"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Y" FontSize="9" FontWeight="Bold" Foreground="#3498DB" HorizontalAlignment="Center"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="RIGHT" FontSize="9" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TopRightAlign.CenterX, StringFormat=F4}" FontSize="10" Foreground="#ECF0F1" HorizontalAlignment="Center"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding TopRightAlign.CenterY, StringFormat=F4}" FontSize="10" Foreground="#ECF0F1" HorizontalAlignment="Center"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="LEFT" FontSize="9" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TopLeftAlign.CenterX, StringFormat=F4}" FontSize="10" Foreground="#ECF0F1" HorizontalAlignment="Center"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding TopLeftAlign.CenterY, StringFormat=F4}" FontSize="10" Foreground="#ECF0F1" HorizontalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <Rectangle Grid.Column="1" Fill="#1A3A5C" Width="1" Margin="10,0"/>
+
+                            <!-- PICK UP -->
+                            <StackPanel Grid.Column="2" VerticalAlignment="Top" Margin="10,0">
+                                <TextBlock Text="PICK UP" FontSize="14" FontWeight="Bold" Foreground="#E67E22" Margin="0,0,0,4"/>
+                                <telerik:RadComboBox
+                        ItemsSource="{Binding DieTypeList}" SelectedItem="{Binding SelectedDieType}"
+                        Style="{StaticResource RadComboBoxStyle}" Height="24" Margin="0,0,0,5"/>
+                                <Button Content="선택 실행" Height="26" Command="{Binding DiePickupCommand}"/>
+                            </StackPanel>
+
+                            <Rectangle Grid.Column="3" Fill="#1A3A5C" Width="1" Margin="10,0"/>
+
+                            <!-- PLACE -->
+                            <StackPanel Grid.Column="4" VerticalAlignment="Top" Margin="10,0">
+                                <TextBlock Text="PLACE" FontSize="14" FontWeight="Bold" Foreground="#2ECC71" Margin="0,0,0,4"/>
+                                <telerik:RadComboBox
+                        ItemsSource="{Binding DieTypeList}" SelectedItem="{Binding SelectedDieType}"
+                        Style="{StaticResource RadComboBoxStyle}" Height="24" Margin="0,0,0,5"/>
+                                <Button Content="선택 실행" Height="26" Command="{Binding DiePlaceCommand}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="ERROR X" FontSize="14" FontWeight="Bold" Foreground="#2ECC71" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding ErrorX}"/>
+
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="ERROR Y" FontSize="14" FontWeight="Bold" Foreground="#E67E22" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding ErrorY}"/>
+
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2"> 
+                                        <TextBlock Text="ERROR T" FontSize="14" FontWeight="Bold" Foreground="BlueViolet" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding ErrorT}"/>
+                                    </StackPanel>
+
+                                </Grid>
+                            </StackPanel>
+
+                        </Grid>
+                    </Border>
+
+                    <!-- ─────────────────────────────── ROW 1: BOTTOM DIE — compact flat table -->
+                    <Border Grid.Row="1" Background="#0D1B2A" CornerRadius="4" Padding="8,6">
+                        <StackPanel>
+
+                            <!-- Section label -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                <Rectangle Width="3" Height="13" Fill="#9B59B6" RadiusX="1" RadiusY="1" Margin="0,0,6,0"/>
+                                <TextBlock Text="BOTTOM DIE" FontSize="10" FontWeight="Bold" Foreground="#9B59B6" VerticalAlignment="Center"/>
+                                <TextBlock Text=" — Alignment Result Data" FontSize="10" Foreground="#566573" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!--
+                    Flat 5-column table:
+                    Col 0 (46): LEFT / RIGHT label
+                    Col 1-2 (*): FID X / Y
+                    Col 3-4 (*): FID ERR X / Y
+                    Col 5-6 (*): ALIGN X / Y
+                    Col 7-8 (*): ALIGN ERR X / Y
+                    Col 9 (100): FID THETA + ALIGN THETA (rowspan)
+                -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="44"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="3"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- ── HEADER ROW ── -->
+                                <TextBlock Grid.Row="0" Grid.Column="0"/>
+                                <!-- FID header -->
+                                <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                               Text="FID" FontSize="9" FontWeight="Bold" Foreground="#3498DB"
+                               HorizontalAlignment="Center" Margin="0,0,0,3"/>
+                                <!-- FID ERR header -->
+                                <TextBlock Grid.Row="0" Grid.Column="4" Grid.ColumnSpan="2"
+                               Text="FID ERROR" FontSize="9" FontWeight="Bold" Foreground="#E74C3C"
+                               HorizontalAlignment="Center" Margin="0,0,0,3"/>
+                                <!-- ALIGN header -->
+                                <TextBlock Grid.Row="0" Grid.Column="7" Grid.ColumnSpan="2"
+                               Text="ALIGN" FontSize="9" FontWeight="Bold" Foreground="#2ECC71"
+                               HorizontalAlignment="Center" Margin="0,0,0,3"/>
+                                <!-- ALIGN ERR header -->
+                                <TextBlock Grid.Row="0" Grid.Column="10" Grid.ColumnSpan="2"
+                               Text="ALIGN ERROR" FontSize="9" FontWeight="Bold" Foreground="#E67E22"
+                               HorizontalAlignment="Center" Margin="0,0,0,3"/>
+                                <!-- THETA header -->
+                                <TextBlock Grid.Row="0" Grid.Column="13"
+                               Text="THETA" FontSize="14" FontWeight="Bold" Foreground="#9B59B6"
+                               HorizontalAlignment="Center" Margin="0,0,0,3"/>
+
+                                <!-- ── LEFT ROW ── -->
+                                <Border Grid.Row="1" Grid.Column="0" Background="#0A1520" CornerRadius="3" Padding="3,3" Margin="0,0,3,0" VerticalAlignment="Stretch">
+                                    <TextBlock Text="LEFT" FontSize="9" FontWeight="Bold" Foreground="#95A5A6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <Border Grid.Row="1" Grid.Column="1" Background="#0A1520" CornerRadius="3,0,0,3" Padding="5,3" Margin="0,0,1,0">
+                                    <StackPanel>
+                                        <TextBlock Text="X" FontSize="8" Foreground="#3498DB"/>
+                                        <TextBlock Text="{Binding BottomDie.LeftFid.X, StringFormat=F4}" FontSize="11" Foreground="#ECF0F1" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="2" Background="#0A1520" CornerRadius="0,3,3,0" Padding="5,3">
+                                    <StackPanel>
+                                        <TextBlock Text="Y" FontSize="8" Foreground="#3498DB"/>
+                                        <TextBlock Text="{Binding BottomDie.LeftFid.Y, StringFormat=F4}" FontSize="11" Foreground="#ECF0F1" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="1" Grid.Column="4" Background="#0A1520" CornerRadius="3,0,0,3" Padding="5,3" Margin="0,0,1,0">
+                                    <StackPanel>
+                                        <TextBlock Text="X" FontSize="8" Foreground="#E74C3C"/>
+                                        <TextBlock Text="{Binding BottomDie.LeftFidError.X, StringFormat=F4}" FontSize="11" Foreground="#E74C3C" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="5" Background="#0A1520" CornerRadius="0,3,3,0" Padding="5,3">
+                                    <StackPanel>
+                                        <TextBlock Text="Y" FontSize="8" Foreground="#E74C3C"/>
+                                        <TextBlock Text="{Binding BottomDie.LeftFidError.Y, StringFormat=F4}" FontSize="11" Foreground="#E74C3C" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="1" Grid.Column="7" Background="#0A1520" CornerRadius="3,0,0,3" Padding="5,3" Margin="0,0,1,0">
+                                    <StackPanel>
+                                        <TextBlock Text="X" FontSize="8" Foreground="#2ECC71"/>
+                                        <TextBlock Text="{Binding BottomDie.LeftAlign.X, StringFormat=F4}" FontSize="11" Foreground="#ECF0F1" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="8" Background="#0A1520" CornerRadius="0,3,3,0" Padding="5,3">
+                                    <StackPanel>
+                                        <TextBlock Text="Y" FontSize="8" Foreground="#2ECC71"/>
+                                        <TextBlock Text="{Binding BottomDie.LeftAlign.Y, StringFormat=F4}" FontSize="11" Foreground="#ECF0F1" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="1" Grid.Column="10" Background="#0A1520" CornerRadius="3,0,0,3" Padding="5,3" Margin="0,0,1,0">
+                                    <StackPanel>
+                                        <TextBlock Text="X" FontSize="8" Foreground="#E67E22"/>
+                                        <TextBlock Text="{Binding BottomDie.LeftAlignError.X, StringFormat=F4}" FontSize="11" Foreground="#E67E22" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="11" Background="#0A1520" CornerRadius="0,3,3,0" Padding="5,3">
+                                    <StackPanel>
+                                        <TextBlock Text="Y" FontSize="8" Foreground="#E67E22"/>
+                                        <TextBlock Text="{Binding BottomDie.LeftAlignError.Y, StringFormat=F4}" FontSize="11" Foreground="#E67E22" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- THETA cell spans LEFT + spacer + RIGHT rows -->
+                                <Border Grid.Row="1" Grid.RowSpan="3" Grid.Column="13"
+                            Background="#0A1520" CornerRadius="4" Padding="6,4">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="FID" FontSize="8" Foreground="#7F8C8D" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding BottomDie.FidTheta, StringFormat=F6}"
+                                       FontSize="13" FontWeight="Bold" Foreground="#9B59B6" HorizontalAlignment="Center"/>
+                                        <Rectangle Height="1" Fill="#1A2A3A" Margin="2,4"/>
+                                        <TextBlock Text="ALIGN" FontSize="8" Foreground="#7F8C8D" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding BottomDie.AlignTheta, StringFormat=F6}"
+                                       FontSize="13" FontWeight="Bold" Foreground="#8E44AD" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- ── RIGHT ROW ── -->
+                                <Border Grid.Row="3" Grid.Column="0" Background="#0A1520" CornerRadius="3" Padding="3,3" Margin="0,0,3,0" VerticalAlignment="Stretch">
+                                    <TextBlock Text="RIGHT" FontSize="9" FontWeight="Bold" Foreground="#95A5A6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <Border Grid.Row="3" Grid.Column="1" Background="#0A1520" CornerRadius="3,0,0,3" Padding="5,3" Margin="0,0,1,0">
+                                    <StackPanel>
+                                        <TextBlock Text="X" FontSize="8" Foreground="#3498DB"/>
+                                        <TextBlock Text="{Binding BottomDie.RightFid.X, StringFormat=F4}" FontSize="11" Foreground="#ECF0F1" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="3" Grid.Column="2" Background="#0A1520" CornerRadius="0,3,3,0" Padding="5,3">
+                                    <StackPanel>
+                                        <TextBlock Text="Y" FontSize="8" Foreground="#3498DB"/>
+                                        <TextBlock Text="{Binding BottomDie.RightFid.Y, StringFormat=F4}" FontSize="11" Foreground="#ECF0F1" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="3" Grid.Column="4" Background="#0A1520" CornerRadius="3,0,0,3" Padding="5,3" Margin="0,0,1,0">
+                                    <StackPanel>
+                                        <TextBlock Text="X" FontSize="8" Foreground="#E74C3C"/>
+                                        <TextBlock Text="{Binding BottomDie.RightFidError.X, StringFormat=F4}" FontSize="11" Foreground="#E74C3C" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="3" Grid.Column="5" Background="#0A1520" CornerRadius="0,3,3,0" Padding="5,3">
+                                    <StackPanel>
+                                        <TextBlock Text="Y" FontSize="8" Foreground="#E74C3C"/>
+                                        <TextBlock Text="{Binding BottomDie.RightFidError.Y, StringFormat=F4}" FontSize="11" Foreground="#E74C3C" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="3" Grid.Column="7" Background="#0A1520" CornerRadius="3,0,0,3" Padding="5,3" Margin="0,0,1,0">
+                                    <StackPanel>
+                                        <TextBlock Text="X" FontSize="8" Foreground="#2ECC71"/>
+                                        <TextBlock Text="{Binding BottomDie.RightAlign.X, StringFormat=F4}" FontSize="11" Foreground="#ECF0F1" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="3" Grid.Column="8" Background="#0A1520" CornerRadius="0,3,3,0" Padding="5,3">
+                                    <StackPanel>
+                                        <TextBlock Text="Y" FontSize="8" Foreground="#2ECC71"/>
+                                        <TextBlock Text="{Binding BottomDie.RightAlign.Y, StringFormat=F4}" FontSize="11" Foreground="#ECF0F1" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="3" Grid.Column="10" Background="#0A1520" CornerRadius="3,0,0,3" Padding="5,3" Margin="0,0,1,0">
+                                    <StackPanel>
+                                        <TextBlock Text="X" FontSize="8" Foreground="#E67E22"/>
+                                        <TextBlock Text="{Binding BottomDie.RightAlignError.X, StringFormat=F4}" FontSize="11" Foreground="#E67E22" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="3" Grid.Column="11" Background="#0A1520" CornerRadius="0,3,3,0" Padding="5,3">
+                                    <StackPanel>
+                                        <TextBlock Text="Y" FontSize="8" Foreground="#E67E22"/>
+                                        <TextBlock Text="{Binding BottomDie.RightAlignError.Y, StringFormat=F4}" FontSize="11" Foreground="#E67E22" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
                 </Grid>
-                
             </Grid>
+
         </telerik:RadTabItem>
         
         

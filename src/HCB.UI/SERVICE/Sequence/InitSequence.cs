@@ -137,22 +137,6 @@ namespace HCB.UI
         {
             try
             {
-                //this._logger.Debug("Head 초기화 시작");
-                //var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                //var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
-                //// Head 초기화 로직 구현
-                //var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // Head Z(L)축 (예시)
-                //var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); // Head Z(S)축 (예시)
-
-                //if (H_Z is null || !H_Z.IsEnabled || !H_Z.IsHomeDone) throw new Exception("H_Z축이 준비되지 않았습니다. H_Z축 Servo On, Home 실행여부를 확인하십시요.");
-                //if (h_z is null || !h_z.IsEnabled || !h_z.IsHomeDone) throw new Exception("h_z축이 준비되지 않았습니다. h_z축 Servo On, Home 실행여부를 확인하십시요.");
-
-                //if (H_Z.IsBusy || h_z.IsBusy) throw new Exception("Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
-
-                //// Head Z축 안전 위치로 이동
-                //Task HZ = _sequenceHelper.MoveAsync(H_Z.MotorNo, MotionExtensions.HEAD_SAFETY, ct);
-                //Task hz = _sequenceHelper.MoveAsync(h_z.MotorNo, MotionExtensions.HEAD_SAFETY, ct);
-                //await Task.WhenAll(HZ, hz);
 
                 this._logger.Debug("Head 초기화 시작");
                 var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
@@ -189,6 +173,19 @@ namespace HCB.UI
             }
         }
 
+        public async Task<double> GetPosition(string motionName, string positionName, CancellationToken ct)
+        {
+            var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var motion = motionDevice?.FindMotionByName(motionName);
+            if (motion == null)
+                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+            var position = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
+            if (position == null)
+                throw new Exception($"[Position Error] '{positionName}' 위치 정보 없음");
+            _logger.Information($"Position of {motionName} - {positionName}: {position.Position}");
+            return position.Position;
+        }
+
         public async Task MotionsMove(string motionName, string positionName, CancellationToken ct)
         {
             var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
@@ -221,6 +218,39 @@ namespace HCB.UI
 
             await Task.Delay(200, ct);
         }
+
+        public async Task MotionsMove(string motionName, string positionName, double offset, CancellationToken ct)
+        {
+            var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var motion = motionDevice?.FindMotionByName(motionName);
+
+            if (motion == null)
+                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+
+            var position = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
+            if (position == null)
+                throw new Exception($"[Position Error] '{positionName}' 위치 정보 없음");
+
+            // 이동 명령
+            await motion.Move(MoveType.Absolute, 100, position.Speed, position.Position + offset);
+
+            // InPosition 안정화 대기 (이동 시작 직후 InPosition이 false로 전환될 때까지 대기)
+            int retry = 0;
+            while (motion.InPosition && retry < 5)
+            {
+                await Task.Delay(20, ct);
+                retry++;
+            }
+
+            // 이동 완료 대기
+            await _sequenceHelper.WaitUntilAsync(
+                () => motion.InPosition,
+                60000, ct,
+                $"[Motion Timeout] '{motionName}' 이동 시간 초과"
+            );
+            await Task.Delay(200, ct);
+        }
+
 
         public async Task MotionsMove(string motionName, double position, CancellationToken ct)
         {
@@ -513,8 +543,6 @@ namespace HCB.UI
                     await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct);
                 }
 
-                   
-
             }
             catch (OperationCanceledException)
             {
@@ -526,5 +554,7 @@ namespace HCB.UI
                 throw;
             }
         }
+
+        
     }
 }
