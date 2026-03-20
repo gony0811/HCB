@@ -262,6 +262,7 @@
   <Compile Include="SUB UI\USub01Tab\StepLamp.cs" />
   <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\AlarmModalViewModel.cs" />
+  <Compile Include="SUB UI\ViewModels\CalibrationViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\DieMeasurement.cs" />
   <Compile Include="SUB UI\ViewModels\MotionMoveVM.cs" />
   <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />

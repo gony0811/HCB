@@ -34,7 +34,7 @@ namespace HCB.UI
         // 테스트를 위해 만들어진 버전입니다. 실제로는 아래의 버전을 사용해야합니다. 
         public async Task TopDieDrop(CancellationToken ct, int[] delayMs = null)
         {
-            delayMs ??= new int[] { 5000, 5000, 5000 };
+            delayMs ??= new int[] { 1000, 1000, 8000 };
             VisionMarkResult rightFid = new VisionMarkResult
             {
                 MarkType = MarkType.FIDUCIAL,
@@ -113,7 +113,7 @@ namespace HCB.UI
 
 
         // 아래는 TopDieDrop 함수의 기존 버전입니다. 위의 버전은 테스트를 위해 만들어진 버전입니다.
-        public async Task TopDieDrop(Dictionary<string, VisionMarkResult> topVisionMarkResult, CancellationToken ct, int[] delayMs = null)
+        public async Task<(double moveX, double moveY, double moveTheta)> TopDieDrop(Dictionary<string, VisionMarkResult> topVisionMarkResult, CancellationToken ct, int[] delayMs = null)
         {
 
             delayMs ??= new int[] { 5000, 5000, 5000 };
@@ -188,11 +188,11 @@ namespace HCB.UI
             leftFid.DxCamToMark = lFid.X;
             leftFid.DyCamToMark = lFid.Y;
 
-            //await communicationService.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, ct);
-            //var lAlign = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
-            //if (lAlign.Result == Result.NG) throw new Exception("Left Align 측정 실패");
-            //leftAlign.DxCamToMark = lAlign.X;
-            //leftAlign.DyCamToMark = lAlign.Y;
+            await communicationService.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, ct);
+            var lAlign = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
+            if (lAlign.Result == Result.NG) throw new Exception("Left Align 측정 실패");
+            leftAlign.DxCamToMark = lAlign.X;
+            leftAlign.DyCamToMark = lAlign.Y;
 
             await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
             var rFid = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
@@ -200,34 +200,34 @@ namespace HCB.UI
             rightFid.DxCamToMark = rFid.X;
             rightFid.DyCamToMark = rFid.Y;
 
-            //await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, ct);
-            //var rAlign = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
-            //if (rAlign.Result == Result.NG) throw new Exception("Right Align 측정 실패");
-            //rightAlign.DxCamToMark = rAlign.X;
-            //rightAlign.DyCamToMark = rAlign.Y;
+            await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, ct);
+            var rAlign = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
+            if (rAlign.Result == Result.NG) throw new Exception("Right Align 측정 실패");
+            rightAlign.DxCamToMark = rAlign.X;
+            rightAlign.DyCamToMark = rAlign.Y;
 
-            //var fidToDie = CalibrationService.FidToDie(topVisionMarkResult["RIGHT_FID"], topVisionMarkResult["RIGHT_ALIGN"]);
-            //var dTheta_die = CalibrationService.CalcTheta(
-            //        topVisionMarkResult["RIGHT_FID"],
-            //        topVisionMarkResult["LEFT_FID"]
-            //) - CalibrationService.CalcTheta(
-            //        topVisionMarkResult["RIGHT_ALIGN"],
-            //        topVisionMarkResult["LEFT_ALIGN"]
-            //);
+            var fidToDie = CalibrationService.FidToDie(topVisionMarkResult["RIGHT_FID"], topVisionMarkResult["RIGHT_ALIGN"]);
+            var dTheta_die = CalibrationService.CalcTheta(
+                    topVisionMarkResult["RIGHT_FID"],
+                    topVisionMarkResult["LEFT_FID"]
+            ) - CalibrationService.CalcTheta(
+                    topVisionMarkResult["RIGHT_ALIGN"],
+                    topVisionMarkResult["LEFT_ALIGN"]
+            );
 
-            //var fidToWafer = CalibrationService.FidToWafer(rightFid, rightAlign);
-            //var dTheta_wafer = CalibrationService.WaferCalcTheta(rightFid, leftFid, CenterToHC2OffsetX, CenterToHC2OffsetY) - CalibrationService.WaferCalcTheta(rightAlign, leftAlign, CenterToHC2OffsetX, CenterToHC2OffsetY);
+            var fidToWafer = CalibrationService.FidToWafer(rightFid, rightAlign);
+            var dTheta_wafer = CalibrationService.WaferCalcTheta(rightFid, leftFid, CenterToHC2OffsetX, CenterToHC2OffsetY) - CalibrationService.WaferCalcTheta(rightAlign, leftAlign, CenterToHC2OffsetX, CenterToHC2OffsetY);
 
-            //var xyt = CalculateRelativeBondingMove(
-            //    fidToDie.X, fidToDie.Y, dTheta_die,
-            //    fidToWafer.X, fidToWafer.Y, dTheta_wafer
-            //);
+            var xyt = CalculateRelativeBondingMove(
+                fidToDie.X, fidToDie.Y, dTheta_die,
+                fidToWafer.X, fidToWafer.Y, dTheta_wafer
+            );
 
-            //await Task.WhenAll(
-            //    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 0, xyt.moveX, ct),
-            //    _sequenceHelper.RelativeMoveAsync(MotionExtensions.W_Y, 0, xyt.moveY, ct),
-            //    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, xyt.moveTheta, ct)
-            //);
+            await Task.WhenAll(
+                _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 0, xyt.moveX, ct),
+                _sequenceHelper.RelativeMoveAsync(MotionExtensions.W_Y, 0, xyt.moveY, ct),
+                _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, xyt.moveTheta, ct)
+            );
             //await Pressurize();
             await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness, ct);
             await Task.Delay(delayMs[0]);
@@ -239,6 +239,7 @@ namespace HCB.UI
             //await _sequenceHelper.RelativeMoveAsync(MotionExtensions.W_Y, 0, xyt.moveY, ct);
 
             if (!result) throw new Exception("HeadPicker를 확인해주세요");
+            return xyt;
         }
 
         // 가압 시퀀스

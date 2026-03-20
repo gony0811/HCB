@@ -37,9 +37,9 @@ namespace HCB.UI
                 await DTableTOPPickup(topDie, TopDieAlign, ct);
 
                 //// 3. 고배율 보정
-                //var topDieVisionResults = await TopDieVision(ct);
-                //await TopDieDrop(topDieVisionResults, ct, delayMs);
-                await TopDieDrop(ct, delayMs);
+                var topDieVisionResults = await TopDieVision(ct);
+                await TopDieDrop(topDieVisionResults, ct, delayMs);
+                //await TopDieDrop(ct, delayMs);
                 await Task.Delay(1000);
                 await Init_Head(ct);
             }

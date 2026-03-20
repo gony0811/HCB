@@ -171,7 +171,8 @@ namespace HCB.UI
         DIE_CENTER,
         FIDUCIAL,
         CORNER,
-        ALIGN_MARK
+        ALIGN_MARK,
+        ALIGN_MARK_TOP
     }
     
     public enum CameraType

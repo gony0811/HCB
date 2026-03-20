@@ -205,7 +205,7 @@
 
 
         <telerik:RadTabItem Style="{StaticResource RadTabItemStyle}" Header="3. ALIGN" Margin="1">
-            <Grid local:GridHelper.Rows="Auto, Auto" Margin="10,6">
+            <Grid local:GridHelper.Rows="Auto, Auto, Auto" Margin="10,6">
 
                 <!-- ══════════════════════════════════════════════════════════════ HEADER -->
                 <Border Grid.Row="0" Background="#0D1B2A" CornerRadius="4" Padding="10,6" Margin="0,0,0,6">
@@ -527,6 +527,10 @@
                         </StackPanel>
                     </Border>
 
+                </Grid>
+
+                <Grid Grid.Row="2">
+                    <Button Content="RequestMark" Command="{Binding RequestMarksCommand}"/>
                 </Grid>
             </Grid>
 

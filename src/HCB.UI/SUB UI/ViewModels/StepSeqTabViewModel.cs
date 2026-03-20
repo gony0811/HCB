@@ -25,6 +25,7 @@ namespace HCB.UI
         private readonly DialogService _dialogService;
         private readonly DeviceManager _deviceManager;
         private readonly EqpCommunicationService eqpCommunicationService;
+        private readonly CalibrationViewModel calibrationViewModel;
         private IOManager ioManager;
 
         [ObservableProperty]
@@ -131,7 +132,7 @@ namespace HCB.UI
         };
 
         public StepSeqTabViewModel(SequenceServiceVM sequenceServiceVM, SequenceService sequenceService, SequenceHelper sequenceHelper, DeviceManager deviceManager, IOManager ioManager, DialogService dialogService
-           , EqpCommunicationService eqpCommunicationService, ILogger logger
+           , EqpCommunicationService eqpCommunicationService, CalibrationViewModel calibrationViewModel, ILogger logger
             )
         {
             _logger = logger.ForContext<StepSeqTabViewModel>();
@@ -142,6 +143,7 @@ namespace HCB.UI
             this.ioManager = ioManager;
             this._dialogService = dialogService;
             this.eqpCommunicationService = eqpCommunicationService;
+            this.calibrationViewModel = calibrationViewModel;
             var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
 
             if (ioDevice != null)
@@ -399,8 +401,11 @@ namespace HCB.UI
 
                         int[] delayTimes = { PressureTime, BlowTime, WaitTime };
 
-                        await SequenceService.TopDieDrop(topVisionMarkResult, _cts.Token, delayTimes);
-
+                        //var result = await SequenceService.TopDieDrop(topVisionMarkResult, _cts.Token, delayTimes);
+                        await SequenceService.TopDieDrop(_cts.Token, delayTimes);
+                        //ErrorX = result.moveX;
+                        //ErrorY = result.moveY;
+                        //ErrorT = result.moveTheta;
 
                         //TopDieAlign.RightX = xyt.rightAlign.StageX;
                         //TopDieAlign.RightXError= xyt.rightAlign.DxCamToMark;
@@ -835,6 +840,12 @@ namespace HCB.UI
         //    await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct); // W-Table 리프트 핀 다운
         //}
 
+        [RelayCommand]
+        public async Task RequestMarks
+            ()
+        {
+            await calibrationViewModel.RequestAlignMark(DieType.TOP, DirectType.LEFT);
+        }
         private bool CanStartInitialize() => !IsInitializing;
     }
 }
