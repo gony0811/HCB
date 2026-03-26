@@ -41,6 +41,7 @@ namespace HCB.UI
         {
             this.alarmService = alarmService;
             this.alarmHistoryRepository = alarmHistoryRepository;
+          
 
             alarmService.AlarmHistoryAdded += OnAlarmHistoryAdded;
             alarmService.AlarmHistoryReset += OnAlarmHistoryReset;

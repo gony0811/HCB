@@ -32,9 +32,8 @@ namespace HCB.UI
 
 
         // 테스트를 위해 만들어진 버전입니다. 실제로는 아래의 버전을 사용해야합니다. 
-        public async Task TopDieDrop(CancellationToken ct, int[] delayMs = null)
+        public async Task TopDieDrop(CancellationToken ct)
         {
-            delayMs ??= new int[] { 1000, 1000, 8000 };
             VisionMarkResult rightFid = new VisionMarkResult
             {
                 MarkType = MarkType.FIDUCIAL,
@@ -102,9 +101,7 @@ namespace HCB.UI
             await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", -topDieThickness - btmDieThickness, ct);
             //await Pressurize();
             await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness, ct);
-            await Task.Delay(delayMs[0]);
-            bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct, delayMs[1]);
-            await Task.Delay(delayMs[2]);
+            bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
             await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness - 1, ct);
             await Init_Head(ct);
 
@@ -113,10 +110,8 @@ namespace HCB.UI
 
 
         // 아래는 TopDieDrop 함수의 기존 버전입니다. 위의 버전은 테스트를 위해 만들어진 버전입니다.
-        public async Task<(double moveX, double moveY, double moveTheta)> TopDieDrop(Dictionary<string, VisionMarkResult> topVisionMarkResult, CancellationToken ct, int[] delayMs = null)
+        public async Task<(double moveX, double moveY, double moveTheta)> TopDieDrop(Dictionary<string, VisionMarkResult> topVisionMarkResult, CancellationToken ct)
         {
-
-            delayMs ??= new int[] { 5000, 5000, 5000 };
             VisionMarkResult rightFid = new VisionMarkResult
             {
                 MarkType = MarkType.FIDUCIAL,
@@ -230,9 +225,7 @@ namespace HCB.UI
             );
             //await Pressurize();
             await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness, ct);
-            await Task.Delay(delayMs[0]);
-            bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct, delayMs[1]);
-            await Task.Delay(delayMs[2]);
+            bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
             await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness - 1, ct);
             await Init_Head(ct);
 

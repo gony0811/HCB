@@ -11,7 +11,7 @@ namespace HCB.UI
 {
     public partial class SequenceService : BackgroundService
     {
-        public async Task MachineStartAsync(int topDie, int btmDie, int[] delayMs, CancellationToken ct)
+        public async Task MachineStartAsync(int topDie, int btmDie,  CancellationToken ct)
         {
             try
             {
@@ -25,21 +25,23 @@ namespace HCB.UI
                     return;
                 }
 
-                // 1. Btm Die 
-                 //#1. BTM DIE 가 놓인 VACUUM위치로 저배율 카메라를 이동시킨다.
+                // 1. Die wafer 얼라인
                 var BtmDieAlign = await DTableCarrierAlign(btmDie, MarkType.DIE_CENTER_BOTTOM, ct);
+
+                // 2. 픽업
                 await DTableBTMPickup(btmDie, BtmDieAlign, ct);
                 await BtmDieDrop(1, ct);
                 await Init_Head(ct);
 
-                ////2.TopDie
+                // 3. 픽업 다이 얼라인
                 var TopDieAlign = await DTableCarrierAlign(topDie, MarkType.DIE_CENTER_TOP, ct);
                 await DTableTOPPickup(topDie, TopDieAlign, ct);
 
-                //// 3. 고배율 보정
+                // 4. 웨이퍼 다이 얼라인
                 var topDieVisionResults = await TopDieVision(ct);
-                await TopDieDrop(topDieVisionResults, ct, delayMs);
-                //await TopDieDrop(ct, delayMs);
+
+                // 5. 본딩
+                await TopDieDrop(topDieVisionResults, ct);
                 await Task.Delay(1000);
                 await Init_Head(ct);
             }

@@ -34,22 +34,21 @@
                     <ColumnDefinition Width="*"></ColumnDefinition>
                     <ColumnDefinition Width="AUTO"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
-                <Grid>
-                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <telerik:RadButton Grid.Row="0" Width="100" Height="80" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" Command="{Binding DTableLoadingCommand}" local:BlinkBehavior.IsBlinking="{Binding IsDTableLoading}">
-                            <telerik:HighlightTextBlock TextAlignment="Center" Margin="5">
-                                LOADING
-                                <LineBreak/> POS
-                            </telerik:HighlightTextBlock>
+                <Grid local:GridHelper.Rows="*, *">
+                    <telerik:RadButton Grid.Row="0" Width="100" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" Command="{Binding DTableLoadingCommand}" local:BlinkBehavior.IsBlinking="{Binding IsDTableLoading}">
+                        <telerik:HighlightTextBlock TextAlignment="Center" Margin="5">
+                            LOADING
+                            <LineBreak/> POS
+                        </telerik:HighlightTextBlock>
                             
-                        </telerik:RadButton>
-                        <telerik:RadButton Grid.Row="1" Width="100" Height="80"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" Command="{Binding DTableReadyCommand}" local:BlinkBehavior.IsBlinking="{Binding IsDTableStandby}">
-                            <telerik:HighlightTextBlock TextAlignment="Center" Margin="5">
-                                READY
-                                <LineBreak/> POS
-                            </telerik:HighlightTextBlock>
-                        </telerik:RadButton>
-                    </WrapPanel>
+                    </telerik:RadButton>
+                    <telerik:RadButton Grid.Row="1" Width="100" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="{StaticResource ControlMargin}" Style="{StaticResource RadButtonStyle}" Command="{Binding DTableReadyCommand}" local:BlinkBehavior.IsBlinking="{Binding IsDTableStandby}">
+                        <telerik:HighlightTextBlock TextAlignment="Center" Margin="5">
+                            READY
+                            <LineBreak/> POS
+                        </telerik:HighlightTextBlock>
+                    </telerik:RadButton>
+                    
 
                 </Grid>
                 <ItemsControl ItemsSource="{Binding DTableList}" Grid.Column="1" Margin="5">

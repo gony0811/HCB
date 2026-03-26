@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
 using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,12 @@ namespace HCB.UI
         public RunInformation RunInformation { get; }
         public RunningStatus RunningStatus { get; }
         public AlarmService AlarmService { get; }
+        public RecipeService RecipeService { get; }
+
+        public ObservableCollection<LabelValue> RunInfo { get; }
+
+        [ObservableProperty]
+        private RecipeDto selectedRecipe;
 
         [ObservableProperty]
         private bool isInitializing;
@@ -35,16 +42,9 @@ namespace HCB.UI
         [ObservableProperty]
         private bool isInitialize;
 
-        [ObservableProperty]
-        private int pressureTime = 1000;
+        public SequenceServiceVM SequenceServiceVM => _sequenceServiceVM;
 
-        [ObservableProperty]
-        private int blowTime = 1000;
-
-        [ObservableProperty]
-        private int waitTime = 8000;
-
-        public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, OperationService operationService, SequenceService sequenceService, AlarmService alarmService)
+        public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, OperationService operationService, SequenceService sequenceService, AlarmService alarmService, RecipeService recipeService, SequenceServiceVM sequenceServiceVM)
         {
             RunInformation = runInformation;
             RunningStatus = runningStatus;
@@ -52,31 +52,18 @@ namespace HCB.UI
             _operationService = operationService;
             _cancellationTokenSource.TryReset();
             AlarmService = alarmService;
-        }
+            RecipeService = recipeService;
+            _sequenceServiceVM = sequenceServiceVM;
 
-        [RelayCommand]
-        public void Loaded()
-        {
-            _operationService.Status.Operation = OperationMode.Auto;
-        }
-
-        [RelayCommand]      
-        public void Unloaded() 
-        {
-            _operationService.Status.Operation = OperationMode.Manual;
-        }
-
-        [RelayCommand]
-        public void Running()
-        {
-            RunningStatus.RunningTimeRange.StartTimer();
-        }
-
-        [RelayCommand]
-        public void Loading()
-        {
-            RunningStatus.LoadingTimeRange.StartTimer();
-        }
+            RunInfo = new ObservableCollection<LabelValue>
+            {
+                new LabelValue("Operator ID", RunInformation.OperatorId),
+                new LabelValue("Lot ID", RunInformation.LotId),
+                new LabelValue("Wafer Size", RunInformation.WaferSize.ToString()),
+                new LabelValue("BTM Die Count", RunInformation.TopDieCount.ToString()),
+                new LabelValue("Top Die Count", RunInformation.BottomDieCount.ToString())
+            };
+        }       
 
         [RelayCommand]
         public void MachineInit()
@@ -131,40 +118,24 @@ namespace HCB.UI
         [RelayCommand]
         public async Task MachineRun()
         {
-            // RelayCommand는 이미 UI 스레드에서 실행됨
-            // Dispatcher 불필요 — 그냥 직접 열면 됨
             var tcs = new TaskCompletionSource<bool>();
-            int top = 0, bot = 0;
-
             var dialog = new VacuumSelector();
-            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            dialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
 
-            dialog.Closed += (s, e) =>
-            {
-                if (dialog.DialogResult == true
-                    && dialog.TopDieVacuum.HasValue
-                    && dialog.BotDieVacuum.HasValue)
-                {
-                    top = dialog.TopDieVacuum.Value;
-                    bot = dialog.BotDieVacuum.Value;
-                    tcs.SetResult(true);
-                }
-                else
-                {
-                    tcs.SetResult(false);
-                }
-            };
-
-            dialog.ShowDialog(); // UI 스레드에서 직접 호출
+            dialog.Closed += (s, e) => tcs.SetResult(dialog.DialogResult == true);
+            dialog.ShowDialog();
 
             bool confirmed = await tcs.Task;
             if (!confirmed) return;
 
+            var topList = dialog.TopDieVacuums;  // List
+            var botList = dialog.BotDieVacuums;  // List
+
             IsRunning = true;
             try
             {
-                int[] delayTimes = { PressureTime ,BlowTime, WaitTime };
-                await _sequenceService.MachineStartAsync(top, bot, delayTimes, _cancellationTokenSource.Token);
+                foreach (var (top, bot) in topList.Zip(botList))
+                    await _sequenceService.MachineStartAsync(top, bot, _cancellationTokenSource.Token);
             }
             catch (OperationCanceledException) { }
             catch (Exception ex) { }
@@ -200,6 +171,12 @@ namespace HCB.UI
         public void MachineReset()
         {
             Task.Run(async () => await AlarmService.ResetAllAlarms());
+        }
+
+        [RelayCommand]
+        public void ShowAccuracyData()
+        {
+            // TODO: 실시간 Accuracy Data 팝업 or 네비게이션
         }
 
     }

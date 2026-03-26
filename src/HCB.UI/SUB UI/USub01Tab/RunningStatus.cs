@@ -9,6 +9,8 @@ namespace HCB.UI
         public TimeRangeViewModel RunningTimeRange { get; }
         public TimeRangeViewModel LoadingTimeRange { get; }
 
+        [ObservableProperty] private string tactTime = "--";
+        [ObservableProperty] private string bondingAccuracy = "--";
 
         public RunningStatus()
         {

@@ -1,10 +1,10 @@
-﻿<telerik:RadWindow x:Class="HCB.UI.VacuumSelector"
+<telerik:RadWindow x:Class="HCB.UI.VacuumSelector"
                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
                     Header="Vacuum 선택"
-                    Width="420"
-                    Height="520"
+                    Width="480"
+                    Height="600"
                     ResizeMode="NoResize"
                     Style="{StaticResource RadWindowStyle}"
                     CanMove="True"
@@ -125,25 +125,55 @@
             </Setter>
         </Style>
 
+        <!-- 그리드 모드 토글 스타일 -->
+        <Style x:Key="ModeToggleStyle" TargetType="telerik:RadButton">
+            <Setter Property="Height"          Value="26"/>
+            <Setter Property="Padding"         Value="10,0"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="FontFamily"      Value="Segoe UI"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="telerik:RadButton">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </telerik:RadWindow.Resources>
 
     <Grid Margin="20,10,20,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Die 탭 선택 -->
+            <!-- Die 탭 + 모드 토글 -->
             <RowDefinition Height="Auto"/>
-            <!-- 선택 현황 표시 -->
+            <!-- 선택 현황 리스트 -->
             <RowDefinition Height="*"/>
-            <!-- 3x3 그리드 -->
+            <!-- Vacuum 그리드 -->
             <RowDefinition Height="Auto"/>
             <!-- 확인 / 취소 -->
         </Grid.RowDefinitions>
 
-        <!-- ① Die 선택 탭 -->
+        <!-- ① Die 선택 탭 + 그리드 모드 토글 -->
         <Grid Grid.Row="0" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <telerik:RadButton x:Name="TopDieTab"
@@ -163,9 +193,29 @@
                                BorderBrush="Transparent"
                                Foreground="#FF556688"
                                Click="BotDieTab_Click"/>
+
+            <!-- 그리드 모드 토글 -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal"
+                        VerticalAlignment="Center" Margin="10,0,0,0">
+                <telerik:RadButton x:Name="Mode3x3Btn"
+                                   Content="3×3"
+                                   Style="{StaticResource ModeToggleStyle}"
+                                   Background="#FF1E88E5"
+                                   BorderBrush="#FF1E88E5"
+                                   Foreground="White"
+                                   Click="Mode3x3_Click"/>
+                <telerik:RadButton x:Name="Mode4x2Btn"
+                                   Content="4×2"
+                                   Style="{StaticResource ModeToggleStyle}"
+                                   Background="#FF16213E"
+                                   BorderBrush="#FF334466"
+                                   Foreground="#FF556688"
+                                   Margin="4,0,0,0"
+                                   Click="Mode4x2_Click"/>
+            </StackPanel>
         </Grid>
 
-        <!-- ② 선택 현황 -->
+        <!-- ② 선택 현황 (리스트) -->
         <Border Grid.Row="1"
                 Background="#FF16213E"
                 BorderBrush="#FF533483"
@@ -180,17 +230,16 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- TOP DIE -->
+                <!-- TOP DIE 선택 리스트 -->
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                     <TextBlock Text="TOP DIE"
                                FontFamily="Segoe UI" FontSize="11"
                                Foreground="#FF1E88E5"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock x:Name="TopDieValueText"
-                               Text="—"
-                               FontFamily="Segoe UI" FontSize="22" FontWeight="Bold"
-                               Foreground="#FF1E88E5"
-                               HorizontalAlignment="Center"/>
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,4"/>
+                    <WrapPanel x:Name="TopSelectionPanel"
+                               HorizontalAlignment="Center"
+                               MinHeight="32"/>
                 </StackPanel>
 
                 <TextBlock Grid.Column="1"
@@ -199,64 +248,54 @@
                            VerticalAlignment="Center"
                            Margin="8,0"/>
 
-                <!-- BOTTOM DIE -->
+                <!-- BOTTOM DIE 선택 리스트 -->
                 <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                     <TextBlock Text="BOTTOM DIE"
                                FontFamily="Segoe UI" FontSize="11"
                                Foreground="#FFE94560"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock x:Name="BotDieValueText"
-                               Text="—"
-                               FontFamily="Segoe UI" FontSize="22" FontWeight="Bold"
-                               Foreground="#FFE94560"
-                               HorizontalAlignment="Center"/>
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,4"/>
+                    <WrapPanel x:Name="BotSelectionPanel"
+                               HorizontalAlignment="Center"
+                               MinHeight="32"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- ③ 3x3 Vacuum 그리드 -->
-        <Grid Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <telerik:RadButton Grid.Row="0" Grid.Column="0" x:Name="Btn1" Content="1"
+        <!-- ③ Vacuum 그리드 (UniformGrid — 3×3 / 4×2 동적 전환) -->
+        <UniformGrid x:Name="VacuumGrid"
+                     Grid.Row="2"
+                     Rows="3" Columns="3"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center">
+            <telerik:RadButton x:Name="Btn1" Content="1"
                                Style="{StaticResource VacuumButtonStyle}"
                                Click="VacuumButton_Click" Tag="1"/>
-            <telerik:RadButton Grid.Row="0" Grid.Column="1" x:Name="Btn2" Content="2"
+            <telerik:RadButton x:Name="Btn2" Content="2"
                                Style="{StaticResource VacuumButtonStyle}"
                                Click="VacuumButton_Click" Tag="2"/>
-            <telerik:RadButton Grid.Row="0" Grid.Column="2" x:Name="Btn3" Content="3"
+            <telerik:RadButton x:Name="Btn3" Content="3"
                                Style="{StaticResource VacuumButtonStyle}"
                                Click="VacuumButton_Click" Tag="3"/>
-
-            <telerik:RadButton Grid.Row="1" Grid.Column="0" x:Name="Btn4" Content="4"
+            <telerik:RadButton x:Name="Btn4" Content="4"
                                Style="{StaticResource VacuumButtonStyle}"
                                Click="VacuumButton_Click" Tag="4"/>
-            <telerik:RadButton Grid.Row="1" Grid.Column="1" x:Name="Btn5" Content="5"
+            <telerik:RadButton x:Name="Btn5" Content="5"
                                Style="{StaticResource VacuumButtonStyle}"
                                Click="VacuumButton_Click" Tag="5"/>
-            <telerik:RadButton Grid.Row="1" Grid.Column="2" x:Name="Btn6" Content="6"
+            <telerik:RadButton x:Name="Btn6" Content="6"
                                Style="{StaticResource VacuumButtonStyle}"
                                Click="VacuumButton_Click" Tag="6"/>
-
-            <telerik:RadButton Grid.Row="2" Grid.Column="0" x:Name="Btn7" Content="7"
+            <telerik:RadButton x:Name="Btn7" Content="7"
                                Style="{StaticResource VacuumButtonStyle}"
                                Click="VacuumButton_Click" Tag="7"/>
-            <telerik:RadButton Grid.Row="2" Grid.Column="1" x:Name="Btn8" Content="8"
+            <telerik:RadButton x:Name="Btn8" Content="8"
                                Style="{StaticResource VacuumButtonStyle}"
                                Click="VacuumButton_Click" Tag="8"/>
-            <telerik:RadButton Grid.Row="2" Grid.Column="2" x:Name="Btn9" Content="9"
+            <telerik:RadButton x:Name="Btn9" Content="9"
                                Style="{StaticResource VacuumButtonStyle}"
                                Click="VacuumButton_Click" Tag="9"/>
-        </Grid>
+        </UniformGrid>
 
         <!-- ④ 확인 / 취소 -->
         <Grid Grid.Row="3" Margin="0,16,0,0">

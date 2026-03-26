@@ -22,47 +22,20 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <telerik:RadHighlightTextBlock Text="현재 디바이스" 
-               IsEnabled="True"
-               IsHitTestVisible="False"
-               FontSize="24"
-               Grid.Column="0" 
-               VerticalAlignment="Center" 
-               
-               />
-
-            <telerik:RadHighlightTextBlock x:Name="tbCurrentDevice"
-               Text="{Binding CurrentDevice}"         
-               IsEnabled="True"
-               IsHitTestVisible="False"
-               FontSize="24"
-               Grid.Column="1" 
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center" 
-               
-               />
-        </Grid>
-
         <!-- Tab Panel-->
         <Border Padding="15" Grid.Row="1">
             <Grid Grid.Row="1">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="AUTO"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- 콘텐츠 영역 -->
-                    <Frame x:Name="ContentFrame" Content="{Binding CurrentTab}" Grid.Column="0" NavigationUIVisibility="Hidden"/>
+                    <Frame x:Name="ContentFrame" Content="{Binding CurrentTab}" Grid.Column="1" NavigationUIVisibility="Hidden"/>
 
                     <!-- 탭 패널 -->
-                    <Grid x:Name="TabPanel" Grid.Column="1" Width="150">
+                    <Grid x:Name="TabPanel" Grid.Column="0" Width="150">
                         <Grid.RowDefinitions>
                             <RowDefinition></RowDefinition>
                             <RowDefinition></RowDefinition>

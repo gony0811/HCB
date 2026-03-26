@@ -141,7 +141,7 @@ namespace HCB.UI
         /// <param name="onOff"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public static async Task<bool> HeadPickerVacuum(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct, int delayMs = 5000)
+        public static async Task<bool> HeadPickerVacuum(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
         {
             var bOnOff = onOff == eOnOff.On;
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
@@ -159,7 +159,7 @@ namespace HCB.UI
             {
                 device.SetDigital(DO_HEADER_EJECTOR_VAC_ON, false);
                 device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, true);
-                await Task.Delay(delayMs);
+                await Task.Delay(1000);
                 device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, false);
             }
 
@@ -182,6 +182,15 @@ namespace HCB.UI
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
+
+        public static async Task DVacSelectOnOff(this ISequenceHelper helper, List<int> vacs, eOnOff onOff, CancellationToken ct)
+        {
+            foreach(int vac in vacs)
+            {
+                await helper.DTableVacuum(vac, onOff, ct);
+            }
+        }
+
 
 
         public static async Task DTableVacuum(this ISequenceHelper helper, int channel, eOnOff onOff, CancellationToken ct)

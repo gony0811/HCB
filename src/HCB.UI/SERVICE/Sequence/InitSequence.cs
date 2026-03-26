@@ -137,7 +137,6 @@ namespace HCB.UI
         {
             try
             {
-
                 this._logger.Debug("Head 초기화 시작");
                 var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
                 var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);

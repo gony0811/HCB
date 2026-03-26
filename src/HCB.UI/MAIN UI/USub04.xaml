@@ -26,6 +26,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="*"></RowDefinition>
+                <RowDefinition Height="200"></RowDefinition>
             </Grid.RowDefinitions>
 
             <Border Grid.Column="0" Grid.Row="0" Margin="10">
@@ -106,7 +107,58 @@
                 </telerik:GroupBox>
             </Grid>
 
+            <!-- 시스템 로그 -->
+            <telerik:RadGridView Grid.Row="2" Grid.ColumnSpan="2"
+                          ItemsSource="{Binding Logs}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          ShowGroupPanel="False"
+                          RowIndicatorVisibility="Collapsed"
+                          GridLinesVisibility="Horizontal"
+                          Style="{StaticResource RadGridViewStyle}"
+                          Margin="10,0,10,10">
+                <telerik:RadGridView.Columns>
+                    <telerik:GridViewDataColumn Header="Time"
+                                        DataMemberBinding="{Binding Timestamp}"
+                                        Width="200" />
+                    <telerik:GridViewDataColumn Header="ThreadId"
+                                        DataMemberBinding="{Binding ThreadId}"
+                                        Width="150" />
+                    <telerik:GridViewDataColumn Header="LogSource"
+                                        DataMemberBinding="{Binding SourceContext}"
+                                        Width="250" />
+                    <telerik:GridViewDataColumn Header="Level"
+                                        DataMemberBinding="{Binding Level}"
+                                        Width="100">
+                        <telerik:GridViewDataColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Level}" FontWeight="Bold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                    <Setter Property="Foreground" Value="Red"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                                    <Setter Property="Foreground" Value="DarkOrange"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Information">
+                                                    <Setter Property="Foreground" Value="Green"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </telerik:GridViewDataColumn.CellTemplate>
+                    </telerik:GridViewDataColumn>
+                    <telerik:GridViewDataColumn Header="Message"
+                                        DataMemberBinding="{Binding Message}"
+                                        Width="*" />
+                </telerik:RadGridView.Columns>
+            </telerik:RadGridView>
+
         </Grid>
     </Border>
-    
+
 </Page>

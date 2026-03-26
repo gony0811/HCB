@@ -5,239 +5,896 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
              xmlns:local="clr-namespace:HCB.UI"
-             mc:Ignorable="d" Loaded="OnLoaded"  Unloaded="OnUnloaded">
+             mc:Ignorable="d">
 
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
+
+            <!-- Dark ComboBoxItem Style -->
+            <Style x:Key="DarkComboBoxItem" TargetType="ComboBoxItem">
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBoxItem">
+                            <Border x:Name="Bg"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="4"
+                                    Margin="4,2">
+                                <ContentPresenter Margin="8,4"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bg" Property="Background" Value="#1C3A52"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Bg" Property="Background" Value="#1E4A6A"/>
+                                    <Setter TargetName="Bg" Property="BorderBrush" Value="#3498DB"/>
+                                    <Setter TargetName="Bg" Property="BorderThickness" Value="1"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Dark ComboBox Style -->
+            <Style x:Key="DarkComboBox" TargetType="ComboBox">
+                <Setter Property="ItemContainerStyle" Value="{StaticResource DarkComboBoxItem}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBox">
+                            <Grid>
+                                <!-- 메인 버튼 영역 -->
+                                <Border x:Name="MainBorder"
+                                        Background="#0A1628"
+                                        BorderBrush="#2A5A8C"
+                                        BorderThickness="1"
+                                        CornerRadius="6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="36"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- 선택된 항목 표시 -->
+                                        <ContentPresenter Grid.Column="0"
+                                                          x:Name="ContentSite"
+                                                          Content="{TemplateBinding SelectionBoxItem}"
+                                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                          IsHitTestVisible="False"
+                                                          Margin="12,0,0,0"
+                                                          VerticalAlignment="Center"/>
+
+                                        <!-- 드롭다운 화살표 -->
+                                        <ToggleButton Grid.Column="0" Grid.ColumnSpan="2"
+                                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                      Background="Transparent"
+                                                      BorderThickness="0"
+                                                      Focusable="False"
+                                                      ClickMode="Press">
+                                            <ToggleButton.Template>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border Background="Transparent"/>
+                                                </ControlTemplate>
+                                            </ToggleButton.Template>
+                                        </ToggleButton>
+
+                                        <Path Grid.Column="1"
+                                              x:Name="Arrow"
+                                              Data="M 0 0 L 5 5 L 10 0"
+                                              Stroke="#5E8BAA"
+                                              StrokeThickness="1.5"
+                                              StrokeLineJoin="Round"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              IsHitTestVisible="False"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 드롭다운 팝업 -->
+                                <Popup x:Name="PART_Popup"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       Placement="Bottom"
+                                       Focusable="False"
+                                       AllowsTransparency="True"
+                                       PopupAnimation="Fade">
+                                    <Border Background="#0A1628"
+                                            BorderBrush="#2A5A8C"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Margin="0,2,0,0"
+                                            MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                            MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                        <ScrollViewer Margin="4">
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="MainBorder" Property="BorderBrush" Value="#3498DB"/>
+                                </Trigger>
+                                <Trigger Property="IsDropDownOpen" Value="True">
+                                    <Setter TargetName="MainBorder" Property="BorderBrush" Value="#3498DB"/>
+                                    <Setter TargetName="Arrow" Property="Data" Value="M 0 5 L 5 0 L 10 5"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition></ColumnDefinition>
-            <ColumnDefinition></ColumnDefinition>
-        </Grid.ColumnDefinitions>
 
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition></RowDefinition>
-                <RowDefinition></RowDefinition>
-            </Grid.RowDefinitions>
-            <telerik:GroupBox Header="Run Information" FontSize="14" Style="{StaticResource GroupBoxStyle}" Margin="4">
-                
-                <!-- 3 Columns , 6 Rows  -->
-                <Grid local:GridHelper.Columns="Auto, 1*, 1*, 1*, 1*" 
-                      local:GridHelper.Rows="1*, 1*, 1*, 1*, 1*, 1*" 
-                      DataContext="{Binding RunInformation}"
-                      >
-                    <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource HeaderCell}">
-                        <telerik:Label Content="OperatorID" Style="{StaticResource LabelStyle}"/>
-                    </Border>
-                    <Border Grid.Column="0" Grid.Row="1" Style="{StaticResource HeaderCell}">
-                        <telerik:Label Content="Lot Size" Style="{StaticResource LabelStyle}"/>
-                    </Border>
-                    <Border Grid.Column="0" Grid.Row="2" Style="{StaticResource HeaderCell}">
-                        <telerik:Label Content="Wafer Size" Style="{StaticResource LabelStyle}"/>
-                    </Border>
-                    <Border Grid.Column="0" Grid.Row="3" Style="{StaticResource HeaderCell}">
-                        <telerik:Label Content="Die Carrier" Style="{StaticResource LabelStyle}"/>
-                    </Border>
-                    <Border Grid.Column="0" Grid.Row="4" Grid.RowSpan="4" Style="{StaticResource HeaderCell}">
-                        <telerik:Label Content="Die Size" HorizontalContentAlignment="Center" Style="{StaticResource LabelStyle}"/>
-                    </Border>
-                    <Border Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="4"  Style="{StaticResource Cell}">
-                        <telerik:HighlightTextBlock Text="{Binding OperatorId}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"></telerik:HighlightTextBlock>
-                    </Border>
-                    <Border Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="4"  Style="{StaticResource Cell}">
-                        <telerik:HighlightTextBlock Text="{Binding LotId}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"></telerik:HighlightTextBlock>
-                    </Border>
+    <Grid Margin="6" local:GridHelper.Columns="1*, 1*" local:GridHelper.Rows="1*, 1*">
+        <!-- 1. Information -->
+        <Border Background="#0D1B2A" CornerRadius="8" Margin="6"
+                BorderBrush="#1C3A52" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                    <Border Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="4"  Style="{StaticResource Cell}">
-                        <telerik:HighlightTextBlock Text="{Binding WaferSize}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"></telerik:HighlightTextBlock>
-                    </Border>
-                    <Border Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="4" Style="{StaticResource Cell}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <telerik:HighlightTextBlock Text="Die 수:"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                            <telerik:HighlightTextBlock Text="{Binding DieCarrier}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                            <telerik:HighlightTextBlock Text="EA"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                <local:HeaderBar Margin="12,10,12,0" Title="Run Information"/>
+
+                <!-- 구분선 -->
+                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                <ItemsControl Grid.Row="1" ItemsSource="{Binding RunInfo}" Margin="0,4,0,8">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid Margin="16,10,16,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Label}"
+                                               Foreground="#5E8BAA"
+                                               FontSize="20"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Value}"
+                                               Foreground="#ECF0F1"
+                                               FontSize="20"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                                <Rectangle Grid.Row="1" Height="1"
+                                           Fill="#1C3A52" Margin="16,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </Border>
+
+        <Border Background="#0D1B2A" CornerRadius="8" Margin="6"
+                BorderBrush="#1C3A52" BorderThickness="1" Grid.Column="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <local:HeaderBar Margin="12,10,12,0" Title="Running Status"/>
+                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                <!-- 상태 항목들 -->
+                <StackPanel Grid.Row="1" Margin="0,4,0,4">
+
+                    <!-- Tact Time -->
+                    <Grid Margin="16,10,16,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Tact Time"
+                                   Foreground="#5E8BAA" FontSize="20"
+                                   VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding RunningStatus.TactTime}"
+                                       Foreground="#ECF0F1" FontSize="20" FontWeight="SemiBold"/>
+                            <TextBlock Text=" s" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Bottom" Margin="2,0,0,2"/>
                         </StackPanel>
-                        
-                    </Border>
+                    </Grid>
+                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
 
-                    <Border Grid.Column="1" Grid.Row="4" Style="{StaticResource HeaderCell}">
-                        <telerik:HighlightTextBlock Text="Top"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                    </Border>
-
-                    <Border Grid.Column="1" Grid.Row="5" Style="{StaticResource HeaderCell}">
-                        <telerik:HighlightTextBlock Text="Bottom"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                    </Border>
-
-                    <Border Grid.Column="3" Grid.Row="4" Style="{StaticResource HeaderCell}">
-                        <telerik:HighlightTextBlock Text="Thickness"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                    </Border>
-
-                    <Border Grid.Column="3" Grid.Row="5" Style="{StaticResource HeaderCell}">
-                        <telerik:HighlightTextBlock Text="Thickness"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                    </Border>
-
-                    <Border Grid.Column="2" Grid.Row="4" Style="{StaticResource Cell}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <telerik:HighlightTextBlock Text="{Binding DieTopSize}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                            <telerik:Label Content="x" Style="{StaticResource LabelStyle}"/>
-                            <telerik:HighlightTextBlock Text="{Binding DieTopSize}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                            <telerik:Label Content=" mm" Style="{StaticResource LabelStyle}"/>
+                    <!-- Bonding Accuracy -->
+                    <Grid Margin="16,10,16,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Bonding Accuracy"
+                                   Foreground="#5E8BAA" FontSize="20"
+                                   VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding RunningStatus.BondingAccuracy}"
+                                       Foreground="#2ECC71" FontSize="20" FontWeight="SemiBold"/>
+                            <TextBlock Text=" %" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Bottom" Margin="2,0,0,2"/>
                         </StackPanel>
-                    </Border>
-                    <Border Grid.Column="4" Grid.Row="4" Style="{StaticResource Cell}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <telerik:HighlightTextBlock Text="{Binding DieTopThickness}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                            <telerik:Label Content=" um" Style="{StaticResource LabelStyle}"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Grid.Column="2" Grid.Row="5" Style="{StaticResource Cell}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <telerik:HighlightTextBlock Text="{Binding DieBottomSize}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                            <telerik:Label Content="x" Style="{StaticResource LabelStyle}"/>
-                            <telerik:HighlightTextBlock Text="{Binding DieBottomSize}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                            <telerik:Label Content=" mm" Style="{StaticResource LabelStyle}"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Grid.Column="4" Grid.Row="5" Style="{StaticResource Cell}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <telerik:HighlightTextBlock Text="{Binding DieBottomThickness}"  TextAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                            <telerik:Label Content=" um" Style="{StaticResource LabelStyle}"/>
-                        </StackPanel>
-                    </Border>
+                    </Grid>
+                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+
+                    <!-- 총 소요시간 -->
+                    <Grid Margin="16,10,16,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="총 소요시간"
+                                   Foreground="#5E8BAA" FontSize="20"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding RunningStatus.RunningTimeRange.ElapsedTime}"
+                                   Foreground="#ECF0F1" FontSize="18" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </Grid>
+                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+
+                </StackPanel>
+
+                <!-- 실시간 Accuracy Data 보기 버튼 -->
+                <Button Grid.Row="2"
+                        Margin="16,8,16,16"
+                        Height="40"
+                        Command="{Binding ShowAccuracyDataCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#1A3A5C"/>
+                            <Setter Property="Foreground" Value="#ECF0F1"/>
+                            <Setter Property="FontSize" Value="22"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="BorderBrush" Value="#2A5A8C"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="6">
+                                            <StackPanel Orientation="Horizontal"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="&#x1F4CA;" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="실시간 Accuracy Data 보기"
+                                                           Foreground="{TemplateBinding Foreground}"
+                                                           FontSize="{TemplateBinding FontSize}"
+                                                           FontWeight="{TemplateBinding FontWeight}"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#234E7A"/>
+                                                <Setter Property="BorderBrush" Value="#3498DB"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter Property="Background" Value="#0F2A45"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+            </Grid>
+        </Border>
+
+        <!-- 3. Recipe -->
+        <Border Background="#0D1B2A" CornerRadius="8" Margin="6"
+                BorderBrush="#1C3A52" BorderThickness="1"
+                Grid.Column="0" Grid.Row="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="1"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="Recipe"/>
+                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                <!-- Recipe 선택 ComboBox -->
+                <ComboBox Grid.Row="1"
+                          Style="{StaticResource DarkComboBox}"
+                          Margin="12,10,12,10"
+                          Height="38"
+                          FontSize="14"
+                          Foreground="#ECF0F1"
+                          MaxDropDownHeight="200"
+                          ItemsSource="{Binding RecipeService.RecipeList}"
+                          SelectedItem="{Binding SelectedRecipe, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="4,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Name}"
+                                           Foreground="#ECF0F1"
+                                           FontSize="14"
+                                           VerticalAlignment="Center"/>
+                                <Border Grid.Column="1"
+                                        CornerRadius="4" Padding="6,2"
+                                        Background="#14452A"
+                                        BorderBrush="#2ECC71" BorderThickness="1"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="USE"
+                                               Foreground="#2ECC71"
+                                               FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <!-- 구분선 -->
+                <Rectangle Grid.Row="2" Fill="#1C3A52" Margin="12,0">
+                    <Rectangle.Style>
+                        <Style TargetType="Rectangle">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedRecipe}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Rectangle.Style>
+                </Rectangle>
+
+                <!-- 파라미터 테이블 -->
+                <Grid Grid.Row="3">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedRecipe}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Margin="16,8,16,4"
+                               Text="Parameters"
+                               Foreground="#5E8BAA"
+                               FontSize="12" FontWeight="SemiBold"/>
+
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding SelectedRecipe.ParamList}"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              RowBackground="Transparent"
+                              AlternatingRowBackground="#0A1628"
+                              Foreground="#ECF0F1"
+                              FontSize="18"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserResizeRows="False"
+                              CanUserAddRows="False"
+                              GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="#1C3A52"
+                              RowHeaderWidth="0"
+                              Margin="8,0,8,8">
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader"
+                                   BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                                <Setter Property="Background" Value="#0A1628"/>
+                                <Setter Property="Foreground" Value="#5E8BAA"/>
+                                <Setter Property="FontSize" Value="14"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="BorderBrush" Value="#1C3A52"/>
+                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                <Setter Property="Padding" Value="8,6"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell"
+                                   BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Padding" Value="8,4"/>
+                            </Style>
+                        </DataGrid.CellStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name"  Binding="{Binding Name}"     Width="*"/>
+                            <DataGridTextColumn Header="Value" Binding="{Binding Value}"    Width="0.6*"/>
+                            <DataGridTextColumn Header="Unit"  Binding="{Binding UnitType}" Width="0.5*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </Grid>
 
-            </telerik:GroupBox>
-            <telerik:GroupBox Header="Running Step" FontSize="14" Grid.Row="1" Style="{StaticResource GroupBoxStyle}" Margin="4">
-                <Grid local:GridHelper.Columns="1*, 1*, 1*, 1*, 1*" 
-                      local:GridHelper.Rows="Auto, 1*" 
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center">
-                    <telerik:Label Style="{StaticResource LabelStyle}" Content="Step▼" Foreground="Red" HorizontalContentAlignment="Center" Grid.Column="0" Grid.Row="0"></telerik:Label>
-                    <Border Background="Yellow" Width="100" Height="100" Margin="4 0 0 0" Grid.Column="0" Grid.Row="1"></Border>
-                    <Border Background="Green"  Width="100" Height="100" Margin="4 0 0 0" Grid.Column="1" Grid.Row="1" ></Border>
-                    <Border Background="Blue"  Width="100" Height="100" Margin="4 0 0 0" Grid.Column="2" Grid.Row="1"></Border>
-                    <Border Background="Purple"  Width="100" Height="100" Margin="4 0 0 0" Grid.Column="3" Grid.Row="1"></Border>
-                    <Border Background="White"  Width="100" Height="100" Margin="4 0 0 0" Grid.Column="4" Grid.Row="1"></Border>
+            </Grid>
+        </Border>
+
+        <Border Background="#0D1B2A" CornerRadius="8" Margin="6"
+                BorderBrush="#1C3A52" BorderThickness="1" Grid.Column="1" Grid.Row="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1.6*"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Running Step -->
+                <Grid Grid.Row="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <local:HeaderBar Margin="12,10,12,0" Title="Running Step"/>
+                    <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                               VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                    <!-- 5 Step 수평 인디케이터 -->
+                    <Grid Grid.Row="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Step 1: Die wafer 얼라인 -->
+                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                            <Border Width="32" Height="32" CornerRadius="16" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1C3A52"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="1">
+                                                <Setter Property="Background" Value="#3498DB"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="1" Foreground="White" FontSize="14" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Die wafer" TextAlignment="Center" FontSize="12" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#5E8BAA"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="1">
+                                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="얼라인" TextAlignment="Center" FontSize="12" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#5E8BAA"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="1">
+                                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Arrow 1→2 -->
+                        <Path Grid.Column="1" Data="M 0 0 L 10 7 L 0 14"
+                              Stroke="#2A5A8C" StrokeThickness="1.5" StrokeLineJoin="Round"
+                              HorizontalAlignment="Center" VerticalAlignment="Top" Margin="4,9,4,0"
+                              IsHitTestVisible="False"/>
+
+                        <!-- Step 2: 픽업 -->
+                        <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                            <Border Width="32" Height="32" CornerRadius="16" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1C3A52"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="2">
+                                                <Setter Property="Background" Value="#3498DB"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="2" Foreground="White" FontSize="14" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="픽업" TextAlignment="Center" FontSize="12" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#5E8BAA"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="2">
+                                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Arrow 2→3 -->
+                        <Path Grid.Column="3" Data="M 0 0 L 10 7 L 0 14"
+                              Stroke="#2A5A8C" StrokeThickness="1.5" StrokeLineJoin="Round"
+                              HorizontalAlignment="Center" VerticalAlignment="Top" Margin="4,9,4,0"
+                              IsHitTestVisible="False"/>
+
+                        <!-- Step 3: 픽업 다이 얼라인 -->
+                        <StackPanel Grid.Column="4" HorizontalAlignment="Center">
+                            <Border Width="32" Height="32" CornerRadius="16" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1C3A52"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="3">
+                                                <Setter Property="Background" Value="#3498DB"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="3" Foreground="White" FontSize="14" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="픽업 다이" TextAlignment="Center" FontSize="12" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#5E8BAA"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="3">
+                                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="얼라인" TextAlignment="Center" FontSize="12" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#5E8BAA"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="3">
+                                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Arrow 3→4 -->
+                        <Path Grid.Column="5" Data="M 0 0 L 10 7 L 0 14"
+                              Stroke="#2A5A8C" StrokeThickness="1.5" StrokeLineJoin="Round"
+                              HorizontalAlignment="Center" VerticalAlignment="Top" Margin="4,9,4,0"
+                              IsHitTestVisible="False"/>
+
+                        <!-- Step 4: 웨이퍼 다이 얼라인 -->
+                        <StackPanel Grid.Column="6" HorizontalAlignment="Center">
+                            <Border Width="32" Height="32" CornerRadius="16" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1C3A52"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="4">
+                                                <Setter Property="Background" Value="#3498DB"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="4" Foreground="White" FontSize="14" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="웨이퍼 다이" TextAlignment="Center" FontSize="12" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#5E8BAA"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="4">
+                                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="얼라인" TextAlignment="Center" FontSize="12" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#5E8BAA"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="4">
+                                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Arrow 4→5 -->
+                        <Path Grid.Column="7" Data="M 0 0 L 10 7 L 0 14"
+                              Stroke="#2A5A8C" StrokeThickness="1.5" StrokeLineJoin="Round"
+                              HorizontalAlignment="Center" VerticalAlignment="Top" Margin="4,9,4,0"
+                              IsHitTestVisible="False"/>
+
+                        <!-- Step 5: 본딩 -->
+                        <StackPanel Grid.Column="8" HorizontalAlignment="Center">
+                            <Border Width="32" Height="32" CornerRadius="16" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1C3A52"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="5">
+                                                <Setter Property="Background" Value="#3498DB"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="5" Foreground="White" FontSize="14" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="본딩" TextAlignment="Center" FontSize="12" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#5E8BAA"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SequenceServiceVM.CurrentAutoStep}" Value="5">
+                                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                    </Grid>
                 </Grid>
-                
-            </telerik:GroupBox>
-        </Grid>
 
-        <Grid Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"></RowDefinition>
-                <RowDefinition Height="Auto"></RowDefinition>
-                <RowDefinition Height="Auto"></RowDefinition>
-            </Grid.RowDefinitions>
-            <telerik:GroupBox Header="Running Status" FontSize="14" Style="{StaticResource GroupBoxStyle}" Margin="4">
-                <Grid local:GridHelper.Columns="1*, 1*, 1*, 1*"
-                      local:GridHelper.Rows="1*, 1*, 1*, 1*, 1*, 1*, 1*" 
-                      VerticalAlignment="Center">
-
-                    <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource HeaderCell}">
-                        <telerik:Label Style="{StaticResource LabelStyle}" Content="실행" HorizontalContentAlignment="Center"></telerik:Label>
-                    </Border>
-
-                    <Border Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource HeaderCell}">
-                        <telerik:Label Style="{StaticResource LabelStyle}" Content="진행도" HorizontalContentAlignment="Center"></telerik:Label>
-                    </Border>
-
-                    <Border Grid.Column="3" Grid.Row="0" Style="{StaticResource HeaderCell}">
-                        <telerik:Label Style="{StaticResource LabelStyle}" Content="Start / End" HorizontalContentAlignment="Center"></telerik:Label>
-                    </Border>
-
-                    <Border Grid.Column="0" Grid.Row="1" Style="{StaticResource Cell}">
-                        <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="Running" Command="{Binding RunningCommand}" Margin="4" />
-                    </Border>
-                    <Border Grid.ColumnSpan="2" Grid.Column="1" Grid.Row="1" Style="{StaticResource Cell}">
-                        <telerik:RadProgressBar Style="{StaticResource RadProgressBarStyle}" Height="20" Margin="4"></telerik:RadProgressBar>
-                    </Border>
-                    <Border Grid.Column="3" Grid.Row="1" Style="{StaticResource Cell}">
-                        <local:TimeRange DataContext="{Binding RunningStatus.RunningTimeRange}" Margin="4" />
-                    </Border>
-
-                    <Border Grid.Column="0" Grid.Row="2" Style="{StaticResource Cell}">
-                        <Button Content="Loading" Command="{Binding LoadingCommand}" Margin="4"/>
-                    </Border>
-                    <Border Grid.ColumnSpan="2" Grid.Column="1" Grid.Row="2" Style="{StaticResource Cell}">
-                        <telerik:RadProgressBar Style="{StaticResource RadProgressBarStyle}" Height="20" Margin="4"></telerik:RadProgressBar>
-                    </Border>
-                    <Border Grid.Column="3" Grid.Row="2" Style="{StaticResource Cell}">
-                        <local:TimeRange DataContext="{Binding RunningStatus.LoadingTimeRange}" Margin="4"/>
-                    </Border>
-                    <Border Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="3" Style="{StaticResource HeaderCell}">
-                        <telerik:Label Style="{StaticResource LabelStyle}" Content="Tact Time" HorizontalContentAlignment="Center"/>
-                    </Border>
-                    <Border Grid.ColumnSpan="2" Grid.Column="2" Grid.Row="3" Style="{StaticResource Cell}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="0"></TextBlock>
-                            <TextBlock Text=" UPH"></TextBlock>
-                        </StackPanel>
-                    </Border>
-
-                    <Border  Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="4" Style="{StaticResource HeaderCell}">
-                        <telerik:Label Style="{StaticResource LabelStyle}" Content="Bonding Accuracy" HorizontalContentAlignment="Center"/>
-                    </Border>
-                    <Border  Grid.ColumnSpan="2" Grid.Column="2" Grid.Row="4" Style="{StaticResource Cell}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <telerik:Label Content="+/- "></telerik:Label>
-                            <telerik:Label Content="0"></telerik:Label>
-                            <telerik:Label Content=" nm"></telerik:Label>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.ColumnSpan="4" Grid.Row="5" Style="{StaticResource Cell}">
-                        <StackPanel>
-                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="실시간 Auccracy Data 보기"></telerik:RadButton>
-                        </StackPanel>
-                    </Border>
-                    <Border Grid.ColumnSpan="4" Grid.Row="6" Style="{StaticResource Cell}">
-                        <StackPanel>
-                            
-                        </StackPanel>
-                    </Border>
-                    
-
-
-                </Grid>
-            </telerik:GroupBox>
-
-            <telerik:GroupBox Header="Delay time" FontSize="14" Style="{StaticResource GroupBoxStyle}" Margin="4" Grid.Row="1">
-                <Grid>
+                <!-- Buttons: Init / Start / Reset / Stop -->
+                <Grid Grid.Row="1" Margin="12,8,12,14">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="PressureTime" FontSize="14" FontWeight="Bold" Grid.Column="0"/>
-                    <TextBox Text="{Binding PressureTime}" Width="120" Grid.Column="1"/>
 
-                    <TextBlock Text="BlowTime" FontSize="14" FontWeight="Bold" Grid.Column="2"/>
-                    <TextBox Text="{Binding BlowTime}" Width="120" Grid.Column="3"/>
-                    <TextBlock Text="WaitTime" FontSize="14" FontWeight="Bold" Grid.Column="4"/>
-                    <TextBox Text="{Binding WaitTime}" Width="120" Grid.Column="5"/>
+                    <!-- Init -->
+                    <Button Grid.Column="0" Command="{Binding MachineInitCommand}"
+                            IsEnabled="{Binding IsInitializing, Converter={StaticResource InverseBoolConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#0F3460"/>
+                                <Setter Property="BorderBrush" Value="#2A5A8C"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                <Setter Property="FontSize" Value="18"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="6">
+                                                <TextBlock Text="Init"
+                                                           Foreground="{TemplateBinding Foreground}"
+                                                           FontSize="{TemplateBinding FontSize}"
+                                                           FontWeight="{TemplateBinding FontWeight}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#1A4A7A"/>
+                                                    <Setter Property="BorderBrush" Value="#3498DB"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#0A2040"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Background" Value="#0A1628"/>
+                                                    <Setter Property="BorderBrush" Value="#1C3A52"/>
+                                                    <Setter Property="Foreground" Value="#3A5A7A"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Start -->
+                    <Button Grid.Column="2" Command="{Binding MachineRunCommand}"
+                            IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBoolConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#0F3D20"/>
+                                <Setter Property="BorderBrush" Value="#27AE60"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                <Setter Property="FontSize" Value="18"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="6">
+                                                <TextBlock Text="Start"
+                                                           Foreground="{TemplateBinding Foreground}"
+                                                           FontSize="{TemplateBinding FontSize}"
+                                                           FontWeight="{TemplateBinding FontWeight}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#1A5A30"/>
+                                                    <Setter Property="BorderBrush" Value="#2ECC71"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#082010"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Background" Value="#0A1628"/>
+                                                    <Setter Property="BorderBrush" Value="#1C3A52"/>
+                                                    <Setter Property="Foreground" Value="#3A5A7A"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Reset -->
+                    <Button Grid.Column="4" Command="{Binding MachineResetCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#3D2A0F"/>
+                                <Setter Property="BorderBrush" Value="#E67E22"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                <Setter Property="FontSize" Value="18"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="6">
+                                                <TextBlock Text="Reset"
+                                                           Foreground="{TemplateBinding Foreground}"
+                                                           FontSize="{TemplateBinding FontSize}"
+                                                           FontWeight="{TemplateBinding FontWeight}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#5A3D18"/>
+                                                    <Setter Property="BorderBrush" Value="#F39C12"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#201508"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Stop -->
+                    <Button Grid.Column="6" Command="{Binding MachineStopCommand}"
+                            IsEnabled="{Binding IsRunning}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#3D0F0F"/>
+                                <Setter Property="BorderBrush" Value="#E74C3C"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="Foreground" Value="#ECF0F1"/>
+                                <Setter Property="FontSize" Value="18"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="6">
+                                                <TextBlock Text="Stop"
+                                                           Foreground="{TemplateBinding Foreground}"
+                                                           FontSize="{TemplateBinding FontSize}"
+                                                           FontWeight="{TemplateBinding FontWeight}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#5A1818"/>
+                                                    <Setter Property="BorderBrush" Value="#FF6B6B"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#200808"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Background" Value="#0A1628"/>
+                                                    <Setter Property="BorderBrush" Value="#1C3A52"/>
+                                                    <Setter Property="Foreground" Value="#3A5A7A"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
                 </Grid>
-            </telerik:GroupBox>
-            
-            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="4" HorizontalAlignment="Center">
-                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineInitCommand}" Content="INITIAL" Width="120" Height="80" Margin="1"
-                 local:BlinkBehavior.IsBlinking="{Binding IsInitializing}"/>
-                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineRunCommand}" Content="START" Width="120" Height="80" Margin="1"
-                 local:BlinkBehavior.IsBlinking="{Binding IsRunning}"/>
-                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineStopCommand}" Content="STOP" Width="120" Height="80" Margin="1"
-                 local:BlinkBehavior.IsBlinking="{Binding IsStopping}"/>
-                <telerik:RadButton Style="{StaticResource RadButtonStyle}" Command="{Binding MachineResetCommand}" Content="RESET" Width="120" Height="80" Margin="1"/>
-            </StackPanel>
-            
-        </Grid>
+
+            </Grid>
+        </Border>
+        
     </Grid>
+
+
 </UserControl>
