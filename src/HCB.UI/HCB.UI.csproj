@@ -101,7 +101,13 @@
   <Page Include="SUB UI\Title\TitleBar.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\USub01Tab\BondingInfoWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub01Tab\StepSeqTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub01Tab\TopHighAlignInfoWindow.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\USub08Tab\IoDeviceView.xaml">
@@ -263,8 +269,10 @@
   <Compile Include="SUB UI\PromptModal\VacuumSelector.xaml.cs" />
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
   <Compile Include="SUB UI\Title\Headerbar.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\BondingInfoWindow.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\StepLamp.cs" />
   <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\TopHighAlignInfoWindow.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\AlarmModalViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\CalibrationViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\DieMeasurement.cs" />

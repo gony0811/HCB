@@ -5,6 +5,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static HCB.UI.SERVICE.CalibrationService;
@@ -19,7 +20,10 @@ namespace HCB.UI
         private readonly SequenceHelper _sequenceHelper;
         private readonly SequenceService _sequenceService;
         private readonly DeviceManager _deviceManager;
+        private readonly RecipeService _recipeService;
         private IOManager ioManager;
+
+        public RecipeService RecipeService => _recipeService;
 
         [ObservableProperty] private int topDie = 0;
         [ObservableProperty] private int bottomDie = 0;
@@ -32,7 +36,17 @@ namespace HCB.UI
         [ObservableProperty] private VisionMarkResult topLeftAlign;
         [ObservableProperty] private VisionMarkResult topLeftFid;
 
+        [ObservableProperty] private VisionMarkResult btmRightAlign;
+        [ObservableProperty] private VisionMarkResult btmRightFid;
+        [ObservableProperty] private VisionMarkResult btmLeftAlign;
+        [ObservableProperty] private VisionMarkResult btmLeftFid;
+
         [ObservableProperty] private double errorT;
+
+        [ObservableProperty] private RecipeDto selectedRecipe;
+
+        [ObservableProperty]
+        private ObservableCollection<BondingDataPoint> bondingHistory = new ObservableCollection<BondingDataPoint>();
 
         // ── Step Lamp States ─────────────────────────────────
         [ObservableProperty] private StepState initState        = StepState.Idle;
@@ -70,12 +84,14 @@ namespace HCB.UI
             SequenceService sequenceService,
             DeviceManager deviceManager,
             IOManager ioManager,
+            RecipeService recipeService,
             ILogger logger)
         {
             _logger = logger.ForContext<StepSeqTabViewModel>();
             this.SequenceServiceVM = sequenceServiceVM;
             this._sequenceService = sequenceService;
             this._deviceManager = deviceManager;
+            this._recipeService = recipeService;
             this.ioManager = ioManager;
 
             var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
@@ -125,22 +141,32 @@ namespace HCB.UI
         {
             _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
             await _sequenceService.DTableLoading(_cts.Token);
-            var tcs    = new TaskCompletionSource<bool>();
-            var dialog = new VacuumSelector();
-            dialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
 
-            dialog.Closed += (s, e) => tcs.SetResult(dialog.DialogResult == true);
-            dialog.ShowDialog();
+            bool confirmed = false;
+            List<int> topList = new List<int>();
+            List<int> botList = new List<int>();
 
-            bool confirmed = await tcs.Task;
+            await RunDialogOnNewThread(() =>
+            {
+                var dialog = new VacuumSelector
+                {
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
+                };
+                dialog.ShowDialog();
+
+                confirmed = dialog.DialogResult == true;
+                if (confirmed)
+                {
+                    topList = dialog.TopDieVacuums;
+                    botList = dialog.BotDieVacuums;
+                }
+            });
+
             if (!confirmed) return;
-
-            var topList = dialog.TopDieVacuums;  // List
-            var botList = dialog.BotDieVacuums;  // List
 
             if (topList.Count > 0) TopDie    = topList[0];
             if (botList.Count  > 0) BottomDie = botList[0];
-            
+
             _logger.Information(
                 "Die Load 선택 완료 — TOP: [{Top}]  BOT: [{Bot}]",
                 string.Join(", ", topList),
@@ -154,7 +180,62 @@ namespace HCB.UI
         public void InitInfo() => IsInitInfoOpen = true;
 
         [RelayCommand]
+        public void OpenTopHighAlignInfo()
+        {
+            var rightFid   = TopRightFid;
+            var rightAlign = TopRightAlign;
+            var leftFid    = TopLeftFid;
+            var leftAlign  = TopLeftAlign;
+
+            _ = RunDialogOnNewThread(() =>
+            {
+                var window = new TopHighAlignInfoWindow(rightFid, rightAlign, leftFid, leftAlign)
+                {
+                    Header = "고배율 보정 정보 (Top Die)",
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
+                };
+                window.ShowDialog();
+            });
+        }
+
+        [RelayCommand]
+        public void TopHighAlignBtmInfo()
+        {
+            var rightFid   = BtmRightFid;
+            var rightAlign = BtmRightAlign;
+            var leftFid    = BtmLeftFid;
+            var leftAlign  = BtmLeftAlign;
+
+            _ = RunDialogOnNewThread(() =>
+            {
+                var window = new TopHighAlignInfoWindow(rightFid, rightAlign, leftFid, leftAlign)
+                {
+                    Header = "고배율 보정 정보 (Bottom Die)",
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
+                };
+                window.ShowDialog();
+            });
+        }
+
+        [RelayCommand]
         public void CloseInitInfo() => IsInitInfoOpen = false;
+
+        // ── Bonding Info (BONDING 스텝 INFO 버튼) ────────────────────
+        [RelayCommand]
+        public void TopHighAlignTopInfo()
+        {
+            var recipeService = _recipeService;
+            var history       = BondingHistory.ToList();
+
+            _ = RunDialogOnNewThread(() =>
+            {
+                var window = new BondingInfoWindow(recipeService, history)
+                {
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
+                };
+                window.ShowDialog();
+            });
+        }
 
         // BOTTOM ALIGN 
         [RelayCommand]
@@ -272,6 +353,33 @@ namespace HCB.UI
             catch (Exception e) { TopPlaceState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
+
+        // ── 모달창 별도 STA 스레드 실행 헬퍼 ────────────────────────
+        // ShowDialog()를 새 STA 스레드에서 실행하여 메인 UI가 블로킹되지 않도록 한다.
+        private static Task RunDialogOnNewThread(Action dialogAction)
+        {
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    dialogAction();
+                    tcs.SetResult(true);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+                finally
+                {
+                    System.Windows.Threading.Dispatcher.CurrentDispatcher.InvokeShutdown();
+                }
+            });
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.IsBackground = true;
+            thread.Start();
+            return tcs.Task;
+        }
 
         public async Task BtmInit()
         {
