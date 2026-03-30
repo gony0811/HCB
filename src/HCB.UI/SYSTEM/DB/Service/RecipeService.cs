@@ -20,20 +20,22 @@ namespace HCB.UI
     {
         private readonly RecipeRepository _recipeRepo;
         private readonly ParameterRepository _parameterRepo;
+        private readonly StepRecipeRepository _stepRecipeRepo;
 
         [ObservableProperty] private ObservableCollection<RecipeDto> recipeList = new ObservableCollection<RecipeDto>();
         [ObservableProperty] private RecipeDto useRecipe;
 
-        public RecipeService(RecipeRepository recipeRepo, ParameterRepository parameterRepo)
+        public RecipeService(RecipeRepository recipeRepo, ParameterRepository parameterRepo, StepRecipeRepository stepRecipeRepo)
         {
             _recipeRepo = recipeRepo;
             _parameterRepo = parameterRepo;
+            _stepRecipeRepo = stepRecipeRepo;
         }
 
         public async Task Initialize(CancellationToken ct = default)
         { 
             var list = await _recipeRepo.ListAsync(
-                include: q => q.Include(r => r.ParamList),
+                include: q => q.Include(r => r.ParamList).Include(r => r.StepList),
                 orderBy: q => q.OrderBy(r => r.Id),
                 asNoTracking: true,
                 ct: ct);
@@ -102,10 +104,11 @@ namespace HCB.UI
             {
                 Name = CreateCopyName(recipDto.Name),
                 IsActive = false,
-                ParamList = new List<RecipeParam>()
+                ParamList = new List<RecipeParam>(),
+                StepList = new List<StepRecipe>()
             };
 
-            foreach (var p in recipDto.ParamList) 
+            foreach (var p in recipDto.ParamList)
             {
                 newRecipe.ParamList.Add(new RecipeParam
                 {
@@ -116,6 +119,17 @@ namespace HCB.UI
                     Description = p.Description,
                     UnitType = p.UnitType,
                     ValueType = p.ValueType
+                });
+            }
+
+            foreach (var s in recipDto.StepList)
+            {
+                newRecipe.StepList.Add(new StepRecipe
+                {
+                    StepNumber = s.StepNumber,
+                    Force = s.Force,
+                    DurationTime = s.DurationTime,
+                    Description = s.Description
                 });
             }
             var created = await _recipeRepo.AddAsync(newRecipe);
@@ -160,6 +174,29 @@ namespace HCB.UI
             if (targetParam != null)
             {
                 recipe.ParamList.Remove(targetParam);
+            }
+        }
+
+        public async Task AddStep(StepRecipeDto stepDto)
+        {
+            var entity = await _stepRecipeRepo.AddAsync(stepDto.ToEntity());
+            var recipe = RecipeList.FirstOrDefault(r => r.Id == entity.RecipeId);
+            recipe?.StepList.Add(new StepRecipeDto().ToDto(entity));
+        }
+
+        public async Task UpdateStep(StepRecipeDto stepDto)
+        {
+            await _stepRecipeRepo.Update(stepDto.ToEntity());
+        }
+
+        public async Task DeleteStep(StepRecipeDto stepDto)
+        {
+            await _stepRecipeRepo.Remove(stepDto.Id);
+            var recipe = RecipeList.FirstOrDefault(r => r.Id == stepDto.RecipeId);
+            var target = recipe?.StepList.FirstOrDefault(s => s.Id == stepDto.Id);
+            if (target != null)
+            {
+                recipe.StepList.Remove(target);
             }
         }
 

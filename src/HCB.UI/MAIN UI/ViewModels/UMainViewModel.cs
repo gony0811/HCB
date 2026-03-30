@@ -21,6 +21,7 @@ namespace HCB.UI
         private LogRepository logRepository;
 
         private Page mainPage;
+        private Page recipePage;
         private Page parameterPage;
         private Page userPage;
         private Page logPage;
@@ -51,8 +52,9 @@ namespace HCB.UI
         public UMainViewModel(
             ILogger logger,
             LogRepository logRepository,
-            USub01 uSub01, 
+            USub01 uSub01,
             USub02 uSub02,
+            USub09 uSub09,
             USub03 uSub03,
             USub04 uSub04,
             USub05 uSub05,
@@ -64,7 +66,8 @@ namespace HCB.UI
             NavigationViewModel navVM)
         {
             this.mainPage = uSub01;
-            this.parameterPage = uSub02;
+            this.recipePage = uSub02;
+            this.parameterPage = uSub09;
             this.userPage = uSub03;
             this.logPage = uSub04;
             this.alarmPage = uSub05;
@@ -126,7 +129,10 @@ namespace HCB.UI
             switch(key)
             {
                 case "MAIN":
-                    CurrentPage = mainPage;                            
+                    CurrentPage = mainPage;
+                    break;
+                case "RECIPE":
+                    CurrentPage = recipePage;
                     break;
                 case "PARAMETER":
                     CurrentPage = parameterPage;

@@ -488,6 +488,86 @@ namespace HCB.Data
         }
     }
 
+    public class StepRecipeConfig : IEntityTypeConfiguration<StepRecipe>
+    {
+        public void Configure(EntityTypeBuilder<StepRecipe> e)
+        {
+            e.ToTable("StepRecipe");
+
+            e.HasKey(x => x.Id);
+
+            e.Property(x => x.Id)
+                .ValueGeneratedOnAdd()
+                .HasAnnotation("Sqlite:Autoincrement", true);
+
+            e.Property(x => x.StepNumber)
+                .IsRequired();
+
+            e.Property(x => x.Force)
+                .IsRequired()
+                .HasDefaultValue(0.0);
+
+            e.Property(x => x.DurationTime)
+                .IsRequired()
+                .HasDefaultValue(0.0);
+
+            e.Property(x => x.Description)
+                .HasMaxLength(200)
+                .IsRequired(false);
+
+            e.Property(x => x.RecipeId)
+                .IsRequired();
+
+            e.HasOne(x => x.Recipe)
+                .WithMany(r => r.StepList)
+                .HasForeignKey(x => x.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class ECParamConfig : IEntityTypeConfiguration<ECParam>
+    {
+        public void Configure(EntityTypeBuilder<ECParam> e)
+        {
+            e.ToTable("ECParam");
+
+            e.HasKey(x => x.Id);
+
+            e.Property(x => x.Id)
+                .ValueGeneratedOnAdd()
+                .HasAnnotation("Sqlite:Autoincrement", true);
+
+            e.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            e.HasIndex(x => x.Name).IsUnique();
+
+            e.Property(x => x.Value)
+                .IsRequired();
+
+            e.Property(x => x.Minimum)
+                .HasMaxLength(100)
+                .IsRequired(false);
+
+            e.Property(x => x.Maximum)
+                .HasMaxLength(100)
+                .IsRequired(false);
+
+            e.Property(x => x.Description)
+                .HasMaxLength(500)
+                .IsRequired(false);
+
+            e.Property(x => x.ValueType)
+                .HasConversion<string>()
+                .IsRequired();
+
+            e.Property(x => x.UnitType)
+                .HasConversion<string>()
+                .IsRequired();
+        }
+    }
+
     public class LogConfig : IEntityTypeConfiguration<LogModel>
     {
         public void Configure(EntityTypeBuilder<LogModel> e)

@@ -1,0 +1,88 @@
+<Page x:Class="HCB.UI.USub09"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+      xmlns:local="clr-namespace:HCB.UI"
+      mc:Ignorable="d"
+     >
+    <!-- 파라미터 화면 -->
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/Common/Styles/DefaultResource.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <telerik:RadHighlightTextBlock Text="파라미터 설정"
+                                        FontSize="24"
+                                        FontWeight="SemiBold"
+                                        Grid.Row="0"
+                                        Margin="10"
+                                        Style="{StaticResource RadHighlightTextBlockStyle}"/>
+
+        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="EC 파라미터 목록" Grid.Row="1" Margin="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <telerik:RadGridView x:Name="ParamGrid"
+                                     Grid.Row="0"
+                                     ItemsSource="{Binding ParamList}"
+                                     SelectedItem="{Binding SelectedParam, Mode=TwoWay}"
+                                     Style="{StaticResource RadGridViewStyle}"
+                                     ShowGroupPanel="False"
+                                     FontSize="18"
+                                     AutoGenerateColumns="False"
+                                     Margin="0,8,0,0">
+                    <telerik:RadGridView.Columns>
+                        <telerik:GridViewColumn Header="Name" Width="2*">
+                            <telerik:GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <telerik:HighlightTextBlock Text="{Binding Name}" FontSize="16" VerticalAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
+                                </DataTemplate>
+                            </telerik:GridViewColumn.CellTemplate>
+                        </telerik:GridViewColumn>
+                        <telerik:GridViewColumn Header="Value" Width="2*">
+                            <telerik:GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Value}" />
+                                </DataTemplate>
+                            </telerik:GridViewColumn.CellTemplate>
+                        </telerik:GridViewColumn>
+                        <telerik:GridViewDataColumn Header="Unit"
+                            Width="100"
+                            DataMemberBinding="{Binding UnitType}" />
+                        <telerik:GridViewDataColumn Header="Description"
+                            Width="3*"
+                            DataMemberBinding="{Binding Description}" />
+                    </telerik:RadGridView.Columns>
+                </telerik:RadGridView>
+
+                <StackPanel Grid.Row="1" HorizontalAlignment="Right" Margin="10" Orientation="Horizontal">
+                    <telerik:RadButton Content="생성"
+                                       Width="80" Height="30" Margin="4"
+                                       Command="{Binding CreateParamCommand}"
+                                       Style="{StaticResource RadButtonStyle}"/>
+                    <telerik:RadButton Content="수정"
+                                       Width="80" Height="30" Margin="4"
+                                       Command="{Binding UpdateParamCommand}"
+                                       Style="{StaticResource RadButtonStyle}"/>
+                    <telerik:RadButton Content="삭제"
+                                       Width="80" Height="30" Margin="4"
+                                       Command="{Binding DeleteParamCommand}"
+                                       Style="{StaticResource RadButtonStyle}"/>
+                </StackPanel>
+            </Grid>
+        </telerik:GroupBox>
+    </Grid>
+</Page>

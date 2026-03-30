@@ -17,5 +17,7 @@ namespace HCB.Data.Entity
         public DateTime UpdatedAt { get; set; }
 
         public ICollection<RecipeParam> ParamList { get; set; } = new List<RecipeParam>();
+
+        public ICollection<StepRecipe> StepList { get; set; } = new List<StepRecipe>();
     }
 }

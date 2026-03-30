@@ -33,6 +33,7 @@ namespace HCB.Data
                 var screens = new List<Screen>
                 {
                     await UpsertScreenAsync(db, code:"MAIN",      name:"메인",     displayOrder: 10, isEnabled:true, ct).ConfigureAwait(false),
+                    await UpsertScreenAsync(db, code:"RECIPE",    name:"레시피",   displayOrder: 15, isEnabled:true, ct).ConfigureAwait(false),
                     await UpsertScreenAsync(db, code:"PARAMETER", name:"파라미터", displayOrder: 20, isEnabled:true, ct).ConfigureAwait(false),
                     await UpsertScreenAsync(db, code:"USER",      name:"사용자",   displayOrder: 30, isEnabled:true, ct).ConfigureAwait(false),
                     await UpsertScreenAsync(db, code:"LOG",       name:"로그",     displayOrder: 40, isEnabled:true, ct).ConfigureAwait(false),

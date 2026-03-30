@@ -75,6 +75,9 @@ namespace HCB.UI
             var recipeService = _host.Services.GetRequiredService<RecipeService>();
             await recipeService.Initialize();
 
+            var ecParamService = _host.Services.GetRequiredService<ECParamService>();
+            await ecParamService.Initialize();
+
             var userService = _host.Services.GetRequiredService<UserService>();
             await userService.InitializeAsync();
             SplashScreenUpdate("데이터베이스 연결 및 초기화 완료", 25);
