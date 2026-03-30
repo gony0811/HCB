@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
@@ -140,40 +141,46 @@ namespace HCB.UI
         public async Task DieLoad()
         {
             _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
-            await _sequenceService.DTableLoading(_cts.Token);
-
-            bool confirmed = false;
-            List<int> topList = new List<int>();
-            List<int> botList = new List<int>();
-
-            await RunDialogOnNewThread(() =>
+            try
             {
-                var dialog = new VacuumSelector
+                await _sequenceService.DTableLoading(_cts.Token);
+
+                bool confirmed = false;
+                List<int> topList = new List<int>();
+                List<int> botList = new List<int>();
+
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
-                };
-                dialog.ShowDialog();
+                    var dialog = new VacuumSelector
+                    {
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen
+                    };
+                    dialog.ShowDialog();
+                    confirmed = dialog.DialogResult == true;
+                    if (confirmed)
+                    {
+                        topList = dialog.TopDieVacuums;
+                        botList = dialog.BotDieVacuums;
+                    }
+                });
 
-                confirmed = dialog.DialogResult == true;
-                if (confirmed)
-                {
-                    topList = dialog.TopDieVacuums;
-                    botList = dialog.BotDieVacuums;
-                }
-            });
+                if (!confirmed) return;
 
-            if (!confirmed) return;
+                if (topList.Count > 0) TopDie = topList[0];
+                if (botList.Count > 0) BottomDie = botList[0];
 
-            if (topList.Count > 0) TopDie    = topList[0];
-            if (botList.Count  > 0) BottomDie = botList[0];
+                _logger.Information(
+                    "Die Load 선택 완료 — TOP: [{Top}]  BOT: [{Bot}]",
+                    string.Join(", ", topList),
+                    string.Join(", ", botList));
 
-            _logger.Information(
-                "Die Load 선택 완료 — TOP: [{Top}]  BOT: [{Bot}]",
-                string.Join(", ", topList),
-                string.Join(", ", botList));
-
-            List<int> vacs = new List<int> { TopDie, BottomDie };
-            await _sequenceService.DTableLoadComplete(vacs, _cts.Token);
+                List<int> vacs = new List<int> { TopDie, BottomDie };
+                await _sequenceService.DTableLoadComplete(vacs, _cts.Token);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e.Message);
+            }
         }
 
         [RelayCommand]

@@ -80,6 +80,9 @@
   <Page Include="SUB UI\Pad\UPasswordNPad.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\PromptModal\JogWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\PromptModal\ParameterCreateWindow.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -265,6 +268,7 @@
   <Compile Include="SUB UI\Pad\UNmumPad.xaml.cs" />
   <Compile Include="SUB UI\Pad\UPasswordNPad.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
+  <Compile Include="SUB UI\PromptModal\JogWindow.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\VacuumSelector.xaml.cs" />
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
@@ -276,6 +280,7 @@
   <Compile Include="SUB UI\ViewModels\AlarmModalViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\CalibrationViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\DieMeasurement.cs" />
+  <Compile Include="SUB UI\ViewModels\JogWindowVM.cs" />
   <Compile Include="SUB UI\ViewModels\MotionMoveVM.cs" />
   <Compile Include="SUB UI\ViewModels\ParameterCreateVM.cs" />
   <Compile Include="SUB UI\PromptModal\ParameterCreateWindow.xaml.cs" />

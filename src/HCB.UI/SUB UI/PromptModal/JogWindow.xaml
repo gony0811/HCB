@@ -1,0 +1,510 @@
+﻿<telerik:RadWindow x:Class="HCB.UI.JogWindow"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:HCB.UI"
+                    xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+                    Header="Jog Control"
+                    Style="{StaticResource RadWindowStyle}"
+                    CanMove="True"
+                    Width="860"
+                    Height="780"
+                    Background="#FF0D0D1A">
+
+    <telerik:RadWindow.Resources>
+        <SolidColorBrush x:Key="PanelBg"      Color="#FF1A1A2E"/>
+        <SolidColorBrush x:Key="CardBg"       Color="#FF16213E"/>
+        <SolidColorBrush x:Key="AccentBlue"   Color="#FF0F3460"/>
+        <SolidColorBrush x:Key="NeonCyan"     Color="#FF00D4FF"/>
+        <SolidColorBrush x:Key="NeonOrange"   Color="#FFFF6B35"/>
+        <SolidColorBrush x:Key="NeonGreen"    Color="#FF39FF14"/>
+        <SolidColorBrush x:Key="TextPrimary"  Color="#FFE0E0F0"/>
+        <SolidColorBrush x:Key="TextMuted"    Color="#FF8888AA"/>
+        <SolidColorBrush x:Key="BorderSubtle" Color="#FF2A2A4A"/>
+
+        <!-- 입력 TextBox -->
+        <Style x:Key="InputBox" TargetType="TextBox">
+            <Setter Property="Width"                    Value="100"/>
+            <Setter Property="Height"                   Value="28"/>
+            <Setter Property="Background"               Value="#FF0D0D1A"/>
+            <Setter Property="Foreground"               Value="#FFE0E0F0"/>
+            <Setter Property="BorderBrush"              Value="#FF2A2A4A"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="FontFamily"               Value="Consolas"/>
+            <Setter Property="FontSize"                 Value="16"/>
+            <Setter Property="TextAlignment"            Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding"                  Value="2,0"/>
+            <Style.Triggers>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="#FF00D4FF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 소형 라벨 -->
+        <Style x:Key="MiniLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily"          Value="Consolas"/>
+            <Setter Property="FontSize"            Value="10"/>
+            <Setter Property="Foreground"          Value="#FF8888AA"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin"              Value="0,2,0,0"/>
+        </Style>
+
+        <!-- 모드 토글 버튼 -->
+        <Style x:Key="ModeBtn" TargetType="Button">
+            <Setter Property="Height"          Value="36"/>
+            <Setter Property="MinWidth"        Value="120"/>
+            <Setter Property="FontFamily"      Value="Consolas"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="FontWeight"      Value="Bold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- HX 수평 버튼 — Continue -->
+        <Style x:Key="JogHBtn" TargetType="Button">
+            <Setter Property="Width"           Value="64"/>
+            <Setter Property="Height"          Value="40"/>
+            <Setter Property="FontFamily"      Value="Consolas"/>
+            <Setter Property="FontSize"        Value="16"/>
+            <Setter Property="FontWeight"      Value="Bold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 수직 버튼 공통 베이스 -->
+        <Style x:Key="JogVBtnBase" TargetType="Button">
+            <Setter Property="Width"           Value="100"/>
+            <Setter Property="Height"          Value="80"/>
+            <Setter Property="FontFamily"      Value="Consolas"/>
+            <Setter Property="FontSize"        Value="20"/>
+            <Setter Property="FontWeight"      Value="Bold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <!-- Continue 모드 기본색 (주황) -->
+            <Setter Property="Foreground"  Value="{StaticResource NeonOrange}"/>
+            <Setter Property="Background"  Value="#FF2A1A0A"/>
+            <Setter Property="BorderBrush" Value="{StaticResource NeonOrange}"/>
+        </Style>
+
+        <!-- 축 라벨 -->
+        <Style x:Key="AxisLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily"          Value="Consolas"/>
+            <Setter Property="FontSize"            Value="14"/>
+            <Setter Property="FontWeight"          Value="Bold"/>
+            <Setter Property="Foreground"          Value="{StaticResource TextMuted}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin"              Value="0,5,0,0"/>
+        </Style>
+
+        <!-- 섹션 카드 -->
+        <Style x:Key="SectionCard" TargetType="Border">
+            <Setter Property="Background"      Value="{StaticResource CardBg}"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="10"/>
+            <Setter Property="Padding"         Value="16,12"/>
+        </Style>
+
+        <!-- 섹션 헤더 -->
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Margin"     Value="0,0,0,10"/>
+        </Style>
+    </telerik:RadWindow.Resources>
+
+    <Border Padding="16" Background="{StaticResource PanelBg}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Row 0: 모드 선택 -->
+                <RowDefinition Height="Auto"/>
+                <!-- Row 1: HX -->
+                <RowDefinition Height="*"/>
+                <!-- Row 2: Multi-axis -->
+            </Grid.RowDefinitions>
+
+            <!-- ══════════════════════════════
+                 ROW 0 — 모드 선택
+            ══════════════════════════════ -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource CardBg}"
+                    BorderBrush="{StaticResource BorderSubtle}"
+                    BorderThickness="1" CornerRadius="10"
+                    Padding="16,10" Margin="0,0,0,10">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+
+                    <TextBlock Text="MODE"
+                               FontFamily="Consolas" FontSize="13" FontWeight="Bold"
+                               Foreground="{StaticResource TextMuted}"
+                               VerticalAlignment="Center" Margin="0,0,16,0"/>
+
+                    <!-- CONTINUE -->
+                    <Button Style="{StaticResource ModeBtn}"
+                            x:Name="BtnModeContinue"
+                            Command="{Binding SetContinueModeCommand}"
+                            Margin="0,0,8,0"
+                            ToolTip="누르는 동안 계속 이동">
+                        <Button.Background>
+                            <SolidColorBrush Color="#FF2A1A0A"/>
+                        </Button.Background>
+                        <Button.BorderBrush>
+                            <SolidColorBrush Color="#FFFF6B35"/>
+                        </Button.BorderBrush>
+                        <StackPanel Orientation="Horizontal" Margin="12,0">
+                            <Ellipse x:Name="DotContinue" Width="8" Height="8"
+                                     Fill="#FFFF6B35" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="CONTINUE" Foreground="#FFFF6B35"
+                                       FontFamily="Consolas" FontSize="13" FontWeight="Bold"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- PITCH -->
+                    <Button Style="{StaticResource ModeBtn}"
+                            x:Name="BtnModePitch"
+                            Command="{Binding SetPitchModeCommand}"
+                            ToolTip="클릭 시 Pitch 만큼 이동">
+                        <Button.Background>
+                            <SolidColorBrush Color="#FF0A2A0A"/>
+                        </Button.Background>
+                        <Button.BorderBrush>
+                            <SolidColorBrush Color="#FF39FF14"/>
+                        </Button.BorderBrush>
+                        <StackPanel Orientation="Horizontal" Margin="12,0">
+                            <Ellipse x:Name="DotPitch" Width="8" Height="8"
+                                     Fill="#FF39FF14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="PITCH" Foreground="#FF39FF14"
+                                       FontFamily="Consolas" FontSize="13" FontWeight="Bold"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════════════════════════
+                 ROW 1 — HX 수평 조그
+            ══════════════════════════════ -->
+            <Border Grid.Row="1" Style="{StaticResource SectionCard}" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionHeader}">
+                        <Run Foreground="{StaticResource NeonCyan}" Text="[ HX ]"/>
+                        <Run Text="  Horizontal Axis"/>
+                    </TextBlock>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 후진 (단일 버튼 — 코드비하인드에서 모드 분기) -->
+                        <Button Grid.Column="0"
+                                Style="{StaticResource JogHBtn}"
+                                x:Name="BtnHxBack"
+                                Tag="HX|Back"
+                                Foreground="{StaticResource NeonCyan}"
+                                Background="{StaticResource AccentBlue}"
+                                BorderBrush="{StaticResource NeonCyan}"
+                                PreviewMouseLeftButtonDown="JogBtn_Down"
+                                PreviewMouseLeftButtonUp="JogBtn_Up"
+                                MouseLeave="JogBtn_Leave"
+                                Click="JogBtn_Click"
+                                Margin="0,0,10,0"
+                                ToolTip="HX 후진">
+                            &#x276E;
+                        </Button>
+
+                        <!-- 위치 표시 -->
+                        <Border Grid.Column="1"
+                                Background="#FF0D0D1A"
+                                BorderBrush="{StaticResource BorderSubtle}"
+                                BorderThickness="1" CornerRadius="4" Padding="12,0">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <TextBlock Text="POSITION" FontFamily="Consolas" FontSize="9"
+                                           Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding HxPosition, StringFormat={}{0:F3} mm}"
+                                           FontFamily="Consolas" FontSize="18" FontWeight="Bold"
+                                           Foreground="{StaticResource NeonCyan}" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 전진 -->
+                        <Button Grid.Column="2"
+                                Style="{StaticResource JogHBtn}"
+                                x:Name="BtnHxFront"
+                                Tag="HX|Front"
+                                Foreground="{StaticResource NeonCyan}"
+                                Background="{StaticResource AccentBlue}"
+                                BorderBrush="{StaticResource NeonCyan}"
+                                PreviewMouseLeftButtonDown="JogBtn_Down"
+                                PreviewMouseLeftButtonUp="JogBtn_Up"
+                                MouseLeave="JogBtn_Leave"
+                                Click="JogBtn_Click"
+                                Margin="10,0,0,0"
+                                ToolTip="HX 전진">
+                            &#x276F;
+                        </Button>
+                    </Grid>
+
+                    <!-- HX Speed + Pitch -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                        <TextBlock Text="SPEED" FontFamily="Consolas" FontSize="14"
+                                   Foreground="{StaticResource TextMuted}"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBox Style="{StaticResource InputBox}"
+                                 Text="{Binding HXSpeed, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}"/>
+                        <TextBlock Text="mm/s" FontFamily="Consolas" FontSize="14"
+                                   Foreground="{StaticResource TextMuted}"
+                                   VerticalAlignment="Center" Margin="4,0,24,0"/>
+                        <TextBlock Text="PITCH" FontFamily="Consolas" FontSize="14"
+                                   Foreground="{StaticResource NeonGreen}"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBox Style="{StaticResource InputBox}"
+                                 Text="{Binding HXPitch, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}"/>
+                        <TextBlock Text="mm" FontFamily="Consolas" FontSize="14"
+                                   Foreground="{StaticResource TextMuted}"
+                                   VerticalAlignment="Center" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════════════════════════
+                 ROW 2 — 다축 수직 조그
+            ══════════════════════════════ -->
+            <Border Grid.Row="2" Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionHeader}">
+                        <Run Foreground="{StaticResource NeonOrange}" Text="[ MULTI-AXIS ]"/>
+                        <Run Text="  Vertical Jog"/>
+                    </TextBlock>
+
+                    <UniformGrid Columns="5" HorizontalAlignment="Center">
+
+                        <!-- ── D_Y ── -->
+                        <StackPanel Margin="6,0" HorizontalAlignment="Center">
+                            <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
+                                    Tag="DY|Up"
+                                    PreviewMouseLeftButtonDown="JogBtn_Down"
+                                    PreviewMouseLeftButtonUp="JogBtn_Up"
+                                    MouseLeave="JogBtn_Leave"
+                                    Click="JogBtn_Click"
+                                    ToolTip="D_Y +">&#x25B2;</Button>
+                            <Border Background="#FF0D0D1A" BorderBrush="{StaticResource BorderSubtle}"
+                                    BorderThickness="1" CornerRadius="4" Padding="6,5" Margin="0,6">
+                                <TextBlock Text="{Binding DyPosition, StringFormat={}{0:F3}}"
+                                           FontFamily="Consolas" FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource NeonOrange}" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
+                                    Tag="DY|Down"
+                                    PreviewMouseLeftButtonDown="JogBtn_Down"
+                                    PreviewMouseLeftButtonUp="JogBtn_Up"
+                                    MouseLeave="JogBtn_Leave"
+                                    Click="JogBtn_Click"
+                                    ToolTip="D_Y -">&#x25BC;</Button>
+                            <TextBlock Text="D_Y" Style="{StaticResource AxisLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
+                                     Text="{Binding DYSpeed, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" ToolTip="속도"/>
+                            <TextBlock Text="spd mm/s" Style="{StaticResource MiniLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
+                                     Text="{Binding DYPitch, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" ToolTip="피치"/>
+                            <TextBlock Text="pitch mm" Style="{StaticResource MiniLabel}"/>
+                        </StackPanel>
+
+                        <!-- ── P_Y ── -->
+                        <StackPanel Margin="6,0" HorizontalAlignment="Center">
+                            <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
+                                    Tag="PY|Up"
+                                    PreviewMouseLeftButtonDown="JogBtn_Down"
+                                    PreviewMouseLeftButtonUp="JogBtn_Up"
+                                    MouseLeave="JogBtn_Leave"
+                                    Click="JogBtn_Click"
+                                    ToolTip="P_Y +">&#x25B2;</Button>
+                            <Border Background="#FF0D0D1A" BorderBrush="{StaticResource BorderSubtle}"
+                                    BorderThickness="1" CornerRadius="4" Padding="6,5" Margin="0,6">
+                                <TextBlock Text="{Binding PyPosition, StringFormat={}{0:F3}}"
+                                           FontFamily="Consolas" FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource NeonOrange}" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
+                                    Tag="PY|Down"
+                                    PreviewMouseLeftButtonDown="JogBtn_Down"
+                                    PreviewMouseLeftButtonUp="JogBtn_Up"
+                                    MouseLeave="JogBtn_Leave"
+                                    Click="JogBtn_Click"
+                                    ToolTip="P_Y -">&#x25BC;</Button>
+                            <TextBlock Text="P_Y" Style="{StaticResource AxisLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
+                                     Text="{Binding PYSpeed, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" ToolTip="속도"/>
+                            <TextBlock Text="spd mm/s" Style="{StaticResource MiniLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
+                                     Text="{Binding PYPitch, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" ToolTip="피치"/>
+                            <TextBlock Text="pitch mm" Style="{StaticResource MiniLabel}"/>
+                        </StackPanel>
+
+                        <!-- ── W_Y ── -->
+                        <StackPanel Margin="6,0" HorizontalAlignment="Center">
+                            <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
+                                    Tag="WY|Up"
+                                    PreviewMouseLeftButtonDown="JogBtn_Down"
+                                    PreviewMouseLeftButtonUp="JogBtn_Up"
+                                    MouseLeave="JogBtn_Leave"
+                                    Click="JogBtn_Click"
+                                    ToolTip="W_Y +">&#x25B2;</Button>
+                            <Border Background="#FF0D0D1A" BorderBrush="{StaticResource BorderSubtle}"
+                                    BorderThickness="1" CornerRadius="4" Padding="6,5" Margin="0,6">
+                                <TextBlock Text="{Binding WyPosition, StringFormat={}{0:F3}}"
+                                           FontFamily="Consolas" FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource NeonOrange}" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
+                                    Tag="WY|Down"
+                                    PreviewMouseLeftButtonDown="JogBtn_Down"
+                                    PreviewMouseLeftButtonUp="JogBtn_Up"
+                                    MouseLeave="JogBtn_Leave"
+                                    Click="JogBtn_Click"
+                                    ToolTip="W_Y -">&#x25BC;</Button>
+                            <TextBlock Text="W_Y" Style="{StaticResource AxisLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
+                                     Text="{Binding WYSpeed, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" ToolTip="속도"/>
+                            <TextBlock Text="spd mm/s" Style="{StaticResource MiniLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
+                                     Text="{Binding WYPitch, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" ToolTip="피치"/>
+                            <TextBlock Text="pitch mm" Style="{StaticResource MiniLabel}"/>
+                        </StackPanel>
+
+                        <!-- ── H_Z ── -->
+                        <StackPanel Margin="6,0" HorizontalAlignment="Center">
+                            <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
+                                    Tag="HZ|Down"
+                                    PreviewMouseLeftButtonDown="JogBtn_Down"
+                                    PreviewMouseLeftButtonUp="JogBtn_Up"
+                                    MouseLeave="JogBtn_Leave"
+                                    Click="JogBtn_Click"
+                                    ToolTip="H_Z +">&#x25B2;</Button>
+                            <Border Background="#FF0D0D1A" BorderBrush="{StaticResource BorderSubtle}"
+                                    BorderThickness="1" CornerRadius="4" Padding="6,5" Margin="0,6">
+                                <TextBlock Text="{Binding HzPosition, StringFormat={}{0:F3}}"
+                                           FontFamily="Consolas" FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource NeonOrange}" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
+                                    Tag="HZ|Up"
+                                    PreviewMouseLeftButtonDown="JogBtn_Down"
+                                    PreviewMouseLeftButtonUp="JogBtn_Up"
+                                    MouseLeave="JogBtn_Leave"
+                                    Click="JogBtn_Click"
+                                    ToolTip="H_Z -">&#x25BC;</Button>
+                            <TextBlock Text="H_Z" Style="{StaticResource AxisLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
+                                     Text="{Binding HZSpeed, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" ToolTip="속도"/>
+                            <TextBlock Text="spd mm/s" Style="{StaticResource MiniLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
+                                     Text="{Binding HZPitch, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" ToolTip="피치"/>
+                            <TextBlock Text="pitch mm" Style="{StaticResource MiniLabel}"/>
+                        </StackPanel>
+
+                        <!-- ── h_z ── -->
+                        <StackPanel Margin="6,0" HorizontalAlignment="Center">
+                            <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
+                                    Tag="hz|Down"
+                                    PreviewMouseLeftButtonDown="JogBtn_Down"
+                                    PreviewMouseLeftButtonUp="JogBtn_Up"
+                                    MouseLeave="JogBtn_Leave"
+                                    Click="JogBtn_Click"
+                                    ToolTip="h_z +">&#x25B2;</Button>
+                            <Border Background="#FF0D0D1A" BorderBrush="{StaticResource BorderSubtle}"
+                                    BorderThickness="1" CornerRadius="4" Padding="6,5" Margin="0,6">
+                                <TextBlock Text="{Binding HzSmallPosition, StringFormat={}{0:F3}}"
+                                           FontFamily="Consolas" FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource NeonOrange}" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
+                                    Tag="hz|Up"
+                                    PreviewMouseLeftButtonDown="JogBtn_Down"
+                                    PreviewMouseLeftButtonUp="JogBtn_Up"
+                                    MouseLeave="JogBtn_Leave"
+                                    Click="JogBtn_Click"
+                                    ToolTip="h_z -">&#x25BC;</Button>
+                            <TextBlock Text="h_z" Style="{StaticResource AxisLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
+                                     Text="{Binding HzSpeed, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" ToolTip="속도"/>
+                            <TextBlock Text="spd mm/s" Style="{StaticResource MiniLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
+                                     Text="{Binding HzPitch, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" ToolTip="피치"/>
+                            <TextBlock Text="pitch mm" Style="{StaticResource MiniLabel}"/>
+                        </StackPanel>
+
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+        </Grid>
+    </Border>
+</telerik:RadWindow>

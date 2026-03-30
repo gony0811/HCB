@@ -6,6 +6,8 @@ using Serilog;
 using System.Threading;
 using System.Drawing.Printing;
 using System;
+using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HCB.UI
 {
@@ -13,9 +15,12 @@ namespace HCB.UI
     public partial class ManualTabViewModel : ObservableObject
     {
         private ILogger _logger;
+        private readonly IServiceProvider _serviceProvider;
+
         private SequenceService _sequenceService;
         private DeviceManager _deviceManager;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private JogWindow? _jogWindow;
         // D-Table
         [ObservableProperty]
         private IAxis? dyAxis;
@@ -50,10 +55,12 @@ namespace HCB.UI
         // 생성자에서 IoC로부터 팩토리 함수 주입
         public ManualTabViewModel(
             ILogger logger,
+            IServiceProvider serviceProvider,
             DeviceManager deviceManager,
             SequenceService sequenceService)
         {
             _logger = logger.ForContext<ManualTabViewModel>();
+            _serviceProvider = serviceProvider;
             _deviceManager = deviceManager;
             _sequenceService = sequenceService;
             Initialize();
@@ -239,5 +246,24 @@ namespace HCB.UI
                 _logger.Error(ex, "PY Move Position Error");
             }
         }
+
+        [RelayCommand]
+        private void JogOpen()
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (_jogWindow is not null && _jogWindow.IsOpen)
+                {
+                    _jogWindow.BringToFront();
+                    return;
+                }
+
+                _jogWindow = _serviceProvider.GetRequiredService<JogWindow>();
+                _jogWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                _jogWindow.Show();
+            });
+        }
+
+
     }
 }

@@ -17,7 +17,7 @@ namespace HCB.UI
             try
             {
                 _logger.Information("Die Loading Start");
-                //EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
@@ -30,7 +30,7 @@ namespace HCB.UI
                 //if (HX == null) throw new Exception("H Table X axis not found in motion device.");
 
                 //Task moveHX = _sequenceHelper.MoveAsync(HX.MotorNo, MotionExtensions.DIE_LOADING, ct);
-                Task moveDY = _sequenceHelper.MoveAsync(DY.MotorNo, MotionExtensions.DIE_LOADING, ct);
+                Task moveDY = _sequenceHelper.MoveAsync(DY.MotorNo, MotionExtensions.LOAD_POSITION, ct);
 
                 // 작업 동시에 수행
                 await Task.WhenAll(moveDY);
@@ -182,7 +182,6 @@ namespace HCB.UI
 
                 if (!results.All(r => r)) throw new Exception("보정 실패");
 
-                await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_PICKUP_STANBY, ct);
                 await MotionsMove(MotionExtensions.H_Z, ShankToDieOffset-btmDieThickness, ct);
 
                 var headPicker = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
