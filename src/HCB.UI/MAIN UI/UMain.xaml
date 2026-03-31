@@ -338,6 +338,22 @@
                     </StackPanel>
                 </telerik:RadToggleButton>
 
+                <telerik:RadToggleButton Tag="RECIPE"
+                        Command="{Binding NavigateCommand}"
+                        CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
+                        IsChecked="{Binding SelectedPageKey, Converter={StaticResource KeyEquals}, ConverterParameter=RECIPE}"
+                        IsEnabled="{Binding NavVM.RecipeEnabled}"
+                        Style="{StaticResource MenuBtn}">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                        <telerik:RadGlyph Glyph="&#xe13a;"
+                  Width="24" Height="24"
+                  Margin="0,0,0,5"
+                  HorizontalAlignment="Center"/>
+
+                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="레시피" TextAlignment="Center"/>
+                    </StackPanel>
+                </telerik:RadToggleButton>
+
                 <telerik:RadToggleButton Tag="PARAMETER"
                         Command="{Binding NavigateCommand}"
                         CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
@@ -345,9 +361,9 @@
                         IsEnabled="{Binding NavVM.ParameterEnabled}"
                         Style="{StaticResource MenuBtn}">
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-                        <telerik:RadGlyph Glyph="&#xe13a;" 
-                  Width="24" Height="24" 
-                  Margin="0,0,0,5" 
+                        <telerik:RadGlyph Glyph="&#xe401;"
+                  Width="24" Height="24"
+                  Margin="0,0,0,5"
                   HorizontalAlignment="Center"/>
 
                         <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="파라미터" TextAlignment="Center"/>

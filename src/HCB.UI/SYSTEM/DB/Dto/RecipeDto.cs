@@ -19,15 +19,19 @@ namespace HCB.UI
         [ObservableProperty]
         private ObservableCollection<RecipeParamDto> paramList = new ObservableCollection<RecipeParamDto>();
 
+        [ObservableProperty]
+        private ObservableCollection<StepRecipeDto> stepList = new ObservableCollection<StepRecipeDto>();
+
         public RecipeDto()
         {
         }
-        private RecipeDto(int id, string name, bool isActive, ObservableCollection<RecipeParamDto> paramList)
+        private RecipeDto(int id, string name, bool isActive, ObservableCollection<RecipeParamDto> paramList, ObservableCollection<StepRecipeDto> stepList)
         {
             Id = id;
             Name = name;
             IsActive = isActive;
             ParamList = paramList;
+            StepList = stepList;
         }
 
         public RecipeDto ToDto(Recipe entity)
@@ -35,14 +39,19 @@ namespace HCB.UI
             var paramDtos = new ObservableCollection<RecipeParamDto>();
             foreach (var param in entity.ParamList)
             {
-                var paramDto = new RecipeParamDto().ToDto(param);
-                paramDtos.Add(paramDto);
+                paramDtos.Add(new RecipeParamDto().ToDto(param));
+            }
+            var stepDtos = new ObservableCollection<StepRecipeDto>();
+            foreach (var step in entity.StepList)
+            {
+                stepDtos.Add(new StepRecipeDto().ToDto(step));
             }
             return new RecipeDto(
                 entity.Id,
                 entity.Name,
                 entity.IsActive,
-                paramDtos
+                paramDtos,
+                stepDtos
             );
         }
 
@@ -53,12 +62,16 @@ namespace HCB.UI
                 Id = this.Id,
                 Name = this.Name,
                 IsActive = this.IsActive,
-                ParamList = new List<RecipeParam>()
+                ParamList = new List<RecipeParam>(),
+                StepList = new List<StepRecipe>()
             };
             foreach (var paramDto in this.ParamList)
             {
-                var paramEntity = paramDto.ToEntity();
-                entity.ParamList.Add(paramEntity);
+                entity.ParamList.Add(paramDto.ToEntity());
+            }
+            foreach (var stepDto in this.StepList)
+            {
+                entity.StepList.Add(stepDto.ToEntity());
             }
             return entity;
         }

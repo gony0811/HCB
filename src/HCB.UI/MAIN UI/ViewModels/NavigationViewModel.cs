@@ -17,6 +17,8 @@ namespace HCB.UI
         // 화면 활성화 여부 뷰 모델 
         [ObservableProperty] private bool mainEnabled = true;
 
+        [ObservableProperty] private bool recipeEnabled = true;
+
         [ObservableProperty] private bool parameterEnabled = true;
 
         [ObservableProperty] private bool userEnabled = true;

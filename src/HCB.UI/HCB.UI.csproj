@@ -47,6 +47,9 @@
   <Page Include="MAIN UI\USub02.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="MAIN UI\USub09.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="MAIN UI\USub03.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -215,12 +218,14 @@
   <Compile Include="DEVICE\Interface\IMotionStatusStream.cs" />
   <Compile Include="DEVICE\PMAC IO\PmacIoDevice.cs" />
   <Compile Include="MAIN UI\USub02.xaml.cs" />
+  <Compile Include="MAIN UI\USub09.xaml.cs" />
   <Compile Include="MAIN UI\USub03.xaml.cs" />
   <Compile Include="MAIN UI\USub04.xaml.cs" />
   <Compile Include="MAIN UI\USub05.xaml.cs" />
   <Compile Include="MAIN UI\USub06.xaml.cs" />
   <Compile Include="MAIN UI\USub07.xaml.cs" />
   <Compile Include="MAIN UI\ViewModels\USub02ViewModel.cs" />
+  <Compile Include="MAIN UI\ViewModels\USub09ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub03ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub04ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub05ViewModel.cs" />
@@ -303,7 +308,10 @@
   <Compile Include="SYSTEM\DB\Dto\ParameterCreateDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\RecipeCreateDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\RecipeDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\ECParamDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\RecipeParamDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\StepRecipeDto.cs" />
+  <Compile Include="SYSTEM\DB\Dto\StepRecipeCreateDto.cs" />
   <Compile Include="SYSTEM\DB\Dto\SharedIoState.cs" />
   <Compile Include="SYSTEM\DB\Service\AlarmService.cs" />
   <Compile Include="SYSTEM\COMMON\Converter\BoolToBrushConverter.cs" />
@@ -323,6 +331,7 @@
   <Compile Include="SYSTEM\DB\Dto\RoleScreensGroupVM.cs" />
   <Compile Include="SYSTEM\DB\Dto\SensorIoItemViewModel.cs" />
   <Compile Include="SYSTEM\DB\Service\DialogService.cs" />
+  <Compile Include="SYSTEM\DB\Service\ECParamService.cs" />
   <Compile Include="SYSTEM\DB\Service\RecipeService.cs" />
   <Compile Include="SYSTEM\DB\Service\UserService.cs" />
   <Compile Include="DEVICE\CommonType\MotionType.cs" />

@@ -78,14 +78,14 @@ namespace HCB.UI
         public async Task LoadRoleScreen()
         {
             if (CurrentAuthority == null) return;
-            var groups = await roleScreenRepository.ListAsync(predicate: x=> x.RoleId == CurrentAuthority.Id, include: query => query.Include(d => d.Screen));
-            NavVM.MainEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "MAIN")?.Granted ?? false;
-            NavVM.ParameterEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "PARAMETER")?.Granted ?? false;
-            NavVM.UserEnabled= groups.FirstOrDefault(groups => groups.Screen.Code == "USER")?.Granted ?? false;
-            NavVM.LogEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "LOG")?.Granted ?? false;
-            NavVM.AlarmEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "ALARM")?.Granted ?? false;
-            NavVM.MotionEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "MOTION")?.Granted ?? false;
-            NavVM.IOEnabled = groups.FirstOrDefault(groups => groups.Screen.Code == "IO")?.Granted ?? false;
+            NavVM.MainEnabled = true;
+            NavVM.RecipeEnabled = true;
+            NavVM.ParameterEnabled = true;
+            NavVM.UserEnabled = true;
+            NavVM.LogEnabled = true;
+            NavVM.AlarmEnabled = true;
+            NavVM.MotionEnabled = true;
+            NavVM.IOEnabled = true;
             NavVM.DeviceEnabled = CurrentAuthority.Name == "SERVICE_ENGINEER" ? Visibility.Visible : Visibility.Collapsed;
         }
     }

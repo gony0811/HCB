@@ -3,6 +3,7 @@ using System;
 using HCB.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HCB.Migrations
 {
     [DbContext(typeof(AppDb))]
-    partial class AppDbModelSnapshot : ModelSnapshot
+    [Migration("20260330113747_AddECParam")]
+    partial class AddECParam
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.11");
@@ -641,40 +644,6 @@ namespace HCB.Migrations
                     b.ToTable("Screens", (string)null);
                 });
 
-            modelBuilder.Entity("HCB.Data.Entity.StepRecipe", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasAnnotation("Sqlite:Autoincrement", true);
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<double>("DurationTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("REAL")
-                        .HasDefaultValue(0.0);
-
-                    b.Property<double>("Force")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("REAL")
-                        .HasDefaultValue(0.0);
-
-                    b.Property<int>("RecipeId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("StepNumber")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RecipeId");
-
-                    b.ToTable("StepRecipe", (string)null);
-                });
-
             modelBuilder.Entity("HCB.Data.Entity.AlarmHistory", b =>
                 {
                     b.HasOne("HCB.Data.Entity.Alarm", "Alarm")
@@ -801,17 +770,6 @@ namespace HCB.Migrations
                     b.Navigation("Screen");
                 });
 
-            modelBuilder.Entity("HCB.Data.Entity.StepRecipe", b =>
-                {
-                    b.HasOne("HCB.Data.Entity.Recipe", "Recipe")
-                        .WithMany("StepList")
-                        .HasForeignKey("RecipeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Recipe");
-                });
-
             modelBuilder.Entity("HCB.Data.Entity.Device", b =>
                 {
                     b.Navigation("IoDeviceDetail");
@@ -839,8 +797,6 @@ namespace HCB.Migrations
             modelBuilder.Entity("HCB.Data.Entity.Recipe", b =>
                 {
                     b.Navigation("ParamList");
-
-                    b.Navigation("StepList");
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.Role", b =>

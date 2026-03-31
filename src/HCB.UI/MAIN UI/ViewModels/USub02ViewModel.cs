@@ -31,6 +31,7 @@ namespace HCB.UI
         // 선택/상태
         [ObservableProperty] private RecipeDto selectedRecipe;
         [ObservableProperty] private RecipeParamDto selectedParam;
+        [ObservableProperty] private StepRecipeDto selectedStep;
         [ObservableProperty] private bool isBusy;
 
         // (필요 시) 기타 UI 상태
@@ -235,7 +236,7 @@ namespace HCB.UI
         [RelayCommand]
         public async Task DeleteParam()
         {
-            
+
             if (SelectedParam != null)
             {
                 bool result = _dialogService.ShowConfirm("파라미터 삭제", $"{SelectedParam.Name}을 삭제하시겠습니까?");
@@ -247,6 +248,84 @@ namespace HCB.UI
             else
             {
                 _dialogService.ShowMessage("파라미터 선택 필요", "파라미터를 선택해주세요");
+            }
+        }
+
+        [RelayCommand]
+        public async Task AddStep()
+        {
+            if (SelectedRecipe == null)
+            {
+                _dialogService.ShowMessage("레시피 선택 필요", "레시피를 선택해주세요");
+                return;
+            }
+
+            try
+            {
+                int nextStep = SelectedRecipe.StepList.Count > 0
+                    ? SelectedRecipe.StepList.Max(s => s.StepNumber) + 1
+                    : 1;
+
+                var dto = new StepRecipeDto
+                {
+                    RecipeId = SelectedRecipe.Id,
+                    StepNumber = nextStep,
+                    Force = 0,
+                    DurationTime = 0,
+                    Description = ""
+                };
+
+                await _recipeService.AddStep(dto);
+            }
+            catch (Exception e)
+            {
+                _dialogService.ShowMessage("저장 실패", "스텝 추가 실패");
+            }
+        }
+
+        [RelayCommand]
+        public async Task UpdateStep()
+        {
+            if (SelectedStep == null) return;
+            try
+            {
+                var stepEdit = new StepRecipeCreateDto
+                {
+                    StepNumber = SelectedStep.StepNumber,
+                    Force = SelectedStep.Force,
+                    DurationTime = SelectedStep.DurationTime,
+                    Description = SelectedStep.Description
+                };
+                bool? result = await _dialogService.ShowEditDialog(stepEdit);
+                if (result != true) return;
+
+                SelectedStep.Force = stepEdit.Force;
+                SelectedStep.DurationTime = stepEdit.DurationTime;
+                SelectedStep.Description = stepEdit.Description;
+
+                await _recipeService.UpdateStep(SelectedStep);
+                _dialogService.ShowMessage("저장", "저장되었습니다");
+            }
+            catch (Exception e)
+            {
+                _dialogService.ShowMessage("저장 실패", "스텝 수정 실패");
+            }
+        }
+
+        [RelayCommand]
+        public async Task DeleteStep()
+        {
+            if (SelectedStep != null)
+            {
+                bool result = _dialogService.ShowConfirm("스텝 삭제", $"Step {SelectedStep.StepNumber}을 삭제하시겠습니까?");
+                if (!result) return;
+
+                await _recipeService.DeleteStep(SelectedStep);
+                SelectedStep = null;
+            }
+            else
+            {
+                _dialogService.ShowMessage("스텝 선택 필요", "스텝을 선택해주세요");
             }
         }
     }
