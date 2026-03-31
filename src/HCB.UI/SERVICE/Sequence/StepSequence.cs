@@ -1,369 +1,489 @@
-﻿//using Microsoft.Extensions.Hosting;
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
-//using System.Threading;
-//using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Hosting;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using static HCB.UI.SERVICE.CalibrationService;
 
-//namespace HCB.UI
-//{
-//    public partial class SequenceService : BackgroundService
-//    {
-//        private async Task ExecuteStepAsync(string stepName, Action<StepState> setStepState, Func<CancellationToken, Task> action, Func<CancellationToken, Task> measureAction, CancellationToken ct)
-//        {
-//            try
-//            {
-//                _logger.Information($"Step {stepName} Start");
-//                setStepState(StepState.InProgress);
+namespace HCB.UI
+{
+    public partial class SequenceService : BackgroundService
+    {
+        public async Task BtmDieDrop(int vacNum, CancellationToken ct)
+        {
+            if (double.TryParse(_recipeService.FindByParam("BtmDieThickness").Value, out double btmDieThickness))
+            { }
+            else
+            {
+                throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
+            }
 
-//                using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct))
-//                {
-//                    // 1. 실제 작업 (완료되면 토큰을 취소시킴)
-//                    var actionTask = Task.Run(async () =>
-//                    {
-//                        try
-//                        {
-//                            await action(linkedCts.Token);
-//                        }
-//                        finally
-//                        {
-//                            if (!linkedCts.IsCancellationRequested)
-//                            {
-//                                linkedCts.Cancel(); // 작업 완료(또는 에러) 시 시간 측정 루프 종료 신호
-//                            }
-//                        }
-//                    }, ct);
+            // W-Table로 이동
+            await Init_Head(ct);
+            await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+            await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", -btmDieThickness, ct);
+            await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -btmDieThickness, ct);
+            await _sequenceHelper.WTableVacuum(vacNum, eOnOff.On, ct);
+            bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
+            if (!result) throw new Exception("HeadPicker를 확인해주세요");
+        }
 
-//                    // 2. 시간 측정 작업 (토큰이 취소될 때까지 경과 시간을 UI에 업데이트)
-//                    var measureTask = measureAction(linkedCts.Token);
+        public async Task<VisionMarkResult> BtmDieVisionRightFid(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
-//                    // 두 작업이 끝날 때까지 대기
-//                    await Task.WhenAll(actionTask, measureTask);
-//                }
+                var result = false;
+                VisionMarkResult fid = new VisionMarkResult
+                {
+                    MarkType = MarkType.FIDUCIAL,
+                    DirectType = DirectType.RIGHT,
+                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = GetCurrentPosition(MotionExtensions.W_Y, ct),
+                };
 
-//                ct.ThrowIfCancellationRequested(); // 외부에서 취소 요청이 있었는지 확인
-//                setStepState(StepState.Completed);
-//            }
-//            catch (OperationCanceledException)
-//            {
-//                setStepState(StepState.Aborted);
-//                _logger.Information($"Step {stepName} Canceled");
-//            }
-//            catch (Exception ex)
-//            {
-//                setStepState(StepState.Failed);
-//                _logger.Error(ex, ex.Message);
-//            }
-//            finally
-//            {
-//                _logger.Information($"Step {stepName} End");
-//            }
-//        }
+                result = await communicationService.RequestAFStart(CameraType.HC2_HIGH, markType: MarkType.FIDUCIAL, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC2_HIGH, "RIGHT");
+                VisionResult(rFidXY);
+                fid.DxCamToMark = rFidXY.X;
+                fid.DyCamToMark = rFidXY.Y;
+                return fid;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
 
-        
-//        public async Task StepDieCarrierAlign(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Die Carrier Align",
-//                state => this._sequenceServiceVM.StepDieCarrierAlignCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Die Carrier Align 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepDieCarrierAlign,
-//                ct
-//            );
-//        }
+        public async Task<VisionMarkResult> BtmDieVisionLeftFid(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
-//        public async Task StepDiePickUp(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Die PickUp",
-//                state => this._sequenceServiceVM.StepDiePickUpCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Die Pick 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepDiePickUp,
-//                ct
-//            );
-//        }
+                var result = false;
+                VisionMarkResult fid = new VisionMarkResult
+                {
+                    MarkType = MarkType.FIDUCIAL,
+                    DirectType = DirectType.LEFT,
+                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = GetCurrentPosition(MotionExtensions.W_Y, ct),
+                };
 
-//        public async Task StepMovePTableCenter(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Move P-Table Center",
-//                state => this._sequenceServiceVM.StepMovePTableCenterCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        // 여기에 실제 PTable Center로 이동하는 로직을 구현합니다.
-//                        await this._sequenceHelper.MoveAsync(MotionExtensions.H_Z, MotionExtensions.DTABLE_CENTER_POSITION, token);
-//                        await this._sequenceHelper.MoveAsync(MotionExtensions.H_X, MotionExtensions.DTABLE_CENTER_POSITION, token);
-//                        await this._sequenceHelper.MoveAsync(MotionExtensions.D_Y, MotionExtensions.DTABLE_CENTER_POSITION, token);
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepMovePTableCenter,
-//                ct
-//            );
-//        }
+                result = await communicationService.RequestAFStart(CameraType.HC1_HIGH, markType: MarkType.FIDUCIAL, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC1_HIGH, "LEFT");
+                VisionResult(rFidXY);
+                fid.DxCamToMark = rFidXY.X;
+                fid.DyCamToMark = rFidXY.Y;
+                return fid;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
 
-//        public async Task StepLeftFiducialMarkAlign(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Left Fiducial Mark Align",
-//                state => this._sequenceServiceVM.StepLeftFiducialMarkAlignCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Fiducial Mark Align 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepLeftFiducialMarkAlign,
-//                ct
-//            );
-//        }
+        public async Task<VisionMarkResult> BtmDieVisionRightAlign(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
-//        public async Task StepRightFiducialMarkAlign(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Right Fiducial Mark Align",
-//                state => this._sequenceServiceVM.StepRightFiducialMarkAlignCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Fiducial Mark Align 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepRightFiducialMarkAlign,
-//                ct
-//            );
-//        }
+                var result = false;
+                VisionMarkResult fid = new VisionMarkResult
+                {
+                    MarkType = MarkType.ALIGN_MARK,
+                    DirectType = DirectType.RIGHT,
+                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = GetCurrentPosition(MotionExtensions.W_Y, ct),
+                };
 
-//        public async Task StepCalculateFiducialMarkPosition(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Calculate Fiducial Mark Position",
-//                state => this._sequenceServiceVM.StepCalculateFiducialMarkPositionCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Calculate Fiducia Mark Position 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepCalculateFiducialMarkPosition,
-//                ct
-//            );
-//        }
+                result = await communicationService.RequestAFStart(CameraType.HC2_HIGH, markType: MarkType.ALIGN_MARK, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, "RIGHT");
+                VisionResult(rFidXY);
+                fid.DxCamToMark = rFidXY.X;
+                fid.DyCamToMark = rFidXY.Y;
+                return fid;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
 
-//        public async Task StepLeftDieMarkDetect(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Left Die Mark Detect",
-//                state => this._sequenceServiceVM.StepLeftDieMarkDetectCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Left Die Mark Align 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepLeftDieMarkDetect,
-//                ct
-//            );
-//        }
+        public async Task<VisionMarkResult> BtmDieVisionLeftAlign(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
-//        public async Task StepRightDieMarkDetect(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Right Die Mark Detect",
-//                state => this._sequenceServiceVM.StepRightDieMarkDetectCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Right Die Mark Align 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepRightDieMarkDetect,
-//                ct
-//            );
-//        }
+                var result = false;
+                VisionMarkResult fid = new VisionMarkResult
+                {
+                    MarkType = MarkType.ALIGN_MARK,
+                    DirectType = DirectType.LEFT,
+                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = GetCurrentPosition(MotionExtensions.W_Y, ct),
+                };
 
-//        public async Task StepDieAlignment(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Die Alignment",
-//                state => this._sequenceServiceVM.StepDieAlignmentCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Die Alignment 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepDieAlignment,
-//                ct
-//            );
-//        }
+                result = await communicationService.RequestAFStart(CameraType.HC1_HIGH, markType: MarkType.ALIGN_MARK, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, "LEFT");
+                VisionResult(rFidXY);
+                fid.DxCamToMark = rFidXY.X;
+                fid.DyCamToMark = rFidXY.Y;
+                return fid;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
 
-//        public async Task StepMoveBondingPosition(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Move Bonding Position",
-//                state => this._sequenceServiceVM.StepMoveBondingPositionCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Move Bonding Position 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepMoveBondingPosition,
-//                ct
-//            );
-//        }
+        // 테스트를 위해 만들어진 버전입니다. 실제로는 아래의 버전을 사용해야합니다. 
+        public async Task TopDieDrop(CancellationToken ct)
+        {
+            if (double.TryParse(_recipeService.FindByParam("TopDieThickness").Value, out double topDieThickness))
+            { }
+            else
+            {
+                throw new Exception("레시피 TopDieThickness값이 Double타입이 아닙니다");
+            }
 
-//        public async Task StepWaferLogicMarkDetecting(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Wafer Logic Mark Detecting",
-//                state => this._sequenceServiceVM.StepWaferLogicMarkDetectingCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Wafer Logic Mark Detect 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepWaferLogicMarkDetecting,
-//                ct
-//            );
-//        }
+            if (double.TryParse(_recipeService.FindByParam("BtmDieThickness").Value, out double btmDieThickness))
+            { }
+            else
+            {
+                throw new Exception("레시피 btmDieThickness값이 Double타입이 아닙니다");
+            }
 
-//        public async Task StepDieFinalAlign(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Die Final Align",
-//                state => this._sequenceServiceVM.StepDieFinalAlignCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Die Final Align 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepDieFinalAlign,
-//                ct
-//            );
-//        }
+            if (double.TryParse(_recipeService.FindByParam("CenterToHC2OffsetX").Value, out double CenterToHC2OffsetX))
+            { }
+            else
+            {
+                throw new Exception("레시피 CenterToHC2OffsetX값이 Double타입이 아닙니다");
+            }
 
-//        public async Task StepBondingProcess(CancellationToken ct)
-//        {
-//            await ExecuteStepAsync(
-//                "Bonding Process",
-//                state => this._sequenceServiceVM.StepBodingProcessCompleted = state,
-//                async token =>
-//                {
-//                    if (this._simulation)
-//                    {
-//                        // 시뮬레이션 모드에서는 5초간 대기합니다.
-//                        await Task.Delay(5000, token);
-//                    }
-//                    else
-//                    {
-//                        /// 여기에 Bonding Process 이동 로직 구현
-//                        await Task.CompletedTask; // 실제 로직 구현 전까지 임시로 추가
-//                    }
-//                },
-//                this._sequenceServiceVM.MeasureElapsedStepBodingProcess,
-//                ct
-//            );
-//        }
+            if (double.TryParse(_recipeService.FindByParam("CenterToHC2OffsetY").Value, out double CenterToHC2OffsetY))
+            { }
+            else
+            {
+                throw new Exception("레시피 CenterToHC2OffsetY값이 Double타입이 아닙니다");
+            }
 
 
-//    }
+            // W-Table로 이동
+            await Init_Head(ct);
+            await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+            await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", -topDieThickness - btmDieThickness, ct);
+            //await Pressurize();
+            await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness, ct);
+            bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
+            await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness - 1, ct);
+            await Init_Head(ct);
 
-//}
+            if (!result) throw new Exception("HeadPicker를 확인해주세요");
+        }
+
+        public async Task<Dictionary<string, VisionMarkResult>> TopDieVision(CancellationToken ct)
+        {
+
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+                var result = false;
+
+                string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
+                string[] z = { MotionExtensions.H_Z };
+
+                VisionMarkResult rightFid = new VisionMarkResult
+                {
+                    MarkType = MarkType.FIDUCIAL,
+                    DirectType = DirectType.RIGHT,
+                    StageX = await GetPosition(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
+                    StageY = await GetPosition(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_HIGH, ct),
+                };
+
+                VisionMarkResult rightAlign = new VisionMarkResult
+                {
+                    MarkType = MarkType.ALIGN_MARK,
+                    DirectType = DirectType.RIGHT,
+                    StageX = rightFid.StageX,
+                    StageY = rightFid.StageY,
+                };
+
+                VisionMarkResult leftFid = new VisionMarkResult
+                {
+                    MarkType = MarkType.FIDUCIAL,
+                    DirectType = DirectType.LEFT,
+                    StageX = await GetPosition(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
+                    StageY = await GetPosition(MotionExtensions.P_Y, MotionExtensions.P_LEFT_HIGH, ct),
+                };
+
+                VisionMarkResult leftAlign = new VisionMarkResult
+                {
+                    MarkType = MarkType.ALIGN_MARK,
+                    DirectType = DirectType.LEFT,
+                    StageX = leftFid.StageX,
+                    StageY = leftFid.StageY,
+                };
+
+                Dictionary<string, VisionMarkResult> visionResults = new Dictionary<string, VisionMarkResult>
+                {
+                    { "RIGHT_FID", rightFid },
+                    { "RIGHT_ALIGN", rightAlign },
+                    { "LEFT_FID", leftFid },
+                    { "LEFT_ALIGN", leftAlign }
+                };
+
+                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+
+                // 우측 피듀셜마크 이동                
+                await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
+                await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
+
+                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
+                if (result == false) throw new Exception("AF 실패");
+
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "RIGHT");
+                VisionResult(rFidXY);
+                rightFid.DxCamToMark = rFidXY.X;
+                rightFid.DyCamToMark = rFidXY.Y;
+
+                // 우측 얼라인마크 이동
+                await MotionsMove(z, MotionExtensions.P_RIGHT_ALIGN_HIGH, ct);
+                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var rAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "RIGHT");
+                VisionResult(rAlignXY);
+                rightAlign.DxCamToMark = rAlignXY.X;
+                rightAlign.DyCamToMark = rAlignXY.Y;
+
+                // 좌측 피듀셜마크 이동 
+                await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
+                await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
+                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var lFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "LEFT");
+                VisionResult(lFidXY);
+                leftFid.DxCamToMark = lFidXY.X;
+                leftFid.DyCamToMark = lFidXY.Y;
+
+                // 좌측 얼라인마크 이동
+                await MotionsMove(z, MotionExtensions.P_LEFT_ALIGN_HIGH, ct);
+                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var lAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "LEFT");
+                VisionResult(lAlignXY);
+                leftAlign.DxCamToMark = lAlignXY.X;
+                leftAlign.DyCamToMark = lAlignXY.Y;
+
+                return visionResults;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+        public async Task<VisionMarkResult> TopDieVisionRightFid(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+
+                var result = false;
+                VisionMarkResult rightFid = new VisionMarkResult
+                {
+                    MarkType = MarkType.FIDUCIAL,
+                    DirectType = DirectType.RIGHT,
+                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = GetCurrentPosition(MotionExtensions.P_Y, ct)
+                };
+
+                string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
+                string[] z = { MotionExtensions.H_Z };
+
+
+                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+
+                // 우측 피듀셜마크 이동
+                await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
+                await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
+                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "RIGHT");
+                VisionResult(rFidXY);
+                rightFid.DxCamToMark = rFidXY.X;
+                rightFid.DyCamToMark = rFidXY.Y;
+
+                return rightFid;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+        public async Task<VisionMarkResult> TopDieVisionRightAlign(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+
+                var result = false;
+                VisionMarkResult rightAlign = new VisionMarkResult
+                {
+                    MarkType = MarkType.ALIGN_MARK,
+                    DirectType = DirectType.RIGHT,
+                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = GetCurrentPosition(MotionExtensions.P_Y, ct)
+                };
+
+                string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
+                string[] z = { MotionExtensions.H_Z };
+
+                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+                await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
+                await MotionsMove(z, MotionExtensions.P_RIGHT_ALIGN_HIGH, ct);
+                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var rAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "RIGHT");
+                VisionResult(rAlignXY);
+                rightAlign.DxCamToMark = rAlignXY.X;
+                rightAlign.DyCamToMark = rAlignXY.Y;
+
+                return rightAlign;
+
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+        public async Task<VisionMarkResult> TopDieVisionLeftFid(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+
+                var result = false;
+                VisionMarkResult leftFid = new VisionMarkResult
+                {
+                    MarkType = MarkType.FIDUCIAL,
+                    DirectType = DirectType.LEFT,
+                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = GetCurrentPosition(MotionExtensions.P_Y, ct)
+                };
+
+                string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
+                string[] z = { MotionExtensions.H_Z };
+
+
+                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+
+                // 좌측 피듀셜마크 이동
+                await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
+                await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
+                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var lFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "LEFT");
+                VisionResult(lFidXY);
+                leftFid.DxCamToMark = lFidXY.X;
+                leftFid.DyCamToMark = lFidXY.Y;
+                return leftFid;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+        public async Task<VisionMarkResult> TopDieVisionLeftAlign(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+
+                var result = false;
+                VisionMarkResult leftAlign = new VisionMarkResult
+                {
+                    MarkType = MarkType.ALIGN_MARK,
+                    DirectType = DirectType.LEFT,
+                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = GetCurrentPosition(MotionExtensions.P_Y, ct)
+                };
+
+                string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
+                string[] z = { MotionExtensions.H_Z };
+
+
+                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+
+                // 좌측 얼라인마크 이동
+                await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
+                await MotionsMove(z, MotionExtensions.P_LEFT_ALIGN_HIGH, ct);
+                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
+                if (result == false) throw new Exception("AF 실패");
+                var lAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "LEFT");
+                VisionResult(lAlignXY);
+                leftAlign.DxCamToMark = lAlignXY.X;
+                leftAlign.DyCamToMark = lAlignXY.Y;
+                return leftAlign;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+        public async Task TopDiePlace(CancellationToken ct)
+        {
+            double topDieThickness = await GetRecipe("TopDieThickness");
+            double btmDieThickness = await GetRecipe("BtmDieThickness");
+
+            await Init_Head(ct);
+            await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+            await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness - 0.1, ct);
+        }
+
+        public async Task Bonding(CancellationToken ct)
+        {
+
+        }
+        public async Task<double> GetRecipe(string name, CancellationToken ct = default)
+        {
+            var value = _recipeService.FindByParam(name).Value;
+
+            if (!double.TryParse(value, out double result))
+                throw new InvalidCastException($"레시피 {name}값이 Double타입이 아닙니다");
+
+            return result;
+        }
+
+        public void VisionResult(VisionMarkPositionResponse response)
+        {
+            if (response.Result == Result.NG) throw new Exception("비전 통신 에러");
+        }
+
+    }
+}

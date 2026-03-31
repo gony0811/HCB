@@ -16,33 +16,85 @@ namespace HCB.UI
         private readonly VisionMarkResult _rightAlign;
         private readonly VisionMarkResult _leftFid;
         private readonly VisionMarkResult _leftAlign;
+        private readonly bool _useWaferY;
 
         public TopHighAlignInfoWindow(
             VisionMarkResult rightFid,
             VisionMarkResult rightAlign,
             VisionMarkResult leftFid,
-            VisionMarkResult leftAlign)
+            VisionMarkResult leftAlign,
+            bool useWaferY = false)
         {
             InitializeComponent();
             _rightFid   = rightFid;
             _rightAlign = rightAlign;
             _leftFid    = leftFid;
             _leftAlign  = leftAlign;
+            _useWaferY  = useWaferY;
 
             Loaded += (s, e) => UpdateDisplay();
         }
 
+        // CenterY / CenterWaferY 분기 헬퍼
+        private double GetY(VisionMarkResult m) =>
+            _useWaferY ? m.CenterWaferY : m.CenterY;
+
         // ── 좌표 텍스트 업데이트 ──────────────────────────────────
         private void UpdateDisplay()
         {
-            RightFidX.Text   = _rightFid?.CenterX.ToString("F4")   ?? "N/A";
-            RightFidY.Text   = _rightFid?.CenterY.ToString("F4")   ?? "N/A";
-            RightAlignX.Text = _rightAlign?.CenterX.ToString("F4") ?? "N/A";
-            RightAlignY.Text = _rightAlign?.CenterY.ToString("F4") ?? "N/A";
-            LeftFidX.Text    = _leftFid?.CenterX.ToString("F4")    ?? "N/A";
-            LeftFidY.Text    = _leftFid?.CenterY.ToString("F4")    ?? "N/A";
-            LeftAlignX.Text  = _leftAlign?.CenterX.ToString("F4")  ?? "N/A";
-            LeftAlignY.Text  = _leftAlign?.CenterY.ToString("F4")  ?? "N/A";
+            // Center
+            RightFidX.Text   = _rightFid?.CenterX.ToString("F4")          ?? "N/A";
+            RightFidY.Text   = _rightFid   != null ? GetY(_rightFid).ToString("F4")   : "N/A";
+            RightAlignX.Text = _rightAlign?.CenterX.ToString("F4")        ?? "N/A";
+            RightAlignY.Text = _rightAlign != null ? GetY(_rightAlign).ToString("F4") : "N/A";
+            LeftFidX.Text    = _leftFid?.CenterX.ToString("F4")           ?? "N/A";
+            LeftFidY.Text    = _leftFid    != null ? GetY(_leftFid).ToString("F4")    : "N/A";
+            LeftAlignX.Text  = _leftAlign?.CenterX.ToString("F4")         ?? "N/A";
+            LeftAlignY.Text  = _leftAlign  != null ? GetY(_leftAlign).ToString("F4")  : "N/A";
+
+            // Stage
+            RightFidStageX.Text   = _rightFid?.StageX.ToString("F4")   ?? "N/A";
+            RightFidStageY.Text   = _rightFid?.StageY.ToString("F4")   ?? "N/A";
+            RightAlignStageX.Text = _rightAlign?.StageX.ToString("F4") ?? "N/A";
+            RightAlignStageY.Text = _rightAlign?.StageY.ToString("F4") ?? "N/A";
+            LeftFidStageX.Text    = _leftFid?.StageX.ToString("F4")    ?? "N/A";
+            LeftFidStageY.Text    = _leftFid?.StageY.ToString("F4")    ?? "N/A";
+            LeftAlignStageX.Text  = _leftAlign?.StageX.ToString("F4")  ?? "N/A";
+            LeftAlignStageY.Text  = _leftAlign?.StageY.ToString("F4")  ?? "N/A";
+
+            // Cam → Mark Offset
+            RightFidDx.Text   = _rightFid?.DxCamToMark.ToString("F4")   ?? "N/A";
+            RightFidDy.Text   = _rightFid?.DyCamToMark.ToString("F4")   ?? "N/A";
+            RightAlignDx.Text = _rightAlign?.DxCamToMark.ToString("F4") ?? "N/A";
+            RightAlignDy.Text = _rightAlign?.DyCamToMark.ToString("F4") ?? "N/A";
+            LeftFidDx.Text    = _leftFid?.DxCamToMark.ToString("F4")    ?? "N/A";
+            LeftFidDy.Text    = _leftFid?.DyCamToMark.ToString("F4")    ?? "N/A";
+            LeftAlignDx.Text  = _leftAlign?.DxCamToMark.ToString("F4")  ?? "N/A";
+            LeftAlignDy.Text  = _leftAlign?.DyCamToMark.ToString("F4")  ?? "N/A";
+
+            // 중심 좌표 & Offset
+            bool hasFidCenter   = _rightFid   != null && _leftFid   != null;
+            bool hasAlignCenter = _rightAlign  != null && _leftAlign != null;
+
+            double fidCX = hasFidCenter   ? (_rightFid.CenterX   + _leftFid.CenterX)   / 2.0 : 0;
+            double fidCY = hasFidCenter   ? (GetY(_rightFid)     + GetY(_leftFid))     / 2.0 : 0;
+            double algCX = hasAlignCenter ? (_rightAlign.CenterX + _leftAlign.CenterX) / 2.0 : 0;
+            double algCY = hasAlignCenter ? (GetY(_rightAlign)   + GetY(_leftAlign))   / 2.0 : 0;
+
+            FidCenterX.Text   = hasFidCenter   ? fidCX.ToString("F4") : "N/A";
+            FidCenterY.Text   = hasFidCenter   ? fidCY.ToString("F4") : "N/A";
+            AlignCenterX.Text = hasAlignCenter ? algCX.ToString("F4") : "N/A";
+            AlignCenterY.Text = hasAlignCenter ? algCY.ToString("F4") : "N/A";
+
+            if (hasFidCenter && hasAlignCenter)
+            {
+                CenterOffsetX.Text = (fidCX - algCX).ToString("+0.0000;-0.0000;0.0000");
+                CenterOffsetY.Text = (fidCY - algCY).ToString("+0.0000;-0.0000;0.0000");
+            }
+            else
+            {
+                CenterOffsetX.Text = CenterOffsetY.Text = "N/A";
+            }
 
             double theta    = CalculateTheta();
             double thetaFid = CalculateThetaFid();
@@ -57,7 +109,7 @@ namespace HCB.UI
         {
             if (_rightAlign == null || _leftAlign == null) return 0.0;
             double dx = _rightAlign.CenterX - _leftAlign.CenterX;
-            double dy = _rightAlign.CenterY - _leftAlign.CenterY;
+            double dy = GetY(_rightAlign)   - GetY(_leftAlign);
             return Math.Atan2(dy, dx) * 180.0 / Math.PI;
         }
 
@@ -66,7 +118,7 @@ namespace HCB.UI
         {
             if (_rightFid == null || _leftFid == null) return 0.0;
             double dx = _rightFid.CenterX - _leftFid.CenterX;
-            double dy = _rightFid.CenterY - _leftFid.CenterY;
+            double dy = GetY(_rightFid)   - GetY(_leftFid);
             return Math.Atan2(dy, dx) * 180.0 / Math.PI;
         }
 
@@ -86,10 +138,10 @@ namespace HCB.UI
 
             // 유효 마크 수집
             var marks = new List<(string name, double x, double y, Color color)>();
-            if (_rightFid   != null) marks.Add(("R.Fid",   _rightFid.CenterX,   _rightFid.CenterY,   Colors.Yellow));
-            if (_rightAlign != null) marks.Add(("R.Align", _rightAlign.CenterX, _rightAlign.CenterY, Colors.Cyan));
-            if (_leftFid    != null) marks.Add(("L.Fid",   _leftFid.CenterX,    _leftFid.CenterY,    Colors.Orange));
-            if (_leftAlign  != null) marks.Add(("L.Align", _leftAlign.CenterX,  _leftAlign.CenterY,  Colors.LimeGreen));
+            if (_rightFid   != null) marks.Add(("R.Fid",   _rightFid.CenterX,   GetY(_rightFid),   Colors.Yellow));
+            if (_rightAlign != null) marks.Add(("R.Align", _rightAlign.CenterX, GetY(_rightAlign), Colors.Cyan));
+            if (_leftFid    != null) marks.Add(("L.Fid",   _leftFid.CenterX,    GetY(_leftFid),    Colors.Orange));
+            if (_leftAlign  != null) marks.Add(("L.Align", _leftAlign.CenterX,  GetY(_leftAlign),  Colors.LimeGreen));
 
             if (marks.Count == 0)
             {

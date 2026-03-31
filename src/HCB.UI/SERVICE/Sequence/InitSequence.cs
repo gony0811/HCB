@@ -171,6 +171,14 @@ namespace HCB.UI
                 throw;
             }
         }
+        public double GetCurrentPosition(string motionName, CancellationToken ct)
+        {
+            var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var motion = motionDevice?.FindMotionByName(motionName);
+            if (motion == null)
+                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+            return motion.CurrentPosition;
+        }
 
         public async Task<double> GetPosition(string motionName, string positionName, CancellationToken ct)
         {

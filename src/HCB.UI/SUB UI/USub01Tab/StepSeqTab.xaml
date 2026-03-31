@@ -731,7 +731,7 @@
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
-                                                State="{Binding TopHighAlignTopState}" Margin="0,0,10,0"/>
+                                                State="{Binding TopHighAlignState}" Margin="0,0,10,0"/>
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                     <TextBlock Text="고배율 보정 (Top die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
                                     <TextBlock Text="High Magnification Calibration - Top" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
@@ -741,7 +741,7 @@
                                     <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
                                 </Button>
                                 <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
-                                        Command="{Binding TopHighAlignTopCommand}">
+                                        Command="{Binding TopHighAlignCommand}">
                                     <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
                                 </Button>
                             </Grid>
@@ -765,17 +765,17 @@
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
-                                                State="{Binding TopHighAlignBtmState}" Margin="0,0,10,0"/>
+                                                State="{Binding BtmHighAlignState}" Margin="0,0,10,0"/>
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                     <TextBlock Text="고배율 보정 (Bottom die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
                                     <TextBlock Text="High Magnification Calibration - Bottom" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                 </StackPanel>
                                 <Button Grid.Column="3" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
-                                        Command="{Binding TopHighAlignBtmInfoCommand}">
+                                        Command="{Binding BtmHighAlignInfoCommand}">
                                     <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
                                 </Button>
                                 <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
-                                        Command="{Binding TopHighAlignBtmCommand}">
+                                        Command="{Binding BtmHighAlignCommand}">
                                     <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
                                 </Button>
                             </Grid>
@@ -805,7 +805,7 @@
                                     <TextBlock Text="Hybrid Bonding" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                 </StackPanel>
                                 <Button Grid.Column="3" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
-                                        Command="{Binding TopHighAlignTopInfoCommand}">
+                                        Command="{Binding TopHighAlignInfoCommand}">
                                     <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
                                 </Button>
                                 <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"

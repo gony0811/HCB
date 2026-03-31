@@ -4,7 +4,7 @@
                    xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
                    Style="{StaticResource RadWindowStyle}"
                    WindowStartupLocation="CenterOwner"
-                   Width="900" Height="540"
+                   Width="1080" Height="620"
                    ResizeMode="NoResize">
 
     <telerik:RadWindow.Resources>
@@ -17,157 +17,269 @@
 
     <Grid Margin="12">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="310"/>
+            <ColumnDefinition Width="430"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ── 좌측: 좌표 정보 패널 ── -->
-        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+        <!-- ── 좌측: 정보 패널 ── -->
+        <ScrollViewer Grid.Column="0" Margin="0,0,12,0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
 
-            <TextBlock Text="마크 좌표 정보" FontSize="15" FontWeight="Bold"
-                       Foreground="White" Margin="0,0,0,8"/>
+                <TextBlock Text="마크 좌표 정보" FontSize="15" FontWeight="Bold"
+                           Foreground="White" Margin="0,0,0,6"/>
 
-            <!-- 테이블 헤더 -->
-            <Border Background="#1E3A5F" CornerRadius="4,4,0,0" Padding="8,6">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="마크"    Foreground="#88CCFF" FontWeight="Bold" FontSize="12"/>
-                    <TextBlock Grid.Column="1" Text="CenterX" Foreground="#88CCFF" FontWeight="Bold" FontSize="12"/>
-                    <TextBlock Grid.Column="2" Text="CenterY" Foreground="#88CCFF" FontWeight="Bold" FontSize="12"/>
-                </Grid>
-            </Border>
+                <!-- ══ 통합 좌표 테이블 ══ -->
+                <TextBlock Text="■  Mark | Axis | Stage | Cam_Offset | Center"
+                           Foreground="#88CCFF" FontSize="11" Margin="0,0,0,3"/>
 
-            <!-- Right Fid -->
-            <Border BorderBrush="#2A4A6A" BorderThickness="1,0,1,1" Padding="8,7">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <Ellipse Width="9" Height="9" Fill="Yellow" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="R. Fid" Foreground="White" FontSize="12"/>
-                    </StackPanel>
-                    <TextBlock x:Name="RightFidX" Grid.Column="1" Foreground="#AADDFF" FontFamily="Consolas" FontSize="12"/>
-                    <TextBlock x:Name="RightFidY" Grid.Column="2" Foreground="#AADDFF" FontFamily="Consolas" FontSize="12"/>
-                </Grid>
-            </Border>
+                <Border BorderBrush="#2A4A6A" BorderThickness="1" CornerRadius="4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="82"/>
+                            <ColumnDefinition Width="22"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/><!-- 0  header  -->
+                            <RowDefinition Height="Auto"/><!-- 1  R.Fid X -->
+                            <RowDefinition Height="Auto"/><!-- 2  R.Fid Y -->
+                            <RowDefinition Height="1"/>  <!-- 3  sep      -->
+                            <RowDefinition Height="Auto"/><!-- 4  R.Align X-->
+                            <RowDefinition Height="Auto"/><!-- 5  R.Align Y-->
+                            <RowDefinition Height="1"/>  <!-- 6  sep      -->
+                            <RowDefinition Height="Auto"/><!-- 7  L.Fid X -->
+                            <RowDefinition Height="Auto"/><!-- 8  L.Fid Y -->
+                            <RowDefinition Height="1"/>  <!-- 9  sep      -->
+                            <RowDefinition Height="Auto"/><!-- 10 L.Align X-->
+                            <RowDefinition Height="Auto"/><!-- 11 L.Align Y-->
+                        </Grid.RowDefinitions>
 
-            <!-- Right Align -->
-            <Border BorderBrush="#2A4A6A" BorderThickness="1,0,1,1" Padding="8,7">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <Ellipse Width="9" Height="9" Fill="Cyan" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="R. Align" Foreground="White" FontSize="12"/>
-                    </StackPanel>
-                    <TextBlock x:Name="RightAlignX" Grid.Column="1" Foreground="#AADDFF" FontFamily="Consolas" FontSize="12"/>
-                    <TextBlock x:Name="RightAlignY" Grid.Column="2" Foreground="#AADDFF" FontFamily="Consolas" FontSize="12"/>
-                </Grid>
-            </Border>
+                        <!-- 배경 레이어 -->
+                        <Rectangle Grid.Row="0" Grid.ColumnSpan="5" Fill="#1E3A5F"/>
+                        <Rectangle Grid.Row="3" Grid.ColumnSpan="5" Fill="#2A4A6A"/>
+                        <Rectangle Grid.Row="6" Grid.ColumnSpan="5" Fill="#2A4A6A"/>
+                        <Rectangle Grid.Row="9" Grid.ColumnSpan="5" Fill="#2A4A6A"/>
 
-            <!-- Left Fid -->
-            <Border BorderBrush="#2A4A6A" BorderThickness="1,0,1,1" Padding="8,7">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <Ellipse Width="9" Height="9" Fill="Orange" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="L. Fid" Foreground="White" FontSize="12"/>
-                    </StackPanel>
-                    <TextBlock x:Name="LeftFidX" Grid.Column="1" Foreground="#AADDFF" FontFamily="Consolas" FontSize="12"/>
-                    <TextBlock x:Name="LeftFidY" Grid.Column="2" Foreground="#AADDFF" FontFamily="Consolas" FontSize="12"/>
-                </Grid>
-            </Border>
+                        <!-- ── 헤더 ── -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Mark"
+                                   Foreground="#88CCFF" FontWeight="Bold" FontSize="11" Padding="8,5,4,5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Ax"
+                                   Foreground="#888888" FontWeight="Bold" FontSize="11" Padding="2,5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Stage"
+                                   Foreground="#FFCC66" FontWeight="Bold" FontSize="11" Padding="4,5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="3" Text="Cam_Offset"
+                                   Foreground="#99DDAA" FontWeight="Bold" FontSize="11" Padding="4,5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="4" Text="Center"
+                                   Foreground="#AADDFF" FontWeight="Bold" FontSize="11" Padding="4,5"/>
 
-            <!-- Left Align -->
-            <Border BorderBrush="#2A4A6A" BorderThickness="1,0,1,1" Padding="8,7" CornerRadius="0,0,4,4">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <Ellipse Width="9" Height="9" Fill="LimeGreen" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="L. Align" Foreground="White" FontSize="12"/>
-                    </StackPanel>
-                    <TextBlock x:Name="LeftAlignX" Grid.Column="1" Foreground="#AADDFF" FontFamily="Consolas" FontSize="12"/>
-                    <TextBlock x:Name="LeftAlignY" Grid.Column="2" Foreground="#AADDFF" FontFamily="Consolas" FontSize="12"/>
-                </Grid>
-            </Border>
+                        <!-- ── R.Fid ── -->
+                        <StackPanel Grid.Row="1" Grid.Column="0" Grid.RowSpan="2"
+                                    Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                            <Ellipse Width="9" Height="9" Fill="Yellow" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="R. Fid" Foreground="White" FontSize="11"/>
+                        </StackPanel>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="X"
+                                   Foreground="#666666" FontSize="10" Padding="2,5,2,2" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="RightFidStageX" Grid.Row="1" Grid.Column="2"
+                                   Foreground="#FFE599" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock x:Name="RightFidDx"     Grid.Row="1" Grid.Column="3"
+                                   Foreground="#AAEEBB" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock x:Name="RightFidX"      Grid.Row="1" Grid.Column="4"
+                                   Foreground="#AADDFF" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Y"
+                                   Foreground="#666666" FontSize="10" Padding="2,2,2,5" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="RightFidStageY" Grid.Row="2" Grid.Column="2"
+                                   Foreground="#FFE599" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
+                        <TextBlock x:Name="RightFidDy"     Grid.Row="2" Grid.Column="3"
+                                   Foreground="#AAEEBB" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
+                        <TextBlock x:Name="RightFidY"      Grid.Row="2" Grid.Column="4"
+                                   Foreground="#AADDFF" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
 
-            <!-- Align Theta -->
-            <Border Background="#112030" CornerRadius="4" Margin="0,14,0,0" Padding="10,10">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="θ  Align : " Foreground="#88CCFF" FontWeight="Bold" FontSize="16"/>
-                        <TextBlock x:Name="ThetaValue" Foreground="White" FontWeight="Bold" FontSize="16" FontFamily="Consolas"/>
-                    </StackPanel>
-                    <TextBlock Text="= atan2 ( ΔY, ΔX )  [ L.Align → R.Align ]"
-                               Foreground="#557799" FontSize="10" Margin="0,4,0,0"/>
-                </StackPanel>
-            </Border>
+                        <!-- ── R.Align ── -->
+                        <StackPanel Grid.Row="4" Grid.Column="0" Grid.RowSpan="2"
+                                    Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                            <Ellipse Width="9" Height="9" Fill="Cyan" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="R. Align" Foreground="White" FontSize="11"/>
+                        </StackPanel>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="X"
+                                   Foreground="#666666" FontSize="10" Padding="2,5,2,2" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="RightAlignStageX" Grid.Row="4" Grid.Column="2"
+                                   Foreground="#FFE599" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock x:Name="RightAlignDx"     Grid.Row="4" Grid.Column="3"
+                                   Foreground="#AAEEBB" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock x:Name="RightAlignX"      Grid.Row="4" Grid.Column="4"
+                                   Foreground="#AADDFF" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="Y"
+                                   Foreground="#666666" FontSize="10" Padding="2,2,2,5" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="RightAlignStageY" Grid.Row="5" Grid.Column="2"
+                                   Foreground="#FFE599" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
+                        <TextBlock x:Name="RightAlignDy"     Grid.Row="5" Grid.Column="3"
+                                   Foreground="#AAEEBB" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
+                        <TextBlock x:Name="RightAlignY"      Grid.Row="5" Grid.Column="4"
+                                   Foreground="#AADDFF" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
 
-            <!-- Fiducial Theta -->
-            <Border Background="#112030" CornerRadius="4" Margin="0,6,0,0" Padding="10,10">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="θ  Fid    : " Foreground="#FFCC66" FontWeight="Bold" FontSize="16"/>
-                        <TextBlock x:Name="ThetaFidValue" Foreground="White" FontWeight="Bold" FontSize="16" FontFamily="Consolas"/>
-                    </StackPanel>
-                    <TextBlock Text="= atan2 ( ΔY, ΔX )  [ L.Fid → R.Fid ]"
-                               Foreground="#776644" FontSize="10" Margin="0,4,0,0"/>
-                </StackPanel>
-            </Border>
+                        <!-- ── L.Fid ── -->
+                        <StackPanel Grid.Row="7" Grid.Column="0" Grid.RowSpan="2"
+                                    Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                            <Ellipse Width="9" Height="9" Fill="Orange" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="L. Fid" Foreground="White" FontSize="11"/>
+                        </StackPanel>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Text="X"
+                                   Foreground="#666666" FontSize="10" Padding="2,5,2,2" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="LeftFidStageX"   Grid.Row="7" Grid.Column="2"
+                                   Foreground="#FFE599" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock x:Name="LeftFidDx"       Grid.Row="7" Grid.Column="3"
+                                   Foreground="#AAEEBB" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock x:Name="LeftFidX"        Grid.Row="7" Grid.Column="4"
+                                   Foreground="#AADDFF" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock Grid.Row="8" Grid.Column="1" Text="Y"
+                                   Foreground="#666666" FontSize="10" Padding="2,2,2,5" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="LeftFidStageY"   Grid.Row="8" Grid.Column="2"
+                                   Foreground="#FFE599" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
+                        <TextBlock x:Name="LeftFidDy"       Grid.Row="8" Grid.Column="3"
+                                   Foreground="#AAEEBB" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
+                        <TextBlock x:Name="LeftFidY"        Grid.Row="8" Grid.Column="4"
+                                   Foreground="#AADDFF" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
 
-            <!-- 범례 -->
-            <Border Background="#0D1E30" CornerRadius="4" Margin="0,8,0,0" Padding="8,8">
-                <StackPanel>
-                    <TextBlock Text="범례" Foreground="#88CCFF" FontSize="11" Margin="0,0,0,5"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                        <Ellipse Width="8" Height="8" Fill="Yellow"    Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Right Fiducial" Foreground="#AAAAAA" FontSize="11"/>
+                        <!-- ── L.Align ── -->
+                        <StackPanel Grid.Row="10" Grid.Column="0" Grid.RowSpan="2"
+                                    Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                            <Ellipse Width="9" Height="9" Fill="LimeGreen" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="L. Align" Foreground="White" FontSize="11"/>
+                        </StackPanel>
+                        <TextBlock Grid.Row="10" Grid.Column="1" Text="X"
+                                   Foreground="#666666" FontSize="10" Padding="2,5,2,2" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="LeftAlignStageX"  Grid.Row="10" Grid.Column="2"
+                                   Foreground="#FFE599" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock x:Name="LeftAlignDx"      Grid.Row="10" Grid.Column="3"
+                                   Foreground="#AAEEBB" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock x:Name="LeftAlignX"       Grid.Row="10" Grid.Column="4"
+                                   Foreground="#AADDFF" FontFamily="Consolas" FontSize="11" Padding="4,5,4,2"/>
+                        <TextBlock Grid.Row="11" Grid.Column="1" Text="Y"
+                                   Foreground="#666666" FontSize="10" Padding="2,2,2,5" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="LeftAlignStageY"  Grid.Row="11" Grid.Column="2"
+                                   Foreground="#FFE599" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
+                        <TextBlock x:Name="LeftAlignDy"      Grid.Row="11" Grid.Column="3"
+                                   Foreground="#AAEEBB" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
+                        <TextBlock x:Name="LeftAlignY"       Grid.Row="11" Grid.Column="4"
+                                   Foreground="#AADDFF" FontFamily="Consolas" FontSize="11" Padding="4,2,4,5"/>
+                    </Grid>
+                </Border>
+
+                <!-- ══ Theta 값 ══ -->
+                <Border Background="#112030" CornerRadius="4" Margin="0,10,0,0" Padding="10,8">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="θ  Align : " Foreground="#88CCFF" FontWeight="Bold" FontSize="15"/>
+                            <TextBlock x:Name="ThetaValue" Foreground="White" FontWeight="Bold" FontSize="15" FontFamily="Consolas"/>
+                        </StackPanel>
+                        <TextBlock Text="= atan2 ( ΔY, ΔX )  [ L.Align → R.Align ]"
+                                   Foreground="#557799" FontSize="10" Margin="0,3,0,0"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                        <Ellipse Width="8" Height="8" Fill="Cyan"      Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Right Align"    Foreground="#AAAAAA" FontSize="11"/>
+                </Border>
+                <Border Background="#112030" CornerRadius="4" Margin="0,5,0,0" Padding="10,8">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="θ  Fid    : " Foreground="#FFCC66" FontWeight="Bold" FontSize="15"/>
+                            <TextBlock x:Name="ThetaFidValue" Foreground="White" FontWeight="Bold" FontSize="15" FontFamily="Consolas"/>
+                        </StackPanel>
+                        <TextBlock Text="= atan2 ( ΔY, ΔX )  [ L.Fid → R.Fid ]"
+                                   Foreground="#776644" FontSize="10" Margin="0,3,0,0"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                        <Ellipse Width="8" Height="8" Fill="Orange"    Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Left Fiducial"  Foreground="#AAAAAA" FontSize="11"/>
+                </Border>
+
+                <!-- ══ 중심 좌표 & Offset ══ -->
+                <TextBlock Text="■  중심 좌표  &amp;  Offset ( Fid − Align )"
+                           Foreground="#FF8888" FontSize="11" Margin="0,10,0,3"/>
+                <Border BorderBrush="#2A4A6A" BorderThickness="1" CornerRadius="4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="82"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/><!-- 0 header     -->
+                            <RowDefinition Height="Auto"/><!-- 1 Fid Center -->
+                            <RowDefinition Height="Auto"/><!-- 2 Align Center-->
+                            <RowDefinition Height="1"/>  <!-- 3 sep         -->
+                            <RowDefinition Height="Auto"/><!-- 4 Offset     -->
+                        </Grid.RowDefinitions>
+
+                        <Rectangle Grid.Row="0" Grid.ColumnSpan="3" Fill="#1E3A5F"/>
+                        <Rectangle Grid.Row="3" Grid.ColumnSpan="3" Fill="#2A4A6A"/>
+
+                        <!-- 헤더 -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="구분"
+                                   Foreground="#FF8888" FontWeight="Bold" FontSize="11" Padding="8,5,4,5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="X"
+                                   Foreground="#FF8888" FontWeight="Bold" FontSize="11" Padding="4,5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Y"
+                                   Foreground="#FF8888" FontWeight="Bold" FontSize="11" Padding="4,5"/>
+
+                        <!-- Fid Center : (R.Fid + L.Fid) / 2 -->
+                        <StackPanel Grid.Row="1" Grid.Column="0"
+                                    Orientation="Horizontal" VerticalAlignment="Center" Margin="8,5,0,5">
+                            <Ellipse Width="8" Height="8" Fill="Yellow" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                            <Ellipse Width="8" Height="8" Fill="Orange" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Fid" Foreground="#DDDDDD" FontSize="11"/>
+                        </StackPanel>
+                        <TextBlock x:Name="FidCenterX" Grid.Row="1" Grid.Column="1"
+                                   Foreground="#FFE599" FontFamily="Consolas" FontSize="11" Padding="4,5"/>
+                        <TextBlock x:Name="FidCenterY" Grid.Row="1" Grid.Column="2"
+                                   Foreground="#FFE599" FontFamily="Consolas" FontSize="11" Padding="4,5"/>
+
+                        <!-- Align Center : (R.Align + L.Align) / 2 -->
+                        <StackPanel Grid.Row="2" Grid.Column="0"
+                                    Orientation="Horizontal" VerticalAlignment="Center" Margin="8,5,0,5">
+                            <Ellipse Width="8" Height="8" Fill="Cyan"      Margin="0,0,3,0" VerticalAlignment="Center"/>
+                            <Ellipse Width="8" Height="8" Fill="LimeGreen" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Align" Foreground="#DDDDDD" FontSize="11"/>
+                        </StackPanel>
+                        <TextBlock x:Name="AlignCenterX" Grid.Row="2" Grid.Column="1"
+                                   Foreground="#AADDFF" FontFamily="Consolas" FontSize="11" Padding="4,5"/>
+                        <TextBlock x:Name="AlignCenterY" Grid.Row="2" Grid.Column="2"
+                                   Foreground="#AADDFF" FontFamily="Consolas" FontSize="11" Padding="4,5"/>
+
+                        <!-- Offset = Fid Center − Align Center -->
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Offset"
+                                   Foreground="#FF8888" FontWeight="Bold" FontSize="11" Padding="8,5,4,5" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="CenterOffsetX" Grid.Row="4" Grid.Column="1"
+                                   Foreground="#FF6666" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Padding="4,5"/>
+                        <TextBlock x:Name="CenterOffsetY" Grid.Row="4" Grid.Column="2"
+                                   Foreground="#FF6666" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Padding="4,5"/>
+                    </Grid>
+                </Border>
+
+                <!-- 범례 -->
+                <Border Background="#0D1E30" CornerRadius="4" Margin="0,8,0,0" Padding="8,7">
+                    <StackPanel>
+                        <TextBlock Text="범례" Foreground="#88CCFF" FontSize="11" Margin="0,0,0,4"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Width="8" Height="8" Fill="Yellow"    Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Right Fiducial" Foreground="#AAAAAA" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Width="8" Height="8" Fill="Cyan"      Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Right Align"    Foreground="#AAAAAA" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Width="8" Height="8" Fill="Orange"    Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Left Fiducial"  Foreground="#AAAAAA" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Width="8" Height="8" Fill="LimeGreen" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Left Align"     Foreground="#AAAAAA" FontSize="11"/>
+                        </StackPanel>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                        <Ellipse Width="8" Height="8" Fill="LimeGreen" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Left Align"     Foreground="#AAAAAA" FontSize="11"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,6">
-                        <Line X1="0" Y1="4" X2="20" Y2="4"
-                              Stroke="#6488AA" StrokeThickness="1.5" StrokeDashArray="4 3"
-                              Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Fid → Align 연결선" Foreground="#AAAAAA" FontSize="11"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                        <Line X1="0" Y1="4" X2="20" Y2="4"
-                              Stroke="DeepSkyBlue" StrokeThickness="2"
-                              Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="정렬 기준선 (L.Align→R.Align)" Foreground="#AAAAAA" FontSize="11"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
 
         <!-- ── 우측: 그래프 캔버스 ── -->
         <Border Grid.Column="1" Background="#0D1E30" CornerRadius="6" ClipToBounds="True">

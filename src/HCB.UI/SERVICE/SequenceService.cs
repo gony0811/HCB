@@ -21,6 +21,7 @@ namespace HCB.UI
         private readonly EqpCommunicationService communicationService;
         private readonly SemaphoreSlim _pollingLock = new SemaphoreSlim(1, 1);
         private readonly RecipeService _recipeService;
+        private readonly ECParamService _paramService;
 
         private CancellationToken _stopToken = CancellationToken.None;
 

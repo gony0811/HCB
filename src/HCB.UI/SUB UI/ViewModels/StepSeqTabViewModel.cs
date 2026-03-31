@@ -50,16 +50,21 @@ namespace HCB.UI
         private ObservableCollection<BondingDataPoint> bondingHistory = new ObservableCollection<BondingDataPoint>();
 
         // ── Step Lamp States ─────────────────────────────────
-        [ObservableProperty] private StepState initState        = StepState.Idle;
+        [ObservableProperty] private StepState initState          = StepState.Idle;
+        [ObservableProperty] private StepState dieLoadState       = StepState.Idle;
+        [ObservableProperty] private StepState waferLoadState     = StepState.Idle;
+        [ObservableProperty] private StepState recipeSelectState  = StepState.Idle;
 
-        [ObservableProperty] private StepState btmLowAlignState = StepState.Idle;
-        [ObservableProperty] private StepState btmPickupState   = StepState.Idle;
-        [ObservableProperty] private StepState btmPlaceState    = StepState.Idle;
+        [ObservableProperty] private StepState btmLowAlignState  = StepState.Idle;
+        [ObservableProperty] private StepState btmPickupState    = StepState.Idle;
+        [ObservableProperty] private StepState btmHighAlignState = StepState.Idle;
+        [ObservableProperty] private StepState btmPlaceState     = StepState.Idle;
 
         [ObservableProperty] private StepState topLowAlignState  = StepState.Idle;
         [ObservableProperty] private StepState topPickupState    = StepState.Idle;
         [ObservableProperty] private StepState topHighAlignState = StepState.Idle;
         [ObservableProperty] private StepState topPlaceState     = StepState.Idle;
+        [ObservableProperty] private StepState topBondingState   = StepState.Idle;
 
         [ObservableProperty] private bool isInitInfoOpen;
 
@@ -83,6 +88,7 @@ namespace HCB.UI
         public StepSeqTabViewModel(
             SequenceServiceVM sequenceServiceVM,
             SequenceService sequenceService,
+            SequenceHelper sequenceHelper,
             DeviceManager deviceManager,
             IOManager ioManager,
             RecipeService recipeService,
@@ -91,6 +97,7 @@ namespace HCB.UI
             _logger = logger.ForContext<StepSeqTabViewModel>();
             this.SequenceServiceVM = sequenceServiceVM;
             this._sequenceService = sequenceService;
+            this._sequenceHelper = sequenceHelper;
             this._deviceManager = deviceManager;
             this._recipeService = recipeService;
             this.ioManager = ioManager;
@@ -206,7 +213,7 @@ namespace HCB.UI
         }
 
         [RelayCommand]
-        public void TopHighAlignBtmInfo()
+        public void BtmHighAlignInfo()
         {
             var rightFid   = BtmRightFid;
             var rightAlign = BtmRightAlign;
@@ -215,7 +222,7 @@ namespace HCB.UI
 
             _ = RunDialogOnNewThread(() =>
             {
-                var window = new TopHighAlignInfoWindow(rightFid, rightAlign, leftFid, leftAlign)
+                var window = new TopHighAlignInfoWindow(rightFid, rightAlign, leftFid, leftAlign, useWaferY: true)
                 {
                     Header = "고배율 보정 정보 (Bottom Die)",
                     WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
@@ -225,11 +232,27 @@ namespace HCB.UI
         }
 
         [RelayCommand]
+        public async Task BtmHighAlign()
+        {
+            try
+            {
+                BtmHighAlignState = StepState.InProgress;
+                BtmRightFid   = await _sequenceService.BtmDieVisionRightFid(_cts.Token);
+                BtmRightAlign = await _sequenceService.BtmDieVisionRightAlign(_cts.Token);
+                BtmLeftFid    = await _sequenceService.BtmDieVisionLeftFid(_cts.Token);
+                BtmLeftAlign  = await _sequenceService.BtmDieVisionLeftAlign(_cts.Token);
+                BtmHighAlignState = StepState.Completed;
+            }
+            catch (OperationCanceledException) { BtmHighAlignState = StepState.Idle; }
+            catch (Exception e) { BtmHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
+        }
+
+        [RelayCommand]
         public void CloseInitInfo() => IsInitInfoOpen = false;
 
         // ── Bonding Info (BONDING 스텝 INFO 버튼) ────────────────────
         [RelayCommand]
-        public void TopHighAlignTopInfo()
+        public void TopHighAlignInfo()
         {
             var recipeService = _recipeService;
             var history       = BondingHistory.ToList();
@@ -238,7 +261,7 @@ namespace HCB.UI
             {
                 var window = new BondingInfoWindow(recipeService, history)
                 {
-                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
                 };
                 window.ShowDialog();
             });
@@ -338,6 +361,7 @@ namespace HCB.UI
                 TopHighAlignState = StepState.InProgress;
                 TopRightFid   = await _sequenceService.TopDieVisionRightFid(_cts.Token);
                 TopRightAlign = await _sequenceService.TopDieVisionRightAlign(_cts.Token);
+
                 TopLeftFid    = await _sequenceService.TopDieVisionLeftFid(_cts.Token);
                 TopLeftAlign  = await _sequenceService.TopDieVisionLeftAlign(_cts.Token);
                 TopHighAlignState = StepState.Completed;
