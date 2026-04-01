@@ -3,12 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:converters="clr-namespace:HCB.UI.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:HCB.UI"
              mc:Ignorable="d">
     <UserControl.Resources>
-        <converters:TupleConverter x:Key="TupleConverter" />
+        <local:TupleConverter x:Key="TupleConverter" />
+        <local:BoolToColorConverter x:Key="BoolToColor"/>
     </UserControl.Resources>
     <Grid local:GridHelper.Rows="*, Auto">
         <telerik:RadTabControl Style="{StaticResource RadTabControlStyle}">
@@ -509,11 +509,40 @@
             </telerik:RadTabItem>
         </telerik:RadTabControl>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Grid.Row="1" Margin="10">
-            <Button Content="전체 JOG" Command="{Binding JogOpenCommand}" Width="120" Height="80" Margin="2"/>
-            <Button Content="ALL ON" Command="{Binding AllOnCommand}" Width="120" Height="80"  Margin="2"/>
-            <Button Content="ALL OFF" Command="{Binding AllOffCommand}" Width="120" Height="80"  Margin="2"/>
-            <Button Content="DIE VAC OFF" Command="{Binding DieVacOffCommand}" Width="120" Height="80"  Margin="2"/>
-            <Button Content="HEAD VAC OFF" Command="{Binding VacAllOnCommand}" Width="120" Height="80"  Margin="2"/>
+
+            <!-- 전체 JOG: 토글 상태 없음 → 기본 스타일 유지 -->
+            <Button Content="전체 JOG"
+                    Command="{Binding JogOpenCommand}"
+                    Width="120" Height="80" Margin="2"/>
+
+            <!-- SERVO -->
+            <Button Content="SERVO"
+                    Command="{Binding ServoAllOnOffCommand}"
+                    Width="120" Height="80" Margin="2"
+                    Background="{Binding IsServoOn, Converter={StaticResource BoolToColor}}"
+                    Foreground="White"/>
+
+            <!-- D-VAC -->
+            <Button Content="D-VAC"
+                    Command="{Binding DVacAllOnOffCommand}"
+                    Width="120" Height="80" Margin="2"
+                    Background="{Binding IsDVacOn, Converter={StaticResource BoolToColor}}"
+                    Foreground="White"/>
+
+            <!-- W-VAC -->
+            <Button Content="W-VAC"
+                    Command="{Binding WVacAllOnOffCommand}"
+                    Width="120" Height="80" Margin="2"
+                    Background="{Binding IsWVacOn, Converter={StaticResource BoolToColor}}"
+                    Foreground="White"/>
+
+            <!-- H-VAC -->
+            <Button Content="H-VAC"
+                    Command="{Binding HVacOnOffCommand}"
+                    Width="120" Height="80" Margin="2"
+                    Background="{Binding IsHVacOn, Converter={StaticResource BoolToColor}}"
+                    Foreground="White"/>
+
         </StackPanel>
     </Grid>
     

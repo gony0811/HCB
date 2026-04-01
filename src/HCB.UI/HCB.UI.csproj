@@ -195,6 +195,7 @@
     <AutoGen>True</AutoGen>
     <DependentUpon>appsettings.json</DependentUpon>
   </Compile>
+  <Compile Include="Converters\BoolToColorConverter.cs" />
   <Compile Include="Converters\TupleConverter.cs" />
   <Compile Include="DEVICE\CommonType\IoType.cs" />
   <Compile Include="DEVICE\CommonType\ValueChangedEventArgs.cs" />

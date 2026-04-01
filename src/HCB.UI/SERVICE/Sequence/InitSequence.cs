@@ -163,16 +163,6 @@ namespace HCB.UI
             }
         }
 
-        public async Task HeadVacOnOff(bool onOff, CancellationToken ct = default)
-        {
-            //eOnOff eOnOff = onOff 
-            //    await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
-            //}else
-            //{
-
-            //}
-            
-        }
         public async Task<double> GetCurrentPosition(string motionName, CancellationToken ct)
         {
             var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
@@ -530,6 +520,19 @@ namespace HCB.UI
             }
         }
 
-        
+        public async Task DVacAllOnOff(bool onOff, CancellationToken ct = default )
+        {
+            await _sequenceHelper.DTableVacuumAll(onOff? eOnOff.On : eOnOff.Off, ct);
+        }
+
+        public async Task WVacAllOnOff(bool onOff, CancellationToken ct = default)
+        {
+            await _sequenceHelper.WTableVacuumAll(onOff ? eOnOff.On : eOnOff.Off, ct);
+        }
+
+        public async Task HVacOnOff(bool onOff, CancellationToken ct =default)
+        {
+            await _sequenceHelper.HeadPickerVacuum(onOff ? eOnOff.On: eOnOff.Off, ct);
+        }
     }
 }

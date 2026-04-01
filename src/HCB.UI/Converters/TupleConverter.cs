@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows.Data;
 
-namespace HCB.UI.Converters
+namespace HCB.UI
 {
     public class TupleConverter : IMultiValueConverter
     {

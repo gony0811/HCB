@@ -46,6 +46,18 @@ namespace HCB.UI
         [ObservableProperty]
         private IAxis? wtAxis;
 
+        [ObservableProperty]
+        private bool isServoOn;
+
+        [ObservableProperty]
+        private bool isDVacOn;
+
+        [ObservableProperty]
+        private bool isWVacOn;
+
+        [ObservableProperty]
+        private bool isHVacOn;
+
         [ObservableProperty] private bool isDieLoading;
         [ObservableProperty] private bool isWaferLoading;
 
@@ -264,25 +276,48 @@ namespace HCB.UI
             });
         }
 
-
         [RelayCommand]
-        public async Task AllOn()
+        public async Task ServoAllOnOff()
         {
             _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
-            await _sequenceService.Init_ServoAllOn(_cts.Token);
+            IsServoOn = !IsServoOn;
+
+            if(IsServoOn)
+            {
+                await _sequenceService.Init_ServoAllOn(_cts.Token);
+            }else
+            {
+                await _sequenceService.Init_ServoAllOff(_cts.Token);
+            }
+
         }
 
         [RelayCommand]
-        public async Task AllOff()
+        public async Task DVacAllOnOff()
         {
             _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
-            await _sequenceService.Init_ServoAllOff(_cts.Token);
+            IsDVacOn = !IsDVacOn;
+
+            await _sequenceService.DVacAllOnOff(IsDVacOn, _cts.Token);
         }
 
         [RelayCommand]
-        public async Task DieVacOff()
+        public async Task WVacAllOnOff()
         {
             _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            IsWVacOn = !IsWVacOn;
+
+            await _sequenceService.WVacAllOnOff(IsWVacOn, _cts.Token);
         }
+
+        [RelayCommand]
+        public async Task HVacAllOnOff()
+        {
+            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            IsHVacOn = !IsHVacOn;
+
+            await _sequenceService.HVacOnOff(IsHVacOn, _cts.Token);
+        }
+
     }
 }
