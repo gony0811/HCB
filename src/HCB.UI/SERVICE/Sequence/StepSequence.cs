@@ -42,8 +42,8 @@ namespace HCB.UI
                 {
                     MarkType = MarkType.FIDUCIAL,
                     DirectType = DirectType.RIGHT,
-                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
-                    StageY = GetCurrentPosition(MotionExtensions.W_Y, ct),
+                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = await GetCurrentPosition(MotionExtensions.W_Y, ct),
                 };
 
                 result = await communicationService.RequestAFStart(CameraType.HC2_HIGH, markType: MarkType.FIDUCIAL, ct);
@@ -72,8 +72,8 @@ namespace HCB.UI
                 {
                     MarkType = MarkType.FIDUCIAL,
                     DirectType = DirectType.LEFT,
-                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
-                    StageY = GetCurrentPosition(MotionExtensions.W_Y, ct),
+                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = await GetCurrentPosition(MotionExtensions.W_Y, ct),
                 };
 
                 result = await communicationService.RequestAFStart(CameraType.HC1_HIGH, markType: MarkType.FIDUCIAL, ct);
@@ -102,8 +102,8 @@ namespace HCB.UI
                 {
                     MarkType = MarkType.ALIGN_MARK,
                     DirectType = DirectType.RIGHT,
-                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
-                    StageY = GetCurrentPosition(MotionExtensions.W_Y, ct),
+                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = await GetCurrentPosition(MotionExtensions.W_Y, ct),
                 };
 
                 result = await communicationService.RequestAFStart(CameraType.HC2_HIGH, markType: MarkType.ALIGN_MARK, ct);
@@ -132,8 +132,8 @@ namespace HCB.UI
                 {
                     MarkType = MarkType.ALIGN_MARK,
                     DirectType = DirectType.LEFT,
-                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
-                    StageY = GetCurrentPosition(MotionExtensions.W_Y, ct),
+                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = await GetCurrentPosition(MotionExtensions.W_Y, ct),
                 };
 
                 result = await communicationService.RequestAFStart(CameraType.HC1_HIGH, markType: MarkType.ALIGN_MARK, ct);
@@ -308,23 +308,21 @@ namespace HCB.UI
                 EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var result = false;
-                VisionMarkResult rightFid = new VisionMarkResult
-                {
-                    MarkType = MarkType.FIDUCIAL,
-                    DirectType = DirectType.RIGHT,
-                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
-                    StageY = GetCurrentPosition(MotionExtensions.P_Y, ct)
-                };
-
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
 
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-
                 // 우측 피듀셜마크 이동
                 await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
+                VisionMarkResult rightFid = new VisionMarkResult
+                {
+                    MarkType = MarkType.FIDUCIAL,
+                    DirectType = DirectType.RIGHT,
+                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = await GetCurrentPosition(MotionExtensions.P_Y, ct)
+                };
                 result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
                 if (result == false) throw new Exception("AF 실패");
                 var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "RIGHT");
@@ -348,13 +346,6 @@ namespace HCB.UI
                 EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var result = false;
-                VisionMarkResult rightAlign = new VisionMarkResult
-                {
-                    MarkType = MarkType.ALIGN_MARK,
-                    DirectType = DirectType.RIGHT,
-                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
-                    StageY = GetCurrentPosition(MotionExtensions.P_Y, ct)
-                };
 
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
@@ -362,6 +353,14 @@ namespace HCB.UI
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_RIGHT_ALIGN_HIGH, ct);
+
+                VisionMarkResult rightAlign = new VisionMarkResult
+                {
+                    MarkType = MarkType.ALIGN_MARK,
+                    DirectType = DirectType.RIGHT,
+                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = await GetCurrentPosition(MotionExtensions.P_Y, ct)
+                };
                 result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
                 if (result == false) throw new Exception("AF 실패");
                 var rAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "RIGHT");
@@ -386,23 +385,21 @@ namespace HCB.UI
                 EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var result = false;
-                VisionMarkResult leftFid = new VisionMarkResult
-                {
-                    MarkType = MarkType.FIDUCIAL,
-                    DirectType = DirectType.LEFT,
-                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
-                    StageY = GetCurrentPosition(MotionExtensions.P_Y, ct)
-                };
 
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
 
-
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-
                 // 좌측 피듀셜마크 이동
                 await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
+                VisionMarkResult leftFid = new VisionMarkResult
+                {
+                    MarkType = MarkType.FIDUCIAL,
+                    DirectType = DirectType.LEFT,
+                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = await GetCurrentPosition(MotionExtensions.P_Y, ct)
+                };
                 result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
                 if (result == false) throw new Exception("AF 실패");
                 var lFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "LEFT");
@@ -425,13 +422,7 @@ namespace HCB.UI
                 EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var result = false;
-                VisionMarkResult leftAlign = new VisionMarkResult
-                {
-                    MarkType = MarkType.ALIGN_MARK,
-                    DirectType = DirectType.LEFT,
-                    StageX = GetCurrentPosition(MotionExtensions.H_X, ct),
-                    StageY = GetCurrentPosition(MotionExtensions.P_Y, ct)
-                };
+                
 
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
@@ -442,6 +433,13 @@ namespace HCB.UI
                 // 좌측 얼라인마크 이동
                 await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_LEFT_ALIGN_HIGH, ct);
+                VisionMarkResult leftAlign = new VisionMarkResult
+                {
+                    MarkType = MarkType.ALIGN_MARK,
+                    DirectType = DirectType.LEFT,
+                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = await GetCurrentPosition(MotionExtensions.P_Y, ct)
+                };
                 result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
                 if (result == false) throw new Exception("AF 실패");
                 var lAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "LEFT");
@@ -458,12 +456,20 @@ namespace HCB.UI
 
         public async Task TopDiePlace(CancellationToken ct)
         {
-            double topDieThickness = await GetRecipe("TopDieThickness");
-            double btmDieThickness = await GetRecipe("BtmDieThickness");
+            try
+            {
+                double topDieThickness = await GetRecipe("TopDieThickness");
+                double btmDieThickness = await GetRecipe("BtmDieThickness");
+                double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
 
-            await Init_Head(ct);
-            await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
-            await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness - 0.1, ct);
+                await Init_Head(ct);
+                await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+                await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
+            }catch(Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+            
         }
 
         public async Task Bonding(CancellationToken ct)

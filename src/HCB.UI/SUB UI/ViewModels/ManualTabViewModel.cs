@@ -16,7 +16,7 @@ namespace HCB.UI
     {
         private ILogger _logger;
         private readonly IServiceProvider _serviceProvider;
-
+        private CancellationTokenSource _cts;
         private SequenceService _sequenceService;
         private DeviceManager _deviceManager;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
@@ -265,5 +265,24 @@ namespace HCB.UI
         }
 
 
+        [RelayCommand]
+        public async Task AllOn()
+        {
+            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            await _sequenceService.Init_ServoAllOn(_cts.Token);
+        }
+
+        [RelayCommand]
+        public async Task AllOff()
+        {
+            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            await _sequenceService.Init_ServoAllOff(_cts.Token);
+        }
+
+        [RelayCommand]
+        public async Task DieVacOff()
+        {
+            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+        }
     }
 }

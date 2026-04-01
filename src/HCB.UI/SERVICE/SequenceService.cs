@@ -25,7 +25,7 @@ namespace HCB.UI
 
         private CancellationToken _stopToken = CancellationToken.None;
 
-        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, AlarmService alarmService, 
+        public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, AlarmService alarmService,
             SequenceServiceVM sequenceServiceVM, EqpCommunicationService communicationService, RecipeService recipeService)
         {
             _logger = logger.ForContext<SequenceService>();
@@ -94,6 +94,7 @@ namespace HCB.UI
                 _logger.Error($"Stop Sequence error: {e.Message}");
             }
         }
+
 
         //public override async Task StopAsync(CancellationToken cancellationToken)
         //{

@@ -508,8 +508,12 @@
                 </Grid>
             </telerik:RadTabItem>
         </telerik:RadTabControl>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="1" Margin="10">
-            <Button Content="전체 JOG" Command="{Binding JogOpenCommand}" Width="120" Height="80"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Grid.Row="1" Margin="10">
+            <Button Content="전체 JOG" Command="{Binding JogOpenCommand}" Width="120" Height="80" Margin="2"/>
+            <Button Content="ALL ON" Command="{Binding AllOnCommand}" Width="120" Height="80"  Margin="2"/>
+            <Button Content="ALL OFF" Command="{Binding AllOffCommand}" Width="120" Height="80"  Margin="2"/>
+            <Button Content="DIE VAC OFF" Command="{Binding DieVacOffCommand}" Width="120" Height="80"  Margin="2"/>
+            <Button Content="HEAD VAC OFF" Command="{Binding VacAllOnCommand}" Width="120" Height="80"  Margin="2"/>
         </StackPanel>
     </Grid>
     

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using Telerik.Windows.Documents.Spreadsheet.Expressions.Functions;
 using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
@@ -42,7 +43,14 @@ namespace HCB.UI
         [ObservableProperty] private VisionMarkResult btmLeftAlign;
         [ObservableProperty] private VisionMarkResult btmLeftFid;
 
-        [ObservableProperty] private double errorT;
+
+        [ObservableProperty] private double topOffsetX;
+        [ObservableProperty] private double topOffsetY;
+        [ObservableProperty] private double topOffsetT;
+
+        [ObservableProperty] private double btmOffsetX;
+        [ObservableProperty] private double btmOffsetY;
+        [ObservableProperty] private double btmOffsetT;
 
         [ObservableProperty] private RecipeDto selectedRecipe;
 
@@ -236,11 +244,30 @@ namespace HCB.UI
         {
             try
             {
+                _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
                 BtmHighAlignState = StepState.InProgress;
+                double lPiezoOffsetX = -6.1245;
+                double lPiezoOffsetY = 3.479;
+                double rPiezoOffsetX = 6.1245;
+                double rPiezoOffsetY = -3.479;                
+
+                await _sequenceService.TopDiePlace(_cts.Token);
                 BtmRightFid   = await _sequenceService.BtmDieVisionRightFid(_cts.Token);
+                BtmRightFid.StageX = BtmRightFid.StageX - rPiezoOffsetX;
+                BtmRightFid.StageY = BtmRightFid.StageY - rPiezoOffsetY;
+
                 BtmRightAlign = await _sequenceService.BtmDieVisionRightAlign(_cts.Token);
+                BtmRightAlign.StageX = BtmRightAlign.StageX - rPiezoOffsetX;
+                BtmRightAlign.StageY = BtmRightAlign.StageY - rPiezoOffsetY;
+
                 BtmLeftFid    = await _sequenceService.BtmDieVisionLeftFid(_cts.Token);
+                BtmLeftFid.StageX = BtmLeftFid.StageX - lPiezoOffsetX;
+                BtmLeftFid.StageY = BtmLeftFid.StageY - lPiezoOffsetY;
+
                 BtmLeftAlign  = await _sequenceService.BtmDieVisionLeftAlign(_cts.Token);
+                BtmLeftAlign.StageX = BtmLeftAlign.StageX - lPiezoOffsetX;
+                BtmLeftAlign.StageY = BtmLeftAlign.StageY - lPiezoOffsetY;
+
                 BtmHighAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmHighAlignState = StepState.Idle; }
@@ -359,30 +386,42 @@ namespace HCB.UI
             try
             {
                 TopHighAlignState = StepState.InProgress;
-                TopRightFid   = await _sequenceService.TopDieVisionRightFid(_cts.Token);
+                TopRightFid = await _sequenceService.TopDieVisionRightFid(_cts.Token);
                 TopRightAlign = await _sequenceService.TopDieVisionRightAlign(_cts.Token);
+                TopLeftFid = await _sequenceService.TopDieVisionLeftFid(_cts.Token);
+                TopLeftAlign = await _sequenceService.TopDieVisionLeftAlign(_cts.Token);
 
-                TopLeftFid    = await _sequenceService.TopDieVisionLeftFid(_cts.Token);
-                TopLeftAlign  = await _sequenceService.TopDieVisionLeftAlign(_cts.Token);
+                // ── 중심 좌표 ──────────────────────────────────────────────
+                double fidCenterX = (TopRightFid.CenterX + TopLeftFid.CenterX) / 2.0;
+                double fidCenterY = (TopRightFid.CenterY + TopLeftFid.CenterY) / 2.0;
+                double alignCenterX = (TopRightAlign.CenterX + TopLeftAlign.CenterX) / 2.0;
+                double alignCenterY = (TopRightAlign.CenterY + TopLeftAlign.CenterY) / 2.0;
+
+                // ── Offset ─────────────────────────────────────────────────
+                TopOffsetX = fidCenterX - alignCenterX;
+                TopOffsetY = fidCenterY - alignCenterY;
+
+                // ── Theta Align: L.Align → R.Align (CalculateTheta와 동일) ──
+                double dxAlign = TopRightAlign.CenterX - TopLeftAlign.CenterX;
+                double dyAlign = TopRightAlign.CenterY - TopLeftAlign.CenterY;
+                double thetaDeg = Math.Atan2(dyAlign, dxAlign) * 180.0 / Math.PI;
+
+                // ── Theta Fid: L.Fid → R.Fid (CalculateThetaFid와 동일) ────
+                double dxFid = TopRightFid.CenterX - TopLeftFid.CenterX;
+                double dyFid = TopRightFid.CenterY - TopLeftFid.CenterY;
+                double thetaFidDeg = Math.Atan2(dyFid, dxFid) * 180.0 / Math.PI;
+
+                TopOffsetT = thetaFidDeg - thetaDeg;
+                //// ── 보정 적용 ──────────────────────────────────────────────
+                //await _sequenceService.CorrectTheta(-thetaDeg, _cts.Token);
+
                 TopHighAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopHighAlignState = StepState.Idle; }
             catch (Exception e) { TopHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
-        [RelayCommand]
-        public async Task TopPlace()
-        {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
-            try
-            {
-                TopPlaceState = StepState.InProgress;
-                await _sequenceService.TopDieDrop(_cts.Token);
-                TopPlaceState = StepState.Completed;
-            }
-            catch (OperationCanceledException) { TopPlaceState = StepState.Idle; }
-            catch (Exception e) { TopPlaceState = StepState.Failed; _logger.Warning(e.Message); }
-        }
+        
 
 
         // ── 모달창 별도 STA 스레드 실행 헬퍼 ────────────────────────
