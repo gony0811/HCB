@@ -110,6 +110,9 @@
   <Page Include="SUB UI\USub01Tab\BondingInfoWindow.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\USub01Tab\CalibrationTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub01Tab\StepSeqTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -281,10 +284,12 @@
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
   <Compile Include="SUB UI\Title\Headerbar.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\BondingInfoWindow.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\CalibrationTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\StepLamp.cs" />
   <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\TopHighAlignInfoWindow.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\AlarmModalViewModel.cs" />
+  <Compile Include="SUB UI\ViewModels\CalibrationMath.cs" />
   <Compile Include="SUB UI\ViewModels\CalibrationViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\DieMeasurement.cs" />
   <Compile Include="SUB UI\ViewModels\JogWindowVM.cs" />

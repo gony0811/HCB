@@ -4,7 +4,6 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
-      xmlns:converters="clr-namespace:HCB.UI.Converters"
       xmlns:local="clr-namespace:HCB.UI"
       xmlns:uc="clr-namespace:HCB.UI"
       xmlns:page="clr-namespace:HCB.UI"
@@ -17,7 +16,7 @@
                 <ResourceDictionary Source="/SYSTEM/Common/Styles/DefaultResource.xaml"/>
                 <ResourceDictionary Source="/SYSTEM/Common/Styles/ButtonsAndSwitches.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <converters:TupleConverter x:Key="TupleConverter" />
+            <local:TupleConverter x:Key="TupleConverter" />
         </ResourceDictionary>
         
     </Page.Resources>
