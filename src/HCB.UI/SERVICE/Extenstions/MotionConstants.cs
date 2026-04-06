@@ -98,5 +98,13 @@ namespace HCB.UI
         public const string P_LEFT_HIGH = "P_LEFT_HIGH";
         public const string P_RIGHT_HIGH = "P_RIGHT_HIGH";
 
+
+        public const string HC1_T = "HC1_T";
+        public const string HC2_T = "HC2_T";
+        public const string PC_T = "PC_T";
+
+        public const string HCRO_X = "HCRO_X";
+        public const string HCRO_Y = "HCRO_Y";
+
     }
 }

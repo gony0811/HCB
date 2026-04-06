@@ -290,6 +290,7 @@
   <Compile Include="SUB UI\USub01Tab\TopHighAlignInfoWindow.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\AlarmModalViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\CalibrationMath.cs" />
+  <Compile Include="SUB UI\ViewModels\CalibrationTabViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\CalibrationViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\DieMeasurement.cs" />
   <Compile Include="SUB UI\ViewModels\JogWindowVM.cs" />

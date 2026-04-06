@@ -54,7 +54,7 @@ namespace HCB.UI
         public ECParamDto FindByName(string name)
         {
             var param = ParamList.FirstOrDefault(x => x.Name.Equals(name));
-            if (param == null) throw new Exception($"{name} EC 파라미터가 없습니다");
+            if (param == null) return new ECParamDto();
             return param;
         }
     }
