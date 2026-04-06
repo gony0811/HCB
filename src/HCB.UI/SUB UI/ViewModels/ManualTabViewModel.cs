@@ -7,6 +7,7 @@ using System.Threading;
 using System.Drawing.Printing;
 using System;
 using System.Windows;
+using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HCB.UI
@@ -64,6 +65,8 @@ namespace HCB.UI
         [ObservableProperty] private bool isDieStandby;
         [ObservableProperty] private bool isWaferStandby;
 
+        public ICommand HzHomeCommand { get; private set; }
+
         // 생성자에서 IoC로부터 팩토리 함수 주입
         public ManualTabViewModel(
             ILogger logger,
@@ -75,6 +78,7 @@ namespace HCB.UI
             _serviceProvider = serviceProvider;
             _deviceManager = deviceManager;
             _sequenceService = sequenceService;
+            HzHomeCommand = new AsyncRelayCommand(ct => _sequenceService.HzHome(ct));
             Initialize();
         }
 

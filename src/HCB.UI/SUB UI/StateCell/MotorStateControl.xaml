@@ -49,10 +49,37 @@
                         Command="{Binding ServoOffCommand}"
                         Margin="4,0"
                         />
-                <Button Content="HOME"
-                        Grid.Column="3"
-                        Command="{Binding HomeCommand}"
-                        Margin="4,0"/>
+                <!-- HOME 버튼: h_z 축은 특수 홈 시퀀스 사용 -->
+                <Grid Grid.Column="3" Margin="4,0">
+                    <!-- 일반 HOME (h_z 제외) -->
+                    <Button Content="HOME" Command="{Binding HomeCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Name}" Value="h_z">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <!-- h_z 전용 HOME (특수 시퀀스) -->
+                    <Button Content="HOME"
+                            Command="{Binding HzHomeCommand, RelativeSource={RelativeSource AncestorType=local:MotorStateControl}}"
+                            ToolTip="① Cylinder L/R 확장 → ② H_Z→0 이동 → ③ h_z Home → ④ Piezo Home → ⑤ Cylinder 복귀">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Name}" Value="h_z">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
             </Grid>
 
             <!-- ===== Status Indicators ===== -->

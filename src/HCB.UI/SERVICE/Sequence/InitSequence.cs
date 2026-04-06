@@ -392,6 +392,7 @@ namespace HCB.UI
                 _sequenceServiceVM.HZHome = StepState.InProgress;
                 _sequenceServiceVM.HzHome = StepState.InProgress;
                 var headHomeResult = await MotionExtensions.HomeAsync(_sequenceHelper, head, ct);
+                await HzHome(ct);
                 if (!headHomeResult)
                 {
                     _sequenceServiceVM.HZHome = StepState.Failed;
@@ -533,6 +534,34 @@ namespace HCB.UI
         public async Task HVacOnOff(bool onOff, CancellationToken ct =default)
         {
             await _sequenceHelper.HeadPickerVacuum(onOff ? eOnOff.On: eOnOff.Off, ct);
+        }
+
+        public async Task HzHome(CancellationToken ct = default)
+        {
+            var silindarOut = await Task.WhenAll(
+                _sequenceHelper.Silindar_L(true, ct),
+                _sequenceHelper.Silindar_R(true, ct)
+            );
+
+            var ready = silindarOut.All(n => n);
+            if (!ready) throw new Exception("실린더 IO 에러");
+
+            await MotionsMove(MotionExtensions.H_Z, 0, ct);
+            var hz = _deviceManager.GetDevice<PowerPmacDevice>("PMAC").FindMotionByName(MotionExtensions.h_z);
+            await hz.Home();
+            var result = await communicationService.PiezoHome(ct);
+            
+            if (result == Result.OK)
+            {
+                await Task.WhenAll(
+                    _sequenceHelper.Silindar_L(false, ct),
+                    _sequenceHelper.Silindar_R(false, ct)
+                );
+            }
+            else
+            {
+                throw new Exception("피에조 통신 에러");
+            }
         }
     }
 }

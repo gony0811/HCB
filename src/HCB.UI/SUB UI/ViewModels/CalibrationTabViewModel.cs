@@ -134,12 +134,10 @@ namespace HCB.UI
                 CalibStatus = "Hc1/Hc2 마크 센터링 (회전 전)...";
 
                 await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, ct);
+                var v1Before = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
                 await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, ct);
-
-                var (v1Before, v2Before) = await (
-                    _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT.ToString()),
-                    _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, DirectType.RIGHT.ToString())
-                );
+                var v2Before = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
+                    
 
                 // Hc1 기준으로 Stage 센터링 (HX, WY 공유축이므로 Hc1 오프셋만 보정)
                 await Task.WhenAll(
@@ -157,12 +155,9 @@ namespace HCB.UI
                 CalibStatus = "Hc1/Hc2 마크 측정 (회전 후)...";
 
                 await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, ct);
+                var v1After = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
                 await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, ct);
-
-                var (v1After, v2After) = await (
-                    _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT.ToString()),
-                    _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, DirectType.RIGHT.ToString())
-                );
+                var v2After = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
 
                 // 회전 후 절대 좌표 = 현재 Stage 위치 + 비전 오프셋
                 var hc1After = Point2D.of(_hxAxis.CurrentPosition + v1After.X, _wyAxis.CurrentPosition + v1After.Y);

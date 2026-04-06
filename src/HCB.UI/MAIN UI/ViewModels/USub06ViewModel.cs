@@ -17,6 +17,7 @@ using System.Windows;
 using Telerik.Windows.Documents.Fixed.Model.Data;
 using Telerik.Windows.Documents.Spreadsheet.Expressions.Functions;
 using Serilog;
+using System.Windows.Input;
 
 namespace HCB.UI
 {
@@ -27,6 +28,8 @@ namespace HCB.UI
         private readonly DeviceManager deviceManager;
         private readonly DialogService dialogService;
         private readonly MotionPositionRepository positionRepository;
+        private readonly SequenceService _sequenceService;
+
         [ObservableProperty] private ObservableCollection<IAxis> motionList = new();
         [ObservableProperty] private IAxis selectedMotion;
         [ObservableProperty] private DMotionPosition selectedPosition;
@@ -35,12 +38,16 @@ namespace HCB.UI
         [ObservableProperty] MotorStateControlVM motionStatus;
         private IDisposable statusSubscription;
 
-        public USub06ViewModel(ILogger logger, DeviceManager deviceManager, DialogService dialogService, MotionPositionRepository positionRepository)
+        public ICommand HzHomeCommand { get; }
+
+        public USub06ViewModel(ILogger logger, DeviceManager deviceManager, DialogService dialogService, MotionPositionRepository positionRepository, SequenceService sequenceService)
         {
             this.logger = logger;
             this.deviceManager = deviceManager;
             this.dialogService = dialogService;
             this.positionRepository = positionRepository;
+            _sequenceService = sequenceService;
+            HzHomeCommand = new AsyncRelayCommand(ct => _sequenceService.HzHome(ct));
 
             var motionDevices = deviceManager.Devices
                 .OfType<IMotionDevice>()

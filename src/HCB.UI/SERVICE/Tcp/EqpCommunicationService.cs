@@ -198,7 +198,20 @@ namespace HCB.UI
                 return new VisionMarkPositionResponse { Result = Result.NG };
         }
 
-        
+        public async Task<Result> PiezoHome(CancellationToken ct = default)
+        {
+            var request = MessageFactory.Create(
+                messageName: "REQUEST_PIEZO_HOME",
+                unitName: "EQP",
+                content: null
+            );
+            var result = await _server.RequestAsync(request, ct: ct);
+
+            var content = result.Response!.Data?.Content;
+            var xml = XElement.Parse($"<DATA>{content}</DATA>");
+            return Enum.TryParse(xml.Element("RESULT")?.Value, out Result r) ? r : Result.NG;
+        }
+
         #endregion
 
         #region VISION -> EQP

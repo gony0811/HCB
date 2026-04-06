@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace HCB.UI
 {
@@ -130,6 +131,42 @@ namespace HCB.UI
             device.SetDigital(DO_TOWER_LAMP_YELLOW, yellow);
             device.SetDigital(DO_TOWER_LAMP_RED, red);
             device.SetDigital(DO_TOWER_LAMP_BUZZER, buzzer);
+        }
+
+        public static async Task<bool> Silindar_L(this ISequenceHelper helper, bool onOff, CancellationToken ct=default)
+        {
+            var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
+            if (device == null)
+            {
+                helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
+            }
+
+            device.SetDigital("Silindar_L", onOff);
+
+            return await helper.WaitUntilAsync(
+                () => device.GetDigital("Silindar_L") == onOff,
+                3000,
+                ct,
+                $"Timeout"
+            ).ConfigureAwait(false);
+        }
+
+        public static async Task<bool> Silindar_R(this ISequenceHelper helper, bool onOff, CancellationToken ct = default)
+        {
+            var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
+            if (device == null)
+            {
+                helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
+            }
+
+            device.SetDigital("Silindar_R", onOff);
+
+            return await helper.WaitUntilAsync(
+                () => device.GetDigital("Silindar_R") == onOff,
+                3000,
+                ct,
+                $"Timeout"
+            ).ConfigureAwait(false);
         }
 
         /// <summary>

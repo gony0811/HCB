@@ -46,7 +46,6 @@ namespace HCB.UI
         [ObservableProperty] private double commandPosition;
         [ObservableProperty] private double currentPosition;
 
-
         public DAxis(ILogger logger)
         {
             this.logger = logger.ForContext<DAxis>();
@@ -359,5 +358,6 @@ namespace HCB.UI
                 await device.SendCommand(cmd);
             }
         }
+
     }
 }

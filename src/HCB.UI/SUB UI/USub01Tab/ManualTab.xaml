@@ -356,7 +356,8 @@
                                     </telerik:RadGridView.Columns>
                                 </telerik:RadGridView>
 
-                                <local:MotorStateControl DataContext="{Binding Bz2Axis}" Grid.Row="1" Margin="5"/>
+                                <local:MotorStateControl DataContext="{Binding Bz2Axis}" Grid.Row="1" Margin="5"
+                                                         HzHomeCommand="{Binding DataContext.HzHomeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
                             </Grid>
                         </telerik:GroupBox>
                     </Grid>
