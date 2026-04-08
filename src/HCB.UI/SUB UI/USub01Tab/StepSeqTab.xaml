@@ -809,7 +809,7 @@
                                     <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
                                 </Button>
                                 <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
-                                        Command="{Binding TopBondingCommand}">
+                                        Command="{Binding TopPlaceCommand}">
                                     <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
                                 </Button>
                             </Grid>
@@ -821,6 +821,17 @@
                     <Border Grid.Row="2" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
                             Margin="16,0,16,0" Padding="0,10,0,14">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+                                    Command="{Binding LowResultCommand}">
+                                <TextBlock Text="저배율 결과" FontSize="13" FontWeight="Bold"/>
+                            </Button>
+
+
+                            <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+                                    Command="{Binding TopRunFullSequenceCommand}">
+                                <TextBlock Text="Start" FontSize="13" FontWeight="Bold"/>
+                            </Button>
+
                             <Button Style="{StaticResource StopButtonStyle}" Width="90"
                                     Command="{Binding StopCommand}">
                                 <TextBlock Text="STOP" FontSize="13" FontWeight="Bold"/>

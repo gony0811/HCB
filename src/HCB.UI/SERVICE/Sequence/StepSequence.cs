@@ -13,18 +13,12 @@ namespace HCB.UI
     {
         public async Task BtmDieDrop(int vacNum, CancellationToken ct)
         {
-            if (double.TryParse(_recipeService.FindByParam("BtmDieThickness").Value, out double btmDieThickness))
-            { }
-            else
-            {
-                throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
-            }
+            double btmDieThickness = await GetRecipe("BtmDieThickness");
+            double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
 
-            // W-Table로 이동
             await Init_Head(ct);
             await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
-            await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", -btmDieThickness, ct);
-            await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -btmDieThickness, ct);
+            await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - btmDieThickness, ct);
             await _sequenceHelper.WTableVacuum(vacNum, eOnOff.On, ct);
             bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
             if (!result) throw new Exception("HeadPicker를 확인해주세요");
@@ -465,6 +459,8 @@ namespace HCB.UI
                 await Init_Head(ct);
                 await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
                 await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
+                
+                
             }catch(Exception e)
             {
                 throw new Exception(e.Message);
@@ -472,9 +468,22 @@ namespace HCB.UI
             
         }
 
-        public async Task Bonding(CancellationToken ct)
+        public async Task Bonding(int delay, CancellationToken ct)
         {
-
+            try
+            {
+                double topDieThickness = await GetRecipe("TopDieThickness");
+                double btmDieThickness = await GetRecipe("BtmDieThickness");
+                double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
+                double placeOffset = await GetRecipe("PLACE_OFFSET");
+                await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness + placeOffset, ct);
+                await HVacOnOff(false, ct);
+                await Task.Delay(delay);
+            }
+            catch(Exception e)
+            {
+                throw new Exception(e.Message);
+            }
         }
         public async Task<double> GetRecipe(string name, CancellationToken ct = default)
         {

@@ -321,6 +321,34 @@ namespace HCB.UI
             await Task.Delay(200);
         }
 
+        public async Task RelativeMotionsMove( string motionName, double position, CancellationToken ct)
+        {
+            var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var motion = motionDevice?.FindMotionByName(motionName);
+
+            if (motion == null)
+                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+
+            // 이동 명령
+            await motion.Move(MoveType.Relative, 100, motion.LimitMaxSpeed / 2, position);
+
+            // InPosition 안정화 대기 (이동 시작 직후 InPosition이 false로 전환될 때까지 대기)
+            int retry = 0;
+            while (motion.InPosition && retry < 5)
+            {
+                await Task.Delay(20, ct);
+                retry++;
+            }
+
+            // 이동 완료 대기
+            await _sequenceHelper.WaitUntilAsync(
+                () => motion.InPosition,
+                60000, ct,
+                $"[Motion Timeout] '{motionName}' 이동 시간 초과"
+            );
+
+            await Task.Delay(200, ct);
+        }
 
         public void EQStatusCheck()
         {
@@ -549,6 +577,7 @@ namespace HCB.UI
             await MotionsMove(MotionExtensions.H_Z, 0, ct);
             var hz = _deviceManager.GetDevice<PowerPmacDevice>("PMAC").FindMotionByName(MotionExtensions.h_z);
             await hz.Home();
+            await MotionsMove(MotionExtensions.h_z, MotionExtensions.LOAD_POSITION, ct);
             var result = await communicationService.PiezoHome(ct);
             
             if (result == Result.OK)

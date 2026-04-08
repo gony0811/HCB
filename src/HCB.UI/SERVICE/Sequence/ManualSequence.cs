@@ -27,6 +27,19 @@ namespace HCB.UI
                 _logger.Error(e, e.Message);
             }
         }
+
+        public async Task DTableLoadComplete(int top, int bottom, CancellationToken ct)
+        {
+            try
+            {
+                await _sequenceHelper.TopVac(top,eOnOff.On, ct).ConfigureAwait(false);
+                await _sequenceHelper.BTMVac(bottom, eOnOff.On, ct).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
+            }
+        }
         public async Task DTableLoadComplete(List<int> vacs, CancellationToken ct)
         {
             try

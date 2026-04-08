@@ -183,6 +183,16 @@ namespace HCB.UI
                 unitName: "EQP",
                 content: $"<MARKTYPE>{markType}</MARKTYPE><CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT>"
             );
+
+            double fov = cameraType switch
+            {
+                CameraType.HC1_HIGH => 7.2,
+                CameraType.HC2_HIGH => 7.2,
+                CameraType.PC_HIGH => 10.0,
+                CameraType.HC_LOW => 110.0,
+                _ => 0
+            };
+
             var result = await _server.RequestAsync(request, timeout: TimeSpan.FromSeconds(10));
 
             if (!result.Success)
@@ -192,10 +202,25 @@ namespace HCB.UI
             }
 
             var response = VisionMarkPositionResponse.Parse(result.Response!.Data?.Content);
-            if (response.Result == Result.OK)
-                return new VisionMarkPositionResponse { Result = response.Result, X = response.X, Y = response.Y, Theta = response.Theta };
-            else
+
+            if (response.Result != Result.OK)
                 return new VisionMarkPositionResponse { Result = Result.NG };
+
+            // FOV 범위 체크 (FOV의 절반이 유효 범위)
+            double half = fov / 2.0;
+            if (Math.Abs(response.X) > half || Math.Abs(response.Y) > half)
+            {
+                _logger.Warning($"[MarkPosition] FOV 범위 초과 - X:{response.X:F3}, Y:{response.Y:F3}, FOV:{fov}");
+                return new VisionMarkPositionResponse { Result = Result.NG };
+            }
+
+            return new VisionMarkPositionResponse
+            {
+                Result = response.Result,
+                X = response.X,
+                Y = response.Y,
+                Theta = response.Theta
+            };
         }
 
         public async Task<Result> PiezoHome(CancellationToken ct = default)
@@ -205,7 +230,7 @@ namespace HCB.UI
                 unitName: "EQP",
                 content: null
             );
-            var result = await _server.RequestAsync(request, ct: ct);
+            var result = await _server.RequestAsync(request, timeout: TimeSpan.FromMinutes(1), ct: ct);
 
             var content = result.Response!.Data?.Content;
             var xml = XElement.Parse($"<DATA>{content}</DATA>");

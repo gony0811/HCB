@@ -13,6 +13,7 @@ namespace HCB.UI
     [ViewModel(Lifetime.Scoped)]
     public partial class CalibrationTabViewModel : ObservableObject
     {
+        
         private readonly EqpCommunicationService _communication;
         private readonly ECParamService _ecParamService;
         private readonly SequenceService _sequenceService;
@@ -45,6 +46,7 @@ namespace HCB.UI
         [ObservableProperty] private double hcROY;
 
         public CalibrationTabViewModel(
+            DeviceManager deviceManager,
             EqpCommunicationService communication,
             SequenceService sequenceService,
             ECParamService ecParamService,
@@ -54,6 +56,12 @@ namespace HCB.UI
             _sequenceService = sequenceService;
             _ecParamService = ecParamService;
             _logger = logger.ForContext<CalibrationTabViewModel>();
+            var device = deviceManager.GetDevice<PowerPmacDevice>("PMAC");
+            _hxAxis = device.FindMotionByName(MotionExtensions.H_X);
+            _wyAxis = device.FindMotionByName(MotionExtensions.W_Y);
+            _pyAxis = device.FindMotionByName(MotionExtensions.P_Y);
+            _htAxis = device.FindMotionByName(MotionExtensions.H_T);
+            
         }
 
         [RelayCommand]
@@ -74,8 +82,8 @@ namespace HCB.UI
 
                 CalibStatus = $"Hc1 완료  Θ1 = {Theta1Deg:F4} °";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; throw; }
-            catch (Exception e) { _logger.Error(e, "Hc1 Angle calibration failed"); CalibStatus = $"오류: {e.Message}"; throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
+            catch (Exception e) { _logger.Error(e, "Hc1 Angle calibration failed"); CalibStatus = $"오류: {e.Message}"; }
             finally { IsNotBusy = true; }
         }
 
@@ -97,8 +105,8 @@ namespace HCB.UI
 
                 CalibStatus = $"Hc2 완료  Θ2 = {Theta2Deg:F4} °";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; throw; }
-            catch (Exception e) { _logger.Error(e, "Hc2 Angle calibration failed"); CalibStatus = $"오류: {e.Message}"; throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
+            catch (Exception e) { _logger.Error(e, "Hc2 Angle calibration failed"); CalibStatus = $"오류: {e.Message}"; }
             finally { IsNotBusy = true; }
         }
 
@@ -112,7 +120,7 @@ namespace HCB.UI
                 double theta = await GetAnglePc(CameraType.PC_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, ct);
                 ThetaPRad = theta;
                 ThetaPDeg = theta * (180.0 / Math.PI);
-                ECParamDto dto = _ecParamService.FindByName(MotionExtensions.HC1_T);
+                ECParamDto dto = _ecParamService.FindByName(MotionExtensions.PC_T);
                 dto.Value = ThetaPDeg.ToString();
                 dto.ValueType = ValueType.Double;
                 if (dto.Id == 0) { await _ecParamService.AddParam(dto); }
@@ -120,7 +128,7 @@ namespace HCB.UI
                 CalibStatus = $"Pc 완료  Θp = {ThetaPDeg:F4} °";
             }
             catch (OperationCanceledException) { CalibStatus = "취소됨"; throw; }
-            catch (Exception e) { _logger.Error(e, "Pc Angle calibration failed"); CalibStatus = $"오류: {e.Message}"; throw; }
+            catch (Exception e) { _logger.Error(e, "Pc Angle calibration failed"); CalibStatus = $"오류: {e.Message}";}
             finally { IsNotBusy = true; }
         }
 
@@ -130,36 +138,35 @@ namespace HCB.UI
             IsNotBusy = false;
             try
             {
-                // ── 회전 전: Hc1, Hc2 동시 센터링 ───────────────────
-                CalibStatus = "Hc1/Hc2 마크 센터링 (회전 전)...";
-
+                // ── 회전 전: Hc1, Hc2 각각 절대 좌표 계산 (Stage 이동 없음) ───
+                CalibStatus = "Hc1/Hc2 마크 측정 (회전 전)...";
                 await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, ct);
                 var v1Before = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
+                if (v1Before.Result == Result.NG) throw new Exception("Hc1 회전 전 비전 측정 실패");
+
                 await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, ct);
                 var v2Before = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
-                    
+                if (v2Before.Result == Result.NG) throw new Exception("Hc2 회전 전 비전 측정 실패");
 
-                // Hc1 기준으로 Stage 센터링 (HX, WY 공유축이므로 Hc1 오프셋만 보정)
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, _hxAxis!.CurrentPosition - v1Before.X, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.W_Y, _wyAxis!.CurrentPosition - v1Before.Y, ct));
-
-                var hc1Before = Point2D.of(_hxAxis.CurrentPosition, _wyAxis.CurrentPosition);
-                var hc2Before = Point2D.of(_hxAxis.CurrentPosition, _wyAxis.CurrentPosition);
+                // Stage 이동 없이 현재 위치 + 비전 오프셋으로 절대 좌표 계산
+                var hc1Before = Point2D.of(_hxAxis!.CurrentPosition + v1Before.X, _wyAxis!.CurrentPosition + v1Before.Y);
+                var hc2Before = Point2D.of(_hxAxis!.CurrentPosition + v2Before.X, _wyAxis!.CurrentPosition + v2Before.Y);
 
                 // ── H_T 회전 ─────────────────────────────────────────
                 CalibStatus = "H_T 회전 중...";
                 await _sequenceService.MotionsMove(MotionExtensions.H_T, _htAxis!.CurrentPosition + RotationDeg, ct);
 
-                // ── 회전 후: Hc1, Hc2 동시 측정 ─────────────────────
+                // ── 회전 후: Hc1, Hc2 각각 절대 좌표 계산 (Stage 이동 없음) ───
                 CalibStatus = "Hc1/Hc2 마크 측정 (회전 후)...";
-
                 await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, ct);
                 var v1After = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
+                if (v1After.Result == Result.NG) throw new Exception("Hc1 회전 후 비전 측정 실패");
+
                 await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, ct);
                 var v2After = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
+                if (v2After.Result == Result.NG) throw new Exception("Hc2 회전 후 비전 측정 실패");
 
-                // 회전 후 절대 좌표 = 현재 Stage 위치 + 비전 오프셋
+                // 회전 후 절대 좌표
                 var hc1After = Point2D.of(_hxAxis.CurrentPosition + v1After.X, _wyAxis.CurrentPosition + v1After.Y);
                 var hc2After = Point2D.of(_hxAxis.CurrentPosition + v2After.X, _wyAxis.CurrentPosition + v2After.Y);
 
@@ -184,11 +191,10 @@ namespace HCB.UI
                 if (dto2.Id == 0) { await _ecParamService.AddParam(dto2); }
                 else { await _ecParamService.UpdateParam(dto2); }
 
-
                 CalibStatus = $"HcRO 완료  HX(C) = {HcROX:F4}  WY(C) = {HcROY:F4}";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; throw; }
-            catch (Exception e) { _logger.Error(e, "CreateHcRo failed"); CalibStatus = $"오류: {e.Message}"; throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
+            catch (Exception e) { _logger.Error(e, "CreateHcRo failed"); CalibStatus = $"오류: {e.Message}"; }
             finally { IsNotBusy = true; }
         }
 
@@ -198,14 +204,45 @@ namespace HCB.UI
             {
                 // 1. 마크 탐색 및 초기 비전 좌표 읽기
                 await _communication.RequestAFStart(cameraType, markType, ct);
-                var beforeVision = await _communication.RequestVisionMarkPosition(
-                    markType, cameraType, directType.ToString());
+                var beforeVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+                if (beforeVision == null) throw new Exception("beforeVision 응답 null");
+                if (beforeVision.Result == Result.NG) throw new Exception("비전 측정 실패");
 
-                // 2. 마크를 카메라 센터로 이동
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, _hxAxis!.CurrentPosition - beforeVision.X, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.W_Y, _wyAxis!.CurrentPosition - beforeVision.Y, ct)
-                );
+                // 2. beforeVision X, Y가 0이 될 때까지 센터 이동 반복
+                const double Tolerance = 0.003;
+                const int MaxRetry = 3;
+                int retry = 0;
+                bool centered = false;
+
+                // 처음부터 오차 범위 내인 경우
+                if (Math.Abs(beforeVision.X) <= Tolerance && Math.Abs(beforeVision.Y) <= Tolerance)
+                {
+                    centered = true;
+                }
+
+                while (!centered && retry < MaxRetry)
+                {
+                    await Task.WhenAll(
+                        _sequenceService.MotionsMove(MotionExtensions.H_X, _hxAxis!.CurrentPosition - beforeVision.X, ct),
+                        _sequenceService.MotionsMove(MotionExtensions.W_Y, _wyAxis!.CurrentPosition - beforeVision.Y, ct)
+                    );
+
+                    await _communication.RequestAFStart(cameraType, markType, ct);
+                    beforeVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+                    if (beforeVision == null) throw new Exception("beforeVision 응답 null");
+                    if (beforeVision.Result == Result.NG) throw new Exception("비전 측정 실패");
+
+                    retry++;
+
+                    if (Math.Abs(beforeVision.X) <= Tolerance && Math.Abs(beforeVision.Y) <= Tolerance)
+                    {
+                        centered = true;
+                        break;
+                    }
+                }
+
+                if (!centered)
+                    throw new Exception($"마크 센터 정렬 실패: {MaxRetry}회 초과");
 
                 // 3. HX = WY = AMove 조건으로 대각선 이동
                 await Task.WhenAll(
@@ -215,12 +252,16 @@ namespace HCB.UI
 
                 // 4. 이동 후 비전 좌표 읽기
                 await _communication.RequestAFStart(cameraType, markType, ct);
-                var afterVision = await _communication.RequestVisionMarkPosition(
-                    markType, cameraType, directType.ToString());
+                var afterVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+                if (afterVision == null) throw new Exception("afterVision 응답 null");
+                if (afterVision.Result == Result.NG) throw new Exception("이동 후 비전 측정 실패");
 
-                // 5. 이동 전후 차이값으로 Theta 역산
-                double hcX = afterVision.X - beforeVision.X;
-                double hcY = afterVision.Y - beforeVision.Y;
+                // 5. AMove 이동 후 비전 좌표를 직접 사용 (beforeVision ≈ 0이므로)
+                double hcX = afterVision.X;
+                double hcY = afterVision.Y;
+
+                if (Math.Abs(AMove) < 1e-10)
+                    throw new Exception("AMove 값이 0입니다");
 
                 return CalibrationMath.ComputeCameraTheta(AMove, hcX, hcY);
             }
@@ -234,21 +275,49 @@ namespace HCB.UI
                 throw;
             }
         }
-
         private async Task<double> GetAnglePc(CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct = default)
         {
             try
             {
                 // 1. 마크 탐색 및 초기 비전 좌표 읽기
                 await _communication.RequestAFStart(cameraType, markType, ct);
-                var beforeVision = await _communication.RequestVisionMarkPosition(
-                    markType, cameraType, directType.ToString());
+                var beforeVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+                if (beforeVision.Result == Result.NG) throw new Exception("비전 측정 실패");
 
-                // 2. 마크를 카메라 센터로 이동 (PY축 사용)
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, _hxAxis!.CurrentPosition + beforeVision.X, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.P_Y, _pyAxis!.CurrentPosition - beforeVision.Y, ct)
-                );
+                // 2. beforeVision X, Y가 0이 될 때까지 센터 이동 반복
+                const double Tolerance = 0.003;
+                const int MaxRetry = 3;
+                int retry = 0;
+                bool centered = false;
+
+                // 처음부터 오차 범위 내인 경우
+                if (Math.Abs(beforeVision.X) <= Tolerance && Math.Abs(beforeVision.Y) <= Tolerance)
+                {
+                    centered = true;
+                }
+
+                while (!centered && retry < MaxRetry)
+                {
+                    await Task.WhenAll(
+                        _sequenceService.MotionsMove(MotionExtensions.H_X, _hxAxis!.CurrentPosition - beforeVision.X, ct),
+                        _sequenceService.MotionsMove(MotionExtensions.P_Y, _pyAxis!.CurrentPosition + beforeVision.Y, ct)
+                    );
+
+                    await _communication.RequestAFStart(cameraType, markType, ct);
+                    beforeVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+                    if (beforeVision.Result == Result.NG) throw new Exception("비전 측정 실패");
+
+                    retry++;
+
+                    if (Math.Abs(beforeVision.X) <= Tolerance && Math.Abs(beforeVision.Y) <= Tolerance)
+                    {
+                        centered = true;
+                        break;
+                    }
+                }
+
+                if (!centered)
+                    throw new Exception($"마크 센터 정렬 실패: {MaxRetry}회 초과");
 
                 // 3. HX = PY = AMove 조건으로 대각선 이동
                 await Task.WhenAll(
@@ -258,13 +327,11 @@ namespace HCB.UI
 
                 // 4. 이동 후 비전 좌표 읽기
                 await _communication.RequestAFStart(cameraType, markType, ct);
-                var afterVision = await _communication.RequestVisionMarkPosition(
-                    markType, cameraType, directType.ToString());
+                var afterVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
 
                 // 5. 이동 전후 차이값으로 Theta 역산
                 double pcX = afterVision.X - beforeVision.X;
                 double pcY = afterVision.Y - beforeVision.Y;
-
                 return CalibrationMath.ComputeCameraTheta(AMove, pcX, pcY);
             }
             catch (OperationCanceledException)

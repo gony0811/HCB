@@ -44,6 +44,9 @@ namespace HCB.UI
         [ObservableProperty] private VisionMarkResult btmLeftAlign;
         [ObservableProperty] private VisionMarkResult btmLeftFid;
 
+        [ObservableProperty] private double topAlignRelOffsetX;
+        [ObservableProperty] private double topAlignRelOffsetY;
+        [ObservableProperty] private double topAlignRelOffsetT;
 
         [ObservableProperty] private double topOffsetX;
         [ObservableProperty] private double topOffsetY;
@@ -100,6 +103,7 @@ namespace HCB.UI
             SequenceHelper sequenceHelper,
             DeviceManager deviceManager,
             IOManager ioManager,
+            ECParamService eCParamService,
             RecipeService recipeService,
             ILogger logger)
         {
@@ -110,7 +114,7 @@ namespace HCB.UI
             this._deviceManager = deviceManager;
             this._recipeService = recipeService;
             this.ioManager = ioManager;
-
+            this._ecParamService = eCParamService;
             var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
             if (ioDevice != null)
             {
@@ -190,8 +194,7 @@ namespace HCB.UI
                     string.Join(", ", topList),
                     string.Join(", ", botList));
 
-                List<int> vacs = new List<int> { TopDie, BottomDie };
-                await _sequenceService.DTableLoadComplete(vacs, _cts.Token);
+                //await _sequenceService.DTableLoadComplete(TopDie, BottomDie, _cts.Token);
             }
             catch (Exception e)
             {
@@ -244,6 +247,7 @@ namespace HCB.UI
         public async Task BtmHighAlign()
         {
             _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            int mode = 0;
             try
             {
                 BtmHighAlignState = StepState.InProgress;
@@ -251,61 +255,65 @@ namespace HCB.UI
                 // HC1_T (Left 카메라), HC2_T (Right 카메라) 각도 로드
                 var hc1Param = _ecParamService.FindByName(MotionExtensions.HC1_T);
                 var hc2Param = _ecParamService.FindByName(MotionExtensions.HC2_T);
-                if (hc1Param.Id == 0) throw new Exception("HC1_T Not Found");
-                if (hc2Param.Id == 0) throw new Exception("HC2_T Not Found");
-                double hc1Rad = double.Parse(hc1Param.Value);
-                double hc2Rad = double.Parse(hc2Param.Value);
+                if (hc1Param.Id != 0 && hc2Param.Id != 0) mode = 1; // ← 버그 수정: 둘 다 존재할 때
 
-                // 피에조 오프셋
-                double lPiezoOffsetX = -6.1245;
-                double lPiezoOffsetY =  3.479;
-                double rPiezoOffsetX =  6.1245;
-                double rPiezoOffsetY = -3.479;
+                double lPiezoOffsetX = -6.1585, lPiezoOffsetY = 3.5915;
+                double rPiezoOffsetX = 6.1585, rPiezoOffsetY = -3.5915;
 
                 await _sequenceService.TopDiePlace(_cts.Token);
 
-                // ── Right 마크 (HC2 카메라) ───────────────────────────
+                // ── Right 마크 (HC2 카메라) ─────────────────────────────────────
                 BtmRightFid = await _sequenceService.BtmDieVisionRightFid(_cts.Token);
-                BtmRightFid.StageX -= rPiezoOffsetX;
-                BtmRightFid.StageY -= rPiezoOffsetY;
-
+                BtmRightFid.StageX -= rPiezoOffsetX; BtmRightFid.StageY -= rPiezoOffsetY;
                 BtmRightAlign = await _sequenceService.BtmDieVisionRightAlign(_cts.Token);
-                BtmRightAlign.StageX -= rPiezoOffsetX;
-                BtmRightAlign.StageY -= rPiezoOffsetY;
+                BtmRightAlign.StageX -= rPiezoOffsetX; BtmRightAlign.StageY -= rPiezoOffsetY;
 
-                // ── Left 마크 (HC1 카메라) ────────────────────────────
+                // ── Left 마크 (HC1 카메라) ──────────────────────────────────────
                 BtmLeftFid = await _sequenceService.BtmDieVisionLeftFid(_cts.Token);
-                BtmLeftFid.StageX -= lPiezoOffsetX;
-                BtmLeftFid.StageY -= lPiezoOffsetY;
-
+                BtmLeftFid.StageX -= lPiezoOffsetX; BtmLeftFid.StageY -= lPiezoOffsetY;
                 BtmLeftAlign = await _sequenceService.BtmDieVisionLeftAlign(_cts.Token);
-                BtmLeftAlign.StageX -= lPiezoOffsetX;
-                BtmLeftAlign.StageY -= lPiezoOffsetY;
+                BtmLeftAlign.StageX -= lPiezoOffsetX; BtmLeftAlign.StageY -= lPiezoOffsetY;
 
-                // ── 카메라 각도 보정 (HC1 → Left, HC2 → Right) ────────
-                var corrRF = CalibrationMath.ApplyRotation(Point2D.of(BtmRightFid.DxCamToMark,   BtmRightFid.DyCamToMark),   hc2Rad);
-                var corrRA = CalibrationMath.ApplyRotation(Point2D.of(BtmRightAlign.DxCamToMark, BtmRightAlign.DyCamToMark), hc2Rad);
-                var corrLF = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftFid.DxCamToMark,    BtmLeftFid.DyCamToMark),    hc1Rad);
-                var corrLA = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftAlign.DxCamToMark,  BtmLeftAlign.DyCamToMark),  hc1Rad);
+                // ── 카메라 각도 보정 (HC1 → Left, HC2 → Right) ──────────────────
+                if (mode == 1)
+                {
+                    double hc1Rad = double.Parse(hc1Param.Value);
+                    double hc2Rad = double.Parse(hc2Param.Value);
 
-                BtmRightFid.DxCamToMark   = corrRF.X;  BtmRightFid.DyCamToMark   = corrRF.Y;
-                BtmRightAlign.DxCamToMark = corrRA.X;  BtmRightAlign.DyCamToMark = corrRA.Y;
-                BtmLeftFid.DxCamToMark    = corrLF.X;  BtmLeftFid.DyCamToMark    = corrLF.Y;
-                BtmLeftAlign.DxCamToMark  = corrLA.X;  BtmLeftAlign.DyCamToMark  = corrLA.Y;
+                    var corrRF = CalibrationMath.ApplyRotation(Point2D.of(BtmRightFid.DxCamToMark, BtmRightFid.DyCamToMark), hc2Rad);
+                    var corrRA = CalibrationMath.ApplyRotation(Point2D.of(BtmRightAlign.DxCamToMark, BtmRightAlign.DyCamToMark), hc2Rad);
+                    var corrLF = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftFid.DxCamToMark, BtmLeftFid.DyCamToMark), hc1Rad);
+                    var corrLA = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftAlign.DxCamToMark, BtmLeftAlign.DyCamToMark), hc1Rad);
+                    BtmRightFid.DxCamToMark = corrRF.X; BtmRightFid.DyCamToMark = corrRF.Y;
+                    BtmRightAlign.DxCamToMark = corrRA.X; BtmRightAlign.DyCamToMark = corrRA.Y;
+                    BtmLeftFid.DxCamToMark = corrLF.X; BtmLeftFid.DyCamToMark = corrLF.Y;
+                    BtmLeftAlign.DxCamToMark = corrLA.X; BtmLeftAlign.DyCamToMark = corrLA.Y;
+                }
 
-                // ── X/Y 보정량: Fid 중심 - Align 중심 ────────────────
-                double fidCenterX   = (BtmRightFid.CenterX   + BtmLeftFid.CenterX)   / 2.0;
-                double fidCenterY   = (BtmRightFid.CenterY   + BtmLeftFid.CenterY)   / 2.0;
-                double alignCenterX = (BtmRightAlign.CenterX + BtmLeftAlign.CenterX) / 2.0;
-                double alignCenterY = (BtmRightAlign.CenterY + BtmLeftAlign.CenterY) / 2.0;
+                // ── Btm: Fid 기준 AlignMark 상대 오프셋 ────────────────────────
+                double btmRXFidToAlign = BtmRightFid.CenterX - BtmRightAlign.CenterX;
+                double btmRYFidToAlign = BtmRightFid.CenterY - BtmRightAlign.CenterY;
+                double btmLXFidToAlign = BtmLeftFid.CenterX - BtmLeftAlign.CenterX;
+                double btmLYFidToAlign = BtmLeftFid.CenterY - BtmLeftAlign.CenterY;
 
-                BtmOffsetX = fidCenterX - alignCenterX;
-                BtmOffsetY = fidCenterY - alignCenterY;
+                double btmAlignRelOffsetX = (btmRXFidToAlign + btmLXFidToAlign) / 2.0;
+                double btmAlignRelOffsetY = (btmRYFidToAlign + btmLYFidToAlign) / 2.0;
 
-                // ── T 보정량: Fid 기준선 각도 - Align 기준선 각도 ────
-                double fidTheta   = CalcTheta(BtmLeftFid,   BtmRightFid);
-                double alignTheta = CalcTheta(BtmLeftAlign, BtmRightAlign);
-                BtmOffsetT = fidTheta - alignTheta;
+                // ── 하나의 좌표계로 통합: Top AlignMark 위치를 Btm 좌표계로 변환 ─
+                // Btm 카메라는 아래에서 보므로 X축이 반전됨 (경우에 따라 부호 확인 필요)
+                double topInBtmX = -TopAlignRelOffsetX; // 좌우 미러 보정
+                double topInBtmY = TopAlignRelOffsetY;
+                double topInBtmT = -TopAlignRelOffsetT; // 회전 방향 반전
+
+                // ── 최종 보정량: Btm AlignMark → Top AlignMark 위치에 맞춤 ──────
+                BtmOffsetX = topInBtmX - btmAlignRelOffsetX;
+                BtmOffsetY = topInBtmY - btmAlignRelOffsetY;
+
+                // T 보정량: Btm Fid 기준선 - Btm Align 기준선, 그리고 Top과의 차이
+                double btmFidTheta = CalcTheta(BtmLeftFid, BtmRightFid);
+                double btmAlignTheta = CalcTheta(BtmLeftAlign, BtmRightAlign);
+                double btmOffsetT = btmFidTheta - btmAlignTheta;
+                BtmOffsetT = topInBtmT - btmOffsetT;
 
                 BtmHighAlignState = StepState.Completed;
             }
@@ -342,7 +350,7 @@ namespace HCB.UI
             {
                 if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); return; }
                 BtmLowAlignState = StepState.InProgress;
-                VisionBtmLowAlign = await _sequenceService.DTableCarrierAlign(BottomDie, MarkType.DIE_CENTER_BOTTOM, _cts.Token);
+                VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(BottomDie, MarkType.DIE_CENTER_BOTTOM, _cts.Token);
                 BtmLowAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmLowAlignState = StepState.Idle; }
@@ -362,7 +370,7 @@ namespace HCB.UI
                 if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 해주세요"); return; }
                 BtmPickupState = StepState.InProgress;
                 await _sequenceService.DTableBTMPickup(BottomDie, VisionBtmLowAlign, _cts.Token);
-                DTableList[BottomDie - 1].Off();
+                await _sequenceHelper.BTMVac(BottomDie, eOnOff.Off, _cts.Token);
                 BtmPickupState = StepState.Completed;
                 
             }
@@ -394,7 +402,7 @@ namespace HCB.UI
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
                 TopLowAlignState = StepState.InProgress;
-                VisionTopLowAlign = await _sequenceService.DTableCarrierAlign(TopDie, MarkType.DIE_CENTER_TOP, _cts.Token);
+                VisionTopLowAlign = await _sequenceService.TopCarrierAlign(TopDie, MarkType.DIE_CENTER_TOP, _cts.Token);
                 TopLowAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopLowAlignState = StepState.Idle; }
@@ -411,7 +419,6 @@ namespace HCB.UI
                 if (VisionTopLowAlign == null) { _logger.Information("Top Die Align 해주세요"); return; }
                 TopPickupState = StepState.InProgress;
                 await _sequenceService.DTableTOPPickup(TopDie, VisionTopLowAlign, _cts.Token);
-                DTableList[TopDie - 1].Off();
                 TopPickupState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopPickupState = StepState.Idle; }
@@ -422,6 +429,7 @@ namespace HCB.UI
         public async Task TopHighAlign()
         {
             _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            int mode = 0;
             try
             {
                 TopHighAlignState = StepState.InProgress;
@@ -430,46 +438,272 @@ namespace HCB.UI
                 TopLeftFid = await _sequenceService.TopDieVisionLeftFid(_cts.Token);
                 TopLeftAlign = await _sequenceService.TopDieVisionLeftAlign(_cts.Token);
 
-                // PC_T (degrees → radians)
                 var pcT = _ecParamService.FindByName(MotionExtensions.PC_T);
-                if (pcT.Id == 0) throw new Exception("PC_T Not Found");
-                double pcTRad = double.Parse(pcT.Value);
+                if (pcT.Id != 0) mode = 1;  // ← 버그 수정: Id != 0 일 때 파라미터 존재
+                if (mode == 1)
+                {
+                    double pcTRad = double.Parse(pcT.Value);
+                    var corrRF = CalibrationMath.ApplyRotation(Point2D.of(TopRightFid.DxCamToMark, TopRightFid.DyCamToMark), pcTRad);
+                    var corrRA = CalibrationMath.ApplyRotation(Point2D.of(TopRightAlign.DxCamToMark, TopRightAlign.DyCamToMark), pcTRad);
+                    var corrLF = CalibrationMath.ApplyRotation(Point2D.of(TopLeftFid.DxCamToMark, TopLeftFid.DyCamToMark), pcTRad);
+                    var corrLA = CalibrationMath.ApplyRotation(Point2D.of(TopLeftAlign.DxCamToMark, TopLeftAlign.DyCamToMark), pcTRad);
+                    TopRightFid.DxCamToMark = corrRF.X; TopRightFid.DyCamToMark = corrRF.Y;
+                    TopRightAlign.DxCamToMark = corrRA.X; TopRightAlign.DyCamToMark = corrRA.Y;
+                    TopLeftFid.DxCamToMark = corrLF.X; TopLeftFid.DyCamToMark = corrLF.Y;
+                    TopLeftAlign.DxCamToMark = corrLA.X; TopLeftAlign.DyCamToMark = corrLA.Y;
+                }
 
-                // 카메라 오프셋에 PC_T 회전 행렬 적용 → Stage 좌표계로 변환
-                var corrRF = CalibrationMath.ApplyRotation(Point2D.of(TopRightFid.DxCamToMark,   TopRightFid.DyCamToMark),   pcTRad);
-                var corrRA = CalibrationMath.ApplyRotation(Point2D.of(TopRightAlign.DxCamToMark, TopRightAlign.DyCamToMark), pcTRad);
-                var corrLF = CalibrationMath.ApplyRotation(Point2D.of(TopLeftFid.DxCamToMark,    TopLeftFid.DyCamToMark),    pcTRad);
-                var corrLA = CalibrationMath.ApplyRotation(Point2D.of(TopLeftAlign.DxCamToMark,  TopLeftAlign.DyCamToMark),  pcTRad);
+                // ── Fid 기준 AlignMark 상대 오프셋 (Right / Left 각각) ──────────
+                // 버그 수정: rYFidToAlign = Fid.Y - Fid.Y → Fid.Y - Align.Y
+                double rXFidToAlign = TopRightFid.CenterX - TopRightAlign.CenterX;
+                double rYFidToAlign = TopRightFid.CenterY - TopRightAlign.CenterY; // ← 핵심 버그 수정
+                double lXFidToAlign = TopLeftFid.CenterX - TopLeftAlign.CenterX;
+                double lYFidToAlign = TopLeftFid.CenterY - TopLeftAlign.CenterY;
 
-                // DxCamToMark / DyCamToMark 갱신 → CenterX/CenterY 자동 반영
-                TopRightFid.DxCamToMark   = corrRF.X;  TopRightFid.DyCamToMark   = corrRF.Y;
-                TopRightAlign.DxCamToMark = corrRA.X;  TopRightAlign.DyCamToMark = corrRA.Y;
-                TopLeftFid.DxCamToMark    = corrLF.X;  TopLeftFid.DyCamToMark    = corrLF.Y;
-                TopLeftAlign.DxCamToMark  = corrLA.X;  TopLeftAlign.DyCamToMark  = corrLA.Y;
-
-                // X/Y 보정량 : Fid 중심 - Align 중심
-                double fidCenterX   = (TopRightFid.CenterX   + TopLeftFid.CenterX)   / 2.0;
-                double fidCenterY   = (TopRightFid.CenterY   + TopLeftFid.CenterY)   / 2.0;
+                // ── X/Y 보정량: Fid 중심 - Align 중심 ───────────────────────────
+                double fidCenterX = (TopRightFid.CenterX + TopLeftFid.CenterX) / 2.0;
+                double fidCenterY = (TopRightFid.CenterY + TopLeftFid.CenterY) / 2.0;
                 double alignCenterX = (TopRightAlign.CenterX + TopLeftAlign.CenterX) / 2.0;
                 double alignCenterY = (TopRightAlign.CenterY + TopLeftAlign.CenterY) / 2.0;
+                TopOffsetX = fidCenterX - alignCenterX;
+                TopOffsetY = fidCenterY - alignCenterY;
 
-                TopOffsetX = fidCenterX  - alignCenterX;
-                TopOffsetY = fidCenterY  - alignCenterY;
-
-                // T 보정량 : Fid 기준선 각도 - Align 기준선 각도
-                double fidTheta   = CalcTheta(TopLeftFid,   TopRightFid);
+                // ── T 보정량: Fid 기준선 각도 - Align 기준선 각도 ───────────────
+                double fidTheta = CalcTheta(TopLeftFid, TopRightFid);
                 double alignTheta = CalcTheta(TopLeftAlign, TopRightAlign);
                 TopOffsetT = fidTheta - alignTheta;
 
+                // ── Fid 기준 AlignMark 상대 오프셋 저장 (BtmHighAlign에서 사용) ─
+                // Right/Left 평균 → Top AlignMark의 "Fid로부터의 위치 오차"
+                TopAlignRelOffsetX = (rXFidToAlign + lXFidToAlign) / 2.0;
+                TopAlignRelOffsetY = (rYFidToAlign + lYFidToAlign) / 2.0;
+                TopAlignRelOffsetT = TopOffsetT; // 각도 오프셋도 보존
+                
                 TopHighAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopHighAlignState = StepState.Idle; }
             catch (Exception e) { TopHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
-        
+        [RelayCommand]
+        public async Task TopPlace()
+        {
+            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            try
+            {
+                TopBondingState = StepState.InProgress;
+                var offsetX = _recipeService.FindByParam("X_ALIGN_OFFSET");
+                var offsetY = _recipeService.FindByParam("Y_ALIGN_OFFSET");
+                var offsetT = _recipeService.FindByParam("T_ALIGN_OFFSET");
+
+                // ── 최종 보정량 합산 (Top + Btm) ──────────────────────────────
+                double totalOffsetX = TopOffsetX + BtmOffsetX + double.Parse(offsetX.Value);
+                double totalOffsetY = TopOffsetY + BtmOffsetY + double.Parse(offsetY.Value);
+                double totalOffsetT = TopOffsetT + BtmOffsetT + double.Parse(offsetT.Value);
+
+                // ── 보정량만큼 스테이지 이동 ───────────────────────────────────
+                await Task.WhenAll
+                    (
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, totalOffsetX, _cts.Token),
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, totalOffsetY, _cts.Token),
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_T, totalOffsetT, _cts.Token)
+                    );
+
+                // ── 보정 위치에서 내려놓기 ─────────────────────────────────────
+                await _sequenceService.Bonding(2000, _cts.Token);
+                await _sequenceService.Init_Head(_cts.Token);
+                TopBondingState = StepState.Completed;
+            }
+            catch (OperationCanceledException) { BtmPlaceState = StepState.Idle; }
+            catch (Exception e) { BtmPlaceState = StepState.Failed; _logger.Warning(e.Message); }
+        }
 
 
+        [RelayCommand]
+        public async Task TopRunFullSequence()
+        {
+            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            try
+            {
+                // ── 0. 사전 조건 검사 ────────────────────────────────────────────
+                if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
+
+                // ── 1. Top Low Align ─────────────────────────────────────────────
+                TopLowAlignState = StepState.InProgress;
+                VisionTopLowAlign = await _sequenceService.TopCarrierAlign(TopDie, MarkType.DIE_CENTER_TOP, _cts.Token);
+                TopLowAlignState = StepState.Completed;
+
+                // ── 2. Top Pickup ────────────────────────────────────────────────
+                TopPickupState = StepState.InProgress;
+                await _sequenceService.DTableTOPPickup(TopDie, VisionTopLowAlign, _cts.Token);
+                TopPickupState = StepState.Completed;
+
+                // ── 3. Top High Align ────────────────────────────────────────────
+                TopHighAlignState = StepState.InProgress;
+                int mode = 0;
+
+                TopRightFid = await _sequenceService.TopDieVisionRightFid(_cts.Token);
+                TopRightAlign = await _sequenceService.TopDieVisionRightAlign(_cts.Token);
+                TopLeftFid = await _sequenceService.TopDieVisionLeftFid(_cts.Token);
+                TopLeftAlign = await _sequenceService.TopDieVisionLeftAlign(_cts.Token);
+
+                var pcT = _ecParamService.FindByName(MotionExtensions.PC_T);
+                if (pcT.Id != 0) mode = 1;
+                if (mode == 1)
+                {
+                    double pcTRad = double.Parse(pcT.Value);
+                    var corrRF = CalibrationMath.ApplyRotation(Point2D.of(TopRightFid.DxCamToMark, TopRightFid.DyCamToMark), pcTRad);
+                    var corrRA = CalibrationMath.ApplyRotation(Point2D.of(TopRightAlign.DxCamToMark, TopRightAlign.DyCamToMark), pcTRad);
+                    var corrLF = CalibrationMath.ApplyRotation(Point2D.of(TopLeftFid.DxCamToMark, TopLeftFid.DyCamToMark), pcTRad);
+                    var corrLA = CalibrationMath.ApplyRotation(Point2D.of(TopLeftAlign.DxCamToMark, TopLeftAlign.DyCamToMark), pcTRad);
+                    TopRightFid.DxCamToMark = corrRF.X; TopRightFid.DyCamToMark = corrRF.Y;
+                    TopRightAlign.DxCamToMark = corrRA.X; TopRightAlign.DyCamToMark = corrRA.Y;
+                    TopLeftFid.DxCamToMark = corrLF.X; TopLeftFid.DyCamToMark = corrLF.Y;
+                    TopLeftAlign.DxCamToMark = corrLA.X; TopLeftAlign.DyCamToMark = corrLA.Y;
+                }
+
+                double rXFidToAlign = TopRightFid.CenterX - TopRightAlign.CenterX;
+                double rYFidToAlign = TopRightFid.CenterY - TopRightAlign.CenterY;
+                double lXFidToAlign = TopLeftFid.CenterX - TopLeftAlign.CenterX;
+                double lYFidToAlign = TopLeftFid.CenterY - TopLeftAlign.CenterY;
+
+                double fidCenterX = (TopRightFid.CenterX + TopLeftFid.CenterX) / 2.0;
+                double fidCenterY = (TopRightFid.CenterY + TopLeftFid.CenterY) / 2.0;
+                double alignCenterX = (TopRightAlign.CenterX + TopLeftAlign.CenterX) / 2.0;
+                double alignCenterY = (TopRightAlign.CenterY + TopLeftAlign.CenterY) / 2.0;
+                TopOffsetX = fidCenterX - alignCenterX;
+                TopOffsetY = fidCenterY - alignCenterY;
+
+                double topFidTheta = CalcTheta(TopLeftFid, TopRightFid);
+                double topAlignTheta = CalcTheta(TopLeftAlign, TopRightAlign);
+                TopOffsetT = topFidTheta - topAlignTheta;
+
+                TopAlignRelOffsetX = (rXFidToAlign + lXFidToAlign) / 2.0;
+                TopAlignRelOffsetY = (rYFidToAlign + lYFidToAlign) / 2.0;
+                TopAlignRelOffsetT = TopOffsetT;
+
+                TopHighAlignState = StepState.Completed;
+
+                // ── 4. Btm High Align ────────────────────────────────────────────
+                BtmHighAlignState = StepState.InProgress;
+                mode = 0;
+
+                var hc1Param = _ecParamService.FindByName(MotionExtensions.HC1_T);
+                var hc2Param = _ecParamService.FindByName(MotionExtensions.HC2_T);
+                if (hc1Param.Id != 0 && hc2Param.Id != 0) mode = 1;
+
+                double lPiezoOffsetX = -6.1585, lPiezoOffsetY = 3.5915;
+                double rPiezoOffsetX = 6.1585, rPiezoOffsetY = -3.5915;
+
+                await _sequenceService.TopDiePlace(_cts.Token);
+
+                BtmRightFid = await _sequenceService.BtmDieVisionRightFid(_cts.Token);
+                BtmRightFid.StageX -= rPiezoOffsetX; BtmRightFid.StageY -= rPiezoOffsetY;
+                BtmRightAlign = await _sequenceService.BtmDieVisionRightAlign(_cts.Token);
+                BtmRightAlign.StageX -= rPiezoOffsetX; BtmRightAlign.StageY -= rPiezoOffsetY;
+
+                BtmLeftFid = await _sequenceService.BtmDieVisionLeftFid(_cts.Token);
+                BtmLeftFid.StageX -= lPiezoOffsetX; BtmLeftFid.StageY -= lPiezoOffsetY;
+                BtmLeftAlign = await _sequenceService.BtmDieVisionLeftAlign(_cts.Token);
+                BtmLeftAlign.StageX -= lPiezoOffsetX; BtmLeftAlign.StageY -= lPiezoOffsetY;
+
+                if (mode == 1)
+                {
+                    double hc1Rad = double.Parse(hc1Param.Value);
+                    double hc2Rad = double.Parse(hc2Param.Value);
+                    var corrRF = CalibrationMath.ApplyRotation(Point2D.of(BtmRightFid.DxCamToMark, BtmRightFid.DyCamToMark), hc2Rad);
+                    var corrRA = CalibrationMath.ApplyRotation(Point2D.of(BtmRightAlign.DxCamToMark, BtmRightAlign.DyCamToMark), hc2Rad);
+                    var corrLF = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftFid.DxCamToMark, BtmLeftFid.DyCamToMark), hc1Rad);
+                    var corrLA = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftAlign.DxCamToMark, BtmLeftAlign.DyCamToMark), hc1Rad);
+                    BtmRightFid.DxCamToMark = corrRF.X; BtmRightFid.DyCamToMark = corrRF.Y;
+                    BtmRightAlign.DxCamToMark = corrRA.X; BtmRightAlign.DyCamToMark = corrRA.Y;
+                    BtmLeftFid.DxCamToMark = corrLF.X; BtmLeftFid.DyCamToMark = corrLF.Y;
+                    BtmLeftAlign.DxCamToMark = corrLA.X; BtmLeftAlign.DyCamToMark = corrLA.Y;
+                }
+
+                double btmRXFidToAlign = BtmRightFid.CenterX - BtmRightAlign.CenterX;
+                double btmRYFidToAlign = BtmRightFid.CenterY - BtmRightAlign.CenterY;
+                double btmLXFidToAlign = BtmLeftFid.CenterX - BtmLeftAlign.CenterX;
+                double btmLYFidToAlign = BtmLeftFid.CenterY - BtmLeftAlign.CenterY;
+
+                double btmAlignRelOffsetX = (btmRXFidToAlign + btmLXFidToAlign) / 2.0;
+                double btmAlignRelOffsetY = (btmRYFidToAlign + btmLYFidToAlign) / 2.0;
+
+                double topInBtmX = -TopAlignRelOffsetX;
+                double topInBtmY = TopAlignRelOffsetY;
+                double topInBtmT = -TopAlignRelOffsetT;
+
+                BtmOffsetX = topInBtmX - btmAlignRelOffsetX;
+                BtmOffsetY = topInBtmY - btmAlignRelOffsetY;
+
+                double btmFidTheta = CalcTheta(BtmLeftFid, BtmRightFid);
+                double btmAlignTheta = CalcTheta(BtmLeftAlign, BtmRightAlign);
+                BtmOffsetT = topInBtmT - (btmFidTheta - btmAlignTheta);
+
+                BtmHighAlignState = StepState.Completed;
+
+                // ── 5. 보정량 합산 후 이동 및 Bonding ───────────────────────────
+                TopBondingState = StepState.InProgress;
+
+                var offsetX = _recipeService.FindByParam("X_ALIGN_OFFSET");
+                var offsetY = _recipeService.FindByParam("Y_ALIGN_OFFSET");
+                var offsetT = _recipeService.FindByParam("T_ALIGN_OFFSET");
+
+                // ── 최종 보정량 합산 (Top + Btm) ──────────────────────────────
+                double totalOffsetX = TopOffsetX + BtmOffsetX + double.Parse(offsetX.Value);
+                double totalOffsetY = TopOffsetY + BtmOffsetY + double.Parse(offsetY.Value);
+                double totalOffsetT = TopOffsetT + BtmOffsetT + double.Parse(offsetT.Value);
+
+                await Task.WhenAll(
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, totalOffsetX, _cts.Token),
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, totalOffsetY, _cts.Token),
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_T, totalOffsetT, _cts.Token)
+                );
+
+                await _sequenceService.Bonding(2000, _cts.Token);
+                await _sequenceService.Init_Head(_cts.Token);
+
+                TopBondingState = StepState.Completed;
+            }
+            catch (OperationCanceledException)
+            {
+                TopLowAlignState = TopLowAlignState == StepState.InProgress ? StepState.Idle : TopLowAlignState;
+                TopPickupState = TopPickupState == StepState.InProgress ? StepState.Idle : TopPickupState;
+                TopHighAlignState = TopHighAlignState == StepState.InProgress ? StepState.Idle : TopHighAlignState;
+                BtmHighAlignState = BtmHighAlignState == StepState.InProgress ? StepState.Idle : BtmHighAlignState;
+                TopBondingState = TopBondingState == StepState.InProgress ? StepState.Idle : TopBondingState;
+            }
+            catch (Exception e)
+            {
+                TopLowAlignState = TopLowAlignState == StepState.InProgress ? StepState.Failed : TopLowAlignState;
+                TopPickupState = TopPickupState == StepState.InProgress ? StepState.Failed : TopPickupState;
+                TopHighAlignState = TopHighAlignState == StepState.InProgress ? StepState.Failed : TopHighAlignState;
+                BtmHighAlignState = BtmHighAlignState == StepState.InProgress ? StepState.Failed : BtmHighAlignState;
+                TopBondingState = TopBondingState == StepState.InProgress ? StepState.Failed : TopBondingState;
+                _logger.Warning(e.Message);
+            }
+        }
+
+
+        [RelayCommand]
+        public async Task LowResult() 
+        {
+            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            string centerLow = "WAFER_CENTER_LOW";
+            try
+            {
+                await _sequenceService.Init_Head(_cts.Token);
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, centerLow, _cts.Token),
+                    _sequenceService.MotionsMove(MotionExtensions.W_Y, centerLow, _cts.Token)
+                    );
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, centerLow, _cts.Token);
+            }catch(Exception e)
+            {
+                _logger.Warning(e.Message);
+            }
+            
+        }
         // ── 모달창 별도 STA 스레드 실행 헬퍼 ────────────────────────
         // ShowDialog()를 새 STA 스레드에서 실행하여 메인 UI가 블로킹되지 않도록 한다.
         private static Task RunDialogOnNewThread(Action dialogAction)

@@ -133,7 +133,7 @@ namespace HCB.UI
             device.SetDigital(DO_TOWER_LAMP_BUZZER, buzzer);
         }
 
-        public static async Task<bool> Silindar_L(this ISequenceHelper helper, bool onOff, CancellationToken ct=default)
+        public static async Task<bool> Silindar_L(this ISequenceHelper helper, bool onOff, CancellationToken ct = default)
         {
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
             if (device == null)
@@ -141,14 +141,29 @@ namespace HCB.UI
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
             }
 
-            device.SetDigital("Silindar_L", onOff);
+            device.SetDigital("DO_SOL_LEFT", onOff);
 
-            return await helper.WaitUntilAsync(
-                () => device.GetDigital("Silindar_L") == onOff,
-                3000,
-                ct,
-                $"Timeout"
-            ).ConfigureAwait(false);
+            bool result = false;
+            if (onOff)
+            {
+                result = await helper.WaitUntilAsync(
+                    () => device.GetDigital("DI_CYLINDER_LEFT_REVERSE"),
+                    3000,
+                    ct,
+                    $"Timeout"
+                ).ConfigureAwait(false);
+            }
+            else
+            {
+                result = await helper.WaitUntilAsync(
+                    () => device.GetDigital("DI_CYLINDER_LEFT_FORWARD"),
+                    3000,
+                    ct,
+                    $"Timeout"
+                ).ConfigureAwait(false);
+            }
+
+            return result;
         }
 
         public static async Task<bool> Silindar_R(this ISequenceHelper helper, bool onOff, CancellationToken ct = default)
@@ -159,14 +174,28 @@ namespace HCB.UI
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
             }
 
-            device.SetDigital("Silindar_R", onOff);
+            device.SetDigital("DO_SOL_RIGHT", onOff);
 
-            return await helper.WaitUntilAsync(
-                () => device.GetDigital("Silindar_R") == onOff,
-                3000,
-                ct,
-                $"Timeout"
-            ).ConfigureAwait(false);
+            bool result = false;
+            if (onOff)
+            {
+                result = await helper.WaitUntilAsync(
+                    () => device.GetDigital("DI_CYLINDER_RIGHT_REVERSE"),
+                    3000,
+                    ct,
+                    $"Timeout"
+                ).ConfigureAwait(false);
+            }else
+            {
+                result = await helper.WaitUntilAsync(
+                    () => device.GetDigital("DI_CYLINDER_RIGHT_FORWARD"),
+                    3000,
+                    ct,
+                    $"Timeout"
+                ).ConfigureAwait(false);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -209,15 +238,13 @@ namespace HCB.UI
             return true;
         }
 
-        public static async Task DTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
+        public static async Task DTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct = default)
         {
-            var tasks = Enumerable.Range(1, 9)
-                .Select(channel =>
-                    Task.Run(() => helper.DTableVacuum(channel, onOff, ct), ct)
-                )
-                .ToArray();
-
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            for(int i=1; i <= 4; i++)
+            {
+                await TopVac(helper, i, onOff, ct);
+                await BTMVac(helper, i, onOff, ct);
+            }
         }
 
         public static async Task DVacSelectOnOff(this ISequenceHelper helper, List<int> vacs, eOnOff onOff, CancellationToken ct)
@@ -227,6 +254,79 @@ namespace HCB.UI
                 await helper.DTableVacuum(vac, onOff, ct);
             }
         }
+
+        public static async Task TopVac(this ISequenceHelper helper, int channel, eOnOff onOff, CancellationToken ct = default)
+        {
+            var bOnOff = onOff == eOnOff.On;
+            var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
+            if (device == null)
+            {
+                helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
+                throw new InvalidOperationException($"Io Device {IoDeviceName} not found.");
+            }
+
+            string doOn = $"DO_TOP_VAC_{channel}_ON";
+            string doRelease = $"DO_TOP_VAC_{channel}_RELEASE";
+
+            try
+            {
+                if (onOff == eOnOff.On)
+                {
+                    device.SetDigital(doOn, true, helper.IsSimulation);
+                }
+                else if (onOff == eOnOff.Off)
+                {
+                    device.SetDigital(doOn, false, helper.IsSimulation);
+                }
+
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                helper.Log(LogLevel.Error,
+                    $"TOP VAC DO set failed. CH={channel}, OnOff={onOff}, doOn={doOn}, doRelease={doRelease}, sim={helper.IsSimulation} :: {ex.Message}");
+                throw;
+            }
+            // 명령 반영 대기
+            await helper.DelayAsync(100, ct).ConfigureAwait(false);
+        }
+
+        public static async Task BTMVac(this ISequenceHelper helper, int channel, eOnOff onOff, CancellationToken ct = default)
+        {
+            var bOnOff = onOff == eOnOff.On;
+            var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
+            if (device == null)
+            {
+                helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
+                throw new InvalidOperationException($"Io Device {IoDeviceName} not found.");
+            }
+
+            string doOn = $"DO_BTM_VAC_{channel}_ON";
+            string doRelease = $"DO_BTM_VAC_{channel}_RELEASE";
+
+            try
+            {
+                if (onOff == eOnOff.On)
+                {
+                    device.SetDigital(doOn, true, helper.IsSimulation);
+                }
+                else if (onOff == eOnOff.Off)
+                {
+                    device.SetDigital(doOn, false, helper.IsSimulation);
+                }
+
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                helper.Log(LogLevel.Error,
+                    $"TOP VAC DO set failed. CH={channel}, OnOff={onOff}, doOn={doOn}, doRelease={doRelease}, sim={helper.IsSimulation} :: {ex.Message}");
+                throw;
+            }
+            // 명령 반영 대기
+            await helper.DelayAsync(100, ct).ConfigureAwait(false);
+        }
+
 
 
 
