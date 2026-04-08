@@ -65,7 +65,7 @@
                         </telerik:RadToggleButton>
 
                         <telerik:RadToggleButton Tag="MANUAL"
-                               Content="MANUAL"
+                               Content="TEACH"
                                Grid.Row="2"
                                Command="{Binding SetTabCommand}"
                                CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
@@ -75,7 +75,7 @@
                         </telerik:RadToggleButton>
 
                         <telerik:RadToggleButton Tag="STEP"
-                               Content="STEP"
+                               Content="MANUAL"
                                Grid.Row="3"
                                Command="{Binding SetTabCommand}"
                                CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"

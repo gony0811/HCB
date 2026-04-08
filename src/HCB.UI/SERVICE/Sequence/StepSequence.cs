@@ -476,7 +476,9 @@ namespace HCB.UI
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
                 double placeOffset = await GetRecipe("PLACE_OFFSET");
-                await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness + placeOffset, ct);
+                await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness, ct);
+                await Task.Delay(200);
+                await RelativeMotionsMove(MotionExtensions.h_z, placeOffset, ct);
                 await HVacOnOff(false, ct);
                 await Task.Delay(delay);
             }

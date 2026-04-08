@@ -144,8 +144,10 @@
 
                         <!-- 모터 상태 관리 -->
                         <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 관리" Grid.Row="0" Margin="10">
-                            <local:MotorStateControl DataContext="{Binding SelectedMotion}"
-                                                     HzHomeCommand="{Binding HzHomeCommand}" />
+                            <local:MotorStateControl 
+                                    DataContext="{Binding SelectedMotion}"
+                                    HzHomeCommand="{Binding DataContext.HzHomeCommand, 
+                                        RelativeSource={RelativeSource AncestorType=Page}}" />
                         </telerik:GroupBox>
 
                         <!-- 모터 조작 -->

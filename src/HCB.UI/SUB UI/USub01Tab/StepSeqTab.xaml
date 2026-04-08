@@ -619,7 +619,13 @@
                     <Border Grid.Row="2" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
                             Margin="16,0,16,0" Padding="0,10,0,14">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource StartButtonStyle}" Width="90"
+                                    Margin="2"
+                                    Command="{Binding BtmFullSequenceCommand}">
+                                <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
+                            </Button>
                             <Button Style="{StaticResource StopButtonStyle}" Width="90"
+                                    Margin="2"
                                     Command="{Binding StopCommand}">
                                 <TextBlock Text="STOP" FontSize="13" FontWeight="Bold"/>
                             </Button>

@@ -392,6 +392,46 @@ namespace HCB.UI
             catch (OperationCanceledException) { BtmPlaceState = StepState.Idle; }
             catch (Exception e) { BtmPlaceState = StepState.Failed; _logger.Warning(e.Message); }
         }
+        [RelayCommand]
+        public async Task BtmFullSequence()
+        {
+            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            var ct = _cts.Token;
+            try
+            {
+                if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); return; }
+
+                // 1. Low Align
+                BtmLowAlignState = StepState.InProgress;
+                VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(BottomDie, MarkType.DIE_CENTER_BOTTOM, ct);
+                BtmLowAlignState = StepState.Completed;
+
+                // 2. Pickup
+                if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 실패"); return; }
+                BtmPickupState = StepState.InProgress;
+                await _sequenceService.DTableBTMPickup(BottomDie, VisionBtmLowAlign, ct);
+                await _sequenceHelper.BTMVac(BottomDie, eOnOff.Off, ct);
+                BtmPickupState = StepState.Completed;
+
+                // 3. Place
+                BtmPlaceState = StepState.InProgress;
+                await _sequenceService.BtmDieDrop(1, ct);
+                BtmPlaceState = StepState.Completed;
+            }
+            catch (OperationCanceledException)
+            {
+                BtmLowAlignState = BtmLowAlignState == StepState.InProgress ? StepState.Idle : BtmLowAlignState;
+                BtmPickupState = BtmPickupState == StepState.InProgress ? StepState.Idle : BtmPickupState;
+                BtmPlaceState = BtmPlaceState == StepState.InProgress ? StepState.Idle : BtmPlaceState;
+            }
+            catch (Exception e)
+            {
+                BtmLowAlignState = BtmLowAlignState == StepState.InProgress ? StepState.Failed : BtmLowAlignState;
+                BtmPickupState = BtmPickupState == StepState.InProgress ? StepState.Failed : BtmPickupState;
+                BtmPlaceState = BtmPlaceState == StepState.InProgress ? StepState.Failed : BtmPlaceState;
+                _logger.Warning(e.Message);
+            }
+        }
 
         // ── TOP ALIGN ────────────────────────────────────────
         [RelayCommand]
@@ -510,7 +550,7 @@ namespace HCB.UI
                     );
 
                 // ── 보정 위치에서 내려놓기 ─────────────────────────────────────
-                await _sequenceService.Bonding(2000, _cts.Token);
+                await _sequenceService.Bonding(10000, _cts.Token);
                 await _sequenceService.Init_Head(_cts.Token);
                 TopBondingState = StepState.Completed;
             }

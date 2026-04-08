@@ -200,24 +200,32 @@ namespace HCB.UI
             var position = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
             if (position == null)
                 throw new Exception($"[Position Error] '{positionName}' 위치 정보 없음");
-
+            await Task.Delay(3000, ct);
             // 이동 명령
             await motion.Move(MoveType.Absolute, 100, position.Speed, position.Position);
 
-            // InPosition 안정화 대기 (이동 시작 직후 InPosition이 false로 전환될 때까지 대기)
-            int retry = 0;
-            while (motion.InPosition && retry < 5)
-            {
-                await Task.Delay(20, ct);
-                retry++;
-            }
+            await Task.Delay(100, ct);
 
-            // 이동 완료 대기
-            await _sequenceHelper.WaitUntilAsync(
+            //int retry = 0;
+            //while (motion.InPosition && retry < 25)  // 25 * 20ms = 500ms
+            //{
+            //    await Task.Delay(20, ct);
+            //    retry++;
+            //}
+
+            if (motion.InPosition)
+                throw new Exception($"[Motion Error] '{motionName}' 이동 명령 후 InPosition 미전환");
+
+            bool success = await _sequenceHelper.WaitUntilAsync(
                 () => motion.InPosition,
                 60000, ct,
-                $"[Motion Timeout] '{motionName}' 이동 시간 초과"
+                $"[Motion Timeout] '{motionName}' 이동 완료 실패"
             );
+
+            if (!success)
+            {
+                throw new Exception($"[Motion Error] {motionName}이 제한 시간 내에 목표 위치에 도달하지 못했습니다.");
+            }
 
             await Task.Delay(200, ct);
         }
@@ -577,9 +585,8 @@ namespace HCB.UI
             await MotionsMove(MotionExtensions.H_Z, 0, ct);
             var hz = _deviceManager.GetDevice<PowerPmacDevice>("PMAC").FindMotionByName(MotionExtensions.h_z);
             await hz.Home();
-            await MotionsMove(MotionExtensions.h_z, MotionExtensions.LOAD_POSITION, ct);
             var result = await communicationService.PiezoHome(ct);
-            
+            await MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, ct);
             if (result == Result.OK)
             {
                 await Task.WhenAll(
