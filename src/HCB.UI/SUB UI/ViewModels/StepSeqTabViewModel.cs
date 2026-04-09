@@ -568,6 +568,31 @@ namespace HCB.UI
                 // ── 0. 사전 조건 검사 ────────────────────────────────────────────
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
 
+                // ── 0-1. DB에서 캘리브레이션 파라미터 로드 ───────────────────────
+                var pcTParam = _ecParamService.FindByName(MotionExtensions.PC_T);
+                var hc1Param = _ecParamService.FindByName(MotionExtensions.HC1_T);
+                var hc2Param = _ecParamService.FindByName(MotionExtensions.HC2_T);
+                var hcroXParam = _ecParamService.FindByName(MotionExtensions.HCRO_X);
+                var hcroYParam = _ecParamService.FindByName(MotionExtensions.HCRO_Y);
+
+                bool hasHcRO = hcroXParam.Id != 0 && hcroYParam.Id != 0
+                            && hc1Param.Id != 0 && hc2Param.Id != 0;
+                bool hasPcT = pcTParam.Id != 0;
+
+                double hc1Rad = 0, hc2Rad = 0, pcTRad = 0;
+                Point2D hcro = Point2D.of(0, 0);
+
+                if (hasHcRO)
+                {
+                    hc1Rad = double.Parse(hc1Param.Value);
+                    hc2Rad = double.Parse(hc2Param.Value);
+                    hcro = Point2D.of(double.Parse(hcroXParam.Value), double.Parse(hcroYParam.Value));
+                }
+                if (hasPcT)
+                {
+                    pcTRad = double.Parse(pcTParam.Value);
+                }
+
                 // ── 1. Top Low Align ─────────────────────────────────────────────
                 TopLowAlignState = StepState.InProgress;
                 VisionTopLowAlign = await _sequenceService.TopCarrierAlign(TopDie, MarkType.DIE_CENTER_TOP, _cts.Token);
@@ -578,20 +603,17 @@ namespace HCB.UI
                 await _sequenceService.DTableTOPPickup(TopDie, VisionTopLowAlign, _cts.Token);
                 TopPickupState = StepState.Completed;
 
-                // ── 3. Top High Align ────────────────────────────────────────────
+                // ── 3. Top High Align (Pc 카메라로 BH Fid + T-Die Align 측정) ───
                 TopHighAlignState = StepState.InProgress;
-                int mode = 0;
 
                 TopRightFid = await _sequenceService.TopDieVisionRightFid(_cts.Token);
                 TopRightAlign = await _sequenceService.TopDieVisionRightAlign(_cts.Token);
                 TopLeftFid = await _sequenceService.TopDieVisionLeftFid(_cts.Token);
                 TopLeftAlign = await _sequenceService.TopDieVisionLeftAlign(_cts.Token);
 
-                var pcT = _ecParamService.FindByName(MotionExtensions.PC_T);
-                if (pcT.Id != 0) mode = 1;
-                if (mode == 1)
+                // ── 3-1. Pc 카메라 각도 보정 (PDF p.8-9) ─────────────────────────
+                if (hasPcT)
                 {
-                    double pcTRad = double.Parse(pcT.Value);
                     var corrRF = CalibrationMath.ApplyRotation(Point2D.of(TopRightFid.DxCamToMark, TopRightFid.DyCamToMark), pcTRad);
                     var corrRA = CalibrationMath.ApplyRotation(Point2D.of(TopRightAlign.DxCamToMark, TopRightAlign.DyCamToMark), pcTRad);
                     var corrLF = CalibrationMath.ApplyRotation(Point2D.of(TopLeftFid.DxCamToMark, TopLeftFid.DyCamToMark), pcTRad);
@@ -602,6 +624,13 @@ namespace HCB.UI
                     TopLeftAlign.DxCamToMark = corrLA.X; TopLeftAlign.DyCamToMark = corrLA.Y;
                 }
 
+                // ── 3-2. Pc 측정값 절대 좌표 (CenterX/Y = StageX/Y + DxCamToMark/DyCamToMark) ─
+                Point2D pcAbsRF = Point2D.of(TopRightFid.CenterX, TopRightFid.CenterY);
+                Point2D pcAbsRA = Point2D.of(TopRightAlign.CenterX, TopRightAlign.CenterY);
+                Point2D pcAbsLF = Point2D.of(TopLeftFid.CenterX, TopLeftFid.CenterY);
+                Point2D pcAbsLA = Point2D.of(TopLeftAlign.CenterX, TopLeftAlign.CenterY);
+
+                // ── 3-3. Top Offset 계산 (Fid-Align 상대 오프셋) ─────────────────
                 double rXFidToAlign = TopRightFid.CenterX - TopRightAlign.CenterX;
                 double rYFidToAlign = TopRightFid.CenterY - TopRightAlign.CenterY;
                 double lXFidToAlign = TopLeftFid.CenterX - TopLeftAlign.CenterX;
@@ -624,13 +653,8 @@ namespace HCB.UI
 
                 TopHighAlignState = StepState.Completed;
 
-                // ── 4. Btm High Align ────────────────────────────────────────────
+                // ── 4. Btm High Align (Hc1/Hc2 카메라로 BH Fid + B-Die Align 측정) ─
                 BtmHighAlignState = StepState.InProgress;
-                mode = 0;
-
-                var hc1Param = _ecParamService.FindByName(MotionExtensions.HC1_T);
-                var hc2Param = _ecParamService.FindByName(MotionExtensions.HC2_T);
-                if (hc1Param.Id != 0 && hc2Param.Id != 0) mode = 1;
 
                 double lPiezoOffsetX = -6.1585, lPiezoOffsetY = 3.5915;
                 double rPiezoOffsetX = 6.1585, rPiezoOffsetY = -3.5915;
@@ -647,10 +671,9 @@ namespace HCB.UI
                 BtmLeftAlign = await _sequenceService.BtmDieVisionLeftAlign(_cts.Token);
                 BtmLeftAlign.StageX -= lPiezoOffsetX; BtmLeftAlign.StageY -= lPiezoOffsetY;
 
-                if (mode == 1)
+                // ── 4-1. Hc1/Hc2 카메라 각도 보정 (PDF p.3-4) ───────────────────
+                if (hasHcRO)
                 {
-                    double hc1Rad = double.Parse(hc1Param.Value);
-                    double hc2Rad = double.Parse(hc2Param.Value);
                     var corrRF = CalibrationMath.ApplyRotation(Point2D.of(BtmRightFid.DxCamToMark, BtmRightFid.DyCamToMark), hc2Rad);
                     var corrRA = CalibrationMath.ApplyRotation(Point2D.of(BtmRightAlign.DxCamToMark, BtmRightAlign.DyCamToMark), hc2Rad);
                     var corrLF = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftFid.DxCamToMark, BtmLeftFid.DyCamToMark), hc1Rad);
@@ -661,45 +684,199 @@ namespace HCB.UI
                     BtmLeftAlign.DxCamToMark = corrLA.X; BtmLeftAlign.DyCamToMark = corrLA.Y;
                 }
 
+                // ── 4-2. Hc 측정값 → HcRO 좌표계 변환 (PDF p.7) ─────────────────
+                //   CenterX/Y가 이미 절대 좌표이므로 HcRO만 빼면 됨
+                Point2D hcroLF, hcroLA, hcroRF, hcroRA;
+
+                if (hasHcRO)
+                {
+                    hcroLF = Point2D.of(BtmLeftFid.CenterX - hcro.X, BtmLeftFid.CenterY - hcro.Y);
+                    hcroLA = Point2D.of(BtmLeftAlign.CenterX - hcro.X, BtmLeftAlign.CenterY - hcro.Y);
+                    hcroRF = Point2D.of(BtmRightFid.CenterX - hcro.X, BtmRightFid.CenterY - hcro.Y);
+                    hcroRA = Point2D.of(BtmRightAlign.CenterX - hcro.X, BtmRightAlign.CenterY - hcro.Y);
+                }
+                else
+                {
+                    hcroLF = Point2D.of(BtmLeftFid.CenterX, BtmLeftFid.CenterY);
+                    hcroLA = Point2D.of(BtmLeftAlign.CenterX, BtmLeftAlign.CenterY);
+                    hcroRF = Point2D.of(BtmRightFid.CenterX, BtmRightFid.CenterY);
+                    hcroRA = Point2D.of(BtmRightAlign.CenterX, BtmRightAlign.CenterY);
+                }
+
+                // ── 4-3. Pc 이미지 → HcRO 좌표계 변환 (PDF p.11-13) ─────────────
+                Point2D hcroTopLF, hcroTopRF, hcroTopLA, hcroTopRA;
+
+                if (hasHcRO)
+                {
+                    // (1) Δpx, Δpy 계산 (PDF p.11)
+                    double dpx = pcAbsLF.X - hcroLF.X;
+                    double dpy = pcAbsLF.Y - hcroLF.Y;
+
+                    // (2) Pc 절대 좌표에 Δp 오프셋 적용
+                    Point2D pcShiftedRF = CalibrationMath.ApplyPcOffset(pcAbsRF, dpx, dpy);
+                    Point2D pcShiftedLF = CalibrationMath.ApplyPcOffset(pcAbsLF, dpx, dpy);
+                    Point2D pcShiftedRA = CalibrationMath.ApplyPcOffset(pcAbsRA, dpx, dpy);
+                    Point2D pcShiftedLA = CalibrationMath.ApplyPcOffset(pcAbsLA, dpx, dpy);
+
+                    // (3) Pc↔HcRO 사이 각도 Θ+ 계산 (PDF p.12)
+                    double thetaPlus = CalibrationMath.ComputeAlignAngle(
+                        hcroLF, pcShiftedRF,
+                        hcroLF, hcroRF);
+
+                    // (4) L+(HcRO) 기준으로 T-Die Mark들을 Θ+ 회전 → HcRO 좌표계 (PDF p.13)
+                    hcroTopLA = CalibrationMath.RotateAroundPivot(pcShiftedLA, hcroLF, thetaPlus);
+                    hcroTopRA = CalibrationMath.RotateAroundPivot(pcShiftedRA, hcroLF, thetaPlus);
+                    hcroTopLF = CalibrationMath.RotateAroundPivot(pcShiftedLF, hcroLF, thetaPlus);
+                    hcroTopRF = CalibrationMath.RotateAroundPivot(pcShiftedRF, hcroLF, thetaPlus);
+                }
+                else
+                {
+                    hcroTopLF = pcAbsLF;
+                    hcroTopRF = pcAbsRF;
+                    hcroTopLA = pcAbsLA;
+                    hcroTopRA = pcAbsRA;
+                }
+
+                // ── 4-4. 얼라인 Angle 연산 (PDF p.14-15) ────────────────────────
+                double thetaO = CalibrationMath.ComputeAlignAngle(
+                    hcroLA, hcroRA,
+                    hcroTopLA, hcroTopRA);
+
+                // 도면 스펙 로드 (PDF p.14)
+                var specThetaParam = _recipeService.FindByParam("SPEC_THETA");
+                var specXParam = _recipeService.FindByParam("SPEC_X");
+                var specYParam = _recipeService.FindByParam("SPEC_Y");
+                double thetaS = specThetaParam != null ? double.Parse(specThetaParam.Value) : 0;
+                double specXs = specXParam != null ? double.Parse(specXParam.Value) : 0;
+                double specYs = specYParam != null ? double.Parse(specYParam.Value) : 0;
+
+                // Θf = Θo - Θs (PDF p.16)
+                double thetaF = thetaO - thetaS;
+
+                // 기존 호환 오프셋 계산
                 double btmRXFidToAlign = BtmRightFid.CenterX - BtmRightAlign.CenterX;
                 double btmRYFidToAlign = BtmRightFid.CenterY - BtmRightAlign.CenterY;
                 double btmLXFidToAlign = BtmLeftFid.CenterX - BtmLeftAlign.CenterX;
                 double btmLYFidToAlign = BtmLeftFid.CenterY - BtmLeftAlign.CenterY;
 
-                double btmAlignRelOffsetX = (btmRXFidToAlign + btmLXFidToAlign) / 2.0;
-                double btmAlignRelOffsetY = (btmRYFidToAlign + btmLYFidToAlign) / 2.0;
+                double btmFidTheta = CalcTheta(BtmLeftFid, BtmRightFid);
+                double btmAlignTheta = CalcTheta(BtmLeftAlign, BtmRightAlign);
 
                 double topInBtmX = -TopAlignRelOffsetX;
                 double topInBtmY = TopAlignRelOffsetY;
                 double topInBtmT = -TopAlignRelOffsetT;
 
+                double btmAlignRelOffsetX = (btmRXFidToAlign + btmLXFidToAlign) / 2.0;
+                double btmAlignRelOffsetY = (btmRYFidToAlign + btmLYFidToAlign) / 2.0;
+
                 BtmOffsetX = topInBtmX - btmAlignRelOffsetX;
                 BtmOffsetY = topInBtmY - btmAlignRelOffsetY;
-
-                double btmFidTheta = CalcTheta(BtmLeftFid, BtmRightFid);
-                double btmAlignTheta = CalcTheta(BtmLeftAlign, BtmRightAlign);
                 BtmOffsetT = topInBtmT - (btmFidTheta - btmAlignTheta);
 
                 BtmHighAlignState = StepState.Completed;
 
-                // ── 5. 보정량 합산 후 이동 및 Bonding ───────────────────────────
+                // ── 5. 각도 보정 (hT 회전) ──────────────────────────────────────
                 TopBondingState = StepState.InProgress;
 
+                // ── 5-1. hT축으로 Θf 만큼 회전 (PDF p.16) ───────────────────────
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_T, thetaF, _cts.Token);
+
+                // ── 5-2. 회전 후 BH Fiducial 재측정 → HcRO 회전 중심 검증 (PDF p.16) ──
+                var verifyRightFid = await _sequenceService.BtmDieVisionRightFid(_cts.Token);
+                verifyRightFid.StageX -= rPiezoOffsetX; verifyRightFid.StageY -= rPiezoOffsetY;
+                var verifyLeftFid = await _sequenceService.BtmDieVisionLeftFid(_cts.Token);
+                verifyLeftFid.StageX -= lPiezoOffsetX; verifyLeftFid.StageY -= lPiezoOffsetY;
+
+                if (hasHcRO)
+                {
+                    var vCorrRF = CalibrationMath.ApplyRotation(
+                        Point2D.of(verifyRightFid.DxCamToMark, verifyRightFid.DyCamToMark), hc2Rad);
+                    var vCorrLF = CalibrationMath.ApplyRotation(
+                        Point2D.of(verifyLeftFid.DxCamToMark, verifyLeftFid.DyCamToMark), hc1Rad);
+                    verifyRightFid.DxCamToMark = vCorrRF.X; verifyRightFid.DyCamToMark = vCorrRF.Y;
+                    verifyLeftFid.DxCamToMark = vCorrLF.X; verifyLeftFid.DyCamToMark = vCorrLF.Y;
+
+                    Point2D verifyHcroRF = Point2D.of(verifyRightFid.CenterX - hcro.X, verifyRightFid.CenterY - hcro.Y);
+                    Point2D verifyHcroLF = Point2D.of(verifyLeftFid.CenterX - hcro.X, verifyLeftFid.CenterY - hcro.Y);
+
+                    // HcRO 원점으로부터 거리가 회전 전후 동일해야 함
+                    double distBeforeR = CalibrationMath.Distance(Point2D.of(0, 0), hcroRF);
+                    double distAfterR = CalibrationMath.Distance(Point2D.of(0, 0), verifyHcroRF);
+                    double distBeforeL = CalibrationMath.Distance(Point2D.of(0, 0), hcroLF);
+                    double distAfterL = CalibrationMath.Distance(Point2D.of(0, 0), verifyHcroLF);
+
+                    if (Math.Abs(distBeforeR - distAfterR) > 2.0 || Math.Abs(distBeforeL - distAfterL) > 2.0)
+                    {
+                        _logger.Warning($"HcRO 회전 중심 검증 실패! " +
+                            $"R거리차={Math.Abs(distBeforeR - distAfterR):F3}µm, " +
+                            $"L거리차={Math.Abs(distBeforeL - distAfterL):F3}µm");
+                    }
+                    else
+                    {
+                        _logger.Information("HcRO 회전 중심 검증 통과");
+                    }
+                }
+
+                // ── 5-3. Θf 회전 후 T-Die 좌표값 갱신 (PDF p.16) ────────────────
+                Point2D hcroTopLTPrime = CalibrationMath.ApplyRotation(hcroTopLA, thetaF);
+                Point2D hcroTopRTPrime = CalibrationMath.ApplyRotation(hcroTopRA, thetaF);
+
+                // ── 5-4. 얼라인 Shift 연산 (PDF p.17) ───────────────────────────
+                double shiftX = hcroTopLTPrime.X - hcroLA.X - specXs;
+                double shiftY = hcroTopLTPrime.Y - hcroLA.Y - specYs;
+
+                // 레시피 수동 보정 오프셋
                 var offsetX = _recipeService.FindByParam("X_ALIGN_OFFSET");
                 var offsetY = _recipeService.FindByParam("Y_ALIGN_OFFSET");
-                var offsetT = _recipeService.FindByParam("T_ALIGN_OFFSET");
+                double manualOffsetX = offsetX != null ? double.Parse(offsetX.Value) : 0;
+                double manualOffsetY = offsetY != null ? double.Parse(offsetY.Value) : 0;
 
-                // ── 최종 보정량 합산 (Top + Btm) ──────────────────────────────
-                double totalOffsetX = TopOffsetX + BtmOffsetX + double.Parse(offsetX.Value);
-                double totalOffsetY = TopOffsetY + BtmOffsetY + double.Parse(offsetY.Value);
-                double totalOffsetT = TopOffsetT + BtmOffsetT + double.Parse(offsetT.Value);
+                double totalShiftX = shiftX + manualOffsetX;
+                double totalShiftY = shiftY + manualOffsetY;
 
+                // ── 5-5. HX, WY 축 이동 ────────────────────────────────────────
                 await Task.WhenAll(
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, totalOffsetX, _cts.Token),
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, totalOffsetY, _cts.Token),
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_T, totalOffsetT, _cts.Token)
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, totalShiftX, _cts.Token),
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, totalShiftY, _cts.Token)
                 );
 
+                // ── 5-6. Shift 후 B-Die 좌표 검증 (PDF p.17) ────────────────────
+                var verifyRightAlign = await _sequenceService.BtmDieVisionRightAlign(_cts.Token);
+                verifyRightAlign.StageX -= rPiezoOffsetX; verifyRightAlign.StageY -= rPiezoOffsetY;
+                var verifyLeftAlign = await _sequenceService.BtmDieVisionLeftAlign(_cts.Token);
+                verifyLeftAlign.StageX -= lPiezoOffsetX; verifyLeftAlign.StageY -= lPiezoOffsetY;
+
+                if (hasHcRO)
+                {
+                    var vCorrRA = CalibrationMath.ApplyRotation(
+                        Point2D.of(verifyRightAlign.DxCamToMark, verifyRightAlign.DyCamToMark), hc2Rad);
+                    var vCorrLA = CalibrationMath.ApplyRotation(
+                        Point2D.of(verifyLeftAlign.DxCamToMark, verifyLeftAlign.DyCamToMark), hc1Rad);
+                    verifyRightAlign.DxCamToMark = vCorrRA.X; verifyRightAlign.DyCamToMark = vCorrRA.Y;
+                    verifyLeftAlign.DxCamToMark = vCorrLA.X; verifyLeftAlign.DyCamToMark = vCorrLA.Y;
+
+                    Point2D verifyHcroRA = Point2D.of(verifyRightAlign.CenterX - hcro.X, verifyRightAlign.CenterY - hcro.Y);
+                    Point2D verifyHcroLA = Point2D.of(verifyLeftAlign.CenterX - hcro.X, verifyLeftAlign.CenterY - hcro.Y);
+
+                    Point2D expectedLA = Point2D.of(hcroLA.X - totalShiftX, hcroLA.Y - totalShiftY);
+                    Point2D expectedRA = Point2D.of(hcroRA.X - totalShiftX, hcroRA.Y - totalShiftY);
+
+                    bool leftOk = CalibrationMath.VerifyPositionStability(expectedLA, verifyHcroLA, 2.0);
+                    bool rightOk = CalibrationMath.VerifyPositionStability(expectedRA, verifyHcroRA, 2.0);
+
+                    if (!leftOk || !rightOk)
+                    {
+                        _logger.Warning($"Shift 검증 실패! " +
+                            $"L오차={CalibrationMath.Distance(expectedLA, verifyHcroLA):F3}µm, " +
+                            $"R오차={CalibrationMath.Distance(expectedRA, verifyHcroRA):F3}µm");
+                    }
+                    else
+                    {
+                        _logger.Information("Shift 위치 검증 통과");
+                    }
+                }
+
+                // ── 6. 최종 본딩 (hz) ────────────────────────────────────────────
                 await _sequenceService.Bonding(2000, _cts.Token);
                 await _sequenceService.Init_Head(_cts.Token);
 
