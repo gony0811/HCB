@@ -3,86 +3,137 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
       xmlns:local="clr-namespace:HCB.UI"
-      mc:Ignorable="d"
-     >
-    <!-- 파라미터 화면 -->
+      mc:Ignorable="d">
+
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/SYSTEM/Common/Styles/DefaultResource.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="ActionButton" TargetType="Button">
+                <Setter Property="Height" Value="34"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd"
+                                    Background="#0F3460"
+                                    BorderBrush="#2A5A8C"
+                                    BorderThickness="1"
+                                    CornerRadius="6">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#1A4A7A"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#3498DB"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#0A2040"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Bd" Property="Background" Value="#0A1628"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#1C3A52"/>
+                                    <Setter Property="Foreground" Value="#3A5A7A"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
         </ResourceDictionary>
     </Page.Resources>
-    <Grid>
+
+    <Grid Margin="6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <telerik:RadHighlightTextBlock Text="파라미터 설정"
-                                        FontSize="24"
-                                        FontWeight="SemiBold"
-                                        Grid.Row="0"
-                                        Margin="10"
-                                        Style="{StaticResource RadHighlightTextBlockStyle}"/>
+        <!-- 타이틀 -->
+        <TextBlock Text="파라미터 설정"
+                   FontSize="24" FontWeight="SemiBold" Foreground="#ECF0F1"
+                   Grid.Row="0" Margin="6,10,6,10" VerticalAlignment="Center"/>
 
-        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="EC 파라미터 목록" Grid.Row="1" Margin="10">
+        <!-- EC 파라미터 목록 카드 -->
+        <Border Grid.Row="1"
+                Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                CornerRadius="8" Margin="6">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <telerik:RadGridView x:Name="ParamGrid"
-                                     Grid.Row="0"
-                                     ItemsSource="{Binding ParamList}"
-                                     SelectedItem="{Binding SelectedParam, Mode=TwoWay}"
-                                     Style="{StaticResource RadGridViewStyle}"
-                                     ShowGroupPanel="False"
-                                     FontSize="18"
-                                     AutoGenerateColumns="False"
-                                     Margin="0,8,0,0">
-                    <telerik:RadGridView.Columns>
-                        <telerik:GridViewColumn Header="Name" Width="2*">
-                            <telerik:GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <telerik:HighlightTextBlock Text="{Binding Name}" FontSize="16" VerticalAlignment="Center" Style="{StaticResource HighlightTextBlockStyle}"/>
-                                </DataTemplate>
-                            </telerik:GridViewColumn.CellTemplate>
-                        </telerik:GridViewColumn>
-                        <telerik:GridViewColumn Header="Value" Width="2*">
-                            <telerik:GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Value}" />
-                                </DataTemplate>
-                            </telerik:GridViewColumn.CellTemplate>
-                        </telerik:GridViewColumn>
-                        <telerik:GridViewDataColumn Header="Unit"
-                            Width="100"
-                            DataMemberBinding="{Binding UnitType}" />
-                        <telerik:GridViewDataColumn Header="Description"
-                            Width="3*"
-                            DataMemberBinding="{Binding Description}" />
-                    </telerik:RadGridView.Columns>
-                </telerik:RadGridView>
+                <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="EC 파라미터 목록"/>
+                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
 
-                <StackPanel Grid.Row="1" HorizontalAlignment="Right" Margin="10" Orientation="Horizontal">
-                    <telerik:RadButton Content="생성"
-                                       Width="80" Height="30" Margin="4"
-                                       Command="{Binding CreateParamCommand}"
-                                       Style="{StaticResource RadButtonStyle}"/>
-                    <telerik:RadButton Content="수정"
-                                       Width="80" Height="30" Margin="4"
-                                       Command="{Binding UpdateParamCommand}"
-                                       Style="{StaticResource RadButtonStyle}"/>
-                    <telerik:RadButton Content="삭제"
-                                       Width="80" Height="30" Margin="4"
-                                       Command="{Binding DeleteParamCommand}"
-                                       Style="{StaticResource RadButtonStyle}"/>
+                <DataGrid x:Name="ParamGrid"
+                          Grid.Row="1"
+                          ItemsSource="{Binding ParamList}"
+                          SelectedItem="{Binding SelectedParam, Mode=TwoWay}"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          RowBackground="Transparent"
+                          AlternatingRowBackground="#0A1628"
+                          Foreground="#ECF0F1"
+                          FontSize="16"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          CanUserResizeRows="False"
+                          SelectionMode="Single"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#1C3A52"
+                          RowHeaderWidth="0"
+                          Margin="8,6,8,4">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader"
+                               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                            <Setter Property="Background" Value="#0A1628"/>
+                            <Setter Property="Foreground" Value="#5E8BAA"/>
+                            <Setter Property="FontSize" Value="14"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="BorderBrush" Value="#1C3A52"/>
+                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                            <Setter Property="Padding" Value="10,8"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell"
+                               BasedOn="{StaticResource {x:Type DataGridCell}}">
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Padding" Value="10,0"/>
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                        </Style>
+                    </DataGrid.CellStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name"        Binding="{Binding Name}"        Width="2*"/>
+                        <DataGridTextColumn Header="Value"       Binding="{Binding Value}"       Width="2*"/>
+                        <DataGridTextColumn Header="Unit"        Binding="{Binding UnitType}"    Width="100"/>
+                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="3*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- 하단 버튼 -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal"
+                            HorizontalAlignment="Right" Margin="12,6,12,12">
+                    <Button Content="생성" Style="{StaticResource ActionButton}"
+                            Command="{Binding CreateParamCommand}" Width="80" Margin="0,0,6,0"/>
+                    <Button Content="수정" Style="{StaticResource ActionButton}"
+                            Command="{Binding UpdateParamCommand}" Width="80" Margin="0,0,6,0"/>
+                    <Button Content="삭제" Style="{StaticResource ActionButton}"
+                            Command="{Binding DeleteParamCommand}" Width="80"/>
                 </StackPanel>
             </Grid>
-        </telerik:GroupBox>
+        </Border>
     </Grid>
 </Page>

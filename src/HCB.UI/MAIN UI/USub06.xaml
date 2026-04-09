@@ -6,160 +6,322 @@
       xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
       xmlns:local="clr-namespace:HCB.UI"
       xmlns:uc="clr-namespace:HCB.UI"
-      xmlns:page="clr-namespace:HCB.UI"
       mc:Ignorable="d"
       Title="USub06">
-    <!-- 모터 제어 화면 -->
+
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/SYSTEM/Common/Styles/DefaultResource.xaml"/>
                 <ResourceDictionary Source="/SYSTEM/Common/Styles/ButtonsAndSwitches.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <local:TupleConverter x:Key="TupleConverter" />
+            <local:TupleConverter x:Key="TupleConverter"/>
+
+            <!-- DataGrid -->
+            <Style x:Key="MotionDataGrid" TargetType="DataGrid">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="RowBackground" Value="Transparent"/>
+                <Setter Property="AlternatingRowBackground" Value="#0A1628"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="AutoGenerateColumns" Value="False"/>
+                <Setter Property="IsReadOnly" Value="True"/>
+                <Setter Property="CanUserAddRows" Value="False"/>
+                <Setter Property="CanUserResizeRows" Value="False"/>
+                <Setter Property="SelectionMode" Value="Single"/>
+                <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+                <Setter Property="HorizontalGridLinesBrush" Value="#1C3A52"/>
+                <Setter Property="RowHeaderWidth" Value="0"/>
+            </Style>
+
+            <Style x:Key="MotionColumnHeader" TargetType="DataGridColumnHeader"
+                   BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                <Setter Property="Background" Value="#0A1628"/>
+                <Setter Property="Foreground" Value="#5E8BAA"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="BorderBrush" Value="#1C3A52"/>
+                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                <Setter Property="Padding" Value="10,7"/>
+            </Style>
+
+            <Style x:Key="MotionCell" TargetType="DataGridCell"
+                   BasedOn="{StaticResource {x:Type DataGridCell}}">
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="10,0"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+            </Style>
+
+            <!-- 이동 버튼 -->
+            <Style x:Key="MoveButton" TargetType="Button">
+                <Setter Property="Width" Value="72"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Margin" Value="3,0"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="#0F3460" BorderBrush="#2A5A8C" BorderThickness="1" CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#1A4A7A"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#3498DB"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#0A2040"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- 정지 버튼 -->
+            <Style x:Key="StopButton" TargetType="Button">
+                <Setter Property="Width" Value="72"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Margin" Value="3,0"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="#3D0F0F" BorderBrush="#E74C3C" BorderThickness="1" CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#5A1818"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#FF6B6B"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#200808"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- 생성 버튼 -->
+            <Style x:Key="CreateButton" TargetType="Button">
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="#0F3D20" BorderBrush="#27AE60" BorderThickness="1" CornerRadius="6">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#1A5A30"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#2ECC71"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#082010"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ListBox 항목 스타일 -->
+            <Style x:Key="MotionListItem" TargetType="ListBoxItem">
+                <Setter Property="Foreground" Value="#5E8BAA"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Padding" Value="14,10"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Margin="4,2">
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#1C3A52"/>
+                                    <Setter Property="Foreground" Value="#ECF0F1"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#1E4A6A"/>
+                                    <Setter Property="Foreground" Value="#ECF0F1"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
         </ResourceDictionary>
-        
     </Page.Resources>
-    <Border>
-        <Grid>
+
+    <Grid Margin="6">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 타이틀 -->
+        <TextBlock Text="모터 제어"
+                   FontSize="24" FontWeight="SemiBold" Foreground="#ECF0F1"
+                   Grid.Column="0" Grid.Row="0"
+                   Margin="6,10,6,10" VerticalAlignment="Center"/>
+
+        <!-- ── 좌측: 모션 항목 리스트 ── -->
+        <Border Grid.Column="0" Grid.Row="1"
+                Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                CornerRadius="8" Margin="6" Width="260">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <uc:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="모션 항목"/>
+                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                <ListBox Grid.Row="1"
+                         ItemsSource="{Binding MotionList}"
+                         SelectedItem="{Binding SelectedMotion, Mode=TwoWay}"
+                         DisplayMemberPath="Name"
+                         ItemContainerStyle="{StaticResource MotionListItem}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Margin="4,4,4,4"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+            </Grid>
+        </Border>
+
+        <!-- ── 우측: 위치 그리드 + 모터 상태/조작 ── -->
+        <Grid Grid.Column="1" Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="0.7*"/>
+                <ColumnDefinition Width="0.3*"/>
             </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"></RowDefinition>
-                <RowDefinition></RowDefinition>
-            </Grid.RowDefinitions>
-            <Border Grid.Column="0" Grid.Row="0" Margin="10">
-                <telerik:RadHighlightTextBlock Text="모터 제어" 
-                                         FontSize="24" 
-                                         FontWeight="SemiBold" 
-                                         Style="{StaticResource RadHighlightTextBlockStyle}"/>
-            </Border>
 
-            <telerik:GroupBox Header="모션 항목"
-                      Style="{StaticResource GroupBoxStyle}"
-                      Grid.Column="0" Grid.Row="1" Grid.RowSpan="2"
-                      Margin="10" Width="250">
-                <telerik:RadListBox
-                        ItemsSource="{Binding MotionList}"
-                        SelectedItem="{Binding SelectedMotion, Mode=TwoWay}"
-                        DisplayMemberPath="Name"
-                        BorderThickness="0"
-                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                        ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-            </telerik:GroupBox>
-            <Border Grid.Column="1" Grid.Row="1">
+            <!-- 위치 그리드 -->
+            <Border Grid.Column="0"
+                    Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                    CornerRadius="8" Margin="0,6,3,6">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="0.7*"></ColumnDefinition>
-                        <ColumnDefinition Width="0.3*"></ColumnDefinition>
-                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <telerik:GroupBox Header="위치" 
-                              Grid.Column="0" 
-                              Style="{StaticResource GroupBoxStyle}" 
-                              Margin="0,10,0,10">
-                        <Grid local:GridHelper.Rows="1*, Auto">
+                    <uc:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="위치"/>
+                    <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                               VerticalAlignment="Bottom" Margin="12,32,12,0"/>
 
-                            
-                            
-                            <telerik:RadGridView
-                                x:Name="PositionDataGrid"
-                                Style="{StaticResource RadGridViewStyle}"
-                                ItemsSource="{Binding SelectedMotion.PositionList}"
-                                SelectedItem="{Binding SelectedPosition, Mode=TwoWay}"
-                                FontSize="16"
-                                ShowGroupPanel="False"
-                                AutoGenerateColumns="False"
-                                IsReadOnly="True"
-                                CanUserDeleteRows="False"
-                                SelectionMode="Single"
-                                GridLinesVisibility="None">
-                                <telerik:RadGridView.RowStyle>
-                                    <Style TargetType="telerik:GridViewRow" BasedOn="{StaticResource {x:Type telerik:GridViewRow}}">
-                                        <EventSetter Event="PreviewMouseRightButtonDown" Handler="OnRowRightClickSelection" />
-                                    </Style>
-                                </telerik:RadGridView.RowStyle>
-                                <telerik:RadGridView.ContextMenu>
-                                    <ContextMenu DataContext="{Binding Path=PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                    <DataGrid x:Name="PositionDataGrid"
+                              Grid.Row="1"
+                              Style="{StaticResource MotionDataGrid}"
+                              ColumnHeaderStyle="{StaticResource MotionColumnHeader}"
+                              CellStyle="{StaticResource MotionCell}"
+                              ItemsSource="{Binding SelectedMotion.PositionList}"
+                              SelectedItem="{Binding SelectedPosition, Mode=TwoWay}"
+                              Margin="8,6,8,4">
+                        <DataGrid.ContextMenu>
+                            <ContextMenu DataContext="{Binding Path=PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                <MenuItem Header="수정"
+                                          Command="{Binding PositionUpdateCommand}"
+                                          CommandParameter="{Binding Path=PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <MenuItem Header="삭제"
+                                          Command="{Binding PositionDeleteCommand}"
+                                          CommandParameter="{Binding Path=PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="이름" Binding="{Binding Name}"                     Width="*"/>
+                            <DataGridTextColumn Header="위치" Binding="{Binding Position, StringFormat=F3}" Width="140"/>
+                            <DataGridTextColumn Header="속도" Binding="{Binding Speed, StringFormat=F2}"    Width="120"/>
+                            <DataGridTemplateColumn Header="동작" Width="170">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,4">
+                                            <Button Style="{StaticResource MoveButton}" Content="이동"
+                                                    Command="{Binding AbsoluteMoveCommand}"/>
+                                            <Button Style="{StaticResource StopButton}" Content="정지"
+                                                    Command="{Binding StopCommand}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
 
-                                        <MenuItem Header="수정"
-                                                  Command="{Binding PositionUpdateCommand}"
-                                                  CommandParameter="{Binding Path=PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-
-                                        <MenuItem Header="삭제"
-                                                  Command="{Binding PositionDeleteCommand}"
-                                                  CommandParameter="{Binding Path=PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    </ContextMenu>
-                                </telerik:RadGridView.ContextMenu>
-
-                                <telerik:RadGridView.Columns>
-                                    <telerik:GridViewDataColumn Header="이름"
-                                                                DataMemberBinding="{Binding Name}"
-                                                                Width="*"
-                                                                SortMemberPath="Name"/>
-                                    <telerik:GridViewDataColumn Header="위치"
-                                                                DataMemberBinding="{Binding Position, StringFormat=F3}"
-                                                                Width="140"
-                                                                SortMemberPath="Location"/>
-                                    <telerik:GridViewDataColumn Header="속도"
-                                                                DataMemberBinding="{Binding Speed, StringFormat=F2}"
-                                                                Width="120"
-                                                                SortMemberPath="Speed"/>
-                                    <telerik:GridViewDataColumn Header="동작" Width="200">
-                                        <telerik:GridViewDataColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
-                                                                        Content="이동" 
-                                                                        Width="80"
-                                                                        Command="{Binding AbsoluteMoveCommand}" 
-                                                                        Margin="2">
-                                                    </telerik:RadButton>
-                                                    <telerik:RadButton Style="{StaticResource RadButtonStyle}" 
-                                                                       Content="정지" 
-                                                                       Width="80"
-                                                                       Command="{Binding StopCommand}" 
-                                                                       Margin="2">
-                                                    </telerik:RadButton>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </telerik:GridViewDataColumn.CellTemplate>
-                                    </telerik:GridViewDataColumn>
-                                </telerik:RadGridView.Columns>
-                            </telerik:RadGridView>
-
-                            <telerik:RadButton Style="{StaticResource RadButtonStyle}" Content="생성" Command="{Binding PositionCreateCommand}" Grid.Row="1"></telerik:RadButton>
-                        </Grid>
-
-                    </telerik:GroupBox>
-
-                    <Grid Grid.Column="1">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="0.4*"></RowDefinition>
-                            <RowDefinition Height="0.6*"></RowDefinition>
-                        </Grid.RowDefinitions>
-
-
-                        <!-- 모터 상태 관리 -->
-                        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="모터 상태 관리" Grid.Row="0" Margin="10">
-                            <local:MotorStateControl 
-                                    DataContext="{Binding SelectedMotion}"
-                                    HzHomeCommand="{Binding DataContext.HzHomeCommand, 
-                                        RelativeSource={RelativeSource AncestorType=Page}}" />
-                        </telerik:GroupBox>
-
-                        <!-- 모터 조작 -->
-                        <telerik:GroupBox Style="{StaticResource GroupBoxStyle}" Header="조작" Grid.Row="1" Margin="10">
-                            <Grid>
-                                <local:MotionMoveController DataContext="{Binding MotionMoveVM}"/>
-                            </Grid>
-                        </telerik:GroupBox>
-                    </Grid>
+                    <Button Grid.Row="2"
+                            Content="+ 생성"
+                            Style="{StaticResource CreateButton}"
+                            Command="{Binding PositionCreateCommand}"
+                            Margin="8,4,8,8"/>
                 </Grid>
             </Border>
+
+            <!-- 모터 상태 + 조작 -->
+            <Grid Grid.Column="1" Margin="3,6,6,6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="0.4*"/>
+                    <RowDefinition Height="0.6*"/>
+                </Grid.RowDefinitions>
+
+                <!-- 모터 상태 관리 -->
+                <Border Grid.Row="0"
+                        Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                        CornerRadius="8" Margin="0,0,0,3">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <uc:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="모터 상태 관리"/>
+                        <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                   VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+                        <uc:MotorStateControl Grid.Row="1"
+                                             DataContext="{Binding SelectedMotion}"
+                                             HzHomeCommand="{Binding DataContext.HzHomeCommand,
+                                                 RelativeSource={RelativeSource AncestorType=Page}}"
+                                             Margin="8,6,8,8"/>
+                    </Grid>
+                </Border>
+
+                <!-- 조작 -->
+                <Border Grid.Row="1"
+                        Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                        CornerRadius="8" Margin="0,3,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <uc:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="조작"/>
+                        <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                   VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+                        <uc:MotionMoveController Grid.Row="1"
+                                                 DataContext="{Binding MotionMoveVM}"
+                                                 Margin="8,6,8,8"/>
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
-    </Border>
-    
+    </Grid>
 </Page>

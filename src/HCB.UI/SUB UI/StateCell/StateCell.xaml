@@ -3,38 +3,45 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
              mc:Ignorable="d"
              x:Name="root"
              Background="Transparent">
 
-    <StackPanel Orientation="Horizontal"
-                Margin="6">
+    <StackPanel Orientation="Horizontal" Margin="6,4">
 
-        <Ellipse Width="14"
-                 Height="14"
-                 Margin="0,0,6,0">
+        <!-- 상태 표시 원 -->
+        <Ellipse Width="12" Height="12" Margin="0,0,6,0" VerticalAlignment="Center">
             <Ellipse.Style>
                 <Style TargetType="Ellipse">
-                    <Setter Property="Fill" Value="#444"/>
+                    <Setter Property="Fill" Value="#1C3A52"/>
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsOn, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      Value="True">
-                            <Setter Property="Fill" Value="#00E676"/>
+                            <Setter Property="Fill" Value="#2ECC71"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Ellipse.Style>
         </Ellipse>
 
-        <!-- ● 라벨 -->
-        <telerik:HighlightTextBlock
-                       Grid.Column="2"
-                       Style="{StaticResource HighlightTextBlockStyle}"
-                       VerticalAlignment="Center"
-                       FontSize="{Binding FontSize, ElementName=root}"  
-                       FontWeight="SemiBold"
-                       TextTrimming="CharacterEllipsis"
-                       Text="{Binding Label, ElementName=root}" />
+        <!-- 레이블 -->
+        <TextBlock Text="{Binding Label, ElementName=root}"
+                   FontSize="{Binding FontSize, ElementName=root}"
+                   FontWeight="SemiBold"
+                   TextTrimming="CharacterEllipsis"
+                   VerticalAlignment="Center">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="#5E8BAA"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsOn, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                     Value="True">
+                            <Setter Property="Foreground" Value="#ECF0F1"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
     </StackPanel>
 </UserControl>

@@ -3,58 +3,143 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:model="clr-namespace:HCB.UI"
-             xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
              xmlns:local="clr-namespace:HCB.UI"
-             xmlns:uc="clr-namespace:HCB.UI"
              mc:Ignorable="d">
 
-    <Border Padding="10"
-            Background="#1E1E1E"
-            BorderBrush="#3A3A3A"
+    <UserControl.Resources>
+
+        <!-- ── 헤더 버튼 공통 베이스 ── -->
+        <Style x:Key="MotorHeaderButton" TargetType="Button">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#ECF0F1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.82"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.60"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#0A1628"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#1C3A52"/>
+                                <Setter Property="Foreground" Value="#3A5A7A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- SERVO ON : 그린 계열 -->
+        <Style x:Key="ServoOnButton" TargetType="Button"
+               BasedOn="{StaticResource MotorHeaderButton}">
+            <Setter Property="Background" Value="#0F3D20"/>
+            <Setter Property="BorderBrush" Value="#27AE60"/>
+        </Style>
+
+        <!-- SERVO OFF : 레드 계열 -->
+        <Style x:Key="ServoOffButton" TargetType="Button"
+               BasedOn="{StaticResource MotorHeaderButton}">
+            <Setter Property="Background" Value="#3D0F0F"/>
+            <Setter Property="BorderBrush" Value="#E74C3C"/>
+        </Style>
+
+        <!-- HOME : 블루 계열 -->
+        <Style x:Key="HomeButton" TargetType="Button"
+               BasedOn="{StaticResource MotorHeaderButton}">
+            <Setter Property="Background" Value="#0F3460"/>
+            <Setter Property="BorderBrush" Value="#2A5A8C"/>
+        </Style>
+
+        <!-- ── 상태 셀(StateCell) 공통 래퍼 스타일 ── -->
+        <!-- StateCell 자체는 local:StateCell UserControl이므로 내부 스타일은 그대로 유지 -->
+
+        <!-- ── 수치 레이블 ── -->
+        <Style x:Key="NumLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#5E8BAA"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,0,3"/>
+        </Style>
+
+        <Style x:Key="NumValue" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#ECF0F1"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="FontFamily" Value="Consolas, Courier New"/>
+        </Style>
+
+    </UserControl.Resources>
+
+    <!-- 외곽 카드 : 디자인 시스템 톤 -->
+    <Border Background="#0D1B2A"
+            BorderBrush="#1C3A52"
             BorderThickness="1"
-            CornerRadius="6">
+            CornerRadius="8"
+            Padding="12,10">
 
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="1"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="1"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- ===== Header ===== -->
-            <Grid 
-                        VerticalAlignment="Center">
+            <!-- ══ Row 0 : 헤더 (축 이름 + 버튼 3개) ══ -->
+            <Grid Grid.Row="0" Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition></ColumnDefinition>
-                    <ColumnDefinition></ColumnDefinition>
-                    <ColumnDefinition></ColumnDefinition>
-                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="100"/>
                 </Grid.ColumnDefinitions>
-                <Border BorderBrush="Transparent" BorderThickness="1">
-                    <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding Name}"
-                   FontSize="18"
-                   FontWeight="Bold"
-                   Foreground="White"
-                   Margin="0,0,10,0"/>
-                </Border>
 
+                <!-- 축 이름 -->
+                <TextBlock Grid.Column="0"
+                           Text="{Binding Name}"
+                           Foreground="#ECF0F1"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
 
-                <Button Content="SERVO ON"
-                        Grid.Column="1"
-                        Command="{Binding ServoOnCommand}"
-                        Margin="4,0"/>
-                <Button Content="SERVO OFF"
-                        Grid.Column="2"
-                        Command="{Binding ServoOffCommand}"
-                        Margin="4,0"
-                        />
-                <!-- HOME 버튼: h_z 축은 특수 홈 시퀀스 사용 -->
-                <Grid Grid.Column="3" Margin="4,0">
-                    <!-- 일반 HOME (h_z 제외) -->
-                    <Button Content="HOME" Command="{Binding HomeCommand}">
+                <!-- SERVO ON -->
+                <Button Grid.Column="1"
+                        Content="SERVO ON"
+                        Style="{StaticResource ServoOnButton}"
+                        Command="{Binding ServoOnCommand}"/>
+
+                <!-- SERVO OFF -->
+                <Button Grid.Column="3"
+                        Content="SERVO OFF"
+                        Style="{StaticResource ServoOffButton}"
+                        Command="{Binding ServoOffCommand}"/>
+
+                <!-- HOME : 일반 / h_z 분기 -->
+                <Grid Grid.Column="5">
+                    <!-- 일반 HOME -->
+                    <Button Content="HOME"
+                            Command="{Binding HomeCommand}">
                         <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                            <Style TargetType="Button" BasedOn="{StaticResource HomeButton}">
                                 <Setter Property="Visibility" Value="Visible"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding Name}" Value="h_z">
@@ -64,12 +149,12 @@
                             </Style>
                         </Button.Style>
                     </Button>
-                    <!-- h_z 전용 HOME (특수 시퀀스) -->
+                    <!-- h_z 전용 HOME -->
                     <Button Content="HOME"
                             Command="{Binding HzHomeCommand, RelativeSource={RelativeSource AncestorType=local:MotorStateControl}}"
                             ToolTip="① Cylinder L/R 확장 → ② H_Z→0 이동 → ③ h_z Home → ④ Piezo Home → ⑤ Cylinder 복귀">
                         <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                            <Style TargetType="Button" BasedOn="{StaticResource HomeButton}">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding Name}" Value="h_z">
@@ -82,61 +167,61 @@
                 </Grid>
             </Grid>
 
-            <!-- ===== Status Indicators ===== -->
-            <UniformGrid Grid.Row="1" Columns="4" Margin="0,10,0,10">
+            <!-- 구분선 -->
+            <Rectangle Grid.Row="1" Fill="#1C3A52"/>
 
-                <local:StateCell Label="ENABLE"     IsOn="{Binding IsEnabled}"/>
-                <local:StateCell Label="BUSY"       IsOn="{Binding IsBusy}"/>
-                <local:StateCell Label="ERROR"      IsOn="{Binding IsError}"/>
-                <local:StateCell Label="INPOS"      IsOn="{Binding InPosition}"/>
+            <!-- ══ Row 2 : 상태 인디케이터 (8개) ══ -->
+            <UniformGrid Grid.Row="2" Columns="4" Margin="0,8">
+                <local:StateCell Label="ENABLE"  IsOn="{Binding IsEnabled}"/>
+                <local:StateCell Label="BUSY"    IsOn="{Binding IsBusy}"/>
+                <local:StateCell Label="ERROR"   IsOn="{Binding IsError}"/>
+                <local:StateCell Label="INPOS"   IsOn="{Binding InPosition}"/>
 
-                
-                <local:StateCell Label="P-LIMIT"     IsOn="{Binding IsPlusLimit}"/>
-                <local:StateCell Label="ORIGIN"      IsOn="{Binding IsHome}"/>
-                <local:StateCell Label="N-LIMIT"     IsOn="{Binding IsMinusLimit}"/>
-                <local:StateCell Label="CAL."       IsOn="{Binding IsHomeDone}"/>
-
+                <local:StateCell Label="P-LIMIT" IsOn="{Binding IsPlusLimit}"/>
+                <local:StateCell Label="ORIGIN"  IsOn="{Binding IsHome}"/>
+                <local:StateCell Label="N-LIMIT" IsOn="{Binding IsMinusLimit}"/>
+                <local:StateCell Label="CAL."    IsOn="{Binding IsHomeDone}"/>
             </UniformGrid>
 
-            <!-- ===== Numeric Values ===== -->
-            <Grid Grid.Row="2">
+            <!-- 구분선 -->
+            <Rectangle Grid.Row="3" Fill="#1C3A52"/>
+
+            <!-- ══ Row 4 : 수치 표시 (CURRENT-POS / TARGET-POS / VELOCITY) ══ -->
+            <Grid Grid.Row="4" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
+                    <ColumnDefinition Width="1"/>
                     <ColumnDefinition/>
+                    <ColumnDefinition Width="1"/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <Border BorderBrush="Transparent" BorderThickness="1" Margin="2">
-                    <StackPanel HorizontalAlignment="Center">
-                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="CURRENT-POS"
-                               Foreground="Gray"/>
-                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding CurrentPosition, StringFormat=F3}"
-                               FontSize="16"
-                               TextAlignment="Center"
-                               Foreground="White"/>
-                    </StackPanel>
-                </Border>
-                <Border BorderBrush="Transparent" BorderThickness="1" Grid.Column="1" Margin="2">
-                    <StackPanel HorizontalAlignment="Center">
-                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="TARGET-POS"
-                               Foreground="Gray"/>
-                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding CommandPosition, StringFormat=F3}"
-                               FontSize="16"
-                                   TextAlignment="Center"
-                               Foreground="White"/>
-                    </StackPanel>
-                </Border>
 
-                <Border BorderBrush="Transparent" BorderThickness="1" Grid.Column="2" Margin="2">
-                    <StackPanel HorizontalAlignment="Center">
-                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="VELOCITY"
-                                    Foreground="Gray"/>
-                        <telerik:HighlightTextBlock Style="{StaticResource HighlightTextBlockStyle}" Text="{Binding CurrentSpeed, StringFormat=F2}"
-                                    FontSize="16"
-                                   TextAlignment="Center"
-                                    Foreground="White"/>
-                    </StackPanel>
-                </Border>
-                
+                <!-- CURRENT-POS -->
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                    <TextBlock Style="{StaticResource NumLabel}" Text="CURRENT-POS"/>
+                    <TextBlock Style="{StaticResource NumValue}"
+                               Text="{Binding CurrentPosition, StringFormat=F3}"/>
+                </StackPanel>
+
+                <!-- 세로 구분선 -->
+                <Rectangle Grid.Column="1" Fill="#1C3A52" Width="1"/>
+
+                <!-- TARGET-POS -->
+                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                    <TextBlock Style="{StaticResource NumLabel}" Text="TARGET-POS"/>
+                    <TextBlock Style="{StaticResource NumValue}"
+                               Text="{Binding CommandPosition, StringFormat=F3}"/>
+                </StackPanel>
+
+                <!-- 세로 구분선 -->
+                <Rectangle Grid.Column="3" Fill="#1C3A52" Width="1"/>
+
+                <!-- VELOCITY -->
+                <StackPanel Grid.Column="4" HorizontalAlignment="Center">
+                    <TextBlock Style="{StaticResource NumLabel}" Text="VELOCITY"/>
+                    <TextBlock Style="{StaticResource NumValue}"
+                               Text="{Binding CurrentSpeed, StringFormat=F2}"/>
+                </StackPanel>
             </Grid>
 
         </Grid>
