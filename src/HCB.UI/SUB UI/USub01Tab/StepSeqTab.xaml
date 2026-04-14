@@ -743,14 +743,14 @@
 
                                 <!-- 번호 뱃지 -->
                                 <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
-                Width="28" Height="28" Margin="0,0,10,0">
+                                        Width="28" Height="28" Margin="0,0,10,0">
                                     <TextBlock Text="3" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
 
                                 <!-- 램프 -->
                                 <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
-                        State="{Binding TopHighAlignState}" Margin="0,0,10,0"/>
+                                                State="{Binding TopHighAlignState}" Margin="0,0,10,0"/>
 
                                 <!-- 타이틀 -->
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
@@ -760,33 +760,33 @@
 
                                 <!-- 진행 표시 (반복 중일 때만 표시) -->
                                 <Border Grid.Column="3"
-                Background="#0D2335" CornerRadius="6" Padding="12,6"
-                Margin="0,0,8,0"
-                Visibility="{Binding IsRepeatRunning, Converter={StaticResource BoolToVis}}">
+                                        Background="#0D2335" CornerRadius="6" Padding="12,6"
+                                        Margin="0,0,8,0"
+                                        Visibility="{Binding IsRepeatRunning, Converter={StaticResource BoolToVis}}">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="⟳ " Foreground="#2ECC71" FontSize="13" VerticalAlignment="Center"/>
                                         <TextBlock Text="{Binding RepeatProgressText}"
-                           Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
-                           FontWeight="Bold" VerticalAlignment="Center"/>
+                                                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
+                                                   FontWeight="Bold" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- 반복 측정 버튼 -->
                                 <Button Grid.Column="4" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
-                Command="{Binding RepeatMeasureCommand}"
-                IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
+                                        Command="{Binding RepeatMeasureCommand}"
+                                        IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
                                     <TextBlock Text="반복 측정" FontSize="12" FontWeight="Bold"/>
                                 </Button>
 
                                 <!-- INFO 버튼 -->
                                 <Button Grid.Column="5" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
-                Command="{Binding OpenTopHighAlignInfoCommand}">
+                                        Command="{Binding OpenTopHighAlignInfoCommand}">
                                     <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
                                 </Button>
 
                                 <!-- START 버튼 -->
                                 <Button Grid.Column="6" Style="{StaticResource StartButtonStyle}"
-                Command="{Binding TopHighAlignCommand}">
+                                        Command="{Binding TopHighAlignCommand}">
                                     <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
                                 </Button>
 
@@ -873,12 +873,12 @@
                                 <Border Background="#0D2335" CornerRadius="6" Padding="12,8" Margin="4,0">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="X" Foreground="#5B9BD5" FontSize="13" FontWeight="Bold"
-                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="{Binding DetailX, StringFormat={}{0:F4}}"
-                           Foreground="White" FontSize="13" FontFamily="Consolas"
-                           VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
+                                                   Foreground="White" FontSize="13" FontFamily="Consolas"
+                                                   VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
                                         <TextBlock Text=" mm" Foreground="#7A9BB5" FontSize="11"
-                           VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                                   VerticalAlignment="Center" Margin="2,0,0,0"/>
                                     </StackPanel>
                                 </Border>
 
@@ -886,12 +886,12 @@
                                 <Border Background="#0D2335" CornerRadius="6" Padding="12,8" Margin="4,0">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="Y" Foreground="#5B9BD5" FontSize="13" FontWeight="Bold"
-                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="{Binding DetailY, StringFormat={}{0:F4}}"
-                           Foreground="White" FontSize="13" FontFamily="Consolas"
-                           VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
+                                                   Foreground="White" FontSize="13" FontFamily="Consolas"
+                                                   VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
                                         <TextBlock Text=" mm" Foreground="#7A9BB5" FontSize="11"
-                           VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                                   VerticalAlignment="Center" Margin="2,0,0,0"/>
                                     </StackPanel>
                                 </Border>
 
@@ -899,12 +899,12 @@
                                 <Border Background="#0D2335" CornerRadius="6" Padding="12,8" Margin="4,0">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="T" Foreground="#5B9BD5" FontSize="13" FontWeight="Bold"
-                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="{Binding DetailT, StringFormat={}{0:F4}}"
-                           Foreground="White" FontSize="13" FontFamily="Consolas"
-                           VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
+                                                   Foreground="White" FontSize="13" FontFamily="Consolas"
+                                                   VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
                                         <TextBlock Text=" °" Foreground="#7A9BB5" FontSize="11"
-                           VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                                   VerticalAlignment="Center" Margin="2,0,0,0"/>
                                     </StackPanel>
                                 </Border>
 
@@ -914,7 +914,7 @@
                                     Command="{Binding LowResultCommand}">
                                 <TextBlock Text="저배율 결과" FontSize="13" FontWeight="Bold"/>
                             </Button>
-                            
+
                             <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
                                     Command="{Binding HighResultCommand}">
                                 <TextBlock Text="고배율 결과" FontSize="13" FontWeight="Bold"/>
@@ -1101,15 +1101,92 @@
                     </Border>
 
                     <!-- Footer -->
-                    <Border Grid.Row="3" BorderBrush="#2A1A4A" BorderThickness="0,1,0,0"
-                            Margin="20,14,20,0" Padding="0,10,0,16">
-                        <Button Style="{StaticResource StopButtonStyle}" Width="100"
-                                HorizontalAlignment="Right"
-                                Command="{Binding CloseInitInfoCommand}">
-                            <TextBlock Text="CLOSE" FontSize="13" FontWeight="Bold"/>
-                        </Button>
-                    </Border>
+                    <Border Grid.Row="3" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
+                            Margin="16,14,16,0" Padding="0,10,0,14">
+                        <StackPanel>
 
+                            <!-- FidAF 설정 행 -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="횟수"
+                                           Foreground="#5E8BAA" FontSize="12"
+                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <Border Grid.Column="1" Background="#0A1628" BorderBrush="#2A5A8C"
+                                        BorderThickness="1" CornerRadius="4">
+                                    <TextBox Text="{Binding FidAfRepeatCount, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="Transparent" BorderThickness="0"
+                                             Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
+                                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                             Height="28"/>
+                                </Border>
+
+                                <TextBlock Grid.Column="2" Text="간격(초)"
+                                           Foreground="#5E8BAA" FontSize="12"
+                                           VerticalAlignment="Center" Margin="10,0,6,0"/>
+                                <Border Grid.Column="3" Background="#0A1628" BorderBrush="#2A5A8C"
+                                        BorderThickness="1" CornerRadius="4">
+                                    <TextBox Text="{Binding FidAfIntervalSeconds, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="Transparent" BorderThickness="0"
+                                             Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
+                                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                             Height="28"/>
+                                </Border>
+
+                                <Border Grid.Column="4"
+                                        Background="#0D2335" CornerRadius="6" Padding="12,6"
+                                        Margin="10,0,0,0" HorizontalAlignment="Left"
+                                        Visibility="{Binding IsRepeatRunning, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="⟳ " Foreground="#3498DB" FontSize="13" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding RepeatProgressText}"
+                                                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
+                                                   FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- 버튼 행 -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+                                        Command="{Binding FidAFCheckCommand}"
+                                        IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
+                                    <TextBlock Text="AF 측정" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+                                        Command="{Binding FidNoAFCheckCommand}"
+                                        IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
+                                    <TextBlock Text="NoAF 측정" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+                                        Command="{Binding AlignAFCheckCommand}"
+                                        IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
+                                    <TextBlock Text="Align AF 측정" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+                                        Command="{Binding AlignNoAFCheckCommand}"
+                                        IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
+                                    <TextBlock Text="Align NoAF 측정" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+
+                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+                                        Command="{Binding BtmFullSequenceCommand}">
+                                    <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                                <Button Style="{StaticResource StopButtonStyle}" Width="90" Margin="2"
+                                        Command="{Binding StopCommand}">
+                                    <TextBlock Text="STOP" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
         </Grid>

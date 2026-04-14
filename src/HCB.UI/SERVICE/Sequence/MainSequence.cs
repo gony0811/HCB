@@ -239,8 +239,7 @@ namespace HCB.UI
             ctx.OffsetYApplied = offsetY;
             ctx.OffsetTApplied = offsetT;
 
-
-            await Bonding(2000, ct);
+            //await Bonding(2000, ct);
             await Init_Head(ct);
             await MotionsMove("H_T", 0, ct);
         }

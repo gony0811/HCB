@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using static HCB.UI.SERVICE.CalibrationService;
@@ -360,6 +362,43 @@ namespace HCB.UI
             }
         }
 
+        public async Task<(double x, double y)> VisionAFNoResult(CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+
+                var xy = await communicationService.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+                
+                return (xy.X, xy.Y);
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+        public async Task<(double x, double y)> VisionAFResult(CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+                var result = false;
+                result = await communicationService.RequestAFStart(cameraType, markType, ct);
+                if (result == false) throw new Exception("AF 실패");
+
+                var xy = await communicationService.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+
+                return (xy.X, xy.Y);
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+       
+
         public async Task<VisionMarkResult> TopDieVisionLeftFid(CancellationToken ct)
         {
             try
@@ -490,6 +529,7 @@ namespace HCB.UI
         {
             if (response.Result == Result.NG) throw new Exception("비전 통신 에러");
         }
+
 
     }
 }

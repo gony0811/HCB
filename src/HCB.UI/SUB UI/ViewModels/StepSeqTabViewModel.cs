@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Telerik.Windows.Controls.DataVisualization.Map.BingRest;
+using static HCB.UI.SequenceService;
 using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
@@ -98,9 +99,14 @@ namespace HCB.UI
         [ObservableProperty] private double detailY;
         [ObservableProperty] private double detailT;
 
-        [ObservableProperty] private bool _isRepeatRunning;
-        [ObservableProperty] private int _repeatCurrent;   // 현재 몇 번째
-        [ObservableProperty] private int _repeatTotal;     // 전체 몇 번
+        // ── FidAF 측정 설정 ───────────────────────────────────
+        [ObservableProperty] private int fidAfRepeatCount = 10;
+        [ObservableProperty] private double fidAfIntervalSeconds = 1.0;
+
+        // ── 반복 진행 상태 ────────────────────────────────────
+        [ObservableProperty] private bool isRepeatRunning;
+        [ObservableProperty] private int repeatCurrent;
+        [ObservableProperty] private int repeatTotal;
 
         // 화면에 표시할 텍스트 (예: "3 / 5")
         public string RepeatProgressText =>
@@ -167,14 +173,11 @@ namespace HCB.UI
                     if (vm != null) DTableList.Add(vm);
                 }
             }
-
-
         }
 
         // ═════════════════════════════════════════════════════
         //  STOP
         // ═════════════════════════════════════════════════════
-
         [RelayCommand]
         public async Task Stop()
         {
@@ -677,6 +680,185 @@ namespace HCB.UI
             }
         }
 
+
+        [RelayCommand]
+        public async Task FidAFCheck()
+        {
+            ResetCts();
+            IsRepeatRunning = true;
+            RepeatTotal = 20;
+            RepeatCurrent = 0;
+            var folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MeasureResults");
+            Directory.CreateDirectory(folder);
+            var filePath = Path.Combine(folder, "FidAF.csv");
+            try
+            {
+                bool writeHeader = !File.Exists(filePath) || new FileInfo(filePath).Length == 0;
+                using var writer = new StreamWriter(filePath, true, Encoding.UTF8);
+                if (writeHeader)
+                    await writer.WriteLineAsync("Time,HC1_X,HC1_Y,HC2_X,HC2_Y");
+                for (int i = 0; i < 20; i++)
+                {
+                    _cts.Token.ThrowIfCancellationRequested();
+                    var hc1 = await _sequenceService.VisionAFResult(
+                        CameraType.HC1_HIGH, MarkType.FIDUCIAL, DirectType.LEFT, _cts.Token);
+                    var hc2 = await _sequenceService.VisionAFResult(
+                        CameraType.HC2_HIGH, MarkType.FIDUCIAL, DirectType.RIGHT, _cts.Token);
+                    RepeatCurrent = i + 1;
+                    await writer.WriteLineAsync($"{DateTime.Now},{hc1.x:F6},{hc1.y:F6},{hc2.x:F6},{hc2.y:F6}");
+                    await writer.FlushAsync();
+                }
+                _logger.Information("FidAF(AF) CSV 저장 완료: {Path} ({Count}건)", filePath, RepeatCurrent);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("FidAF(AF) 측정 취소 — {Count}회 완료", RepeatCurrent);
+            }
+            catch (Exception e)
+            {
+                _logger.Warning("FidAF(AF) 측정 실패: {Msg}", e.Message);
+            }
+            finally
+            {
+                IsRepeatRunning = false;
+            }
+        }
+
+        [RelayCommand]
+        public async Task FidNoAFCheck()
+        {
+            ResetCts();
+            IsRepeatRunning = true;
+            RepeatTotal = 20;
+            RepeatCurrent = 0;
+            var folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MeasureResults");
+            Directory.CreateDirectory(folder);
+            var filePath = Path.Combine(folder, "FidAFNO.csv");
+            try
+            {
+                bool writeHeader = !File.Exists(filePath) || new FileInfo(filePath).Length == 0;
+                using var writer = new StreamWriter(filePath, true, Encoding.UTF8);
+                if (writeHeader)
+                    await writer.WriteLineAsync("Time,HC1_X,HC1_Y,HC2_X,HC2_Y");
+                for (int i = 0; i < 20; i++)
+                {
+                    _cts.Token.ThrowIfCancellationRequested();
+                    var hc1 = await _sequenceService.VisionAFNoResult(
+                        CameraType.HC1_HIGH, MarkType.FIDUCIAL, DirectType.LEFT, _cts.Token);
+                    var hc2 = await _sequenceService.VisionAFNoResult(
+                        CameraType.HC2_HIGH, MarkType.FIDUCIAL, DirectType.RIGHT, _cts.Token);
+                    RepeatCurrent = i + 1;
+                    await writer.WriteLineAsync($"{DateTime.Now},{hc1.x:F6},{hc1.y:F6},{hc2.x:F6},{hc2.y:F6}");
+                    await writer.FlushAsync();
+                    if (i < 19)
+                        await Task.Delay(TimeSpan.FromSeconds(20), _cts.Token);
+                }
+                _logger.Information("FidNoAF CSV 저장 완료: {Path} ({Count}건)", filePath, RepeatCurrent);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("FidNoAF 측정 취소 — {Count}회 완료", RepeatCurrent);
+            }
+            catch (Exception e)
+            {
+                _logger.Warning("FidNoAF 측정 실패: {Msg}", e.Message);
+            }
+            finally
+            {
+                IsRepeatRunning = false;
+            }
+        }
+
+        [RelayCommand]
+        public async Task AlignAFCheck()
+        {
+            ResetCts();
+            IsRepeatRunning = true;
+            RepeatTotal = 20;
+            RepeatCurrent = 0;
+            var folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MeasureResults");
+            Directory.CreateDirectory(folder);
+            var filePath = Path.Combine(folder, "AlignAF.csv");
+            try
+            {
+                bool writeHeader = !File.Exists(filePath) || new FileInfo(filePath).Length == 0;
+                using var writer = new StreamWriter(filePath, true, Encoding.UTF8);
+                if (writeHeader)
+                    await writer.WriteLineAsync("Time, HC1_X,HC1_Y,HC2_X,HC2_Y");
+                for (int i = 0; i < 20; i++)
+                {
+                    _cts.Token.ThrowIfCancellationRequested();
+                    var hc1 = await _sequenceService.VisionAFResult(
+                        CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, _cts.Token);
+                    var hc2 = await _sequenceService.VisionAFResult(
+                        CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, _cts.Token);
+
+                    RepeatCurrent = i + 1;
+                    await writer.WriteLineAsync($"{DateTime.Now.ToString()},{hc1.x:F6},{hc1.y:F6},{hc2.x:F6},{hc2.y:F6}");
+                    await writer.FlushAsync();
+                }
+                _logger.Information("AlignAF(AF) CSV 저장 완료: {Path} ({Count}건)", filePath, RepeatCurrent);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("AlignAF(AF) 측정 취소 — {Count}회 완료", RepeatCurrent);
+            }
+            catch (Exception e)
+            {
+                _logger.Warning("AlignAF(AF) 측정 실패: {Msg}", e.Message);
+            }
+            finally
+            {
+                IsRepeatRunning = false;
+            }
+        }
+
+        [RelayCommand]
+        public async Task AlignNoAFCheck()
+        {
+            ResetCts();
+            IsRepeatRunning = true;
+            RepeatTotal = 20;
+            RepeatCurrent = 0;
+            var folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MeasureResults");
+            Directory.CreateDirectory(folder);
+            var filePath = Path.Combine(folder, "AlignAFNO.csv");
+            try
+            {
+                bool writeHeader = !File.Exists(filePath) || new FileInfo(filePath).Length == 0;
+                using var writer = new StreamWriter(filePath, true, Encoding.UTF8);
+                if (writeHeader)
+                    await writer.WriteLineAsync("Time,HC1_X,HC1_Y,HC2_X,HC2_Y");
+                for (int i = 0; i < 20; i++)
+                {
+                    _cts.Token.ThrowIfCancellationRequested();
+                    var hc1 = await _sequenceService.VisionAFNoResult(
+                        CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, _cts.Token);
+                    var hc2 = await _sequenceService.VisionAFNoResult(
+                        CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, _cts.Token);
+                    RepeatCurrent = i + 1;
+                    await writer.WriteLineAsync($"{DateTime.Now},{hc1.x:F6},{hc1.y:F6},{hc2.x:F6},{hc2.y:F6}");
+                    await writer.FlushAsync();
+                    if (i < 19)
+                        await Task.Delay(TimeSpan.FromSeconds(20), _cts.Token);
+                }
+                _logger.Information("AlignNoAF CSV 저장 완료: {Path} ({Count}건)", filePath, RepeatCurrent);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("AlignNoAF 측정 취소 — {Count}회 완료", RepeatCurrent);
+            }
+            catch (Exception e)
+            {
+                _logger.Warning("AlignNoAF 측정 실패: {Msg}", e.Message);
+            }
+            finally
+            {
+                IsRepeatRunning = false;
+            }
+        }
+
+
         // 마지막 입력값 보존용
         private int _repeatCount = 5;
         // ═════════════════════════════════════════════════════
@@ -746,7 +928,6 @@ namespace HCB.UI
 
             TopHighAlignState = StepState.Completed;
         }
-
 
 
         private async Task RunBtmHighAlign(CancellationToken ct)
