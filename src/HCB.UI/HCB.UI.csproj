@@ -92,6 +92,9 @@
   <Page Include="SUB UI\PromptModal\RecipeCreateWindow.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\PromptModal\RepeatMeasureDialog.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\PromptModal\VacuumSelector.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -236,6 +239,7 @@
   <Compile Include="MAIN UI\ViewModels\USub06ViewModel.cs" />
   <Compile Include="MAIN UI\ViewModels\USub07ViewModel.cs" />
   <Compile Include="MAIN UI\VisionPage.xaml.cs" />
+  <Compile Include="Models\AlignContext.cs" />
   <Compile Include="Models\AlignOffset.cs" />
   <Compile Include="Models\LabelValue.cs" />
   <Compile Include="SERVICE\CalibrationService.cs" />
@@ -280,6 +284,7 @@
   <Compile Include="SUB UI\PromptModal\DialogWindowBase.cs" />
   <Compile Include="SUB UI\PromptModal\JogWindow.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
+  <Compile Include="SUB UI\PromptModal\RepeatMeasureDialog.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\VacuumSelector.xaml.cs" />
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
   <Compile Include="SUB UI\Title\Headerbar.xaml.cs" />

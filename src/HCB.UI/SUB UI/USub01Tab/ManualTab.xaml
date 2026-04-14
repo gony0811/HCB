@@ -263,7 +263,7 @@
                                                         Binding="{Binding Name}"
                                                         Width="*"/>
                                     <DataGridTextColumn Header="위치"
-                                                        Binding="{Binding Position, StringFormat=F3}"
+                                                        Binding="{Binding Position, StringFormat=F5}"
                                                         Width="90"/>
                                     <DataGridTextColumn Header="속도"
                                                         Binding="{Binding Speed, StringFormat=F2}"
@@ -324,7 +324,7 @@
                                       Margin="8,6,8,4">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="이름"   Binding="{Binding Name}"                     Width="*"/>
-                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F3}" Width="90"/>
+                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F5}" Width="90"/>
                                     <DataGridTextColumn Header="속도"   Binding="{Binding Speed, StringFormat=F2}"    Width="80"/>
                                     <DataGridTemplateColumn Header="동작" Width="170">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -371,7 +371,7 @@
                                       Margin="8,6,8,4">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="이름"   Binding="{Binding Name}"                     Width="*"/>
-                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F3}" Width="90"/>
+                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F5}" Width="90"/>
                                     <DataGridTextColumn Header="속도"   Binding="{Binding Speed, StringFormat=F2}"    Width="80"/>
                                     <DataGridTemplateColumn Header="동작" Width="170">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -420,7 +420,7 @@
                                       Margin="8,6,8,4">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="이름"   Binding="{Binding Name}"                     Width="*"/>
-                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F3}" Width="90"/>
+                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F5}" Width="90"/>
                                     <DataGridTextColumn Header="속도"   Binding="{Binding Speed, StringFormat=F2}"    Width="80"/>
                                     <DataGridTemplateColumn Header="동작" Width="170">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -469,7 +469,7 @@
                                       Margin="8,6,8,4">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="이름"   Binding="{Binding Name}"                     Width="*"/>
-                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F3}" Width="90"/>
+                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F5}" Width="90"/>
                                     <DataGridTextColumn Header="속도"   Binding="{Binding Speed, StringFormat=F2}"    Width="80"/>
                                     <DataGridTemplateColumn Header="동작" Width="170">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -524,7 +524,7 @@
                                       Margin="8,6,8,4">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="이름"   Binding="{Binding Name}"                     Width="*"/>
-                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F3}" Width="90"/>
+                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F5}" Width="90"/>
                                     <DataGridTextColumn Header="속도"   Binding="{Binding Speed, StringFormat=F2}"    Width="80"/>
                                     <DataGridTemplateColumn Header="동작" Width="170">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -573,7 +573,7 @@
                                       Margin="8,6,8,4">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="이름"   Binding="{Binding Name}"                     Width="*"/>
-                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F3}" Width="90"/>
+                                    <DataGridTextColumn Header="위치"   Binding="{Binding Position, StringFormat=F5}" Width="90"/>
                                     <DataGridTextColumn Header="속도"   Binding="{Binding Speed, StringFormat=F2}"    Width="80"/>
                                     <DataGridTemplateColumn Header="동작" Width="170">
                                         <DataGridTemplateColumn.CellTemplate>

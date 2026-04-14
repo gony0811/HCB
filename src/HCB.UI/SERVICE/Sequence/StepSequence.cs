@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static HCB.UI.SERVICE.CalibrationService;
@@ -144,50 +142,7 @@ namespace HCB.UI
             }
         }
 
-        // 테스트를 위해 만들어진 버전입니다. 실제로는 아래의 버전을 사용해야합니다. 
-        public async Task TopDieDrop(CancellationToken ct)
-        {
-            if (double.TryParse(_recipeService.FindByParam("TopDieThickness").Value, out double topDieThickness))
-            { }
-            else
-            {
-                throw new Exception("레시피 TopDieThickness값이 Double타입이 아닙니다");
-            }
-
-            if (double.TryParse(_recipeService.FindByParam("BtmDieThickness").Value, out double btmDieThickness))
-            { }
-            else
-            {
-                throw new Exception("레시피 btmDieThickness값이 Double타입이 아닙니다");
-            }
-
-            if (double.TryParse(_recipeService.FindByParam("CenterToHC2OffsetX").Value, out double CenterToHC2OffsetX))
-            { }
-            else
-            {
-                throw new Exception("레시피 CenterToHC2OffsetX값이 Double타입이 아닙니다");
-            }
-
-            if (double.TryParse(_recipeService.FindByParam("CenterToHC2OffsetY").Value, out double CenterToHC2OffsetY))
-            { }
-            else
-            {
-                throw new Exception("레시피 CenterToHC2OffsetY값이 Double타입이 아닙니다");
-            }
-
-
-            // W-Table로 이동
-            await Init_Head(ct);
-            await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
-            await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", -topDieThickness - btmDieThickness, ct);
-            //await Pressurize();
-            await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness, ct);
-            bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
-            await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness - 1, ct);
-            await Init_Head(ct);
-
-            if (!result) throw new Exception("HeadPicker를 확인해주세요");
-        }
+        
 
         public async Task<Dictionary<string, VisionMarkResult>> TopDieVision(CancellationToken ct)
         {
@@ -363,6 +318,40 @@ namespace HCB.UI
                 rightAlign.DyCamToMark = rAlignXY.Y;
 
                 return rightAlign;
+
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+        public async Task<VisionMarkResult> VisionResult(CameraType cameraType, MarkType markType, DirectType directType, string yName,  CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Top Die Vision Start");
+                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+
+                var result = false;
+
+                VisionMarkResult visionResult = new VisionMarkResult
+                {
+                    MarkType = markType,
+                    DirectType = directType,
+                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = await GetCurrentPosition(yName, ct)
+                };
+
+                result = await communicationService.RequestAFStart(cameraType, markType, ct);
+                if (result == false) throw new Exception("AF 실패");
+
+                var xy = await communicationService.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+                VisionResult(xy);
+                visionResult.DxCamToMark = xy.X;
+                visionResult.DyCamToMark = xy.Y;
+
+                return visionResult;
 
             }
             catch (Exception e)

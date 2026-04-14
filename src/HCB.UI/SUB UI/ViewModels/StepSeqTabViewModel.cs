@@ -5,11 +5,13 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Telerik.Windows.Documents.Spreadsheet.Expressions.Functions;
+using Telerik.Windows.Controls.DataVisualization.Map.BingRest;
 using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
@@ -17,23 +19,31 @@ namespace HCB.UI
     [ViewModel(Lifetime.Singleton)]
     public partial class StepSeqTabViewModel : ObservableObject
     {
-        private CancellationTokenSource _cts;
+        // ── 의존성 ────────────────────────────────────────────
         private readonly ILogger _logger;
         private readonly SequenceHelper _sequenceHelper;
         private readonly SequenceService _sequenceService;
         private readonly DeviceManager _deviceManager;
         private readonly RecipeService _recipeService;
         private readonly ECParamService _ecParamService;
-        private IOManager ioManager;
+        private readonly IOManager _ioManager;
 
         public RecipeService RecipeService => _recipeService;
 
+        // ── CancellationToken ─────────────────────────────────
+        private CancellationTokenSource _cts;
+
+        private AlignContext _alignCtx;
+
+        // ── Die 번호 ──────────────────────────────────────────
         [ObservableProperty] private int topDie = 0;
         [ObservableProperty] private int bottomDie = 0;
 
+        // ── Low Align 비전 결과 ───────────────────────────────
         [ObservableProperty] private VisionMarkPositionResponse visionBtmLowAlign;
         [ObservableProperty] private VisionMarkPositionResponse visionTopLowAlign;
 
+        // ── High Align 비전 결과 (UI 표시용) ─────────────────
         [ObservableProperty] private VisionMarkResult topRightAlign;
         [ObservableProperty] private VisionMarkResult topRightFid;
         [ObservableProperty] private VisionMarkResult topLeftAlign;
@@ -44,6 +54,7 @@ namespace HCB.UI
         [ObservableProperty] private VisionMarkResult btmLeftAlign;
         [ObservableProperty] private VisionMarkResult btmLeftFid;
 
+        // ── Offset 표시용 ─────────────────────────────────────
         [ObservableProperty] private double topAlignRelOffsetX;
         [ObservableProperty] private double topAlignRelOffsetY;
         [ObservableProperty] private double topAlignRelOffsetT;
@@ -56,46 +67,75 @@ namespace HCB.UI
         [ObservableProperty] private double btmOffsetY;
         [ObservableProperty] private double btmOffsetT;
 
+        // ── 기타 UI ───────────────────────────────────────────
         [ObservableProperty] private RecipeDto selectedRecipe;
-
-        [ObservableProperty]
-        private ObservableCollection<BondingDataPoint> bondingHistory = new ObservableCollection<BondingDataPoint>();
-
-        // ── Step Lamp States ─────────────────────────────────
-        [ObservableProperty] private StepState initState          = StepState.Idle;
-        [ObservableProperty] private StepState dieLoadState       = StepState.Idle;
-        [ObservableProperty] private StepState waferLoadState     = StepState.Idle;
-        [ObservableProperty] private StepState recipeSelectState  = StepState.Idle;
-
-        [ObservableProperty] private StepState btmLowAlignState  = StepState.Idle;
-        [ObservableProperty] private StepState btmPickupState    = StepState.Idle;
-        [ObservableProperty] private StepState btmHighAlignState = StepState.Idle;
-        [ObservableProperty] private StepState btmPlaceState     = StepState.Idle;
-
-        [ObservableProperty] private StepState topLowAlignState  = StepState.Idle;
-        [ObservableProperty] private StepState topPickupState    = StepState.Idle;
-        [ObservableProperty] private StepState topHighAlignState = StepState.Idle;
-        [ObservableProperty] private StepState topPlaceState     = StepState.Idle;
-        [ObservableProperty] private StepState topBondingState   = StepState.Idle;
-
         [ObservableProperty] private bool isInitInfoOpen;
 
+        [ObservableProperty]
+        private ObservableCollection<BondingDataPoint> bondingHistory
+            = new ObservableCollection<BondingDataPoint>();
+
+        // ── Step Lamp States ──────────────────────────────────
+        [ObservableProperty] private StepState initState = StepState.Idle;
+        [ObservableProperty] private StepState dieLoadState = StepState.Idle;
+        [ObservableProperty] private StepState waferLoadState = StepState.Idle;
+        [ObservableProperty] private StepState recipeSelectState = StepState.Idle;
+
+        [ObservableProperty] private StepState btmLowAlignState = StepState.Idle;
+        [ObservableProperty] private StepState btmPickupState = StepState.Idle;
+        [ObservableProperty] private StepState btmHighAlignState = StepState.Idle;
+        [ObservableProperty] private StepState btmPlaceState = StepState.Idle;
+
+        [ObservableProperty] private StepState topLowAlignState = StepState.Idle;
+        [ObservableProperty] private StepState topPickupState = StepState.Idle;
+        [ObservableProperty] private StepState topHighAlignState = StepState.Idle;
+        [ObservableProperty] private StepState topPlaceState = StepState.Idle;
+        [ObservableProperty] private StepState topBondingState = StepState.Idle;
+
+        [ObservableProperty] private double hzPosition;
+        
+        [ObservableProperty] private double detailX;
+        [ObservableProperty] private double detailY;
+        [ObservableProperty] private double detailT;
+
+        [ObservableProperty] private bool _isRepeatRunning;
+        [ObservableProperty] private int _repeatCurrent;   // 현재 몇 번째
+        [ObservableProperty] private int _repeatTotal;     // 전체 몇 번
+
+        // 화면에 표시할 텍스트 (예: "3 / 5")
+        public string RepeatProgressText =>
+            IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
+
+        // RepeatCurrent, RepeatTotal 변경 시 텍스트도 갱신
+        partial void OnRepeatCurrentChanged(int value) =>
+            OnPropertyChanged(nameof(RepeatProgressText));
+        partial void OnRepeatTotalChanged(int value) =>
+            OnPropertyChanged(nameof(RepeatProgressText));
+
+        // ── D-Table IO ────────────────────────────────────────
         public SequenceServiceVM SequenceServiceVM { get; }
 
         [ObservableProperty]
-        private ObservableCollection<SensorIoItemViewModel> dTableList = new ObservableCollection<SensorIoItemViewModel>();
+        private ObservableCollection<SensorIoItemViewModel> dTableList
+            = new ObservableCollection<SensorIoItemViewModel>();
 
-        private readonly List<string> dTableNameList = new List<string>
+        private readonly List<string> _dTableNameList = new List<string>
         {
-            "DIE 1", "DIE 2", "DIE 3", "DIE 4", "DIE 5", "DIE 6", "DIE 7", "DIE 8", "DIE 9",
+            "DIE 1","DIE 2","DIE 3","DIE 4","DIE 5","DIE 6","DIE 7","DIE 8","DIE 9",
         };
 
-        private readonly List<string> dIoNameList = new List<string>
+        private readonly List<string> _dIoNameList = new List<string>
         {
-            IoExtensions.DO_DTABLE_VAC_1_ON, IoExtensions.DO_DTABLE_VAC_2_ON, IoExtensions.DO_DTABLE_VAC_3_ON,
-            IoExtensions.DO_DTABLE_VAC_4_ON, IoExtensions.DO_DTABLE_VAC_5_ON, IoExtensions.DO_DTABLE_VAC_6_ON,
-            IoExtensions.DO_DTABLE_VAC_7_ON, IoExtensions.DO_DTABLE_VAC_8_ON, IoExtensions.DO_DTABLE_VAC_9_ON,
+            IoExtensions.DO_DTABLE_VAC_1_ON, IoExtensions.DO_DTABLE_VAC_2_ON,
+            IoExtensions.DO_DTABLE_VAC_3_ON, IoExtensions.DO_DTABLE_VAC_4_ON,
+            IoExtensions.DO_DTABLE_VAC_5_ON, IoExtensions.DO_DTABLE_VAC_6_ON,
+            IoExtensions.DO_DTABLE_VAC_7_ON, IoExtensions.DO_DTABLE_VAC_8_ON,
+            IoExtensions.DO_DTABLE_VAC_9_ON,
         };
+
+        // ═════════════════════════════════════════════════════
+        //  생성자
+        // ═════════════════════════════════════════════════════
 
         public StepSeqTabViewModel(
             SequenceServiceVM sequenceServiceVM,
@@ -108,43 +148,55 @@ namespace HCB.UI
             ILogger logger)
         {
             _logger = logger.ForContext<StepSeqTabViewModel>();
-            this.SequenceServiceVM = sequenceServiceVM;
-            this._sequenceService = sequenceService;
-            this._sequenceHelper = sequenceHelper;
-            this._deviceManager = deviceManager;
-            this._recipeService = recipeService;
-            this.ioManager = ioManager;
-            this._ecParamService = eCParamService;
-            var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+            SequenceServiceVM = sequenceServiceVM;
+            _sequenceService = sequenceService;
+            _sequenceHelper = sequenceHelper;
+            _deviceManager = deviceManager;
+            _recipeService = recipeService;
+            _ioManager = ioManager;
+            _ecParamService = eCParamService;
+
+            var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+            var p = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            //hz = p.MotionList.FirstOrDefault(m => m.Name == MotionExtensions.h_z);
             if (ioDevice != null)
             {
-                for (var i = 0; i < dTableNameList.Count; i++)
+                for (var i = 0; i < _dTableNameList.Count; i++)
                 {
-                    var result = ioManager.CreateIoVM(dTableNameList[i], dIoNameList[i], dTableNameList[i]);
-                    if (result != null) DTableList.Add(result);
+                    var vm = _ioManager.CreateIoVM(_dTableNameList[i], _dIoNameList[i], _dTableNameList[i]);
+                    if (vm != null) DTableList.Add(vm);
                 }
             }
+
+
         }
 
-        // ── STOP ─────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════
+        //  STOP
+        // ═════════════════════════════════════════════════════
+
         [RelayCommand]
         public async Task Stop()
         {
-            if (_cts != null && !_cts.IsCancellationRequested)
-            {
-                _cts.Cancel();
-                await _sequenceService.StopAsync(_cts.Token);
-                InitState = StepState.Idle;
-                BtmLowAlignState = BtmPickupState = BtmPlaceState = StepState.Idle;
-                TopLowAlignState = TopPickupState = TopHighAlignState = TopPlaceState = StepState.Idle;
-            }
+            if (_cts == null || _cts.IsCancellationRequested) return;
+
+            _cts.Cancel();
+            await _sequenceService.StopAsync(_cts.Token);
+
+            InitState = StepState.Idle;
+            BtmLowAlignState = BtmPickupState = BtmPlaceState = StepState.Idle;
+            TopLowAlignState = TopPickupState = TopHighAlignState
+                             = TopPlaceState = StepState.Idle;
         }
 
-        // ── INIT ─────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════
+        //  INIT
+        // ═════════════════════════════════════════════════════
+
         [RelayCommand]
         public async Task Init()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             try
             {
                 SequenceServiceVM.ResetInitProgress();
@@ -156,11 +208,14 @@ namespace HCB.UI
             catch (Exception e) { InitState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
-        // Die Load
+        // ═════════════════════════════════════════════════════
+        //  DIE LOAD
+        // ═════════════════════════════════════════════════════
+
         [RelayCommand]
         public async Task DieLoad()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             try
             {
                 await _sequenceService.DTableLoading(_cts.Token);
@@ -193,186 +248,91 @@ namespace HCB.UI
                     "Die Load 선택 완료 — TOP: [{Top}]  BOT: [{Bot}]",
                     string.Join(", ", topList),
                     string.Join(", ", botList));
-
-                //await _sequenceService.DTableLoadComplete(TopDie, BottomDie, _cts.Token);
             }
-            catch (Exception e)
-            {
-                _logger.Error(e.Message);
-            }
+            catch (Exception e) { _logger.Error(e.Message); }
         }
 
-        [RelayCommand]
-        public void InitInfo() => IsInitInfoOpen = true;
+        // ═════════════════════════════════════════════════════
+        //  Info 팝업 커맨드
+        // ═════════════════════════════════════════════════════
+
+        [RelayCommand] public void InitInfo() => IsInitInfoOpen = true;
+        [RelayCommand] public void CloseInitInfo() => IsInitInfoOpen = false;
 
         [RelayCommand]
         public void OpenTopHighAlignInfo()
         {
-            var rightFid   = TopRightFid;
-            var rightAlign = TopRightAlign;
-            var leftFid    = TopLeftFid;
-            var leftAlign  = TopLeftAlign;
-
+            var (rf, ra, lf, la) = (TopRightFid, TopRightAlign, TopLeftFid, TopLeftAlign);
             _ = RunDialogOnNewThread(() =>
             {
-                var window = new TopHighAlignInfoWindow(rightFid, rightAlign, leftFid, leftAlign)
+                new TopHighAlignInfoWindow(rf, ra, lf, la)
                 {
                     Header = "고배율 보정 정보 (Top Die)",
-                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
-                };
-                window.ShowDialog();
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                }.ShowDialog();
             });
         }
 
         [RelayCommand]
         public void BtmHighAlignInfo()
         {
-            var rightFid   = BtmRightFid;
-            var rightAlign = BtmRightAlign;
-            var leftFid    = BtmLeftFid;
-            var leftAlign  = BtmLeftAlign;
-
+            var (rf, ra, lf, la) = (BtmRightFid, BtmRightAlign, BtmLeftFid, BtmLeftAlign);
             _ = RunDialogOnNewThread(() =>
             {
-                var window = new TopHighAlignInfoWindow(rightFid, rightAlign, leftFid, leftAlign, useWaferY: true)
+                new TopHighAlignInfoWindow(rf, ra, lf, la, useWaferY: true)
                 {
                     Header = "고배율 보정 정보 (Bottom Die)",
-                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
-                };
-                window.ShowDialog();
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                }.ShowDialog();
             });
         }
 
         [RelayCommand]
-        public async Task BtmHighAlign()
+        public void TopHighAlignInfo()   // Bonding INFO 버튼
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
-            int mode = 0;
-            try
-            {
-                BtmHighAlignState = StepState.InProgress;
-
-                // HC1_T (Left 카메라), HC2_T (Right 카메라) 각도 로드
-                var hc1Param = _ecParamService.FindByName(MotionExtensions.HC1_T);
-                var hc2Param = _ecParamService.FindByName(MotionExtensions.HC2_T);
-                if (hc1Param.Id != 0 && hc2Param.Id != 0) mode = 1; // ← 버그 수정: 둘 다 존재할 때
-
-                double lPiezoOffsetX = -6.1585, lPiezoOffsetY = 3.5915;
-                double rPiezoOffsetX = 6.1585, rPiezoOffsetY = -3.5915;
-
-                await _sequenceService.TopDiePlace(_cts.Token);
-
-                // ── Right 마크 (HC2 카메라) ─────────────────────────────────────
-                BtmRightFid = await _sequenceService.BtmDieVisionRightFid(_cts.Token);
-                BtmRightFid.StageX -= rPiezoOffsetX; BtmRightFid.StageY -= rPiezoOffsetY;
-                BtmRightAlign = await _sequenceService.BtmDieVisionRightAlign(_cts.Token);
-                BtmRightAlign.StageX -= rPiezoOffsetX; BtmRightAlign.StageY -= rPiezoOffsetY;
-
-                // ── Left 마크 (HC1 카메라) ──────────────────────────────────────
-                BtmLeftFid = await _sequenceService.BtmDieVisionLeftFid(_cts.Token);
-                BtmLeftFid.StageX -= lPiezoOffsetX; BtmLeftFid.StageY -= lPiezoOffsetY;
-                BtmLeftAlign = await _sequenceService.BtmDieVisionLeftAlign(_cts.Token);
-                BtmLeftAlign.StageX -= lPiezoOffsetX; BtmLeftAlign.StageY -= lPiezoOffsetY;
-
-                // ── 카메라 각도 보정 (HC1 → Left, HC2 → Right) ──────────────────
-                if (mode == 1)
-                {
-                    double hc1Rad = double.Parse(hc1Param.Value);
-                    double hc2Rad = double.Parse(hc2Param.Value);
-
-                    var corrRF = CalibrationMath.ApplyRotation(Point2D.of(BtmRightFid.DxCamToMark, BtmRightFid.DyCamToMark), hc2Rad);
-                    var corrRA = CalibrationMath.ApplyRotation(Point2D.of(BtmRightAlign.DxCamToMark, BtmRightAlign.DyCamToMark), hc2Rad);
-                    var corrLF = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftFid.DxCamToMark, BtmLeftFid.DyCamToMark), hc1Rad);
-                    var corrLA = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftAlign.DxCamToMark, BtmLeftAlign.DyCamToMark), hc1Rad);
-                    BtmRightFid.DxCamToMark = corrRF.X; BtmRightFid.DyCamToMark = corrRF.Y;
-                    BtmRightAlign.DxCamToMark = corrRA.X; BtmRightAlign.DyCamToMark = corrRA.Y;
-                    BtmLeftFid.DxCamToMark = corrLF.X; BtmLeftFid.DyCamToMark = corrLF.Y;
-                    BtmLeftAlign.DxCamToMark = corrLA.X; BtmLeftAlign.DyCamToMark = corrLA.Y;
-                }
-
-                // ── Btm: Fid 기준 AlignMark 상대 오프셋 ────────────────────────
-                double btmRXFidToAlign = BtmRightFid.CenterX - BtmRightAlign.CenterX;
-                double btmRYFidToAlign = BtmRightFid.CenterY - BtmRightAlign.CenterY;
-                double btmLXFidToAlign = BtmLeftFid.CenterX - BtmLeftAlign.CenterX;
-                double btmLYFidToAlign = BtmLeftFid.CenterY - BtmLeftAlign.CenterY;
-
-                double btmAlignRelOffsetX = (btmRXFidToAlign + btmLXFidToAlign) / 2.0;
-                double btmAlignRelOffsetY = (btmRYFidToAlign + btmLYFidToAlign) / 2.0;
-
-                // ── 하나의 좌표계로 통합: Top AlignMark 위치를 Btm 좌표계로 변환 ─
-                // Btm 카메라는 아래에서 보므로 X축이 반전됨 (경우에 따라 부호 확인 필요)
-                double topInBtmX = -TopAlignRelOffsetX; // 좌우 미러 보정
-                double topInBtmY = TopAlignRelOffsetY;
-                double topInBtmT = -TopAlignRelOffsetT; // 회전 방향 반전
-
-                // ── 최종 보정량: Btm AlignMark → Top AlignMark 위치에 맞춤 ──────
-                BtmOffsetX = topInBtmX - btmAlignRelOffsetX;
-                BtmOffsetY = topInBtmY - btmAlignRelOffsetY;
-
-                // T 보정량: Btm Fid 기준선 - Btm Align 기준선, 그리고 Top과의 차이
-                double btmFidTheta = CalcTheta(BtmLeftFid, BtmRightFid);
-                double btmAlignTheta = CalcTheta(BtmLeftAlign, BtmRightAlign);
-                double btmOffsetT = btmFidTheta - btmAlignTheta;
-                BtmOffsetT = topInBtmT - btmOffsetT;
-
-                BtmHighAlignState = StepState.Completed;
-            }
-            catch (OperationCanceledException) { BtmHighAlignState = StepState.Idle; }
-            catch (Exception e) { BtmHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
-        }
-
-        [RelayCommand]
-        public void CloseInitInfo() => IsInitInfoOpen = false;
-
-        // ── Bonding Info (BONDING 스텝 INFO 버튼) ────────────────────
-        [RelayCommand]
-        public void TopHighAlignInfo()
-        {
-            var recipeService = _recipeService;
-            var history       = BondingHistory.ToList();
-
+            var history = BondingHistory.ToList();
             _ = RunDialogOnNewThread(() =>
             {
-                var window = new BondingInfoWindow(recipeService, history)
+                new BondingInfoWindow(_recipeService, history)
                 {
                     WindowStartupLocation = WindowStartupLocation.CenterScreen
-                };
-                window.ShowDialog();
+                }.ShowDialog();
             });
         }
 
-        // BOTTOM ALIGN 
+        // ═════════════════════════════════════════════════════
+        //  BOTTOM 시퀀스
+        // ═════════════════════════════════════════════════════
+
         [RelayCommand]
         public async Task BtmLowAlign()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             try
             {
                 if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); return; }
                 BtmLowAlignState = StepState.InProgress;
-                VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(BottomDie, MarkType.DIE_CENTER_BOTTOM, _cts.Token);
+                VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(
+                    BottomDie, MarkType.DIE_CENTER_BOTTOM, _cts.Token);
                 BtmLowAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmLowAlignState = StepState.Idle; }
-            catch (Exception e)
-            {
-                BtmLowAlignState =  StepState.Failed;
-                _logger.Warning(e.Message); }
+            catch (Exception e) { BtmLowAlignState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
         [RelayCommand]
         public async Task BtmPickup()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             try
             {
                 if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); return; }
                 if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 해주세요"); return; }
+
                 BtmPickupState = StepState.InProgress;
                 await _sequenceService.DTableBTMPickup(BottomDie, VisionBtmLowAlign, _cts.Token);
                 await _sequenceHelper.BTMVac(BottomDie, eOnOff.Off, _cts.Token);
                 BtmPickupState = StepState.Completed;
-                
             }
             catch (OperationCanceledException) { BtmPickupState = StepState.Idle; }
             catch (Exception e) { BtmPickupState = StepState.Failed; _logger.Warning(e.Message); }
@@ -381,69 +341,68 @@ namespace HCB.UI
         [RelayCommand]
         public async Task BtmPlace()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             try
             {
                 BtmPlaceState = StepState.InProgress;
                 await _sequenceService.BtmDieDrop(1, _cts.Token);
                 BtmPlaceState = StepState.Completed;
-                
             }
             catch (OperationCanceledException) { BtmPlaceState = StepState.Idle; }
             catch (Exception e) { BtmPlaceState = StepState.Failed; _logger.Warning(e.Message); }
         }
+
         [RelayCommand]
         public async Task BtmFullSequence()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             var ct = _cts.Token;
             try
             {
                 if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); return; }
 
-                // 1. Low Align
                 BtmLowAlignState = StepState.InProgress;
                 VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(BottomDie, MarkType.DIE_CENTER_BOTTOM, ct);
                 BtmLowAlignState = StepState.Completed;
 
-                // 2. Pickup
                 if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 실패"); return; }
+
                 BtmPickupState = StepState.InProgress;
                 await _sequenceService.DTableBTMPickup(BottomDie, VisionBtmLowAlign, ct);
                 await _sequenceHelper.BTMVac(BottomDie, eOnOff.Off, ct);
                 BtmPickupState = StepState.Completed;
 
-                // 3. Place
                 BtmPlaceState = StepState.InProgress;
                 await _sequenceService.BtmDieDrop(1, ct);
                 BtmPlaceState = StepState.Completed;
             }
             catch (OperationCanceledException)
             {
-                BtmLowAlignState = BtmLowAlignState == StepState.InProgress ? StepState.Idle : BtmLowAlignState;
-                BtmPickupState = BtmPickupState == StepState.InProgress ? StepState.Idle : BtmPickupState;
-                BtmPlaceState = BtmPlaceState == StepState.InProgress ? StepState.Idle : BtmPlaceState;
+                BtmLowAlignState = IfInProgress(BtmLowAlignState, StepState.Idle);
+                BtmPickupState = IfInProgress(BtmPickupState, StepState.Idle);
+                BtmPlaceState = IfInProgress(BtmPlaceState, StepState.Idle);
             }
             catch (Exception e)
             {
-                BtmLowAlignState = BtmLowAlignState == StepState.InProgress ? StepState.Failed : BtmLowAlignState;
-                BtmPickupState = BtmPickupState == StepState.InProgress ? StepState.Failed : BtmPickupState;
-                BtmPlaceState = BtmPlaceState == StepState.InProgress ? StepState.Failed : BtmPlaceState;
+                BtmLowAlignState = IfInProgress(BtmLowAlignState, StepState.Failed);
+                BtmPickupState = IfInProgress(BtmPickupState, StepState.Failed);
+                BtmPlaceState = IfInProgress(BtmPlaceState, StepState.Failed);
                 _logger.Warning(e.Message);
             }
         }
 
-        // ── TOP ALIGN ────────────────────────────────────────
+        // ═════════════════════════════════════════════════════
+        //  TOP 시퀀스 — 개별 커맨드
+        // ═════════════════════════════════════════════════════
+
         [RelayCommand]
         public async Task TopLowAlign()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             try
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
-                TopLowAlignState = StepState.InProgress;
-                VisionTopLowAlign = await _sequenceService.TopCarrierAlign(TopDie, MarkType.DIE_CENTER_TOP, _cts.Token);
-                TopLowAlignState = StepState.Completed;
+                await RunTopLowAlign(_cts.Token);
             }
             catch (OperationCanceledException) { TopLowAlignState = StepState.Idle; }
             catch (Exception e) { TopLowAlignState = StepState.Failed; _logger.Warning(e.Message); }
@@ -452,14 +411,12 @@ namespace HCB.UI
         [RelayCommand]
         public async Task TopPickup()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             try
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
                 if (VisionTopLowAlign == null) { _logger.Information("Top Die Align 해주세요"); return; }
-                TopPickupState = StepState.InProgress;
-                await _sequenceService.DTableTOPPickup(TopDie, VisionTopLowAlign, _cts.Token);
-                TopPickupState = StepState.Completed;
+                await RunTopPickup(_cts.Token);
             }
             catch (OperationCanceledException) { TopPickupState = StepState.Idle; }
             catch (Exception e) { TopPickupState = StepState.Failed; _logger.Warning(e.Message); }
@@ -468,302 +425,333 @@ namespace HCB.UI
         [RelayCommand]
         public async Task TopHighAlign()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
-            int mode = 0;
+            ResetCts();
             try
             {
-                TopHighAlignState = StepState.InProgress;
-                TopRightFid = await _sequenceService.TopDieVisionRightFid(_cts.Token);
-                TopRightAlign = await _sequenceService.TopDieVisionRightAlign(_cts.Token);
-                TopLeftFid = await _sequenceService.TopDieVisionLeftFid(_cts.Token);
-                TopLeftAlign = await _sequenceService.TopDieVisionLeftAlign(_cts.Token);
-
-                var pcT = _ecParamService.FindByName(MotionExtensions.PC_T);
-                if (pcT.Id != 0) mode = 1;  // ← 버그 수정: Id != 0 일 때 파라미터 존재
-                if (mode == 1)
-                {
-                    double pcTRad = double.Parse(pcT.Value);
-                    var corrRF = CalibrationMath.ApplyRotation(Point2D.of(TopRightFid.DxCamToMark, TopRightFid.DyCamToMark), pcTRad);
-                    var corrRA = CalibrationMath.ApplyRotation(Point2D.of(TopRightAlign.DxCamToMark, TopRightAlign.DyCamToMark), pcTRad);
-                    var corrLF = CalibrationMath.ApplyRotation(Point2D.of(TopLeftFid.DxCamToMark, TopLeftFid.DyCamToMark), pcTRad);
-                    var corrLA = CalibrationMath.ApplyRotation(Point2D.of(TopLeftAlign.DxCamToMark, TopLeftAlign.DyCamToMark), pcTRad);
-                    TopRightFid.DxCamToMark = corrRF.X; TopRightFid.DyCamToMark = corrRF.Y;
-                    TopRightAlign.DxCamToMark = corrRA.X; TopRightAlign.DyCamToMark = corrRA.Y;
-                    TopLeftFid.DxCamToMark = corrLF.X; TopLeftFid.DyCamToMark = corrLF.Y;
-                    TopLeftAlign.DxCamToMark = corrLA.X; TopLeftAlign.DyCamToMark = corrLA.Y;
-                }
-
-                // ── Fid 기준 AlignMark 상대 오프셋 (Right / Left 각각) ──────────
-                // 버그 수정: rYFidToAlign = Fid.Y - Fid.Y → Fid.Y - Align.Y
-                double rXFidToAlign = TopRightFid.CenterX - TopRightAlign.CenterX;
-                double rYFidToAlign = TopRightFid.CenterY - TopRightAlign.CenterY; // ← 핵심 버그 수정
-                double lXFidToAlign = TopLeftFid.CenterX - TopLeftAlign.CenterX;
-                double lYFidToAlign = TopLeftFid.CenterY - TopLeftAlign.CenterY;
-
-                // ── X/Y 보정량: Fid 중심 - Align 중심 ───────────────────────────
-                double fidCenterX = (TopRightFid.CenterX + TopLeftFid.CenterX) / 2.0;
-                double fidCenterY = (TopRightFid.CenterY + TopLeftFid.CenterY) / 2.0;
-                double alignCenterX = (TopRightAlign.CenterX + TopLeftAlign.CenterX) / 2.0;
-                double alignCenterY = (TopRightAlign.CenterY + TopLeftAlign.CenterY) / 2.0;
-                TopOffsetX = fidCenterX - alignCenterX;
-                TopOffsetY = fidCenterY - alignCenterY;
-
-                // ── T 보정량: Fid 기준선 각도 - Align 기준선 각도 ───────────────
-                double fidTheta = CalcTheta(TopLeftFid, TopRightFid);
-                double alignTheta = CalcTheta(TopLeftAlign, TopRightAlign);
-                TopOffsetT = fidTheta - alignTheta;
-
-                // ── Fid 기준 AlignMark 상대 오프셋 저장 (BtmHighAlign에서 사용) ─
-                // Right/Left 평균 → Top AlignMark의 "Fid로부터의 위치 오차"
-                TopAlignRelOffsetX = (rXFidToAlign + lXFidToAlign) / 2.0;
-                TopAlignRelOffsetY = (rYFidToAlign + lYFidToAlign) / 2.0;
-                TopAlignRelOffsetT = TopOffsetT; // 각도 오프셋도 보존
-                
-                TopHighAlignState = StepState.Completed;
+                await RunTopHighAlign(_cts.Token);
             }
             catch (OperationCanceledException) { TopHighAlignState = StepState.Idle; }
             catch (Exception e) { TopHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
         [RelayCommand]
-        public async Task TopPlace()
+        public async Task BtmHighAlign()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             try
             {
-                TopBondingState = StepState.InProgress;
-                var offsetX = _recipeService.FindByParam("X_ALIGN_OFFSET");
-                var offsetY = _recipeService.FindByParam("Y_ALIGN_OFFSET");
-                var offsetT = _recipeService.FindByParam("T_ALIGN_OFFSET");
-
-                // ── 최종 보정량 합산 (Top + Btm) ──────────────────────────────
-                double totalOffsetX = TopOffsetX + BtmOffsetX + double.Parse(offsetX.Value);
-                double totalOffsetY = TopOffsetY + BtmOffsetY + double.Parse(offsetY.Value);
-                double totalOffsetT = TopOffsetT + BtmOffsetT + double.Parse(offsetT.Value);
-
-                // ── 보정량만큼 스테이지 이동 ───────────────────────────────────
-                await Task.WhenAll
-                    (
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, totalOffsetX, _cts.Token),
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, totalOffsetY, _cts.Token),
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_T, totalOffsetT, _cts.Token)
-                    );
-
-                // ── 보정 위치에서 내려놓기 ─────────────────────────────────────
-                await _sequenceService.Bonding(10000, _cts.Token);
-                await _sequenceService.Init_Head(_cts.Token);
-                TopBondingState = StepState.Completed;
+                await RunBtmHighAlign(_cts.Token);
             }
-            catch (OperationCanceledException) { BtmPlaceState = StepState.Idle; }
-            catch (Exception e) { BtmPlaceState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (OperationCanceledException) { BtmHighAlignState = StepState.Idle; }
+            catch (Exception e) { BtmHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
+        [RelayCommand]
+        public async Task TopPlace()
+        {
+            ResetCts();
+            try
+            {
+                await RunTopPlace(_cts.Token);
+            }
+            catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
+            catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
+        }
+
+        // ═════════════════════════════════════════════════════
+        //  TOP 시퀀스 — Full (1→2→3→4→5)
+        // ═════════════════════════════════════════════════════
 
         [RelayCommand]
         public async Task TopRunFullSequence()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             try
             {
-                // ── 0. 사전 조건 검사 ────────────────────────────────────────────
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
 
-                // ── 1. Top Low Align ─────────────────────────────────────────────
-                TopLowAlignState = StepState.InProgress;
-                VisionTopLowAlign = await _sequenceService.TopCarrierAlign(TopDie, MarkType.DIE_CENTER_TOP, _cts.Token);
-                TopLowAlignState = StepState.Completed;
-
-                // ── 2. Top Pickup ────────────────────────────────────────────────
-                TopPickupState = StepState.InProgress;
-                await _sequenceService.DTableTOPPickup(TopDie, VisionTopLowAlign, _cts.Token);
-                TopPickupState = StepState.Completed;
-
-                // ── 3. Top High Align ────────────────────────────────────────────
-                TopHighAlignState = StepState.InProgress;
-                int mode = 0;
-
-                TopRightFid = await _sequenceService.TopDieVisionRightFid(_cts.Token);
-                TopRightAlign = await _sequenceService.TopDieVisionRightAlign(_cts.Token);
-                TopLeftFid = await _sequenceService.TopDieVisionLeftFid(_cts.Token);
-                TopLeftAlign = await _sequenceService.TopDieVisionLeftAlign(_cts.Token);
-
-                var pcT = _ecParamService.FindByName(MotionExtensions.PC_T);
-                if (pcT.Id != 0) mode = 1;
-                if (mode == 1)
-                {
-                    double pcTRad = double.Parse(pcT.Value);
-                    var corrRF = CalibrationMath.ApplyRotation(Point2D.of(TopRightFid.DxCamToMark, TopRightFid.DyCamToMark), pcTRad);
-                    var corrRA = CalibrationMath.ApplyRotation(Point2D.of(TopRightAlign.DxCamToMark, TopRightAlign.DyCamToMark), pcTRad);
-                    var corrLF = CalibrationMath.ApplyRotation(Point2D.of(TopLeftFid.DxCamToMark, TopLeftFid.DyCamToMark), pcTRad);
-                    var corrLA = CalibrationMath.ApplyRotation(Point2D.of(TopLeftAlign.DxCamToMark, TopLeftAlign.DyCamToMark), pcTRad);
-                    TopRightFid.DxCamToMark = corrRF.X; TopRightFid.DyCamToMark = corrRF.Y;
-                    TopRightAlign.DxCamToMark = corrRA.X; TopRightAlign.DyCamToMark = corrRA.Y;
-                    TopLeftFid.DxCamToMark = corrLF.X; TopLeftFid.DyCamToMark = corrLF.Y;
-                    TopLeftAlign.DxCamToMark = corrLA.X; TopLeftAlign.DyCamToMark = corrLA.Y;
-                }
-
-                double rXFidToAlign = TopRightFid.CenterX - TopRightAlign.CenterX;
-                double rYFidToAlign = TopRightFid.CenterY - TopRightAlign.CenterY;
-                double lXFidToAlign = TopLeftFid.CenterX - TopLeftAlign.CenterX;
-                double lYFidToAlign = TopLeftFid.CenterY - TopLeftAlign.CenterY;
-
-                double fidCenterX = (TopRightFid.CenterX + TopLeftFid.CenterX) / 2.0;
-                double fidCenterY = (TopRightFid.CenterY + TopLeftFid.CenterY) / 2.0;
-                double alignCenterX = (TopRightAlign.CenterX + TopLeftAlign.CenterX) / 2.0;
-                double alignCenterY = (TopRightAlign.CenterY + TopLeftAlign.CenterY) / 2.0;
-                TopOffsetX = fidCenterX - alignCenterX;
-                TopOffsetY = fidCenterY - alignCenterY;
-
-                double topFidTheta = CalcTheta(TopLeftFid, TopRightFid);
-                double topAlignTheta = CalcTheta(TopLeftAlign, TopRightAlign);
-                TopOffsetT = topFidTheta - topAlignTheta;
-
-                TopAlignRelOffsetX = (rXFidToAlign + lXFidToAlign) / 2.0;
-                TopAlignRelOffsetY = (rYFidToAlign + lYFidToAlign) / 2.0;
-                TopAlignRelOffsetT = TopOffsetT;
-
-                TopHighAlignState = StepState.Completed;
-
-                // ── 4. Btm High Align ────────────────────────────────────────────
-                BtmHighAlignState = StepState.InProgress;
-                mode = 0;
-
-                var hc1Param = _ecParamService.FindByName(MotionExtensions.HC1_T);
-                var hc2Param = _ecParamService.FindByName(MotionExtensions.HC2_T);
-                if (hc1Param.Id != 0 && hc2Param.Id != 0) mode = 1;
-
-                double lPiezoOffsetX = -6.1585, lPiezoOffsetY = 3.5915;
-                double rPiezoOffsetX = 6.1585, rPiezoOffsetY = -3.5915;
-
-                await _sequenceService.TopDiePlace(_cts.Token);
-
-                BtmRightFid = await _sequenceService.BtmDieVisionRightFid(_cts.Token);
-                BtmRightFid.StageX -= rPiezoOffsetX; BtmRightFid.StageY -= rPiezoOffsetY;
-                BtmRightAlign = await _sequenceService.BtmDieVisionRightAlign(_cts.Token);
-                BtmRightAlign.StageX -= rPiezoOffsetX; BtmRightAlign.StageY -= rPiezoOffsetY;
-
-                BtmLeftFid = await _sequenceService.BtmDieVisionLeftFid(_cts.Token);
-                BtmLeftFid.StageX -= lPiezoOffsetX; BtmLeftFid.StageY -= lPiezoOffsetY;
-                BtmLeftAlign = await _sequenceService.BtmDieVisionLeftAlign(_cts.Token);
-                BtmLeftAlign.StageX -= lPiezoOffsetX; BtmLeftAlign.StageY -= lPiezoOffsetY;
-
-                if (mode == 1)
-                {
-                    double hc1Rad = double.Parse(hc1Param.Value);
-                    double hc2Rad = double.Parse(hc2Param.Value);
-                    var corrRF = CalibrationMath.ApplyRotation(Point2D.of(BtmRightFid.DxCamToMark, BtmRightFid.DyCamToMark), hc2Rad);
-                    var corrRA = CalibrationMath.ApplyRotation(Point2D.of(BtmRightAlign.DxCamToMark, BtmRightAlign.DyCamToMark), hc2Rad);
-                    var corrLF = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftFid.DxCamToMark, BtmLeftFid.DyCamToMark), hc1Rad);
-                    var corrLA = CalibrationMath.ApplyRotation(Point2D.of(BtmLeftAlign.DxCamToMark, BtmLeftAlign.DyCamToMark), hc1Rad);
-                    BtmRightFid.DxCamToMark = corrRF.X; BtmRightFid.DyCamToMark = corrRF.Y;
-                    BtmRightAlign.DxCamToMark = corrRA.X; BtmRightAlign.DyCamToMark = corrRA.Y;
-                    BtmLeftFid.DxCamToMark = corrLF.X; BtmLeftFid.DyCamToMark = corrLF.Y;
-                    BtmLeftAlign.DxCamToMark = corrLA.X; BtmLeftAlign.DyCamToMark = corrLA.Y;
-                }
-
-                double btmRXFidToAlign = BtmRightFid.CenterX - BtmRightAlign.CenterX;
-                double btmRYFidToAlign = BtmRightFid.CenterY - BtmRightAlign.CenterY;
-                double btmLXFidToAlign = BtmLeftFid.CenterX - BtmLeftAlign.CenterX;
-                double btmLYFidToAlign = BtmLeftFid.CenterY - BtmLeftAlign.CenterY;
-
-                double btmAlignRelOffsetX = (btmRXFidToAlign + btmLXFidToAlign) / 2.0;
-                double btmAlignRelOffsetY = (btmRYFidToAlign + btmLYFidToAlign) / 2.0;
-
-                double topInBtmX = -TopAlignRelOffsetX;
-                double topInBtmY = TopAlignRelOffsetY;
-                double topInBtmT = -TopAlignRelOffsetT;
-
-                BtmOffsetX = topInBtmX - btmAlignRelOffsetX;
-                BtmOffsetY = topInBtmY - btmAlignRelOffsetY;
-
-                double btmFidTheta = CalcTheta(BtmLeftFid, BtmRightFid);
-                double btmAlignTheta = CalcTheta(BtmLeftAlign, BtmRightAlign);
-                BtmOffsetT = topInBtmT - (btmFidTheta - btmAlignTheta);
-
-                BtmHighAlignState = StepState.Completed;
-
-                // ── 5. 보정량 합산 후 이동 및 Bonding ───────────────────────────
-                TopBondingState = StepState.InProgress;
-
-                var offsetX = _recipeService.FindByParam("X_ALIGN_OFFSET");
-                var offsetY = _recipeService.FindByParam("Y_ALIGN_OFFSET");
-                var offsetT = _recipeService.FindByParam("T_ALIGN_OFFSET");
-
-                // ── 최종 보정량 합산 (Top + Btm) ──────────────────────────────
-                double totalOffsetX = TopOffsetX + BtmOffsetX + double.Parse(offsetX.Value);
-                double totalOffsetY = TopOffsetY + BtmOffsetY + double.Parse(offsetY.Value);
-                double totalOffsetT = TopOffsetT + BtmOffsetT + double.Parse(offsetT.Value);
-
-                await Task.WhenAll(
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, totalOffsetX, _cts.Token),
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, totalOffsetY, _cts.Token),
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_T, totalOffsetT, _cts.Token)
-                );
-
-                await _sequenceService.Bonding(2000, _cts.Token);
-                await _sequenceService.Init_Head(_cts.Token);
-
-                TopBondingState = StepState.Completed;
+                await RunTopLowAlign(_cts.Token);
+                await RunTopPickup(_cts.Token);
+                await RunTopHighAlign(_cts.Token);
+                await RunBtmHighAlign(_cts.Token);
+                await RunTopPlace(_cts.Token);
             }
             catch (OperationCanceledException)
             {
-                TopLowAlignState = TopLowAlignState == StepState.InProgress ? StepState.Idle : TopLowAlignState;
-                TopPickupState = TopPickupState == StepState.InProgress ? StepState.Idle : TopPickupState;
-                TopHighAlignState = TopHighAlignState == StepState.InProgress ? StepState.Idle : TopHighAlignState;
-                BtmHighAlignState = BtmHighAlignState == StepState.InProgress ? StepState.Idle : BtmHighAlignState;
-                TopBondingState = TopBondingState == StepState.InProgress ? StepState.Idle : TopBondingState;
+                TopLowAlignState = IfInProgress(TopLowAlignState, StepState.Idle);
+                TopPickupState = IfInProgress(TopPickupState, StepState.Idle);
+                TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Idle);
+                BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Idle);
+                TopBondingState = IfInProgress(TopBondingState, StepState.Idle);
             }
             catch (Exception e)
             {
-                TopLowAlignState = TopLowAlignState == StepState.InProgress ? StepState.Failed : TopLowAlignState;
-                TopPickupState = TopPickupState == StepState.InProgress ? StepState.Failed : TopPickupState;
-                TopHighAlignState = TopHighAlignState == StepState.InProgress ? StepState.Failed : TopHighAlignState;
-                BtmHighAlignState = BtmHighAlignState == StepState.InProgress ? StepState.Failed : BtmHighAlignState;
-                TopBondingState = TopBondingState == StepState.InProgress ? StepState.Failed : TopBondingState;
+                TopLowAlignState = IfInProgress(TopLowAlignState, StepState.Failed);
+                TopPickupState = IfInProgress(TopPickupState, StepState.Failed);
+                TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Failed);
+                BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Failed);
+                TopBondingState = IfInProgress(TopBondingState, StepState.Failed);
                 _logger.Warning(e.Message);
             }
         }
 
+        // ═════════════════════════════════════════════════════
+        //  LowResult (Head 초기화 후 Wafer Center 이동)
+        // ═════════════════════════════════════════════════════
 
         [RelayCommand]
-        public async Task LowResult() 
+        public async Task LowResult()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
-            string centerLow = "WAFER_CENTER_LOW";
+            ResetCts();
+            const string centerLow = "WAFER_CENTER_LOW";
             try
             {
                 await _sequenceService.Init_Head(_cts.Token);
                 await Task.WhenAll(
                     _sequenceService.MotionsMove(MotionExtensions.H_X, centerLow, _cts.Token),
                     _sequenceService.MotionsMove(MotionExtensions.W_Y, centerLow, _cts.Token)
-                    );
+                );
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, centerLow, _cts.Token);
-            }catch(Exception e)
+            }
+            catch (Exception e) { _logger.Warning(e.Message); }
+        }
+
+        [RelayCommand]
+        public async Task HighResult()
+        {
+            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            try
+            {
+
+                await _sequenceService.TopDiePlace(_cts.Token);
+
+
+                var hc2Param = _ecParamService.FindByName(MotionExtensions.HC2_T);
+                double hc2Rad = double.Parse(hc2Param.Value);
+
+                // ── 1. Btm 우측 Align Mark로 이동 후 측정 (BTM RIGHT) ────────────
+                var bR = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, _cts.Token);
+
+                // ── 2. X: -500um 이동 ─────────────────────────────────────────────
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, -0.5, _cts.Token);
+
+                // ── 3. Top 우측 Align Mark 측정 (TOP RIGHT) ───────────────────────
+                var tR = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK_TOP, DirectType.RIGHT, MotionExtensions.W_Y, _cts.Token);
+
+                // ── 4. X: -12mm, Y: +7mm 이동 ────────────────────────────────────
+                await Task.WhenAll(
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, -12.0, _cts.Token),
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, 7.0, _cts.Token)
+                );
+
+                // ── 5. Left Align Mark 측정 (BTM LEFT) ───────────────────────────
+                var bL = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, _cts.Token);
+
+                // ── 6. X: +500um 이동 ─────────────────────────────────────────────
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, 0.5, _cts.Token);
+
+                // ── 7. Left Align Mark 측정 (TOP LEFT) ───────────────────────────
+                var tL = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK_TOP, DirectType.LEFT, MotionExtensions.W_Y, _cts.Token);
+
+                var br = CalibrationMath.ApplyRotation(Point2D.of(bR.DxCamToMark, bR.DyCamToMark), hc2Rad);
+                var bl = CalibrationMath.ApplyRotation(Point2D.of(bL.DxCamToMark, bL.DyCamToMark), hc2Rad);
+                var tr = CalibrationMath.ApplyRotation(Point2D.of(tR.DxCamToMark, tR.DyCamToMark), hc2Rad);
+                var tl = CalibrationMath.ApplyRotation(Point2D.of(tL.DxCamToMark, tL.DyCamToMark), hc2Rad);
+
+                bR.DxCamToMark = br.X; bL.DxCamToMark = bl.X;
+                bR.DyCamToMark = br.Y; bL.DyCamToMark = bl.Y;
+                tR.DxCamToMark = tr.X; tL.DxCamToMark = tl.X;
+                tR.DyCamToMark = tr.Y; tL.DyCamToMark = tl.Y;
+
+                double bCX = (bR.CenterX + bL.CenterX) / 2;
+                double bCY = (bR.CenterWaferY + bL.CenterWaferY) / 2;
+                double tCX = (tR.CenterX + tL.CenterX) / 2;
+                double tCY = (tR.CenterWaferY + tL.CenterWaferY) / 2;
+
+                double btmTheta = CalcTheta(bL, bR);
+                double topTheta = CalcTheta(tL, tR);
+                double deltaTheta = btmTheta - topTheta;
+
+                DetailX = tCX - bCX;
+                DetailY = tCY - bCY;
+                DetailT = deltaTheta - 2.07;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("HighResult 작업이 취소되었습니다.");
+            }
+            catch (Exception e)
             {
                 _logger.Warning(e.Message);
             }
-            
         }
-        // ── 모달창 별도 STA 스레드 실행 헬퍼 ────────────────────────
-        // ShowDialog()를 새 STA 스레드에서 실행하여 메인 UI가 블로킹되지 않도록 한다.
+
+        [RelayCommand]
+        public async Task RepeatMeasure()
+        {
+            // ── 1. 반복 횟수 입력 모달 ──
+            var dialog = new RepeatMeasureDialog(_repeatCount);
+            if (dialog.ShowDialog() != true) return;
+
+            int repeat = dialog.RepeatCount;
+            _repeatCount = repeat; // 마지막 입력값 기억
+
+            // ── 2. 진행 상태 초기화 ──
+            ResetCts();
+            RepeatTotal = repeat;
+            RepeatCurrent = 0;
+            IsRepeatRunning = true;
+
+            var results = new List<AlignContext>();
+
+            try
+            {
+                for (int i = 0; i < repeat; i++)
+                {
+                    RepeatCurrent = i + 1;  // 1-based 표시
+                    var result = await _sequenceService.TopHighAlign(
+                        new AlignContext(), _cts.Token);
+                    results.Add(result);
+                }
+                var path = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    $"align_results_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+                ExportToCsv(results, path);
+            }
+            catch (OperationCanceledException)
+            {
+                // STOP 버튼으로 취소된 경우
+            }
+            finally
+            {
+                IsRepeatRunning = false;
+            }
+        }
+
+        // 마지막 입력값 보존용
+        private int _repeatCount = 5;
+        // ═════════════════════════════════════════════════════
+        //  공개 Reset 메서드 (외부에서 상태 초기화 시 사용)
+        // ═════════════════════════════════════════════════════
+
+        public async Task BtmInit()
+        {
+            ResetCts();
+            await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, _cts.Token);
+            BottomDie = 0;
+            VisionBtmLowAlign = null;
+            BtmLowAlignState = BtmPickupState = BtmPlaceState = StepState.Idle;
+        }
+
+        public async Task TopInit()
+        {
+            ResetCts();
+            try
+            {
+                await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, _cts.Token);
+                TopDie = 0;
+                VisionTopLowAlign = null;
+                _alignCtx = null;
+                TopLowAlignState = TopPickupState = TopHighAlignState
+                                  = TopPlaceState = StepState.Idle;
+            }
+            catch { throw; }
+        }
+
+        // ═════════════════════════════════════════════════════
+        //  내부 Run* 메서드 — 상태 업데이트 + 서비스 위임
+        // ═════════════════════════════════════════════════════
+
+        private async Task RunTopLowAlign(CancellationToken ct)
+        {
+            TopLowAlignState = StepState.InProgress;
+            VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, ct);
+            TopLowAlignState = StepState.Completed;
+        }
+
+        private async Task RunTopPickup(CancellationToken ct)
+        {
+            TopPickupState = StepState.InProgress;
+            await _sequenceService.TopPickup(TopDie, VisionTopLowAlign, ct);
+            TopPickupState = StepState.Completed;
+        }
+
+        private async Task RunTopHighAlign(CancellationToken ct)
+        {
+            TopHighAlignState = StepState.InProgress;
+
+            _alignCtx = await _sequenceService.TopHighAlign(
+                _alignCtx ?? new AlignContext(), ct);
+
+            // UI 바인딩 동기화
+            TopRightFid = _alignCtx.TopRightFid;
+            TopRightAlign = _alignCtx.TopRightAlign;
+            TopLeftFid = _alignCtx.TopLeftFid;
+            TopLeftAlign = _alignCtx.TopLeftAlign;
+            TopOffsetX = _alignCtx.TopOffsetX;
+            TopOffsetY = _alignCtx.TopOffsetY;
+            TopOffsetT = _alignCtx.TopOffsetT;
+            TopAlignRelOffsetX = _alignCtx.TopAlignRelOffsetX;
+            TopAlignRelOffsetY = _alignCtx.TopAlignRelOffsetY;
+            TopAlignRelOffsetT = _alignCtx.TopAlignRelOffsetT;
+
+            TopHighAlignState = StepState.Completed;
+        }
+
+
+
+        private async Task RunBtmHighAlign(CancellationToken ct)
+        {
+            BtmHighAlignState = StepState.InProgress;
+
+            _alignCtx = await _sequenceService.BtmHighAlign(_alignCtx, ct);
+
+            // UI 바인딩 동기화
+            BtmRightFid = _alignCtx.BtmRightFid;
+            BtmRightAlign = _alignCtx.BtmRightAlign;
+            BtmLeftFid = _alignCtx.BtmLeftFid;
+            BtmLeftAlign = _alignCtx.BtmLeftAlign;
+            BtmOffsetX = _alignCtx.BtmOffsetX;
+            BtmOffsetY = _alignCtx.BtmOffsetY;
+            BtmOffsetT = _alignCtx.BtmOffsetT;
+
+            BtmHighAlignState = StepState.Completed;
+        }
+
+        private async Task RunTopPlace(CancellationToken ct)
+        {
+            TopBondingState = StepState.InProgress;
+            await _sequenceService.TopPlace(_alignCtx, _recipeService, ct);
+            TopBondingState = StepState.Completed;
+        }
+
+        // ═════════════════════════════════════════════════════
+        //  공통 유틸
+        // ═════════════════════════════════════════════════════
+
+        /// <summary>CTS를 교체한다. 이전 CTS가 있으면 먼저 취소 후 Dispose.</summary>
+        /// 
+
+        private void ResetCts()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+        }
+
+        /// <summary>현재 상태가 InProgress일 때만 교체한다.</summary>
+        private static StepState IfInProgress(StepState current, StepState next)
+            => current == StepState.InProgress ? next : current;
+
+        /// <summary>ShowDialog()를 별도 STA 스레드에서 실행해 메인 UI를 블로킹하지 않는다.</summary>
         private static Task RunDialogOnNewThread(Action dialogAction)
         {
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var thread = new Thread(() =>
             {
-                try
-                {
-                    dialogAction();
-                    tcs.SetResult(true);
-                }
-                catch (Exception ex)
-                {
-                    tcs.SetException(ex);
-                }
-                finally
-                {
-                    System.Windows.Threading.Dispatcher.CurrentDispatcher.InvokeShutdown();
-                }
+                try { dialogAction(); tcs.SetResult(true); }
+                catch (Exception ex) { tcs.SetException(ex); }
+                finally { System.Windows.Threading.Dispatcher.CurrentDispatcher.InvokeShutdown(); }
             });
             thread.SetApartmentState(ApartmentState.STA);
             thread.IsBackground = true;
@@ -771,38 +759,45 @@ namespace HCB.UI
             return tcs.Task;
         }
 
-        public async Task BtmInit()
+        private void ExportToCsv(List<AlignContext> results, string filePath)
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
-            await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, _cts.Token);
-            BottomDie = 0;
-            BtmLowAlignState = StepState.Idle;
-            BtmPickupState = StepState.Idle;
-            BtmPlaceState = StepState.Idle;
-            VisionBtmLowAlign = null;
-        }
+            var sb = new StringBuilder();
 
-        public async Task TopInit()
-        {
-            
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
-            try
-            {
-                await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, _cts.Token);
-                TopDie = 0;
-                TopLowAlignState = StepState.Idle;
-                TopPickupState = StepState.Idle;
-                TopHighAlignState = StepState.Idle;
-                TopPlaceState = StepState.Idle;
-                VisionTopLowAlign = null;
-            }
-            catch(Exception e)
-            {
-                throw;
-            }
-            
+            // 헤더
+            sb.AppendLine(
+                "Index," +
+                "TopRightFid_StageX,TopRightFid_StageY,TopRightFid_DxCamToMark,TopRightFid_DyCamToMark,TopRightFid_CenterX,TopRightFid_CenterY," +
+                "TopRightAlign_StageX,TopRightAlign_StageY,TopRightAlign_DxCamToMark,TopRightAlign_DyCamToMark,TopRightAlign_CenterX,TopRightAlign_CenterY," +
+                "TopLeftFid_StageX,TopLeftFid_StageY,TopLeftFid_DxCamToMark,TopLeftFid_DyCamToMark,TopLeftFid_CenterX,TopLeftFid_CenterY," +
+                "TopLeftAlign_StageX,TopLeftAlign_StageY,TopLeftAlign_DxCamToMark,TopLeftAlign_DyCamToMark,TopLeftAlign_CenterX,TopLeftAlign_CenterY"
+            );
 
-            
+            // 데이터 행
+            for (int i = 0; i < results.Count; i++)
+            {
+                var ctx = results[i];
+                sb.AppendLine(string.Join(",",
+                    i + 1,
+                    // TopRightFid
+                    ctx.TopRightFid.StageX, ctx.TopRightFid.StageY,
+                    ctx.TopRightFid.DxCamToMark, ctx.TopRightFid.DyCamToMark,
+                    ctx.TopRightFid.CenterX, ctx.TopRightFid.CenterY,
+                    // TopRightAlign
+                    ctx.TopRightAlign.StageX, ctx.TopRightAlign.StageY,
+                    ctx.TopRightAlign.DxCamToMark, ctx.TopRightAlign.DyCamToMark,
+                    ctx.TopRightAlign.CenterX, ctx.TopRightAlign.CenterY,
+                    // TopLeftFid
+                    ctx.TopLeftFid.StageX, ctx.TopLeftFid.StageY,
+                    ctx.TopLeftFid.DxCamToMark, ctx.TopLeftFid.DyCamToMark,
+                    ctx.TopLeftFid.CenterX, ctx.TopLeftFid.CenterY,
+                    // TopLeftAlign
+                    ctx.TopLeftAlign.StageX, ctx.TopLeftAlign.StageY,
+                    ctx.TopLeftAlign.DxCamToMark, ctx.TopLeftAlign.DyCamToMark,
+                    ctx.TopLeftAlign.CenterX, ctx.TopLeftAlign.CenterY
+                ));
+            }
+
+            File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
         }
     }
 }

@@ -200,7 +200,7 @@
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                     <TextBlock Style="{StaticResource NumLabel}" Text="CURRENT-POS"/>
                     <TextBlock Style="{StaticResource NumValue}"
-                               Text="{Binding CurrentPosition, StringFormat=F3}"/>
+                               Text="{Binding CurrentPosition, StringFormat=F5}"/>
                 </StackPanel>
 
                 <!-- 세로 구분선 -->
@@ -210,7 +210,7 @@
                 <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                     <TextBlock Style="{StaticResource NumLabel}" Text="TARGET-POS"/>
                     <TextBlock Style="{StaticResource NumValue}"
-                               Text="{Binding CommandPosition, StringFormat=F3}"/>
+                               Text="{Binding CommandPosition, StringFormat=F5}"/>
                 </StackPanel>
 
                 <!-- 세로 구분선 -->

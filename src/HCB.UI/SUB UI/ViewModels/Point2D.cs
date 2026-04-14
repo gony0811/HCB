@@ -11,12 +11,13 @@ namespace HCB.UI
         public double X { get; set; }
         public double Y { get; set; }
 
+        public static readonly Point2D Zero = new Point2D(0, 0); // 추가
+
         public Point2D(double x, double y)
         {
             X = x;
             Y = y;
         }
-
         public static Point2D of(double x, double y)
         {
             return new Point2D(x, y);

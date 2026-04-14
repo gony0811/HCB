@@ -26,7 +26,7 @@ namespace HCB.UI
         private CancellationToken _stopToken = CancellationToken.None;
 
         public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, AlarmService alarmService,
-            SequenceServiceVM sequenceServiceVM, EqpCommunicationService communicationService, RecipeService recipeService)
+            SequenceServiceVM sequenceServiceVM, EqpCommunicationService communicationService, RecipeService recipeService, ECParamService eCParamService)
         {
             _logger = logger.ForContext<SequenceService>();
             _deviceManager = deviceManager;
@@ -34,6 +34,7 @@ namespace HCB.UI
             _operationService = operationService;
             _alarmService = alarmService;
             _sequenceServiceVM = sequenceServiceVM;
+            _paramService = eCParamService;
             _recipeService = recipeService;
             _simulation = dataOptions.Simulation;
             this.communicationService = communicationService;

@@ -726,30 +726,70 @@
                             <Grid Margin="14,10,14,10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
+                                    <!-- 번호 뱃지 -->
                                     <ColumnDefinition Width="Auto"/>
+                                    <!-- 램프 -->
                                     <ColumnDefinition Width="*"/>
+                                    <!-- 타이틀 -->
                                     <ColumnDefinition Width="Auto"/>
+                                    <!-- 진행 표시 -->
                                     <ColumnDefinition Width="Auto"/>
+                                    <!-- 반복 측정 버튼 -->
+                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- INFO 버튼 -->
+                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- START 버튼 -->
                                 </Grid.ColumnDefinitions>
+
+                                <!-- 번호 뱃지 -->
                                 <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
-                                        Width="28" Height="28" Margin="0,0,10,0">
+                Width="28" Height="28" Margin="0,0,10,0">
                                     <TextBlock Text="3" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
+
+                                <!-- 램프 -->
                                 <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
-                                                State="{Binding TopHighAlignState}" Margin="0,0,10,0"/>
+                        State="{Binding TopHighAlignState}" Margin="0,0,10,0"/>
+
+                                <!-- 타이틀 -->
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                     <TextBlock Text="고배율 보정 (Top die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
                                     <TextBlock Text="High Magnification Calibration - Top" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                 </StackPanel>
-                                <Button Grid.Column="3" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
-                                        Command="{Binding OpenTopHighAlignInfoCommand}">
+
+                                <!-- 진행 표시 (반복 중일 때만 표시) -->
+                                <Border Grid.Column="3"
+                Background="#0D2335" CornerRadius="6" Padding="12,6"
+                Margin="0,0,8,0"
+                Visibility="{Binding IsRepeatRunning, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="⟳ " Foreground="#2ECC71" FontSize="13" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding RepeatProgressText}"
+                           Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
+                           FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- 반복 측정 버튼 -->
+                                <Button Grid.Column="4" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
+                Command="{Binding RepeatMeasureCommand}"
+                IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
+                                    <TextBlock Text="반복 측정" FontSize="12" FontWeight="Bold"/>
+                                </Button>
+
+                                <!-- INFO 버튼 -->
+                                <Button Grid.Column="5" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
+                Command="{Binding OpenTopHighAlignInfoCommand}">
                                     <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
                                 </Button>
-                                <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
-                                        Command="{Binding TopHighAlignCommand}">
+
+                                <!-- START 버튼 -->
+                                <Button Grid.Column="6" Style="{StaticResource StartButtonStyle}"
+                Command="{Binding TopHighAlignCommand}">
                                     <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
                                 </Button>
+
                             </Grid>
                         </Border>
 
@@ -827,11 +867,58 @@
                     <Border Grid.Row="2" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
                             Margin="16,0,16,0" Padding="0,10,0,14">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
+
+                                <!-- X -->
+                                <Border Background="#0D2335" CornerRadius="6" Padding="12,8" Margin="4,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="X" Foreground="#5B9BD5" FontSize="13" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding DetailX, StringFormat={}{0:F4}}"
+                           Foreground="White" FontSize="13" FontFamily="Consolas"
+                           VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
+                                        <TextBlock Text=" mm" Foreground="#7A9BB5" FontSize="11"
+                           VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Y -->
+                                <Border Background="#0D2335" CornerRadius="6" Padding="12,8" Margin="4,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Y" Foreground="#5B9BD5" FontSize="13" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding DetailY, StringFormat={}{0:F4}}"
+                           Foreground="White" FontSize="13" FontFamily="Consolas"
+                           VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
+                                        <TextBlock Text=" mm" Foreground="#7A9BB5" FontSize="11"
+                           VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- T -->
+                                <Border Background="#0D2335" CornerRadius="6" Padding="12,8" Margin="4,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="T" Foreground="#5B9BD5" FontSize="13" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding DetailT, StringFormat={}{0:F4}}"
+                           Foreground="White" FontSize="13" FontFamily="Consolas"
+                           VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
+                                        <TextBlock Text=" °" Foreground="#7A9BB5" FontSize="11"
+                           VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                            </StackPanel>
+
                             <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
                                     Command="{Binding LowResultCommand}">
                                 <TextBlock Text="저배율 결과" FontSize="13" FontWeight="Bold"/>
                             </Button>
-
+                            
+                            <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+                                    Command="{Binding HighResultCommand}">
+                                <TextBlock Text="고배율 결과" FontSize="13" FontWeight="Bold"/>
+                            </Button>
 
                             <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
                                     Command="{Binding TopRunFullSequenceCommand}">
