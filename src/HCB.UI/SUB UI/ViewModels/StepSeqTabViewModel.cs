@@ -495,6 +495,55 @@ namespace HCB.UI
             }
         }
 
+
+        [RelayCommand]
+        public async Task TopRepeatBonding()
+        {
+            ResetCts();
+            var ct = _cts.Token;
+
+            if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
+
+            RepeatCurrent = 0;
+            IsRepeatRunning = true;
+
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    RepeatCurrent++;
+
+                    TopHighAlignState = StepState.Idle;
+                    BtmHighAlignState = StepState.Idle;
+                    TopBondingState = StepState.Idle;
+
+                    await RunTopHighAlign(ct);
+                    await RunBtmHighAlign(ct);
+                    await RunTopPlace(ct);
+                    ExportBondingResult();
+
+                    _logger.Information("반복 본딩 #{Count} 완료", RepeatCurrent);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Idle);
+                BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Idle);
+                TopBondingState = IfInProgress(TopBondingState, StepState.Idle);
+                _logger.Information("반복 본딩 중단 — {Count}회 완료 후 취소", RepeatCurrent);
+            }
+            catch (Exception e)
+            {
+                TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Failed);
+                BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Failed);
+                TopBondingState = IfInProgress(TopBondingState, StepState.Failed);
+                _logger.Warning("반복 본딩 실패 #{Count}: {Msg}", RepeatCurrent, e.Message);
+            }
+            finally
+            {
+                IsRepeatRunning = false;
+            }
+        }
         // ═════════════════════════════════════════════════════
         //  LowResult (Head 초기화 후 Wafer Center 이동)
         // ═════════════════════════════════════════════════════
@@ -757,6 +806,147 @@ namespace HCB.UI
             thread.IsBackground = true;
             thread.Start();
             return tcs.Task;
+        }
+
+        // ═════════════════════════════════════════════════════
+        //  본딩 결과 CSV 저장
+        // ═════════════════════════════════════════════════════
+
+
+        public void ExportBondingResult()
+        {
+            if (_alignCtx == null)
+            {
+                _logger.Information("저장할 본딩 결과가 없습니다.");
+                return;
+            }
+
+            // ★ 날짜만 사용 → 같은 날은 같은 파일에 누적
+            var path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"bonding_result_{DateTime.Now:yyyyMMdd}.csv");
+
+            var fileExists = File.Exists(path);
+            var sb = new StringBuilder();
+
+            // ── 헤더 (파일이 처음 만들어질 때만) ──
+            if (!fileExists)
+            {
+                sb.AppendLine(string.Join(",",
+                    "타임스탬프",
+                    "Top다이번호",
+                    "Bottom다이번호",
+
+                    "Top우측피듀셜_스테이지X", "Top우측피듀셜_스테이지Y",
+                    "Top우측피듀셜_카메라마크편차X", "Top우측피듀셜_카메라마크편차Y",
+                    "Top우측피듀셜_마크절대X", "Top우측피듀셜_마크절대Y",
+
+                    "Top우측얼라인_스테이지X", "Top우측얼라인_스테이지Y",
+                    "Top우측얼라인_카메라마크편차X", "Top우측얼라인_카메라마크편차Y",
+                    "Top우측얼라인_마크절대X", "Top우측얼라인_마크절대Y",
+
+                    "Top좌측피듀셜_스테이지X", "Top좌측피듀셜_스테이지Y",
+                    "Top좌측피듀셜_카메라마크편차X", "Top좌측피듀셜_카메라마크편차Y",
+                    "Top좌측피듀셜_마크절대X", "Top좌측피듀셜_마크절대Y",
+
+                    "Top좌측얼라인_스테이지X", "Top좌측얼라인_스테이지Y",
+                    "Top좌측얼라인_카메라마크편차X", "Top좌측얼라인_카메라마크편차Y",
+                    "Top좌측얼라인_마크절대X", "Top좌측얼라인_마크절대Y",
+
+                    "Top절대보정X", "Top절대보정Y", "Top절대보정θ",
+                    "Top상대보정X", "Top상대보정Y", "Top상대보정θ",
+
+                    "Btm우측피듀셜_스테이지X", "Btm우측피듀셜_스테이지Y",
+                    "Btm우측피듀셜_카메라마크편차X", "Btm우측피듀셜_카메라마크편차Y",
+                    "Btm우측피듀셜_마크절대X", "Btm우측피듀셜_마크절대Y",
+
+                    "Btm우측얼라인_스테이지X", "Btm우측얼라인_스테이지Y",
+                    "Btm우측얼라인_카메라마크편차X", "Btm우측얼라인_카메라마크편차Y",
+                    "Btm우측얼라인_마크절대X", "Btm우측얼라인_마크절대Y",
+
+                    "Btm좌측피듀셜_스테이지X", "Btm좌측피듀셜_스테이지Y",
+                    "Btm좌측피듀셜_카메라마크편차X", "Btm좌측피듀셜_카메라마크편차Y",
+                    "Btm좌측피듀셜_마크절대X", "Btm좌측피듀셜_마크절대Y",
+
+                    "Btm좌측얼라인_스테이지X", "Btm좌측얼라인_스테이지Y",
+                    "Btm좌측얼라인_카메라마크편차X", "Btm좌측얼라인_카메라마크편차Y",
+                    "Btm좌측얼라인_마크절대X", "Btm좌측얼라인_마크절대Y",
+
+                    "Btm절대보정X", "Btm절대보정Y", "Btm절대보정θ",
+
+                    "측정얼라인각도_ThetaO(rad)",
+                    "최종회전보정_ThetaF(rad)",
+                    "최종X이동량(mm)",
+                    "최종Y이동량(mm)",
+                    "적용레시피오프셋X(mm)",
+                    "적용레시피오프셋Y(mm)",
+                    "적용레시피오프셋θ(mm)"
+                ));
+            }
+
+            var ctx = _alignCtx;
+            sb.AppendLine(string.Join(",",
+                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                TopDie,
+                BottomDie,
+
+                MarkFields(ctx.TopRightFid),
+                MarkFields(ctx.TopRightAlign),
+                MarkFields(ctx.TopLeftFid),
+                MarkFields(ctx.TopLeftAlign),
+
+                ctx.TopOffsetX, ctx.TopOffsetY, ctx.TopOffsetT,
+                ctx.TopAlignRelOffsetX, ctx.TopAlignRelOffsetY, ctx.TopAlignRelOffsetT,
+
+                MarkFields(ctx.BtmRightFid),
+                MarkFields(ctx.BtmRightAlign),
+                MarkFields(ctx.BtmLeftFid),
+                MarkFields(ctx.BtmLeftAlign),
+
+                ctx.BtmOffsetX, ctx.BtmOffsetY, ctx.BtmOffsetT,
+
+                ctx.FinalThetaO,
+                ctx.FinalThetaF,
+                ctx.FinalShiftX,
+                ctx.FinalShiftY,
+                ctx.OffsetXApplied,
+                ctx.OffsetYApplied,
+                ctx.OffsetTApplied
+            ));
+
+            File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
+            _logger.Information("본딩 결과 저장: {Path}", path);
+        }
+        /// <summary>VisionMarkResult 6개 필드를 콤마로 이어 반환</summary>
+        private static string MarkFields(VisionMarkResult m)
+        {
+            if (m == null) return ",,,,,";
+            return string.Join(",",
+                m.StageX,        // 측정 시 스테이지 위치
+                m.StageY,
+                m.DxCamToMark,   // 카메라 중심 → 마크 중심 편차
+                m.DyCamToMark,
+                m.CenterX,       // 보정 후 마크 절대좌표
+                m.CenterY);
+        }
+
+        private static void WriteMarkRow(StringBuilder sb, string label, VisionMarkResult mark)
+        {
+            if (mark == null)
+            {
+                sb.AppendLine($"{label},(미측정),,,,, ");
+                return;
+            }
+
+            sb.AppendLine(string.Join(",",
+                label,
+                mark.StageX,       // 측정 당시 스테이지 X 위치
+                mark.StageY,       // 측정 당시 스테이지 Y 위치
+                mark.DxCamToMark,  // 카메라 센터 → 마크 센터 X 편차
+                mark.DyCamToMark,  // 카메라 센터 → 마크 센터 Y 편차
+                mark.CenterX,      // 마크 절대좌표 X (= StageX + Dx 보정)
+                mark.CenterY       // 마크 절대좌표 Y (= StageY + Dy 보정)
+            ));
         }
 
         private void ExportToCsv(List<AlignContext> results, string filePath)

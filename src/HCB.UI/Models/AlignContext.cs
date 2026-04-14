@@ -54,5 +54,15 @@ namespace HCB.UI
         public Point2D Hcro { get; set; }
         public Point2D Hc1Offset { get; set; }
         public Point2D Hc2Offset { get; set; }
+
+
+        // 최종 보정치
+        public double FinalShiftX { get; set; }   // 최종 X 이동량 (mm)
+        public double FinalShiftY { get; set; }   // 최종 Y 이동량 (mm)
+        public double FinalThetaF { get; set; }   // 최종 θ 회전량 (rad)
+        public double FinalThetaO { get; set; }   // 측정된 얼라인 각도 (rad)
+        public double OffsetXApplied { get; set; } // 레시피 X_ALIGN_OFFSET
+        public double OffsetYApplied { get; set; } // 레시피 Y_ALIGN_OFFSET
+        public double OffsetTApplied { get; set; } // 레시피 T_ALIGN_OFFSET
     }
 }

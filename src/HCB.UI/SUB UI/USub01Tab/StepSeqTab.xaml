@@ -920,6 +920,15 @@
                                 <TextBlock Text="고배율 결과" FontSize="13" FontWeight="Bold"/>
                             </Button>
 
+                            <Button Style="{StaticResource InfoButtonStyle}" Width="90" Margin="2"
+                                    Command="{Binding TopRepeatBondingCommand}"
+                                    IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="반복 본딩" FontSize="13" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Button>
+
+
                             <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
                                     Command="{Binding TopRunFullSequenceCommand}">
                                 <TextBlock Text="Start" FontSize="13" FontWeight="Bold"/>

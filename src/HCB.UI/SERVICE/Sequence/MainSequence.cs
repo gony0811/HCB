@@ -160,7 +160,7 @@ namespace HCB.UI
         /// BtmHighAlign 이 먼저 실행되어 ctx.Hcro* 가 채워져 있어야 한다.
         /// </summary>
         public async Task TopPlace(
-    AlignContext ctx, RecipeService recipeService, CancellationToken ct)
+            AlignContext ctx, RecipeService recipeService, CancellationToken ct)
         {
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
 
@@ -231,8 +231,18 @@ namespace HCB.UI
                 RelativeMotionsMove(MotionExtensions.H_X, shiftX, ct),
                 RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct));
 
+            ctx.FinalThetaO = thetaO;
+            ctx.FinalThetaF = thetaF;
+            ctx.FinalShiftX = shiftX;
+            ctx.FinalShiftY = shiftY;
+            ctx.OffsetXApplied = offsetX;
+            ctx.OffsetYApplied = offsetY;
+            ctx.OffsetTApplied = offsetT;
+
+
             await Bonding(2000, ct);
             await Init_Head(ct);
+            await MotionsMove("H_T", 0, ct);
         }
         // ═══════════════════════════════════════════════════
         //  Full Sequence (개별 단계 조합)
