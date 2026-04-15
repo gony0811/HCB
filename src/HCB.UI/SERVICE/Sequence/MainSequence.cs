@@ -364,6 +364,15 @@ namespace HCB.UI
                 ctx.HcroTopLF = ctx.HcroLF;
                 ctx.HcroTopRF = ctx.HcroRF;
 
+                // ── Step 0: Pc↔Hc 카메라 배율 보정 팩터 ──────────────
+                // 동일 BH Fid Mark의 L-R 거리를 양 카메라로 측정하여
+                // Pc 좌표 → HcRO 좌표 변환 시 배율 차이를 보정한다.
+                double pcFidDist = CalibrationMath.Distance(
+                    Point2D.of(ctx.TopLeftFid.CenterX, ctx.TopLeftFid.CenterY),
+                    Point2D.of(ctx.TopRightFid.CenterX, ctx.TopRightFid.CenterY));
+                double hcroFidDist = CalibrationMath.Distance(ctx.HcroLF, ctx.HcroRF);
+                double scale = (pcFidDist > 1e-6) ? hcroFidDist / pcFidDist : 1.0;
+
                 // ── Step 1 (PDF p.12): Θ+ 계산 ───────────────────────
                 // Pc는 하부 카메라(아래→위 촬영)이므로 X축 미러링 적용
                 // Pc Fid 방향 벡터 (L→R, X 미러링)
@@ -380,11 +389,11 @@ namespace HCB.UI
                     Point2D.Zero, Point2D.of(hcroFidDirX, hcroFidDirY));
 
                 // ── Step 2 (PDF p.13): T-Die Align Mark → HcRO ──────
-                // 각 Fid→Align 상대 오프셋 (X 미러링) 을 Θ+로 회전
+                // 각 Fid→Align 상대 오프셋 (X 미러링 + 배율 보정) 을 Θ+로 회전
 
                 // Left: LeftFid → LeftAlign
-                double lXFA = -(ctx.TopLeftAlign.CenterX - ctx.TopLeftFid.CenterX);
-                double lYFA = ctx.TopLeftAlign.CenterY - ctx.TopLeftFid.CenterY;
+                double lXFA = -(ctx.TopLeftAlign.CenterX - ctx.TopLeftFid.CenterX) * scale;
+                double lYFA = (ctx.TopLeftAlign.CenterY - ctx.TopLeftFid.CenterY) * scale;
                 var rotatedLeft = CalibrationMath.ApplyRotation(
                     Point2D.of(lXFA, lYFA), thetaPlus);
                 ctx.HcroTopLA = Point2D.of(
@@ -392,8 +401,8 @@ namespace HCB.UI
                     ctx.HcroLF.Y + rotatedLeft.Y);
 
                 // Right: RightFid → RightAlign
-                double rXFA = -(ctx.TopRightAlign.CenterX - ctx.TopRightFid.CenterX);
-                double rYFA = ctx.TopRightAlign.CenterY - ctx.TopRightFid.CenterY;
+                double rXFA = -(ctx.TopRightAlign.CenterX - ctx.TopRightFid.CenterX) * scale;
+                double rYFA = (ctx.TopRightAlign.CenterY - ctx.TopRightFid.CenterY) * scale;
                 var rotatedRight = CalibrationMath.ApplyRotation(
                     Point2D.of(rXFA, rYFA), thetaPlus);
                 ctx.HcroTopRA = Point2D.of(
@@ -412,7 +421,6 @@ namespace HCB.UI
                 ctx.HcroTopRA = Point2D.of(ctx.BtmRightAlign.CenterX, ctx.BtmRightAlign.CenterY);
             }
         }
-
         //private static void ComputeHcroCoords(AlignContext ctx)
         //{
         //    // ── B-Die (Hc) → HcRO 좌표 변환 ──────────────────────
