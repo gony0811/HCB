@@ -108,6 +108,16 @@ namespace HCB.UI
         [ObservableProperty] private int repeatCurrent;
         [ObservableProperty] private int repeatTotal;
 
+        // ── HighResult 회전 보정 결과 ─────────────────────────
+        [ObservableProperty] private double hrBlX;
+        [ObservableProperty] private double hrBlY;
+        [ObservableProperty] private double hrBrX;
+        [ObservableProperty] private double hrBrY;
+        [ObservableProperty] private double hrTlX;
+        [ObservableProperty] private double hrTlY;
+        [ObservableProperty] private double hrTrX;
+        [ObservableProperty] private double hrTrY;
+
         // 화면에 표시할 텍스트 (예: "3 / 5")
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
@@ -610,6 +620,12 @@ namespace HCB.UI
                 var tr = CalibrationMath.ApplyRotation(Point2D.of(tR.DxCamToMark, tR.DyCamToMark), hc2Rad);
                 var tl = CalibrationMath.ApplyRotation(Point2D.of(tL.DxCamToMark, tL.DyCamToMark), hc2Rad);
 
+                HrBlX = bl.X; HrBlY = bl.Y;
+                HrBrX = br.X; HrBrY = br.Y;
+                HrTlX = tl.X; HrTlY = tl.Y;
+                HrTrX = tr.X; HrTrY = tr.Y;
+
+
                 bR.DxCamToMark = br.X; bL.DxCamToMark = bl.X;
                 bR.DyCamToMark = br.Y; bL.DyCamToMark = bl.Y;
                 tR.DxCamToMark = tr.X; tL.DxCamToMark = tl.X;
@@ -1061,7 +1077,18 @@ namespace HCB.UI
                     "최종Y이동량(mm)",
                     "적용레시피오프셋X(mm)",
                     "적용레시피오프셋Y(mm)",
-                    "적용레시피오프셋θ(mm)"
+                    "적용레시피오프셋θ(mm)",
+                    "결과BL_X",
+                    "결과BL_Y",
+                    "결과BR_X",
+                    "결과BR_Y",
+                    "결과TL_X",
+                    "결과TL_Y",
+                    "결과TR_X",
+                    "결과TR_Y",
+                    "결과C_X",
+                    "결과C_Y",
+                    "결과C_T"
                 ));
             }
 
@@ -1092,7 +1119,12 @@ namespace HCB.UI
                 ctx.FinalShiftY,
                 ctx.OffsetXApplied,
                 ctx.OffsetYApplied,
-                ctx.OffsetTApplied
+                ctx.OffsetTApplied,
+                HrBlX, HrBlY,
+                HrBrX, HrBrY,
+                HrTlX, HrTlY,
+                HrTrX, HrTrY,
+                DetailX, DetailY, DetailT
             ));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
