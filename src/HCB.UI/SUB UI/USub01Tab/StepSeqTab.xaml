@@ -911,11 +911,6 @@
                             </StackPanel>
 
                             <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
-                                    Command="{Binding LowResultCommand}">
-                                <TextBlock Text="저배율 결과" FontSize="13" FontWeight="Bold"/>
-                            </Button>
-
-                            <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
                                     Command="{Binding HighResultCommand}">
                                 <TextBlock Text="고배율 결과" FontSize="13" FontWeight="Bold"/>
                             </Button>

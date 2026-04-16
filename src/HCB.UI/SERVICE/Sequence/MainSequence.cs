@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -194,7 +195,7 @@ namespace HCB.UI
             double thetaS = ParseRecipe(recipeService, "SPEC_THETA") * Math.PI / 180.0;
             double specXs = ParseRecipe(recipeService, "SPEC_X");
             double specYs = ParseRecipe(recipeService, "SPEC_Y");
-            double thetaF = thetaO - thetaS;
+            double thetaF = thetaO - thetaS + offsetT * Math.PI / 180.0;
 
             _logger.Information($"[ANGLE] ThetaO = {thetaO:F6}rad ({thetaO * 180 / Math.PI:F4}deg)");
             _logger.Information($"[ANGLE] ThetaS = {thetaS:F6}rad ({thetaS * 180 / Math.PI:F4}deg)");
@@ -239,7 +240,7 @@ namespace HCB.UI
             ctx.OffsetYApplied = offsetY;
             ctx.OffsetTApplied = offsetT;
 
-            //await Bonding(2000, ct);
+            await Bonding(2000, ct);
             await Init_Head(ct);
             await MotionsMove("H_T", 0, ct);
         }
@@ -287,14 +288,23 @@ namespace HCB.UI
 
             if (ctx.HasHcRO)
             {
-                ctx.Hc1Rad = double.Parse(hc1Param.Value);
-                ctx.Hc2Rad = double.Parse(hc2Param.Value);
-                ctx.Hcro = Point2D.of(double.Parse(hcroXParam.Value), double.Parse(hcroYParam.Value));
-                ctx.Hc1Offset = Point2D.of(double.Parse(hc1XParam.Value), double.Parse(hc1YParam.Value));
-                ctx.Hc2Offset = Point2D.of(double.Parse(hc2XParam.Value), double.Parse(hc2YParam.Value));
+                ctx.Hc1Rad = ParseDouble(hc1Param.Value);
+                ctx.Hc2Rad = ParseDouble(hc2Param.Value);
+                ctx.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
+                ctx.Hc1Offset = Point2D.of(ParseDouble(hc1XParam.Value), ParseDouble(hc1YParam.Value));
+                ctx.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
             }
             if (ctx.HasPcT)
-                ctx.PcTRad = double.Parse(pcTParam.Value);
+                ctx.PcTRad = ParseDouble(pcTParam.Value);
+        }
+
+        private double ParseDouble(string s)
+        {
+            s = s.Replace('\u2212', '-')   // minus sign
+                 .Replace('\u2013', '-')   // en-dash
+                 .Replace('\u00A0', ' ')   // non-breaking space
+                 .Trim();
+            return double.Parse(s, CultureInfo.InvariantCulture);
         }
 
         private static void ApplyTopPcCorrections(AlignContext ctx)

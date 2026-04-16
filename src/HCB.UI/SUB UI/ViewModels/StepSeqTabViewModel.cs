@@ -466,6 +466,7 @@ namespace HCB.UI
             try
             {
                 await RunTopPlace(_cts.Token);
+                
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
             catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
@@ -488,6 +489,7 @@ namespace HCB.UI
                 await RunTopHighAlign(_cts.Token);
                 await RunBtmHighAlign(_cts.Token);
                 await RunTopPlace(_cts.Token);
+                
             }
             catch (OperationCanceledException)
             {
@@ -533,7 +535,6 @@ namespace HCB.UI
                     await RunTopHighAlign(ct);
                     await RunBtmHighAlign(ct);
                     await RunTopPlace(ct);
-                    ExportBondingResult();
 
                     _logger.Information("반복 본딩 #{Count} 완료", RepeatCurrent);
                 }
@@ -968,6 +969,8 @@ namespace HCB.UI
         {
             TopBondingState = StepState.InProgress;
             await _sequenceService.TopPlace(_alignCtx, _recipeService, ct);
+            await HighResult();
+            ExportBondingResult();
             TopBondingState = StepState.Completed;
         }
 
@@ -1021,7 +1024,7 @@ namespace HCB.UI
             // ★ 날짜만 사용 → 같은 날은 같은 파일에 누적
             var path = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                $"bonding_result_{DateTime.Now:yyyyMMdd}.csv");
+                $"bonding_result2_{DateTime.Now:yyyyMMdd}.csv");
 
             var fileExists = File.Exists(path);
             var sb = new StringBuilder();
