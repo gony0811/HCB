@@ -358,6 +358,84 @@ namespace HCB.UI
             await Task.Delay(200, ct);
         }
 
+        public async Task<VernierResponse> MeasureVeriner(CameraType cameraType, DirectType directType)
+        {
+            
+            var result = await communicationService.RequestVernier(cameraType, directType);
+            //if (result.Result == Result.NG) throw new Exception("비전 통신 에러");
+            return result;
+        }
+
+        public async Task<VernierResult> GetVernier(CancellationToken ct = default)
+        {
+            VernierResult result = new VernierResult();
+            if (double.TryParse(_recipeService.FindByParam("TopDieThickness").Value, out double topDieThickness))
+            { }
+            else
+            {
+                throw new Exception("레시피 TopDieThickness값이 Double타입이 아닙니다");
+            }
+
+            if (double.TryParse(_recipeService.FindByParam("BtmDieThickness").Value, out double btmDieThickness))
+            { }
+            else
+            {
+                throw new Exception("레시피 btmDieThickness값이 Double타입이 아닙니다");
+            }
+
+            // 1. Vernier 우측 상단 이동
+            await Task.WhenAll(
+                RelativeMotionsMove(MotionExtensions.H_X, -1.42, ct),
+                RelativeMotionsMove(MotionExtensions.W_Y, -1.2, ct)
+            );
+            await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.VERNIER);
+            // 수평: X축을 알 수 있음
+            var rVh = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Horizontal);
+            result.RV1.X = rVh.Value_1;
+            result.RV3.X = rVh.Value_3;
+
+            await RelativeMotionsMove(MotionExtensions.W_Y, -0.3, ct);
+
+            // 수직: Y축을 알 수 있음.
+            var rVv = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Vertical);
+            result.RV1.Y = rVv.Value_1;
+            result.RV3.Y = rVv.Value_3;
+
+            await Task.WhenAll(
+                RelativeMotionsMove(MotionExtensions.H_X, -4.8, ct),
+                RelativeMotionsMove(MotionExtensions.W_Y, 4.8, ct)
+            );
+
+
+            var cVv = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Vertical);
+            result.CV1.X = cVv.Value_1;
+            result.CV3.X = cVv.Value_3;
+
+            await RelativeMotionsMove(MotionExtensions.W_Y, 0.3, ct);
+
+            var cVh = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Horizontal);
+            result.CV1.X = cVh.Value_1;
+            result.CV3.X = cVh.Value_3;
+
+
+            await Task.WhenAll(
+                RelativeMotionsMove(MotionExtensions.H_X, -4.8, ct),
+                RelativeMotionsMove(MotionExtensions.W_Y, 4.8, ct)
+            );
+
+            var lVh = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Horizontal);
+            result.RV1.X = lVh.Value_1;
+            result.RV3.X = lVh.Value_3;
+
+            await RelativeMotionsMove(MotionExtensions.W_Y, -0.3, ct);
+            var lVv = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Vertical);
+            result.RV1.Y = lVv.Value_1;
+            result.RV3.Y = lVv.Value_3;
+            
+
+            return result;
+        }
+
         public void EQStatusCheck()
         {
             var status = _operationService.Status;

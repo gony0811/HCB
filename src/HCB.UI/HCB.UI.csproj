@@ -242,6 +242,7 @@
   <Compile Include="Models\AlignContext.cs" />
   <Compile Include="Models\AlignOffset.cs" />
   <Compile Include="Models\LabelValue.cs" />
+  <Compile Include="Models\VernierResult.cs" />
   <Compile Include="SERVICE\CalibrationService.cs" />
   <Compile Include="SERVICE\ExceptionType\ErrorException.cs" />
   <Compile Include="SERVICE\Extenstions\IoExtensions.cs" />

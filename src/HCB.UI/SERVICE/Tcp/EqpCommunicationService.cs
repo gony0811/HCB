@@ -207,13 +207,16 @@ namespace HCB.UI
                 return new VisionMarkPositionResponse { Result = Result.NG };
 
             // FOV 범위 체크 (FOV의 절반이 유효 범위)
-            double half = fov / 2.0;
-            if (Math.Abs(response.X) > half || Math.Abs(response.Y) > half)
+            if (markType != MarkType.VERNIER)
             {
-                _logger.Warning($"[MarkPosition] FOV 범위 초과 - X:{response.X:F3}, Y:{response.Y:F3}, FOV:{fov}");
-                return new VisionMarkPositionResponse { Result = Result.NG };
+                double half = fov / 2.0;
+                if (Math.Abs(response.X) > half || Math.Abs(response.Y) > half)
+                {
+                    _logger.Warning($"[MarkPosition] FOV 범위 초과 - X:{response.X:F3}, Y:{response.Y:F3}, FOV:{fov}");
+                    return new VisionMarkPositionResponse { Result = Result.NG };
+                }
             }
-
+            
             return new VisionMarkPositionResponse
             {
                 Result = response.Result,
@@ -221,6 +224,30 @@ namespace HCB.UI
                 Y = response.Y,
                 Theta = response.Theta
             };
+        }
+
+        public async Task<VernierResponse> RequestVernier(CameraType cameraType, DirectType direct)
+        {
+            var request = MessageFactory.Create(
+                messageName: "REQUEST_VISIONMARK_POSITION_V",
+                unitName: "EQP",
+                content: $"<CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT>"
+            );
+
+            var result = await _server.RequestAsync(request, timeout: TimeSpan.FromSeconds(10));
+
+            if (!result.Success)
+            {
+                _logger.Warning($"[MarkPosition] 요청 실패: {result.ErrorMessage}");
+                return new VernierResponse { Result = Result.NG };
+            }
+
+            var response = VernierResponse.Parse(result.Response!.Data?.Content);
+
+            if (response.Result != Result.OK)
+                return new VernierResponse { Result = Result.NG };
+
+            return response;
         }
 
         public async Task<Result> PiezoHome(CancellationToken ct = default)

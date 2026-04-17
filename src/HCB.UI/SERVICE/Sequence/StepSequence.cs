@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static HCB.UI.SERVICE.CalibrationService;
@@ -494,6 +495,38 @@ namespace HCB.UI
                 throw new Exception(e.Message);
             }
             
+        }
+
+        public async Task TCheck(CancellationToken ct)
+        {
+            var results = new List<(double angle, double hc1X, double hc1Y, double hc2X, double hc2Y)>();
+
+            for (double angle = -1.5; angle <= 1.5; angle += 0.5)
+            {
+                await MotionsMove(MotionExtensions.H_T, angle, ct);
+
+                var hc1 = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC1_HIGH, "");
+                var hc2 = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC2_HIGH, "");
+
+                results.Add((angle, hc1.X, hc1.Y, hc2.X, hc2.Y));
+            }
+
+            // CSV 저장 (파일이 없으면 헤더 포함 생성, 있으면 데이터만 추가)
+            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "TCheck_Result.csv");
+            var sb = new StringBuilder();
+
+            if (!File.Exists(path))
+            {
+                sb.AppendLine("Timestamp,Angle,HC1_X,HC1_Y,HC2_X,HC2_Y");
+            }
+
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            foreach (var r in results)
+            {
+                sb.AppendLine($"{timestamp},{r.angle:F1},{r.hc1X},{r.hc1Y},{r.hc2X},{r.hc2Y}");
+            }
+
+            await File.AppendAllTextAsync(path, sb.ToString(), ct);
         }
 
         public async Task Bonding(int delay, CancellationToken ct)

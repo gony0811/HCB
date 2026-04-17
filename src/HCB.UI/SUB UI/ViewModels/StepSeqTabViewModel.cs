@@ -118,6 +118,7 @@ namespace HCB.UI
         [ObservableProperty] private double hrTrX;
         [ObservableProperty] private double hrTrY;
 
+        [ObservableProperty] private VernierResult vernierResult;
         // 화면에 표시할 텍스트 (예: "3 / 5")
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
@@ -535,7 +536,6 @@ namespace HCB.UI
                     await RunTopHighAlign(ct);
                     await RunBtmHighAlign(ct);
                     await RunTopPlace(ct);
-
                     _logger.Information("반복 본딩 #{Count} 완료", RepeatCurrent);
                 }
             }
@@ -579,79 +579,95 @@ namespace HCB.UI
             catch (Exception e) { _logger.Warning(e.Message); }
         }
 
+        //[RelayCommand]
+        //public async Task HighResult()
+        //{
+        //    _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+        //    try
+        //    {
+
+        //        await _sequenceService.TopDiePlace(_cts.Token);
+
+
+        //        var hc2Param = _ecParamService.FindByName(MotionExtensions.HC2_T);
+        //        double hc2Rad = double.Parse(hc2Param.Value);
+
+        //        // ── 1. Btm 우측 Align Mark로 이동 후 측정 (BTM RIGHT) ────────────
+        //        var bR = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, _cts.Token);
+
+        //        // ── 2. X: -500um 이동 ─────────────────────────────────────────────
+        //        await _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, -0.5, _cts.Token);
+
+        //        // ── 3. Top 우측 Align Mark 측정 (TOP RIGHT) ───────────────────────
+        //        var tR = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK_TOP, DirectType.RIGHT, MotionExtensions.W_Y, _cts.Token);
+
+        //        // ── 4. X: -12mm, Y: +7mm 이동 ────────────────────────────────────
+        //        await Task.WhenAll(
+        //            _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, -12.0, _cts.Token),
+        //            _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, 7.0, _cts.Token)
+        //        );
+
+        //        // ── 5. Left Align Mark 측정 (BTM LEFT) ───────────────────────────
+        //        var bL = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, _cts.Token);
+
+        //        // ── 6. X: +500um 이동 ─────────────────────────────────────────────
+        //        await _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, 0.5, _cts.Token);
+
+        //        // ── 7. Left Align Mark 측정 (TOP LEFT) ───────────────────────────
+        //        var tL = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK_TOP, DirectType.LEFT, MotionExtensions.W_Y, _cts.Token);
+
+        //        var br = CalibrationMath.ApplyRotation(Point2D.of(bR.DxCamToMark, bR.DyCamToMark), hc2Rad);
+        //        var bl = CalibrationMath.ApplyRotation(Point2D.of(bL.DxCamToMark, bL.DyCamToMark), hc2Rad);
+        //        var tr = CalibrationMath.ApplyRotation(Point2D.of(tR.DxCamToMark, tR.DyCamToMark), hc2Rad);
+        //        var tl = CalibrationMath.ApplyRotation(Point2D.of(tL.DxCamToMark, tL.DyCamToMark), hc2Rad);
+
+        //        HrBlX = bl.X; HrBlY = bl.Y;
+        //        HrBrX = br.X; HrBrY = br.Y;
+        //        HrTlX = tl.X; HrTlY = tl.Y;
+        //        HrTrX = tr.X; HrTrY = tr.Y;
+
+
+        //        bR.DxCamToMark = br.X; bL.DxCamToMark = bl.X;
+        //        bR.DyCamToMark = br.Y; bL.DyCamToMark = bl.Y;
+        //        tR.DxCamToMark = tr.X; tL.DxCamToMark = tl.X;
+        //        tR.DyCamToMark = tr.Y; tL.DyCamToMark = tl.Y;
+
+        //        double bCX = (bR.CenterX + bL.CenterX) / 2;
+        //        double bCY = (bR.CenterWaferY + bL.CenterWaferY) / 2;
+        //        double tCX = (tR.CenterX + tL.CenterX) / 2;
+        //        double tCY = (tR.CenterWaferY + tL.CenterWaferY) / 2;
+
+        //        double btmTheta = CalcTheta(bL, bR);
+        //        double topTheta = CalcTheta(tL, tR);
+        //        double deltaTheta = btmTheta - topTheta;
+
+        //        DetailX = tCX - bCX;
+        //        DetailY = tCY - bCY;
+        //        DetailT = deltaTheta - 2.07;
+        //    }
+        //    catch (OperationCanceledException)
+        //    {
+        //        _logger.Information("HighResult 작업이 취소되었습니다.");
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        _logger.Warning(e.Message);
+        //    }
+        //}
         [RelayCommand]
         public async Task HighResult()
         {
             _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
             try
             {
-
                 await _sequenceService.TopDiePlace(_cts.Token);
-
-
-                var hc2Param = _ecParamService.FindByName(MotionExtensions.HC2_T);
-                double hc2Rad = double.Parse(hc2Param.Value);
-
-                // ── 1. Btm 우측 Align Mark로 이동 후 측정 (BTM RIGHT) ────────────
-                var bR = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, _cts.Token);
-
-                // ── 2. X: -500um 이동 ─────────────────────────────────────────────
-                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, -0.5, _cts.Token);
-
-                // ── 3. Top 우측 Align Mark 측정 (TOP RIGHT) ───────────────────────
-                var tR = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK_TOP, DirectType.RIGHT, MotionExtensions.W_Y, _cts.Token);
-
-                // ── 4. X: -12mm, Y: +7mm 이동 ────────────────────────────────────
-                await Task.WhenAll(
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, -12.0, _cts.Token),
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, 7.0, _cts.Token)
-                );
-
-                // ── 5. Left Align Mark 측정 (BTM LEFT) ───────────────────────────
-                var bL = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, _cts.Token);
-
-                // ── 6. X: +500um 이동 ─────────────────────────────────────────────
-                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, 0.5, _cts.Token);
-
-                // ── 7. Left Align Mark 측정 (TOP LEFT) ───────────────────────────
-                var tL = await _sequenceService.VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK_TOP, DirectType.LEFT, MotionExtensions.W_Y, _cts.Token);
-
-                var br = CalibrationMath.ApplyRotation(Point2D.of(bR.DxCamToMark, bR.DyCamToMark), hc2Rad);
-                var bl = CalibrationMath.ApplyRotation(Point2D.of(bL.DxCamToMark, bL.DyCamToMark), hc2Rad);
-                var tr = CalibrationMath.ApplyRotation(Point2D.of(tR.DxCamToMark, tR.DyCamToMark), hc2Rad);
-                var tl = CalibrationMath.ApplyRotation(Point2D.of(tL.DxCamToMark, tL.DyCamToMark), hc2Rad);
-
-                HrBlX = bl.X; HrBlY = bl.Y;
-                HrBrX = br.X; HrBrY = br.Y;
-                HrTlX = tl.X; HrTlY = tl.Y;
-                HrTrX = tr.X; HrTrY = tr.Y;
-
-
-                bR.DxCamToMark = br.X; bL.DxCamToMark = bl.X;
-                bR.DyCamToMark = br.Y; bL.DyCamToMark = bl.Y;
-                tR.DxCamToMark = tr.X; tL.DxCamToMark = tl.X;
-                tR.DyCamToMark = tr.Y; tL.DyCamToMark = tl.Y;
-
-                double bCX = (bR.CenterX + bL.CenterX) / 2;
-                double bCY = (bR.CenterWaferY + bL.CenterWaferY) / 2;
-                double tCX = (tR.CenterX + tL.CenterX) / 2;
-                double tCY = (tR.CenterWaferY + tL.CenterWaferY) / 2;
-
-                double btmTheta = CalcTheta(bL, bR);
-                double topTheta = CalcTheta(tL, tR);
-                double deltaTheta = btmTheta - topTheta;
-
-                DetailX = tCX - bCX;
-                DetailY = tCY - bCY;
-                DetailT = deltaTheta - 2.07;
+                var result = await _sequenceService.GetVernier(_cts.Token);
+                VernierResult = result;
+                //await _sequenceService.TCheck(_cts.Token);
             }
-            catch (OperationCanceledException)
+            catch(Exception e)
             {
-                _logger.Information("HighResult 작업이 취소되었습니다.");
-            }
-            catch (Exception e)
-            {
-                _logger.Warning(e.Message);
+
             }
         }
 
@@ -928,8 +944,7 @@ namespace HCB.UI
         {
             TopHighAlignState = StepState.InProgress;
 
-            _alignCtx = await _sequenceService.TopHighAlign(
-                _alignCtx ?? new AlignContext(), ct);
+            _alignCtx = await _sequenceService.TopHighAlign(new AlignContext(), ct);
 
             // UI 바인딩 동기화
             TopRightFid = _alignCtx.TopRightFid;

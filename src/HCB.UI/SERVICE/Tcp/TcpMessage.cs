@@ -154,6 +154,37 @@ namespace HCB.UI
             return response;
         }
     }
+
+    public class VernierResponse
+    {
+        //public MarkType MarkType { get; set; }
+        //public CameraType CameraType { get; set; }
+        public Result Result { get; set; }
+        public double Value_1 { get; set; }
+        public double Value_3 { get; set; }
+
+        public static VernierResponse Parse(string? content)
+        {
+            var response = new VernierResponse();
+            if (string.IsNullOrEmpty(content)) return response;
+
+            try
+            {
+                var xml = XElement.Parse($"<DATA>{content}</DATA>");
+
+                if (Enum.TryParse(xml.Element("RESULT")?.Value, out Result r)) response.Result = r;
+
+                if (double.TryParse(xml.Element("VALUE1")?.Value, out double value1)) response.Value_1 = value1;
+                if (double.TryParse(xml.Element("VALUE3")?.Value, out double value3)) response.Value_3 = value3;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[VernierResponse] 파싱 오류: {ex.Message}");
+            }
+
+            return response;
+        }
+    }
     public enum DieType
     {
         TOP,
@@ -162,7 +193,9 @@ namespace HCB.UI
     public enum DirectType
     {
         LEFT,
-        RIGHT
+        RIGHT,
+        Vertical,
+        Horizontal
     }
     public enum MarkType
     {
@@ -172,7 +205,8 @@ namespace HCB.UI
         FIDUCIAL,
         CORNER,
         ALIGN_MARK,
-        ALIGN_MARK_TOP
+        ALIGN_MARK_TOP,
+        VERNIER
     }
     
     public enum CameraType

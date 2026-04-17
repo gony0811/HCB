@@ -304,7 +304,7 @@ namespace HCB.UI
                 await _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, -correction?.Theta ?? 0, ct);
 
                 await MotionsMove(MotionExtensions.H_Z, ShankToDieOffset-topDieThickness, ct);
-
+                
                 var headPicker = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
                 await _sequenceHelper.TopVac(vacNum, eOnOff.Off, ct);
                 await Task.Delay(2000);
@@ -319,8 +319,6 @@ namespace HCB.UI
             }
 
         }
-
-
 
         //public async Task DTableCarrierAlign(CancellationToken ct)
         //{

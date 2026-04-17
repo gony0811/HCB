@@ -132,7 +132,6 @@ namespace HCB.UI
             await MotionsMove(MotionExtensions.H_Z, "DIE_PLACE", -topDieThickness - btmDieThickness - 1, ct);
             await Init_Head(ct);
 
-            //await _sequenceHelper.RelativeMoveAsync(MotionExtensions.W_Y, 0, xyt.moveY, ct);
 
             if (!result) throw new Exception("HeadPicker를 확인해주세요");
             return xyt;

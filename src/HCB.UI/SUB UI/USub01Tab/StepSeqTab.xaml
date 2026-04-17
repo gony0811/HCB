@@ -866,50 +866,93 @@
                     <!-- Footer -->
                     <Border Grid.Row="2" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
                             Margin="16,0,16,0" Padding="0,10,0,14">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                            <!-- Vernier 결과 표시 -->
+                            <Border Background="#060F1A" CornerRadius="6" Padding="12,8" Margin="0,0,8,0" BorderBrush="#1C3A52" BorderThickness="1" VerticalAlignment="Center">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="16"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="16"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="16"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <!-- X -->
-                                <Border Background="#0D2335" CornerRadius="6" Padding="12,8" Margin="4,0">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="X" Foreground="#5B9BD5" FontSize="13" FontWeight="Bold"
-                                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="{Binding DetailX, StringFormat={}{0:F4}}"
-                                                   Foreground="White" FontSize="13" FontFamily="Consolas"
-                                                   VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
-                                        <TextBlock Text=" mm" Foreground="#7A9BB5" FontSize="11"
-                                                   VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                    <!-- RV3 -->
+                                    <StackPanel Grid.Column="0">
+                                        <Border Background="#14452A" CornerRadius="3" Padding="8,2" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                            <TextBlock Text="RV3" Foreground="#2ECC71" FontSize="11" FontWeight="Bold"/>
+                                        </Border>
+                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                            <TextBlock Text="X " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
+                                            <TextBlock Text="{Binding VernierResult.RV3.X, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                            <TextBlock Text="Y " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
+                                            <TextBlock Text="{Binding VernierResult.RV3.Y, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                        </StackPanel>
                                     </StackPanel>
-                                </Border>
 
-                                <!-- Y -->
-                                <Border Background="#0D2335" CornerRadius="6" Padding="12,8" Margin="4,0">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="Y" Foreground="#5B9BD5" FontSize="13" FontWeight="Bold"
-                                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="{Binding DetailY, StringFormat={}{0:F4}}"
-                                                   Foreground="White" FontSize="13" FontFamily="Consolas"
-                                                   VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
-                                        <TextBlock Text=" mm" Foreground="#7A9BB5" FontSize="11"
-                                                   VerticalAlignment="Center" Margin="2,0,0,0"/>
+
+                                    <!-- 구분선 -->
+                                    <Rectangle Grid.Column="1" Width="1" Fill="#1C3A52" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
+
+                                    <!-- LV3 -->
+                                    <StackPanel Grid.Column="2">
+                                        <Border Background="#14452A" CornerRadius="3" Padding="8,2" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                            <TextBlock Text="LV3" Foreground="#2ECC71" FontSize="11" FontWeight="Bold"/>
+                                        </Border>
+                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                            <TextBlock Text="X " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
+                                            <TextBlock Text="{Binding VernierResult.LV3.X, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                            <TextBlock Text="Y " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
+                                            <TextBlock Text="{Binding VernierResult.LV3.Y, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                        </StackPanel>
                                     </StackPanel>
-                                </Border>
 
-                                <!-- T -->
-                                <Border Background="#0D2335" CornerRadius="6" Padding="12,8" Margin="4,0">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="T" Foreground="#5B9BD5" FontSize="13" FontWeight="Bold"
-                                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="{Binding DetailT, StringFormat={}{0:F4}}"
-                                                   Foreground="White" FontSize="13" FontFamily="Consolas"
-                                                   VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
-                                        <TextBlock Text=" °" Foreground="#7A9BB5" FontSize="11"
-                                                   VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                    <!-- 구분선 -->
+                                    <Rectangle Grid.Column="3" Width="1" Fill="#1C3A52" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
+
+                                    <!-- RV1 -->
+                                    <StackPanel Grid.Column="4">
+                                        <Border Background="#14452A" CornerRadius="3" Padding="8,2" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                            <TextBlock Text="RV1" Foreground="#2ECC71" FontSize="11" FontWeight="Bold"/>
+                                        </Border>
+                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                            <TextBlock Text="X " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
+                                            <TextBlock Text="{Binding VernierResult.RV1.X, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                            <TextBlock Text="Y " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
+                                            <TextBlock Text="{Binding VernierResult.RV1.Y, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                        </StackPanel>
                                     </StackPanel>
-                                </Border>
 
-                            </StackPanel>
+                                    
 
+                                    <!-- 구분선 -->
+                                    <Rectangle Grid.Column="5" Width="1" Fill="#1C3A52" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
+
+                                    <!-- LV1 -->
+                                    <StackPanel Grid.Column="6">
+                                        <Border Background="#14452A" CornerRadius="3" Padding="8,2" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                            <TextBlock Text="LV1" Foreground="#2ECC71" FontSize="11" FontWeight="Bold"/>
+                                        </Border>
+                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                            <TextBlock Text="X " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
+                                            <TextBlock Text="{Binding VernierResult.LV1.X, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                            <TextBlock Text="Y " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
+                                            <TextBlock Text="{Binding VernierResult.LV1.Y, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
                             <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
                                     Command="{Binding HighResultCommand}">
                                 <TextBlock Text="고배율 결과" FontSize="13" FontWeight="Bold"/>
