@@ -433,56 +433,120 @@ namespace HCB.UI
         //}
         private static void ComputeHcroCoords(AlignContext ctx)
         {
-            // ── B-Die (Hc) → HcRO 좌표 변환 ──────────────────────
+            // ═══════════════════════════════════════════════════════════════
+            //  Pc(Top) / Hc(Btm) 카메라의 Y 부호 규칙
+            //  ─────────────────────────────────────────────────────────────
+            //  P-Table (Pc, Top) : 실제 마크 Y = StageY + DyCamToMark  → CenterY
+            //  W-Table (Hc, Btm) : 실제 마크 Y = StageY - DyCamToMark  → CenterWaferY
+            //
+            //  → HcRO 좌표계는 W-Table(Hc) 기준. Btm 은 CenterWaferY 사용,
+            //    Pc 공간 상대 오프셋은 X, Y 모두 부호 반전하여 HcRO 공간에 투영.
+            //
+            //  변환 순서:
+            //     ① Btm (Hc) → HcRO 좌표 (평행 이동)
+            //     ② Pc Fid / Align 오프셋을 HcRO 공간으로 미러링 (X, Y 부호 반전)
+            //     ③ Fid 간격 기반 비등방 배율 Sx, Sy 산출 (Pc ↔ HcRO)
+            //     ④ 미러링된 Align 오프셋에 배율 적용
+            //     ⑤ -TopAlignRelOffsetT 회전 적용
+            //     ⑥ HcRO Fid 좌표에 더해 HcroTopLA, HcroTopRA 산출
+            //  ─────────────────────────────────────────────────────────────
+            //  배율/회전 순서 선택 근거:
+            //    - 비등방 배율(Sx ≠ Sy)과 회전은 commutative 하지 않다.
+            //    - 회전 먼저 수행 시 X/Y 성분이 섞인 채 비등방 배율이 적용되어
+            //      전단(shear) 왜곡이 발생. 배율 먼저 적용이 올바르다.
+            // ═══════════════════════════════════════════════════════════════
+
             if (ctx.HasHcRO)
             {
+                // ── ① B-Die (Hc) → HcRO 좌표 변환 ──────────────────────────
+                //   Hc 카메라는 W-Table 규칙이므로 CenterWaferY 사용
                 ctx.HcroLF = Point2D.of(
                     ctx.BtmLeftFid.CenterX - ctx.Hcro.X,
-                    ctx.BtmLeftFid.CenterY - ctx.Hcro.Y);
+                    ctx.BtmLeftFid.CenterWaferY - ctx.Hcro.Y);
                 ctx.HcroLA = Point2D.of(
                     ctx.BtmLeftAlign.CenterX - ctx.Hcro.X,
-                    ctx.BtmLeftAlign.CenterY - ctx.Hcro.Y);
+                    ctx.BtmLeftAlign.CenterWaferY - ctx.Hcro.Y);
                 ctx.HcroRF = Point2D.of(
                     ctx.BtmRightFid.CenterX - ctx.Hcro.X,
-                    ctx.BtmRightFid.CenterY - ctx.Hcro.Y);
+                    ctx.BtmRightFid.CenterWaferY - ctx.Hcro.Y);
                 ctx.HcroRA = Point2D.of(
                     ctx.BtmRightAlign.CenterX - ctx.Hcro.X,
-                    ctx.BtmRightAlign.CenterY - ctx.Hcro.Y);
+                    ctx.BtmRightAlign.CenterWaferY - ctx.Hcro.Y);
 
-                // ── T-Die → HcRO 좌표 변환 ────────────────────────
-                // Pc는 하부 카메라(아래→위 촬영)이므로 X축 미러링 적용
-                ctx.HcroTopLF = ctx.HcroLF;
-                ctx.HcroTopRF = ctx.HcroRF;
+                // ── ② T-Die Fid 위치 = B-Die Fid 위치 (동일 물리 마크) ─────
+                //   Point2D 는 mutable class 이므로 참조 공유 피해 값 복사
+                ctx.HcroTopLF = Point2D.of(ctx.HcroLF.X, ctx.HcroLF.Y);
+                ctx.HcroTopRF = Point2D.of(ctx.HcroRF.X, ctx.HcroRF.Y);
 
-                // Left: LeftFid → LeftAlign 개별 오프셋 + X 미러링
+                // ── ③ Pc Fid 벡터 산출 (X, Y 미러링 적용) ──────────────────
+                //   X 미러: P-Table X방향이 HcRO X방향과 반대
+                //   Y 미러: P-Table +Dy 규칙 vs HcRO(W-Table) -Dy 규칙
+                double pcFidDx = -(ctx.TopRightFid.CenterX - ctx.TopLeftFid.CenterX);
+                double pcFidDy = -(ctx.TopRightFid.CenterY - ctx.TopLeftFid.CenterY);
+
+                // HcRO Fid 벡터 (이미 HcRO 좌표계에 있음)
+                double hcroFidDx = ctx.HcroRF.X - ctx.HcroLF.X;
+                double hcroFidDy = ctx.HcroRF.Y - ctx.HcroLF.Y;
+
+                // ── ④ 비등방 배율 Sx, Sy 산출 ──────────────────────────────
+                //   0 근처 나눗셈 가드 (Fid 간격이 너무 작으면 배율 보정 생략)
+                const double MIN_FID_DIST = 1e-3;  // 1µm (mm 단위 기준)
+                double Sx = (Math.Abs(pcFidDx) > MIN_FID_DIST) ? (hcroFidDx / pcFidDx) : 1.0;
+                double Sy = (Math.Abs(pcFidDy) > MIN_FID_DIST) ? (hcroFidDy / pcFidDy) : 1.0;
+
+                // 배율이 비정상 범위(예: 0.5 미만 또는 2.0 초과)이면 1.0으로 폴백
+                //   → 실제 운용 시 로그 또는 경고를 호출부에서 처리하도록 플래그 기록 가능
+                if (Sx < 0.5 || Sx > 2.0) Sx = 1.0;
+                if (Sy < 0.5 || Sy > 2.0) Sy = 1.0;
+
+                // ── ⑤ T-Die Align → HcRO 좌표 변환 ─────────────────────────
+                //   (a) Pc 공간 상대 오프셋 산출 (X, Y 미러 적용)
+                //   (b) 비등방 배율 Sx, Sy 적용
+                //   (c) 회전 보정 -TopAlignRelOffsetT 적용
+                //   (d) HcRO Fid 좌표에 더하기
+
+                // Left
                 double lXFA = -(ctx.TopLeftAlign.CenterX - ctx.TopLeftFid.CenterX);
-                double lYFA = ctx.TopLeftAlign.CenterY - ctx.TopLeftFid.CenterY;
+                double lYFA = -(ctx.TopLeftAlign.CenterY - ctx.TopLeftFid.CenterY);
+                var scaledLeft = Point2D.of(lXFA * Sx, lYFA * Sy);
                 var rotatedLeft = CalibrationMath.ApplyRotation(
-                    Point2D.of(lXFA, lYFA), -ctx.TopAlignRelOffsetT);
+                    scaledLeft, -ctx.TopAlignRelOffsetT);
                 ctx.HcroTopLA = Point2D.of(
                     ctx.HcroLF.X + rotatedLeft.X,
                     ctx.HcroLF.Y + rotatedLeft.Y);
 
-                // Right: RightFid → RightAlign 개별 오프셋 + X 미러링
+                // Right
                 double rXFA = -(ctx.TopRightAlign.CenterX - ctx.TopRightFid.CenterX);
-                double rYFA = ctx.TopRightAlign.CenterY - ctx.TopRightFid.CenterY;
+                double rYFA = -(ctx.TopRightAlign.CenterY - ctx.TopRightFid.CenterY);
+                var scaledRight = Point2D.of(rXFA * Sx, rYFA * Sy);
                 var rotatedRight = CalibrationMath.ApplyRotation(
-                    Point2D.of(rXFA, rYFA), -ctx.TopAlignRelOffsetT);
+                    scaledRight, -ctx.TopAlignRelOffsetT);
                 ctx.HcroTopRA = Point2D.of(
                     ctx.HcroRF.X + rotatedRight.X,
                     ctx.HcroRF.Y + rotatedRight.Y);
+
+                // 보정값 저장 Sx, Sy 표준편차 측정. 0.1% 이내면 안정, 그 이상이면 Fid 측정 노이즈 검토.
+                ctx.PcHcroScaleX = Sx;
+                ctx.PcHcroScaleY = Sy;
+                ctx.ScaleFallbackApplied = (Sx == 1.0 && Math.Abs(pcFidDx) > MIN_FID_DIST)
+                                        || (Sy == 1.0 && Math.Abs(pcFidDy) > MIN_FID_DIST);
             }
             else
             {
-                ctx.HcroLF = Point2D.of(ctx.BtmLeftFid.CenterX, ctx.BtmLeftFid.CenterY);
-                ctx.HcroLA = Point2D.of(ctx.BtmLeftAlign.CenterX, ctx.BtmLeftAlign.CenterY);
-                ctx.HcroRF = Point2D.of(ctx.BtmRightFid.CenterX, ctx.BtmRightFid.CenterY);
-                ctx.HcroRA = Point2D.of(ctx.BtmRightAlign.CenterX, ctx.BtmRightAlign.CenterY);
-                ctx.HcroTopLF = Point2D.of(ctx.BtmLeftFid.CenterX, ctx.BtmLeftFid.CenterY);
-                ctx.HcroTopRF = Point2D.of(ctx.BtmRightFid.CenterX, ctx.BtmRightFid.CenterY);
-                ctx.HcroTopLA = Point2D.of(ctx.BtmLeftAlign.CenterX, ctx.BtmLeftAlign.CenterY);
-                ctx.HcroTopRA = Point2D.of(ctx.BtmRightAlign.CenterX, ctx.BtmRightAlign.CenterY);
+                // ── HcRO 캘리브레이션이 없을 때 폴백 ──────────────────────
+                //   Btm 은 W-Table 규칙(CenterWaferY), 좌표계 통합 불가
+                ctx.HcroLF = Point2D.of(ctx.BtmLeftFid.CenterX, ctx.BtmLeftFid.CenterWaferY);
+                ctx.HcroLA = Point2D.of(ctx.BtmLeftAlign.CenterX, ctx.BtmLeftAlign.CenterWaferY);
+                ctx.HcroRF = Point2D.of(ctx.BtmRightFid.CenterX, ctx.BtmRightFid.CenterWaferY);
+                ctx.HcroRA = Point2D.of(ctx.BtmRightAlign.CenterX, ctx.BtmRightAlign.CenterWaferY);
+
+                ctx.HcroTopLF = Point2D.of(ctx.BtmLeftFid.CenterX, ctx.BtmLeftFid.CenterWaferY);
+                ctx.HcroTopRF = Point2D.of(ctx.BtmRightFid.CenterX, ctx.BtmRightFid.CenterWaferY);
+                ctx.HcroTopLA = Point2D.of(ctx.BtmLeftAlign.CenterX, ctx.BtmLeftAlign.CenterWaferY);
+                ctx.HcroTopRA = Point2D.of(ctx.BtmRightAlign.CenterX, ctx.BtmRightAlign.CenterWaferY);
             }
+
+
         }
         private static void ComputeBtmOffsets(AlignContext ctx)
         {

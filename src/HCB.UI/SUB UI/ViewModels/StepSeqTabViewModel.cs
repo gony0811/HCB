@@ -563,6 +563,14 @@ namespace HCB.UI
         // ═════════════════════════════════════════════════════
 
         [RelayCommand]
+        public async Task NoAlgorithmRepeat()
+        {
+            ResetCts();
+            await RunTopHighAlign(_cts.Token);
+            await RunBtmHighAlign(_cts.Token);
+            ExportBondingResult();
+        }
+        [RelayCommand]
         public async Task LowResult()
         {
             ResetCts();

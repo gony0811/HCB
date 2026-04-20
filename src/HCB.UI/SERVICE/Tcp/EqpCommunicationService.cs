@@ -241,12 +241,9 @@ namespace HCB.UI
                 _logger.Warning($"[MarkPosition] 요청 실패: {result.ErrorMessage}");
                 return new VernierResponse { Result = Result.NG };
             }
-
             var response = VernierResponse.Parse(result.Response!.Data?.Content);
-
             if (response.Result != Result.OK)
                 return new VernierResponse { Result = Result.NG };
-
             return response;
         }
 

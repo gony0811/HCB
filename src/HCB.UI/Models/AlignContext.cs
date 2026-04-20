@@ -44,6 +44,9 @@ namespace HCB.UI
         public Point2D HcroTopRF { get; set; }
         public Point2D HcroTopLA { get; set; }
         public Point2D HcroTopRA { get; set; }
+        public double PcHcroScaleX { get; set; } = 1.0;
+        public double PcHcroScaleY { get; set; } = 1.0;
+        public bool ScaleFallbackApplied { get; set; }  // 범위 벗어나 1.0 폴백 시 true
 
         // ── 캘리브레이션 파라미터 캐시 ───────────────────────
         public bool HasHcRO { get; set; }
