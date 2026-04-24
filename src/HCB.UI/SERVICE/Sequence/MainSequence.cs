@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using SharpDX.Direct2D1.Effects;
 using SharpDX.Direct3D9;
 using System;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -217,7 +218,7 @@ namespace HCB.UI
         // ═══════════════════════════════════════════════════
 
         public async Task TopPlace(
-            AlignContext ctx, RecipeService recipeService, CancellationToken ct)
+            AlignContext ctx, RecipeService recipeService, ObservableCollection<BondingDataPoint> bondingDataPoints, CancellationToken ct)
         {
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
 
@@ -299,7 +300,7 @@ namespace HCB.UI
             ctx.OffsetYApplied = offsetY;
             ctx.OffsetTApplied = offsetT;
 
-            await Bonding(2000, ct);
+            await Bonding(bondingDataPoints, ct);
             await Init_Head(ct);
             await Task.Delay(2000);
             await MotionsMove("H_T", 0, ct);
@@ -310,21 +311,22 @@ namespace HCB.UI
         //  ★ ctx 는 반드시 새 인스턴스 생성
         // ═══════════════════════════════════════════════════
 
-        public async Task<AlignContext> TopRunFullSequence(
-            int topDie,
-            VisionMarkPositionResponse visionTopLowAlign,
-            RecipeService recipeService,
-            CancellationToken ct)
-        {
-            var visionResult = await TopLowAlign(topDie, ct);
-            await TopPickup(topDie, visionResult, ct);
+        //public async Task<AlignContext> TopRunFullSequence(
+        //    int topDie,
+        //    VisionMarkPositionResponse visionTopLowAlign,
+        //    RecipeService recipeService,
+        //    ObservableCollection<BondingDataPoint> bondingDataPoints,
+        //    CancellationToken ct)
+        //{
+        //    var visionResult = await TopLowAlign(topDie, ct);
+        //    await TopPickup(topDie, visionResult, ct);
 
-            var ctx = await TopHighAlign(new AlignContext(), ct);
-            ctx = await BtmHighAlign(ctx, ct);
-            await TopPlace(ctx, recipeService, ct);
+        //    var ctx = await TopHighAlign(new AlignContext(), ct);
+        //    ctx = await BtmHighAlign(ctx, ct);
+        //    await TopPlace(ctx, recipeService, bondingDataPoints, ct);
 
-            return ctx;
-        }
+        //    return ctx;
+        //}
 
         // ═══════════════════════════════════════════════════
         //  private: 캘리브레이션 파라미터 로드

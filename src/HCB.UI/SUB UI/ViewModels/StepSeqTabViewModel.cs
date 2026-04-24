@@ -940,12 +940,16 @@ namespace HCB.UI
         private async Task RunTopPlace(CancellationToken ct)
         {
             TopBondingState = StepState.InProgress;
-            await _sequenceService.TopPlace(_alignCtx, _recipeService, ct);
+            BondingHistory = new ObservableCollection<BondingDataPoint>();
+            await _sequenceService.TopPlace(_alignCtx, _recipeService, BondingHistory, ct);
+            //await _sequenceService.Bonding(BondingHistory, ct);
             //await HighResult();
             ExportBondingResult();
             TopBondingState = StepState.Completed;
         }
 
+
+        
         // ═════════════════════════════════════════════════════
         //  공통 유틸
         // ═════════════════════════════════════════════════════

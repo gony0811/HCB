@@ -1,12 +1,14 @@
 ﻿using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static HCB.UI.SERVICE.CalibrationService;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace HCB.UI
 {
@@ -533,32 +535,139 @@ namespace HCB.UI
             await File.AppendAllTextAsync(path, sb.ToString(), ct);
         }
 
-        public async Task Bonding(int delay, CancellationToken ct)
+        public async Task Bonding(ObservableCollection<BondingDataPoint> bondingDataPoints, CancellationToken ct)
         {
+            var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
             try
             {
                 double topDieThickness = await GetRecipe("TopDieThickness");
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
-                double placeOffset = await GetRecipe("PLACE_OFFSET");
-                await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness, ct);
-                await Task.Delay(200);
-                await RelativeMotionsMove(MotionExtensions.h_z, placeOffset, ct);
-                await HVacOnOff(false, ct);
-                await Task.Delay(delay);
+                double readyPosition = await GetRecipe("READY_POSITION");
+                int accTime = await GetRecipeInt("ACC_TIME");
+                int contTime = await GetRecipeInt("CONT_TIME");
+                int decTime = await GetRecipeInt("DEC_TIME");
+                double loadCell = await GetRecipe("LOADCELL");
+                double current = await GetRecipe("CURRENT");
+
+                await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
+                await Task.Delay(200, ct);
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
+                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
+                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
+                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
+                await device.SendCommand(MotionExtensions.BONDING_START + $"=1");
+
+                // Polling으로 본딩 완료 상태 + LoadCell 데이터 추적
+                const int pollingIntervalMs = 100;
+                int timeoutMs = accTime + contTime + decTime;
+                var sw = Stopwatch.StartNew();
+                bool bondingComplete = false;
+                bool vacuumOff = false;
+
+                bondingDataPoints.Clear();
+
+                while (!bondingComplete)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    if (sw.ElapsedMilliseconds > timeoutMs)
+                        throw new TimeoutException($"Bonding 완료 대기 시간 초과 ({timeoutMs}ms)");
+
+                    // AccTime 중간 시점에 Vacuum OFF
+                    if (!vacuumOff && sw.ElapsedMilliseconds >= accTime / 2)
+                    {
+                        await HVacOnOff(false, ct);
+                        vacuumOff = true;
+                        _logger.Information("AccTime 중간 → Vacuum OFF ({Elapsed}ms)", sw.ElapsedMilliseconds);
+                    }
+
+                    // LoadCell 아날로그 값 읽기
+                    double forceValue = 0;
+                    string analog = await device.SendCommand<string>(MotionExtensions.ANALOG_INPUT);
+                    if (double.TryParse(analog.Trim(), out forceValue))
+                    {
+                        bondingDataPoints.Add(new BondingDataPoint
+                        {
+                            TimeS = sw.Elapsed.TotalSeconds,
+                            ForceN = forceValue * 0.00373
+                        });
+                    }
+                    else
+                    {
+                        _logger.Warning("AnalogInput 파싱 실패: {Response}", analog);
+                    }
+
+                    // 본딩 완료 상태 확인
+                    string strResponse = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
+                    var values = strResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (values.Length > 0 && bool.TryParse(values[0], out bool result))
+                    {
+                        _logger.Information("Bonding 상태: {Result} | Force: {Force:F3}N (경과: {Elapsed}ms)",
+                            result, forceValue, sw.ElapsedMilliseconds);
+                        bondingComplete = result;
+                    }
+                    else
+                    {
+                        _logger.Warning("Bonding 상태 응답 파싱 실패: {Response}", strResponse);
+                    }
+
+                    if (!bondingComplete)
+                        await Task.Delay(pollingIntervalMs, ct);
+                }
+
+                sw.Stop();
+                _logger.Information("Bonding 완료 (총 소요: {Elapsed}ms, 수집 포인트: {Count}개)",
+                    sw.ElapsedMilliseconds, bondingDataPoints.Count);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Warning("Bonding 작업이 취소되었습니다.");
+                throw;
+            }
+            catch (TimeoutException ex)
+            {
+                _logger.Error(ex, "Bonding 타임아웃");
+                throw;
             }
             catch (Exception e)
             {
-                throw new Exception(e.Message);
+                _logger.Error(e, "Bonding 실패");
+                throw;
+            }
+            finally
+            {
+                try
+                {
+                    await device.SendCommand(MotionExtensions.BONDING_START + $"=0");
+                    await device.SendCommand(MotionExtensions.BONDING_INIT + $"=1");
+                    await Task.Delay(100);
+                    await device.SendCommand(MotionExtensions.BONDING_INIT + $"=0");
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Bonding 초기화 실패");
+                }
             }
         }
-
         public async Task<double> GetRecipe(string name, CancellationToken ct = default)
         {
             var value = _recipeService.FindByParam(name).Value;
 
             if (!double.TryParse(value, out double result))
                 throw new InvalidCastException($"레시피 {name}값이 Double타입이 아닙니다");
+
+            return result;
+        }
+
+        public async Task<int> GetRecipeInt(string name, CancellationToken ct = default)
+        {
+            var value = _recipeService.FindByParam(name).Value;
+
+            if (!int.TryParse(value, out int result))
+                throw new InvalidCastException($"레시피 {name}값이 INT타입이 아닙니다");
 
             return result;
         }
