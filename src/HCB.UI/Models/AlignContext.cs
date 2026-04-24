@@ -10,16 +10,38 @@ namespace HCB.UI
     public class AlignContext
     {
         // ── Top (Pc) Vision 결과 ──────────────────────────────
-        public VisionMarkResult TopRightFid { get; set; }
-        public VisionMarkResult TopRightAlign { get; set; }
-        public VisionMarkResult TopLeftFid { get; set; }
-        public VisionMarkResult TopLeftAlign { get; set; }
+        // ── Raw (비전 원본, 절대 수정 금지) ──────────────
+        public VisionMarkResult TopRightFidRaw { get; set; }
+        public VisionMarkResult TopRightAlignRaw { get; set; }
+        public VisionMarkResult TopLeftFidRaw { get; set; }
+        public VisionMarkResult TopLeftAlignRaw { get; set; }
 
-        // ── Btm (Hc) Vision 결과 ─────────────────────────────
-        public VisionMarkResult BtmRightFid { get; set; }
-        public VisionMarkResult BtmRightAlign { get; set; }
-        public VisionMarkResult BtmLeftFid { get; set; }
-        public VisionMarkResult BtmLeftAlign { get; set; }
+        public VisionMarkResult BtmRightFidRaw { get; set; }
+        public VisionMarkResult BtmRightAlignRaw { get; set; }
+        public VisionMarkResult BtmLeftFidRaw { get; set; }
+        public VisionMarkResult BtmLeftAlignRaw { get; set; }
+
+        // ── Corrected (보정 후) ──────────────────────────
+        public VisionMarkResult TopRightFidCorrected { get; set; }
+        public VisionMarkResult TopRightAlignCorrected { get; set; }
+        public VisionMarkResult TopLeftFidCorrected { get; set; }
+        public VisionMarkResult TopLeftAlignCorrected { get; set; }
+
+        public VisionMarkResult BtmRightFidCorrected { get; set; }
+        public VisionMarkResult BtmRightAlignCorrected { get; set; }
+        public VisionMarkResult BtmLeftFidCorrected { get; set; }
+        public VisionMarkResult BtmLeftAlignCorrected { get; set; }
+
+        // ── 하위 호환 (기존 UI 바인딩·CSV 코드 변경 불필요) ──
+        public VisionMarkResult TopRightFid => TopRightFidCorrected ?? TopRightFidRaw;
+        public VisionMarkResult TopRightAlign => TopRightAlignCorrected ?? TopRightAlignRaw;
+        public VisionMarkResult TopLeftFid => TopLeftFidCorrected ?? TopLeftFidRaw;
+        public VisionMarkResult TopLeftAlign => TopLeftAlignCorrected ?? TopLeftAlignRaw;
+
+        public VisionMarkResult BtmRightFid => BtmRightFidCorrected ?? BtmRightFidRaw;
+        public VisionMarkResult BtmRightAlign => BtmRightAlignCorrected ?? BtmRightAlignRaw;
+        public VisionMarkResult BtmLeftFid => BtmLeftFidCorrected ?? BtmLeftFidRaw;
+        public VisionMarkResult BtmLeftAlign => BtmLeftAlignCorrected ?? BtmLeftAlignRaw;
 
         // ── Offset 계산 결과 ──────────────────────────────────
         public double TopOffsetX { get; set; }
@@ -44,6 +66,8 @@ namespace HCB.UI
         public Point2D HcroTopRF { get; set; }
         public Point2D HcroTopLA { get; set; }
         public Point2D HcroTopRA { get; set; }
+        public double PcHcroScale { get; set; }
+        public double PcHcroThetaPlus { get; set; }
         public double PcHcroScaleX { get; set; } = 1.0;
         public double PcHcroScaleY { get; set; } = 1.0;
         public bool ScaleFallbackApplied { get; set; }  // 범위 벗어나 1.0 폴백 시 true

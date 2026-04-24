@@ -140,9 +140,15 @@
                     <Button Style="{StaticResource CalibBtnStyle}"
                             Content="Hc2 각도 캘리브레이션"
                             Command="{Binding Hc2AngleCommand}"
-                            Margin="0,0,0,0"
+                            Margin="0,0,0,10"
                             ToolTip="HC2_HIGH: ① AF → ② 마크 센터링 → ③ (A,A) 이동 → ④ 재촬영 → ⑤ Θ2 계산"/>
 
+                    <Button Style="{StaticResource CalibBtnStyle}"
+                            Content="카메라 Hc1/Hc2 거리 계산"
+                            Command="{Binding CameraDistanceCommand}"
+                            Margin="0,0,0,0"
+                            ToolTip="카메라 거리 계산"/>
+                    
                     <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
 
                     <!-- ③ Pc 카메라 각도 -->

@@ -773,7 +773,7 @@
 
                                 <!-- 반복 측정 버튼 -->
                                 <Button Grid.Column="4" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
-                                        Command="{Binding RepeatMeasureCommand}"
+                                        Command="{Binding NoAlgorithmRepeatCommand}"
                                         IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
                                     <TextBlock Text="반복 측정" FontSize="12" FontWeight="Bold"/>
                                 </Button>

@@ -29,12 +29,13 @@ namespace HCB.UI
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                _logger.Information("Btm Die Vision (Right Fid) Start");
+                EQStatusCheck();
 
                 var result = false;
                 VisionMarkResult fid = new VisionMarkResult
                 {
+                    CameraType = CameraType.HC2_HIGH,  
                     MarkType = MarkType.FIDUCIAL,
                     DirectType = DirectType.RIGHT,
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
@@ -59,12 +60,13 @@ namespace HCB.UI
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                _logger.Information("Btm Die Vision (Left Fid) Start");
+                EQStatusCheck();
 
                 var result = false;
                 VisionMarkResult fid = new VisionMarkResult
                 {
+                    CameraType = CameraType.HC1_HIGH,   // ★ W-Table 좌측 = HC1
                     MarkType = MarkType.FIDUCIAL,
                     DirectType = DirectType.LEFT,
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
@@ -89,12 +91,13 @@ namespace HCB.UI
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                _logger.Information("Btm Die Vision (Right Align) Start");
+                EQStatusCheck();
 
                 var result = false;
                 VisionMarkResult fid = new VisionMarkResult
                 {
+                    CameraType = CameraType.HC2_HIGH,  
                     MarkType = MarkType.ALIGN_MARK,
                     DirectType = DirectType.RIGHT,
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
@@ -119,12 +122,13 @@ namespace HCB.UI
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                _logger.Information("Btm Die Vision (Left Align) Start");
+                EQStatusCheck();
 
                 var result = false;
                 VisionMarkResult fid = new VisionMarkResult
                 {
+                    CameraType = CameraType.HC1_HIGH,   // ★ W-Table 좌측 = HC1
                     MarkType = MarkType.ALIGN_MARK,
                     DirectType = DirectType.LEFT,
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
@@ -145,16 +149,15 @@ namespace HCB.UI
             }
         }
 
-        
+
 
         public async Task<Dictionary<string, VisionMarkResult>> TopDieVision(CancellationToken ct)
         {
-
             try
             {
                 _logger.Information("Top Die Vision Start");
 
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                EQStatusCheck();
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
                 var result = false;
@@ -164,6 +167,7 @@ namespace HCB.UI
 
                 VisionMarkResult rightFid = new VisionMarkResult
                 {
+                    CameraType = CameraType.PC_HIGH,    // ★ P-Table
                     MarkType = MarkType.FIDUCIAL,
                     DirectType = DirectType.RIGHT,
                     StageX = await GetPosition(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
@@ -172,6 +176,7 @@ namespace HCB.UI
 
                 VisionMarkResult rightAlign = new VisionMarkResult
                 {
+                    CameraType = CameraType.PC_HIGH,    // ★ P-Table
                     MarkType = MarkType.ALIGN_MARK,
                     DirectType = DirectType.RIGHT,
                     StageX = rightFid.StageX,
@@ -180,6 +185,7 @@ namespace HCB.UI
 
                 VisionMarkResult leftFid = new VisionMarkResult
                 {
+                    CameraType = CameraType.PC_HIGH,    // ★ P-Table
                     MarkType = MarkType.FIDUCIAL,
                     DirectType = DirectType.LEFT,
                     StageX = await GetPosition(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
@@ -188,6 +194,7 @@ namespace HCB.UI
 
                 VisionMarkResult leftAlign = new VisionMarkResult
                 {
+                    CameraType = CameraType.PC_HIGH,    // ★ P-Table
                     MarkType = MarkType.ALIGN_MARK,
                     DirectType = DirectType.LEFT,
                     StageX = leftFid.StageX,
@@ -202,9 +209,9 @@ namespace HCB.UI
                     { "LEFT_ALIGN", leftAlign }
                 };
 
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+                await Init_Head(ct);
 
-                // 우측 피듀셜마크 이동                
+                // 우측 피듀셜마크 이동
                 await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
 
@@ -225,7 +232,7 @@ namespace HCB.UI
                 rightAlign.DxCamToMark = rAlignXY.X;
                 rightAlign.DyCamToMark = rAlignXY.Y;
 
-                // 좌측 피듀셜마크 이동 
+                // 좌측 피듀셜마크 이동
                 await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
                 result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
@@ -256,20 +263,19 @@ namespace HCB.UI
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                _logger.Information("Top Die Vision (Right Fid) Start");
+                EQStatusCheck();
 
                 var result = false;
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
 
-
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                // 우측 피듀셜마크 이동
+                await Init_Head(ct);
                 await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
                 VisionMarkResult rightFid = new VisionMarkResult
                 {
+                    CameraType = CameraType.PC_HIGH,    
                     MarkType = MarkType.FIDUCIAL,
                     DirectType = DirectType.RIGHT,
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
@@ -294,20 +300,21 @@ namespace HCB.UI
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                _logger.Information("Top Die Vision (Right Align) Start");
+                EQStatusCheck();
 
                 var result = false;
 
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
 
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+                await Init_Head(ct);
                 await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_RIGHT_ALIGN_HIGH, ct);
 
                 VisionMarkResult rightAlign = new VisionMarkResult
                 {
+                    CameraType = CameraType.PC_HIGH,   
                     MarkType = MarkType.ALIGN_MARK,
                     DirectType = DirectType.RIGHT,
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
@@ -321,7 +328,6 @@ namespace HCB.UI
                 rightAlign.DyCamToMark = rAlignXY.Y;
 
                 return rightAlign;
-
             }
             catch (Exception e)
             {
@@ -329,17 +335,20 @@ namespace HCB.UI
             }
         }
 
-        public async Task<VisionMarkResult> VisionResult(CameraType cameraType, MarkType markType, DirectType directType, string yName,  CancellationToken ct)
+        public async Task<VisionMarkResult> VisionResult(
+            CameraType cameraType, MarkType markType, DirectType directType,
+            string yName, CancellationToken ct)
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                _logger.Information($"Vision ({cameraType} / {markType} / {directType}) Start");
+                EQStatusCheck();
 
                 var result = false;
 
                 VisionMarkResult visionResult = new VisionMarkResult
                 {
+                    CameraType = cameraType,           
                     MarkType = markType,
                     DirectType = directType,
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
@@ -355,7 +364,6 @@ namespace HCB.UI
                 visionResult.DyCamToMark = xy.Y;
 
                 return visionResult;
-
             }
             catch (Exception e)
             {
@@ -363,14 +371,14 @@ namespace HCB.UI
             }
         }
 
-        public async Task<(double x, double y)> VisionAFNoResult(CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct)
+        public async Task<(double x, double y)> VisionAFNoResult(
+            CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct)
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
+                _logger.Information("Vision AF-No Start");
 
                 var xy = await communicationService.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
-                
                 return (xy.X, xy.Y);
             }
             catch (Exception e)
@@ -379,11 +387,12 @@ namespace HCB.UI
             }
         }
 
-        public async Task<(double x, double y)> VisionAFResult(CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct)
+        public async Task<(double x, double y)> VisionAFResult(
+            CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct)
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
+                _logger.Information("Vision AF Start");
                 var result = false;
                 result = await communicationService.RequestAFStart(cameraType, markType, ct);
                 if (result == false) throw new Exception("AF 실패");
@@ -398,26 +407,26 @@ namespace HCB.UI
             }
         }
 
-       
+
 
         public async Task<VisionMarkResult> TopDieVisionLeftFid(CancellationToken ct)
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                _logger.Information("Top Die Vision (Left Fid) Start");
+                EQStatusCheck();
 
                 var result = false;
 
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
 
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                // 좌측 피듀셜마크 이동
+                await Init_Head(ct);
                 await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
                 VisionMarkResult leftFid = new VisionMarkResult
                 {
+                    CameraType = CameraType.PC_HIGH,    // ★
                     MarkType = MarkType.FIDUCIAL,
                     DirectType = DirectType.LEFT,
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
@@ -441,23 +450,21 @@ namespace HCB.UI
         {
             try
             {
-                _logger.Information("Top Die Vision Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+                _logger.Information("Top Die Vision (Left Align) Start");
+                EQStatusCheck();
 
                 var result = false;
-                
 
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
 
+                await Init_Head(ct);
 
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-
-                // 좌측 얼라인마크 이동
                 await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
                 await MotionsMove(z, MotionExtensions.P_LEFT_ALIGN_HIGH, ct);
                 VisionMarkResult leftAlign = new VisionMarkResult
                 {
+                    CameraType = CameraType.PC_HIGH,    // ★
                     MarkType = MarkType.ALIGN_MARK,
                     DirectType = DirectType.LEFT,
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
@@ -488,13 +495,11 @@ namespace HCB.UI
                 await Init_Head(ct);
                 await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
                 await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
-                
-                
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 throw new Exception(e.Message);
             }
-            
         }
 
         public async Task TCheck(CancellationToken ct)
@@ -511,7 +516,6 @@ namespace HCB.UI
                 results.Add((angle, hc1.X, hc1.Y, hc2.X, hc2.Y));
             }
 
-            // CSV 저장 (파일이 없으면 헤더 포함 생성, 있으면 데이터만 추가)
             var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "TCheck_Result.csv");
             var sb = new StringBuilder();
 
@@ -543,11 +547,12 @@ namespace HCB.UI
                 await HVacOnOff(false, ct);
                 await Task.Delay(delay);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw new Exception(e.Message);
             }
         }
+
         public async Task<double> GetRecipe(string name, CancellationToken ct = default)
         {
             var value = _recipeService.FindByParam(name).Value;
@@ -562,7 +567,5 @@ namespace HCB.UI
         {
             if (response.Result == Result.NG) throw new Exception("비전 통신 에러");
         }
-
-
     }
 }

@@ -57,7 +57,7 @@ namespace HCB.UI
         public const string BONDING_ALIGN_1 = "BONDING_ALIGN_1";
         public const string BONDING_ALIGN_2 = "BONDING_ALIGN_2";
         public const string BONDING = "BONDING";
-        public const string WAFER_CENTER_POSITION = "WAFER_CENTER";
+        public const string WAFER_CENTER_POSITION = "PLACE_CENTER";
         public const string WAFER_RIGHT_POSITION = "WAFER_RIGHT";
         public const string WAFER_LEFT_POSITION = "WAFER_LEFT";
         public const string WAFER_LOADING = "WAFER_LOAD";
@@ -65,7 +65,6 @@ namespace HCB.UI
 
         // 사용 축: H_X, P_Z
         public const string BTM_VISION = "BTM_VISION";
-
 
         // -- 
         public const string READY_POSITION = "READY";

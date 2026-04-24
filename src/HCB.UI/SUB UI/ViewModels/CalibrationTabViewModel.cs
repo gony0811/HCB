@@ -198,6 +198,78 @@ namespace HCB.UI
             finally { IsNotBusy = true; }
         }
 
+
+        [RelayCommand]
+        public async Task CameraDistance(CancellationToken ct = default)
+        {
+            const double SafeGap = 0.1;
+            const double MeasureOffsetX = -12.5;
+            const double MeasureOffsetY = 7.0;
+
+            try
+            {
+                double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
+                double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
+                double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
+
+                await _sequenceService.Init_Head(ct);
+
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, ct));
+
+                double zTarget = shankToWaferOffset - topDieThickness - btmDieThickness - SafeGap;
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, zTarget, ct);
+
+                var firstMark = await _sequenceService.VisionResult(
+                    CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
+
+                await Task.WhenAll(
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, MeasureOffsetX, ct),
+                    _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, MeasureOffsetY, ct));
+
+                var secondMark = await _sequenceService.VisionResult(
+                    CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, ct);
+
+                // ── HcRO 중심 기준 카메라 오프셋 산출 ──
+                // 두 측정점의 중점 = HcRO → 카메라 간 오프셋
+                double halfDeltaX = (secondMark.CenterX - firstMark.CenterX) / 2.0;
+                double halfDeltaY = (secondMark.CenterY - firstMark.CenterY) / 2.0;
+
+                // HC1(물리: 좌하단) → Stage 좌표: X-, Y+ (카메라 Y축 반전)
+                // HC2(물리: 우상단) → Stage 좌표: X+, Y- (HcRO 점대칭)
+                await UpdateCameraOffsets(
+                    hc1X: halfDeltaX,   // -값 (좌측)
+                    hc1Y: halfDeltaY,   // +값 (Y반전 → 하단이 +)
+                    hc2X: -halfDeltaX,   // +값 (우측)
+                    hc2Y: -halfDeltaY);  // -값 (Y반전 → 상단이 -)
+            }
+            catch (OperationCanceledException) {  }
+            catch (Exception e)
+            {
+                _logger.Error(e, "카메라 거리 측정 Fail");
+                throw;
+            }
+        }
+
+        private async Task UpdateCameraOffsets(
+            double hc1X, double hc1Y, double hc2X, double hc2Y)
+        {
+            var updates = new (string Name, double Value)[]
+            {
+            ("HC1_X", hc1X),
+            ("HC1_Y", hc1Y),
+            ("HC2_X", hc2X),
+            ("HC2_Y", hc2Y),
+            };
+
+            foreach (var (name, value) in updates)
+            {
+                var param = _ecParamService.FindByName(name);
+                param.Value = value.ToString();
+                await _ecParamService.UpdateParam(param);
+            }
+        }
         private async Task<double> GetAngle(CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct = default)
         {
             try

@@ -60,6 +60,29 @@ namespace HCB.UI
                 (k2 * u1x - k1 * u2x) / d);
         }
 
+        public static Point2D ComputeHcRO2(Point2D p1, Point2D p1_prime, Point2D p2, Point2D p2_prime)
+        {
+            // 각 선분의 중점 구하기
+            double m1x = (p1.X + p1_prime.X) / 2.0;
+            double m1y = (p1.Y + p1_prime.Y) / 2.0;
+            double m2x = (p2.X + p2_prime.X) / 2.0;
+            double m2y = (p2.Y + p2_prime.Y) / 2.0;
+
+            // 각 선분의 기울기(벡터)의 수직 방향 벡터 구하기
+            double v1x = -(p1_prime.Y - p1.Y);
+            double v1y = p1_prime.X - p1.X;
+            double v2x = -(p2_prime.Y - p2.Y);
+            double v2y = p2_prime.X - p2.X;
+
+            // 두 수직이등분선의 교점 계산 (연립 방정식)
+            double det = v1x * v2y - v1y * v2x;
+            if (Math.Abs(det) < 1e-6) throw new Exception("두 벡터가 평행합니다.");
+
+            double t = ((m2x - m1x) * v2y - (m2y - m1y) * v2x) / det;
+
+            return Point2D.of(m1x + t * v1x, m1y + t * v1y);
+        }
+
         // ═══════════════════════════════════════════════════════════════════
         //  3. 회전 행렬 적용
         // ═══════════════════════════════════════════════════════════════════

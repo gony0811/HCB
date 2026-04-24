@@ -37,7 +37,7 @@ namespace HCB.UI
 
         // CenterY / CenterWaferY 분기 헬퍼
         private double GetY(VisionMarkResult m) =>
-            _useWaferY ? m.CenterWaferY : m.CenterY;
+            _useWaferY ? m.CenterY : m.CenterY;
 
         // ── 좌표 텍스트 업데이트 ──────────────────────────────────
         private void UpdateDisplay()
