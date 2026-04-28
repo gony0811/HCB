@@ -838,6 +838,8 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
                                         Width="28" Height="28" Margin="0,0,10,0">
@@ -851,10 +853,19 @@
                                     <TextBlock Text="Hybrid Bonding" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                 </StackPanel>
                                 <Button Grid.Column="3" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
+                                        Command="{Binding BondingTestCommand}">
+                                    <TextBlock Text="Bonding" FontSize="12" FontWeight="Bold"/>
+                                </Button>
+
+                                <Button Grid.Column="4" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
+                                        Command="{Binding DropTestCommand}">
+                                    <TextBlock Text="PickUp" FontSize="12" FontWeight="Bold"/>
+                                </Button>
+                                <Button Grid.Column="5" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
                                         Command="{Binding TopHighAlignInfoCommand}">
                                     <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
                                 </Button>
-                                <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
+                                <Button Grid.Column="6" Style="{StaticResource StartButtonStyle}"
                                         Command="{Binding TopPlaceCommand}">
                                     <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
                                 </Button>

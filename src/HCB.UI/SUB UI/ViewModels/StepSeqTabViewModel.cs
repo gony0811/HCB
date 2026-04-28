@@ -942,14 +942,25 @@ namespace HCB.UI
             TopBondingState = StepState.InProgress;
             BondingHistory = new ObservableCollection<BondingDataPoint>();
             await _sequenceService.TopPlace(_alignCtx, _recipeService, BondingHistory, ct);
-            //await _sequenceService.Bonding(BondingHistory, ct);
+            await _sequenceService.Bonding(BondingHistory, ct);
             //await HighResult();
             ExportBondingResult();
             TopBondingState = StepState.Completed;
         }
 
+        [RelayCommand]
+        public async Task BondingTest(CancellationToken ct)
+        {
+            BondingHistory = new ObservableCollection<BondingDataPoint>();
+            await _sequenceService.Bonding(BondingHistory, ct);
+        }
 
-        
+        [RelayCommand]
+        public async Task DropTest(CancellationToken ct)
+        {
+            await _sequenceService.BondingTest(ct);
+        }
+
         // ═════════════════════════════════════════════════════
         //  공통 유틸
         // ═════════════════════════════════════════════════════

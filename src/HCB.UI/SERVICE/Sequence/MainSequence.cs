@@ -261,7 +261,7 @@ namespace HCB.UI
             _logger.Information($"[SPEC]  SpecXs = {specXs:F4}  SpecYs = {specYs:F4}");
 
             // ── hT 회전 ──────────────────────────────────────────
-            //await RelativeMotionsMove(MotionExtensions.H_T, thetaF * 180.0 / Math.PI, ct);
+            await RelativeMotionsMove(MotionExtensions.H_T, -thetaF * 180.0 / Math.PI, ct);
 
             // ── Shift 연산 ───────────────────────────────────────
             Point2D hcroTopLTPrime = CalibrationMath.RotateAroundPivot(
@@ -286,9 +286,9 @@ namespace HCB.UI
 
             _logger.Information($"[SHIFT] X = {shiftX:F4}  Y = {shiftY:F4}");
 
-            //await Task.WhenAll(
-            //    RelativeMotionsMove(MotionExtensions.H_X, shiftX, ct),
-            //    RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct));
+            await Task.WhenAll(
+                RelativeMotionsMove(MotionExtensions.H_X, -shiftX, ct),
+                RelativeMotionsMove(MotionExtensions.W_Y, -shiftY, ct));
 
             //await RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct);
 
@@ -300,10 +300,9 @@ namespace HCB.UI
             ctx.OffsetYApplied = offsetY;
             ctx.OffsetTApplied = offsetT;
 
-            await Bonding(bondingDataPoints, ct);
+            //await Bonding(bondingDataPoints, ct);
             await Init_Head(ct);
             await Task.Delay(2000);
-            await MotionsMove("H_T", 0, ct);
         }
 
         // ═══════════════════════════════════════════════════

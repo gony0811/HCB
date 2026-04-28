@@ -27,6 +27,8 @@ namespace HCB.UI
             if (!result) throw new Exception("HeadPicker를 확인해주세요");
         }
 
+       
+
         public async Task<VisionMarkResult> BtmDieVisionRightFid(CancellationToken ct)
         {
             try
@@ -561,7 +563,7 @@ namespace HCB.UI
 
                 // Polling으로 본딩 완료 상태 + LoadCell 데이터 추적
                 const int pollingIntervalMs = 100;
-                int timeoutMs = accTime + contTime + decTime;
+                int timeoutMs = accTime + contTime + decTime + 2000; // 폴링 오버헤드 마진
                 var sw = Stopwatch.StartNew();
                 bool bondingComplete = false;
                 bool vacuumOff = false;
@@ -571,9 +573,6 @@ namespace HCB.UI
                 while (!bondingComplete)
                 {
                     ct.ThrowIfCancellationRequested();
-
-                    if (sw.ElapsedMilliseconds > timeoutMs)
-                        throw new TimeoutException($"Bonding 완료 대기 시간 초과 ({timeoutMs}ms)");
 
                     // AccTime 중간 시점에 Vacuum OFF
                     if (!vacuumOff && sw.ElapsedMilliseconds >= accTime / 2)
@@ -614,8 +613,14 @@ namespace HCB.UI
                         _logger.Warning("Bonding 상태 응답 파싱 실패: {Response}", strResponse);
                     }
 
+                    // 완료되지 않았을 때만 타임아웃 체크 + 대기
                     if (!bondingComplete)
+                    {
+                        if (sw.ElapsedMilliseconds > timeoutMs)
+                            throw new TimeoutException($"Bonding 완료 대기 시간 초과 ({timeoutMs}ms)");
+
                         await Task.Delay(pollingIntervalMs, ct);
+                    }
                 }
 
                 sw.Stop();
@@ -630,7 +635,118 @@ namespace HCB.UI
             catch (TimeoutException ex)
             {
                 _logger.Error(ex, "Bonding 타임아웃");
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Bonding 실패");
                 throw;
+            }
+            finally
+            {
+                try
+                {
+                    await device.SendCommand(MotionExtensions.BONDING_START + $"=0");
+                    await device.SendCommand(MotionExtensions.BONDING_INIT + $"=1");
+                    await Task.Delay(100);
+                    await device.SendCommand(MotionExtensions.BONDING_INIT + $"=0");
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Bonding 초기화 실패");
+                }
+            }
+        }
+
+        public async Task BondingTest(CancellationToken ct)
+        {
+            var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            try
+            {
+                double topDieThickness = await GetRecipe("TopDieThickness");
+                double btmDieThickness = await GetRecipe("BtmDieThickness");
+                double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
+                double readyPosition = await GetRecipe("READY_POSITION");
+                int accTime = await GetRecipeInt("ACC_TIME");
+                int contTime = await GetRecipeInt("CONT_TIME");
+                int decTime = await GetRecipeInt("DEC_TIME");
+                double loadCell = await GetRecipe("LOADCELL");
+                double current = await GetRecipe("CURRENT");
+
+                await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
+                await Task.Delay(200, ct);
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
+                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
+                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
+                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
+                await device.SendCommand(MotionExtensions.BONDING_START + $"=1");
+
+                // Polling으로 본딩 완료 상태 + LoadCell 데이터 추적
+                const int pollingIntervalMs = 100;
+                int timeoutMs = accTime + contTime + decTime + 2000; // 폴링 오버헤드 마진
+                var sw = Stopwatch.StartNew();
+                bool bondingComplete = false;
+                bool vacuumOff = false;
+
+                while (!bondingComplete)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    // AccTime 중간 시점에 Vacuum OFF
+                    if (!vacuumOff && sw.ElapsedMilliseconds >= accTime / 2)
+                    {
+                        await HVacOnOff(true, ct);
+                        vacuumOff = true;
+                        _logger.Information("AccTime 중간 → Vacuum OFF ({Elapsed}ms)", sw.ElapsedMilliseconds);
+                    }
+
+                    // LoadCell 아날로그 값 읽기
+                    double forceValue = 0;
+                    string analog = await device.SendCommand<string>(MotionExtensions.ANALOG_INPUT);
+                    if (double.TryParse(analog.Trim(), out forceValue))
+                    {
+                        
+                    }
+                    else
+                    {
+                        _logger.Warning("AnalogInput 파싱 실패: {Response}", analog);
+                    }
+
+                    // 본딩 완료 상태 확인
+                    string strResponse = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
+                    var values = strResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (values.Length > 0 && bool.TryParse(values[0], out bool result))
+                    {
+                        _logger.Information("Bonding 상태: {Result} | Force: {Force:F3}N (경과: {Elapsed}ms)",
+                            result, forceValue, sw.ElapsedMilliseconds);
+                        bondingComplete = result;
+                    }
+                    else
+                    {
+                        _logger.Warning("Bonding 상태 응답 파싱 실패: {Response}", strResponse);
+                    }
+
+                    // 완료되지 않았을 때만 타임아웃 체크 + 대기
+                    if (!bondingComplete)
+                    {
+                        if (sw.ElapsedMilliseconds > timeoutMs)
+                            throw new TimeoutException($"Bonding 완료 대기 시간 초과 ({timeoutMs}ms)");
+
+                        await Task.Delay(pollingIntervalMs, ct);
+                    }
+                }
+
+                sw.Stop();
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Warning("Bonding 작업이 취소되었습니다.");
+                throw;
+            }
+            catch (TimeoutException ex)
+            {
+                _logger.Error(ex, "Bonding 타임아웃");
             }
             catch (Exception e)
             {
