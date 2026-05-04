@@ -138,19 +138,23 @@ namespace HCB.UI
             IsNotBusy = false;
             try
             {
+                
+                var hc2XParam = _ecParamService.FindByName(MotionExtensions.HC2_X).Value;
+                var hc2YParam = _ecParamService.FindByName(MotionExtensions.HC2_Y).Value;
+                var hc2XOffset = double.TryParse(hc2XParam, out double xOffset) ? xOffset : 0.0;
+                var hc2YOffset = double.TryParse(hc2YParam, out double yOffset) ? yOffset : 0.0;
+
                 // ── 회전 전: Hc1, Hc2 각각 절대 좌표 계산 (Stage 이동 없음) ───
                 CalibStatus = "Hc1/Hc2 마크 측정 (회전 전)...";
-                await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, ct);
-                var v1Before = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
+                await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.FIDUCIAL, ct);
+                var v1Before = await _communication.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
                 if (v1Before.Result == Result.NG) throw new Exception("Hc1 회전 전 비전 측정 실패");
 
-                await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, ct);
-                var v2Before = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
+                await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
+                
+                var v2Before = await _communication.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
                 if (v2Before.Result == Result.NG) throw new Exception("Hc2 회전 전 비전 측정 실패");
 
-                // Stage 이동 없이 현재 위치 + 비전 오프셋으로 절대 좌표 계산
-                var hc1Before = Point2D.of(_hxAxis!.CurrentPosition + v1Before.X, _wyAxis!.CurrentPosition + v1Before.Y);
-                var hc2Before = Point2D.of(_hxAxis!.CurrentPosition + v2Before.X, _wyAxis!.CurrentPosition + v2Before.Y);
 
                 // ── H_T 회전 ─────────────────────────────────────────
                 CalibStatus = "H_T 회전 중...";
@@ -158,18 +162,20 @@ namespace HCB.UI
 
                 // ── 회전 후: Hc1, Hc2 각각 절대 좌표 계산 (Stage 이동 없음) ───
                 CalibStatus = "Hc1/Hc2 마크 측정 (회전 후)...";
-                await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, ct);
-                var v1After = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
+                await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.FIDUCIAL, ct);
+                var v1After = await _communication.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
                 if (v1After.Result == Result.NG) throw new Exception("Hc1 회전 후 비전 측정 실패");
 
-                await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, ct);
-                var v2After = await _communication.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
+                await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
+                var v2After = await _communication.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
                 if (v2After.Result == Result.NG) throw new Exception("Hc2 회전 후 비전 측정 실패");
 
-                // 회전 후 절대 좌표
-                var hc1After = Point2D.of(_hxAxis.CurrentPosition + v1After.X, _wyAxis.CurrentPosition + v1After.Y);
-                var hc2After = Point2D.of(_hxAxis.CurrentPosition + v2After.X, _wyAxis.CurrentPosition + v2After.Y);
-
+                
+                var hc1Before = Point2D.of(v1Before.X, v1Before.Y);
+                var hc2Before = Point2D.of(v2Before.X + hc2XOffset, v2Before.Y + hc2YOffset);
+                var hc1After = Point2D.of(v1After.X, v1After.Y);
+                var hc2After = Point2D.of(v2After.X + hc2XOffset, v2After.Y + hc2YOffset);
+                
                 // ── H_T 복귀 ─────────────────────────────────────────
                 CalibStatus = "H_T 복귀...";
                 await _sequenceService.MotionsMove(MotionExtensions.H_T, _htAxis.CurrentPosition - RotationDeg, ct);

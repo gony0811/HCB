@@ -27,7 +27,6 @@ namespace HCB.UI
             if (!result) throw new Exception("HeadPicker를 확인해주세요");
         }
 
-       
 
         public async Task<VisionMarkResult> BtmDieVisionRightFid(CancellationToken ct)
         {

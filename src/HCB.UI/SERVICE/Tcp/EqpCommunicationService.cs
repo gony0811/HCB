@@ -24,6 +24,7 @@ namespace HCB.UI
         private SequenceServiceVM sequenceServiceVM;
         private SequenceHelper sequenceHelper;
         private AlarmService alarmService;
+        private ECParamService ecParamService;
 
         // HeartBeat
         private Timer? _heartbeatTimer;
@@ -33,12 +34,13 @@ namespace HCB.UI
 
         public ConnectionState State => _server.State;
 
-        public EqpCommunicationService(ILogger logger, SequenceServiceVM sequenceServiceVM, SequenceHelper sequenceHelper, AlarmService alarmService)
+        public EqpCommunicationService(ILogger logger, SequenceServiceVM sequenceServiceVM, SequenceHelper sequenceHelper, AlarmService alarmService, ECParamService eCParamService)
         {
             _logger = logger;
             this.sequenceServiceVM = sequenceServiceVM;
             this.sequenceHelper = sequenceHelper;
             this.alarmService = alarmService;
+            this.ecParamService = ecParamService;
 
             var settings = new TcpSettings();
             _server = new EqpTcpServer(settings);
@@ -184,6 +186,14 @@ namespace HCB.UI
                 content: $"<MARKTYPE>{markType}</MARKTYPE><CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT>"
             );
 
+            double t = cameraType switch
+            {
+                CameraType.HC1_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC1_T).Value),
+                CameraType.HC2_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC2_T).Value),
+                CameraType.PC_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.PC_T).Value),
+                _ => 0
+            };
+
             double fov = cameraType switch
             {
                 CameraType.HC1_HIGH => 7.2,
@@ -216,12 +226,13 @@ namespace HCB.UI
                     return new VisionMarkPositionResponse { Result = Result.NG };
                 }
             }
-            
+            var xy = CalibrationMath.ApplyRotation(Point2D.of(response.X, response.Y), -t);
+
             return new VisionMarkPositionResponse
             {
                 Result = response.Result,
-                X = response.X,
-                Y = response.Y,
+                X = xy.X,
+                Y = xy.Y,
                 Theta = response.Theta
             };
         }

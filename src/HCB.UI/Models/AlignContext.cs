@@ -1,4 +1,5 @@
 ﻿// AlignContext.cs
+using Telerik.Windows.Persistence.Core;
 using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
@@ -91,5 +92,29 @@ namespace HCB.UI
         public double OffsetXApplied { get; set; } // 레시피 X_ALIGN_OFFSET
         public double OffsetYApplied { get; set; } // 레시피 Y_ALIGN_OFFSET
         public double OffsetTApplied { get; set; } // 레시피 T_ALIGN_OFFSET
+    }
+
+
+    public class AlignData
+    {
+        public VisionMarkResult TopRightFidRaw { get; set; }
+        public VisionMarkResult TopRightAlignRaw { get; set; }
+        public VisionMarkResult TopLeftFidRaw { get; set; }
+        public VisionMarkResult TopLeftAlignRaw { get; set; }
+
+        public VisionMarkResult BtmRightFidRaw { get; set; }
+        public VisionMarkResult BtmRightAlignRaw { get; set; }
+        public VisionMarkResult BtmLeftFidRaw { get; set; }
+        public VisionMarkResult BtmLeftAlignRaw { get; set; }
+
+        public double PcTRad { get; set; }
+        public double Hc1Rad { get; set; }
+        public double Hc2Rad { get; set; }
+        public Point2D Hcro { get; set; }
+        public Point2D Hc2Offset { get; set; }
+
+        public Point2D OffsetXY { get; set; }
+        public double OffsetT { get; set; } 
+
     }
 }

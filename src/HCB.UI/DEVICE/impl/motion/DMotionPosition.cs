@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Entity;
-using HCB.UI.SERVICE.ViewModels;
+using HCB.UI.SERVICE;
 using Serilog;
 using System;
 using System.Threading.Tasks;

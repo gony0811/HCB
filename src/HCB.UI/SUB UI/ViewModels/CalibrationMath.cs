@@ -2,7 +2,7 @@
 
 namespace HCB.UI
 {
-    public class CalibrationMath
+    public static class CalibrationMath
     {
         // ═══════════════════════════════════════════════════════════════════
         //  1. 카메라 각도 산출
@@ -179,6 +179,18 @@ namespace HCB.UI
         public static bool VerifyPositionStability(Point2D expected, Point2D actual, double toleranceUm = 1.0)
         {
             return Distance(expected, actual) <= toleranceUm;
+        }
+
+        // Degree를 Radian으로
+        public static double ToRadian(this double degree)
+        {
+            return degree * Math.PI / 180.0;
+        }
+
+        // Radian을 Degree로
+        public static double ToDegree(this double radian)
+        {
+            return radian * 180.0 / Math.PI;
         }
     }
 }

@@ -5,6 +5,7 @@ using SharpDX.Direct3D9;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Runtime.InteropServices.Marshalling;
 using System.Threading;
 using System.Threading.Tasks;
 using static HCB.UI.SERVICE.CalibrationService;
@@ -65,39 +66,7 @@ namespace HCB.UI
                 _logger.Information("Auto Run End");
             }
         }
-
-        public async Task DieAlignAndPick(int dVac, CancellationToken ct)
-        {
-            try
-            {
-                var BtmDieAlign = await DTableCarrierAlign(dVac, MarkType.DIE_CENTER_BOTTOM, ct);
-                await DTableBTMPickup(dVac, BtmDieAlign, ct);
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e.Message);
-            }
-        }
-
-        public async Task BTMPlace(CancellationToken ct)
-        {
-            await BtmDieDrop(1, ct);
-            await Init_Head(ct);
-        }
-
-        public async Task TopDieAlignAndPick(int dVac, CancellationToken ct)
-        {
-            try
-            {
-                var topDieAlign = await DTableCarrierAlign(dVac, MarkType.DIE_CENTER_TOP, ct);
-                await DTableTOPPickup(dVac, topDieAlign, ct);
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e.Message);
-            }
-        }
-
+        #region 저배율 카메라 측정 및 픽업
         public async Task<VisionMarkPositionResponse> TopLowAlign(
             int topDie, CancellationToken ct)
         {
@@ -109,12 +78,9 @@ namespace HCB.UI
         {
             await DTableTOPPickup(topDie, visionResult, ct);
         }
+        #endregion
 
-        // ═══════════════════════════════════════════════════
-        //  Step 1: Top(Pc) 카메라 4점 측정
-        //   비전 원본 → Raw 필드 (절대 수정 금지)
-        //   보정 결과 → Corrected 필드
-        // ═══════════════════════════════════════════════════
+        #region Top Die 고배율 측정
 
         public async Task<AlignContext> TopHighAlign(
             AlignContext ctx, CancellationToken ct)
@@ -136,10 +102,24 @@ namespace HCB.UI
             return ctx;
         }
 
-        // ═══════════════════════════════════════════════════
-        //  Step 2: Btm(Hc) 4점 측정 → 보정 → HcRO 변환
-        //   TopHighAlign 완료 후 ctx.Top*Corrected 필요
-        // ═══════════════════════════════════════════════════
+
+        public async Task<AlignData> TopHighAlign(
+            AlignData data, CancellationToken ct)
+        {
+            data ??= new AlignData();
+            
+
+            data.TopRightFidRaw = await TopDieVisionRightFid(ct);
+            data.TopRightAlignRaw = await TopDieVisionRightAlign(ct);
+            data.TopLeftFidRaw = await TopDieVisionLeftFid(ct);
+            data.TopLeftAlignRaw = await TopDieVisionLeftAlign(ct);
+
+            return data;
+        }
+
+        #endregion
+
+        #region Btm Die 고배율 측정
 
         public async Task<AlignContext> BtmHighAlign(
             AlignContext ctx, CancellationToken ct)
@@ -164,6 +144,88 @@ namespace HCB.UI
 
             return ctx;
         }
+
+        public async Task<AlignData> BtmHighAlign(
+            AlignData data, CancellationToken ct)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
+            await TopDiePlace(ct);
+
+            data.BtmRightFidRaw = await BtmDieVisionRightFid(ct);
+            data.BtmRightAlignRaw = await BtmDieVisionRightAlign(ct);
+            data.BtmLeftFidRaw = await BtmDieVisionLeftFid(ct);
+            data.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(ct);
+            return data;
+        }
+
+        #endregion
+
+        #region Top Die Place 및 Hcro 연산 
+        public async Task TopPlace(AlignData data, ObservableCollection<BondingDataPoint> bondingDataPoints, CancellationToken ct)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            LoadCalibrationInto(data);
+
+            // ── 1. Top Die: Fiducial → Align 거리 ──
+            var lDist = Point2D.of(
+                data.TopLeftAlignRaw.CenterX - data.TopLeftFidRaw.CenterX,
+                data.TopLeftAlignRaw.CenterY - data.TopLeftFidRaw.CenterY);
+            var rDist = Point2D.of(
+                data.TopRightAlignRaw.CenterX - data.TopRightFidRaw.CenterX,
+                data.TopRightAlignRaw.CenterY - data.TopRightFidRaw.CenterY);
+
+            // ── 2. 좌표계 통합: P-Cam → Hc1, Hc2 Cam ──
+            Point2D camOffset = data.Hc2Offset;
+
+            // Bottom 마크 (Align)
+            Point2D bl = Point2D.of(
+                data.BtmLeftAlignRaw.DxCamToMark,
+                data.BtmLeftAlignRaw.DyCamToMark);
+            Point2D br = Point2D.of(
+                camOffset.X + data.BtmRightAlignRaw.DxCamToMark,
+                camOffset.Y + data.BtmRightAlignRaw.DyCamToMark);
+
+            // Bottom Fiducial (Top 마크 기준점으로 사용)
+            Point2D bfl = Point2D.of(
+                data.BtmLeftFidRaw.DxCamToMark,
+                data.BtmLeftFidRaw.DyCamToMark);
+            Point2D bfr = Point2D.of(
+                camOffset.X + data.BtmRightFidRaw.DxCamToMark,
+                camOffset.Y + data.BtmRightFidRaw.DyCamToMark);
+
+            // Top 마크 = Bottom Fiducial DxCam + Dist
+            Point2D tl = Point2D.of(bfl.X + lDist.X, bfl.Y + lDist.Y);
+            Point2D tr = Point2D.of(bfr.X + rDist.X, bfr.Y + rDist.Y);
+
+            // ── 3. 회전중심(HCRO) 기준으로 좌표 이동 ──
+            Point2D hcro = data.Hcro;
+            bl = Point2D.of(bl.X - hcro.X, bl.Y - hcro.Y);
+            br = Point2D.of(br.X - hcro.X, br.Y - hcro.Y);
+            tl = Point2D.of(tl.X - hcro.X, tl.Y - hcro.Y);
+            tr = Point2D.of(tr.X - hcro.X, tr.Y - hcro.Y);
+
+            double thetaS = ParseRecipe("SPEC_THETA");  // Degree
+            double specXs = ParseRecipe("SPEC_X");
+            double specYs = ParseRecipe("SPEC_Y");
+
+            double bTheta = Math.Atan2(br.Y - bl.Y, br.X - bl.X);   // Radian
+            double tTheta = Math.Atan2(tr.Y - tl.Y, tr.X - tl.X);   // Radian
+            double thetaF = thetaS - CalibrationMath.ToDegree(tTheta - bTheta);
+            double thetaF_rad = CalibrationMath.ToRadian(thetaF);
+
+            tl = CalibrationMath.ApplyRotation(tl, thetaF_rad);
+            tr = CalibrationMath.ApplyRotation(tr, thetaF_rad);
+
+            Point2D tCenter = Point2D.of((tl.X + tr.X) / 2.0, (tl.Y + tr.Y) / 2.0);
+            Point2D bCenter = Point2D.of((bl.X + br.X) / 2.0, (bl.Y + br.Y) / 2.0);
+
+            double shiftX = tCenter.X - bCenter.X + data.OffsetXY.X;
+            double shiftY = tCenter.Y - bCenter.Y + data.OffsetXY.Y;
+        }
+
+        #endregion
+
 
         public async Task GetHcro(AlignContext ctx, CancellationToken ct)
         {
@@ -250,9 +312,9 @@ namespace HCB.UI
             double thetaO = CalibrationMath.ComputeAlignAngle(
                 ctx.HcroLA, ctx.HcroRA,
                 ctx.HcroTopLA, ctx.HcroTopRA);      // rad 
-            double thetaS = ParseRecipe(recipeService, "SPEC_THETA") * Math.PI / 180.0;     //rad 
-            double specXs = ParseRecipe(recipeService, "SPEC_X");
-            double specYs = ParseRecipe(recipeService, "SPEC_Y");
+            double thetaS = ParseRecipe("SPEC_THETA") * Math.PI / 180.0;     //rad 
+            double specXs = ParseRecipe("SPEC_X");
+            double specYs = ParseRecipe("SPEC_Y");
             double thetaF = thetaO - thetaS + offsetT * Math.PI / 180.0;
 
             _logger.Information($"[ANGLE] ThetaO = {thetaO:F6}rad ({thetaO * 180 / Math.PI:F4}deg)");
@@ -361,6 +423,37 @@ namespace HCB.UI
                 ctx.PcTRad = ParseDouble(pcTParam.Value) * Math.PI / 180.0;
         }
 
+        private void LoadCalibrationInto(AlignData data)
+        {
+            var pcTParam = _paramService.FindByName(MotionExtensions.PC_T);
+            var hc1Param = _paramService.FindByName(MotionExtensions.HC1_T);
+            var hc2Param = _paramService.FindByName(MotionExtensions.HC2_T);
+            var hcroXParam = _paramService.FindByName(MotionExtensions.HCRO_X);
+            var hcroYParam = _paramService.FindByName(MotionExtensions.HCRO_Y);
+            var hc2XParam = _paramService.FindByName(MotionExtensions.HC2_X);
+            var hc2YParam = _paramService.FindByName(MotionExtensions.HC2_Y);
+            
+
+            data.OffsetXY = new Point2D(
+                double.Parse(_recipeService.FindByParam("X_ALIGN_OFFSET").Value),
+                double.Parse(_recipeService.FindByParam("Y_ALIGN_OFFSET").Value));
+            data.OffsetT = double.Parse(_recipeService.FindByParam("T_ALIGN_OFFSET").Value);
+
+            var HasHcRO = hcroXParam.Id != 0 && hcroYParam.Id != 0
+                       && hc1Param.Id != 0 && hc2Param.Id != 0
+                       && hc2XParam.Id != 0 && hc2YParam.Id != 0;
+            var HasPcT = pcTParam.Id != 0;
+
+            if (HasHcRO)
+            {
+                data.Hc1Rad = CalibrationMath.ToRadian(ParseDouble(hc1Param.Value));
+                data.Hc2Rad = CalibrationMath.ToRadian(ParseDouble(hc2Param.Value));
+                data.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
+                data.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
+            }
+            if (HasPcT)
+                data.PcTRad = CalibrationMath.ToRadian(ParseDouble(pcTParam.Value));
+        }
         // ═══════════════════════════════════════════════════
         //  private: Top(Pc) 보정
         //   Raw → Clone → 회전 보정 → Corrected
@@ -682,9 +775,9 @@ namespace HCB.UI
             return double.Parse(s, CultureInfo.InvariantCulture);
         }
 
-        private static double ParseRecipe(RecipeService svc, string paramName)
+        private double ParseRecipe(string paramName)
         {
-            var p = svc.FindByParam(paramName);
+            var p = _recipeService.FindByParam(paramName);
             return p != null ? double.Parse(p.Value) : 0.0;
         }
     }
