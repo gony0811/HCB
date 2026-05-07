@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Telerik.Windows.Documents.Fixed.Model.Actions;
 using Telerik.Windows.Documents.Flow.FormatProviders.Html;
@@ -33,9 +34,17 @@ namespace HCB.UI
         [ObservableProperty] private MotionDeviceType motionDeviceType;
         [ObservableProperty] public ObservableCollection<IAxis> motionList = new();
 
+
         private readonly ILogger _logger;
         private readonly IInterlockService _interlock;
         private uint _uDeviceId;
+
+        // ── 재연결 관련 필드 ──────────────────────────────────────────
+        private readonly SemaphoreSlim _reconnectLock = new(1, 1);
+        private bool _isReconnecting;
+        private int _consecutiveFailCount;
+        private const int MaxRetryDelaySeconds = 30;
+        private const int MaxRetryAttempts = 10; // 무한 재시도 방지
 
         // ── 생성자 ─────────────────────────────────────────────────────
         public PowerPmacDevice() { }
@@ -63,149 +72,74 @@ namespace HCB.UI
                 _logger.Error(ex, "[INTERLOCK] 전체 축 비상 정지 중 오류");
             }
         }
-        //public async Task RefreshStatus()
-        //{
-        //    foreach (var motion in MotionList)
-        //    {
-        //        try
-        //        {
-        //            // 1. 명령어 생성
-        //            // 띄어쓰기로 구분하여 여러 값을 한 번에 요청합니다.
-        //            var sb = new System.Text.StringBuilder();
-        //            sb.Append($"Motor[{motion.MotorNo}].Status[0] ");       // 상태 비트 (매뉴얼 기준)
-        //            sb.Append($"Motor[{motion.MotorNo}].HomePos ");         // 홈 오프셋
-        //            sb.Append($"Motor[{motion.MotorNo}].ActPos ");          // 현재 위치 (Encoder)
-        //            sb.Append($"Motor[{motion.MotorNo}].DesPos ");          // 명령 위치 (Desired)
-        //                                                                    // (HomeComplete는 Status[0]의 Bit 15에 있으므로 별도 요청 불필요)
-
-        //            // 2. 비동기 전송 및 응답 수신
-        //            string strResponse = await SendCommand<string>(sb.ToString());
-
-        //            // 3. 응답 파싱 (줄바꿈 문자로 분리)
-        //            var values = strResponse.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-        //            if (values.Length < 4) continue; // 데이터가 부족하면 스킵
-
-        //            // 4. 데이터 변환
-        //            // Status[0]은 Hex($) 문자열이므로 처리 필요
-        //            uint status0 = Convert.ToUInt32(values[0].Replace("$", ""), 16);
-
-        //            double homePosVal = Convert.ToDouble(values[1]);
-        //            double actPosVal = Convert.ToDouble(values[2]);
-        //            double desPosVal = Convert.ToDouble(values[3]);
-
-        //            // 단위 변환
-        //            double homePos = homePosVal / motion.EncoderCountPerUnit;
-        //            double actPos = actPosVal / motion.EncoderCountPerUnit;
-        //            double desPos = desPosVal / motion.EncoderCountPerUnit;
-
-        //            motion.CurrentPosition = actPos - homePos;
-        //            motion.CommandPosition = desPos - homePos;
-
-        //            // =========================================================
-        //            // [중요] 매뉴얼 기반 상태 비트 분석
-        //            // =========================================================
-
-        //            // 1. Servo On 상태 (Bit 13: ClosedLoop) - $2000
-        //            motion.IsEnabled = (status0 & 0x00002000) != 0;
-
-        //            // 2. 원점 복귀 완료 (Bit 15: HomeComplete) - $8000
-        //            motion.IsHomeDone = (status0 & 0x00008000) != 0;
-
-        //            // 3. 에러 상태 (Bit 24: AmpFault) - $1000000
-        //            // 필요시 Bit 26(FeFatal, $4000000)이나 Bit 21(I2tFault)도 OR 조건으로 추가 가능
-        //            motion.IsError = (status0 & 0x01000000) != 0;
-
-        //            // 4. 하드웨어 리미트
-        //            // Plus Limit (Bit 28) - $10000000
-        //            motion.IsPlusLimit = (status0 & 0x10000000) != 0;
-
-        //            // Minus Limit (Bit 29) - $20000000
-        //            motion.IsMinusLimit = (status0 & 0x20000000) != 0;
-
-        //            // 5. 이동 중 여부 (Busy)
-        //            // Bit 11 (InPos)이 0이면 "이동 중"으로 판단
-        //            // InPos ($800): 목표 위치 도달 시 1, 이동 중이거나 오차 크면 0
-        //            bool isInPosBit = (status0 & 0x00000800) != 0;
-        //            motion.IsBusy = !isInPosBit;
-
-        //            // 6. InPosition 최종 판단
-        //            // 하드웨어 신호(Bit 11)와 소프트웨어 오차 범위 체크를 동시에 만족해야 True
-        //            bool isPosDiffOk = (Math.Abs(motion.CommandPosition - motion.CurrentPosition) <= motion.InpositionRange);
-
-        //            motion.InPosition = isInPosBit && isPosDiffOk;
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            // 디버깅을 위해 콘솔에 출력 (실제 운영 시엔 로그 기록)
-        //            Console.WriteLine($"Motion[{motion.MotorNo}] Update Error: {ex.Message}");
-        //        }
-        //    }
-        //}
-
-        // ══════════════════════════════════════════════════════════════
-        // RefreshStatus — 위치 수신 후 인터락 자동 체크
-        // ══════════════════════════════════════════════════════════════
-        //}
 
         public async Task RefreshStatus()
         {
+            if (!IsConnected)
+            {
+                // 재연결 중이면 폴링 스킵
+                if (!_isReconnecting)
+                    OnCommunicationLost("RefreshStatus 호출 시 미연결 상태");
+                return;
+            }
+
             foreach (var motion in MotionList)
             {
+                // 루프 도중 연결이 끊기면 나머지 축 스킵
+                if (!IsConnected) break;
+
                 try
                 {
-                    // 1. 해당 축에 필요한 데이터만 묶어서 요청
-                    var sb = new System.Text.StringBuilder();
+                    var sb = new StringBuilder();
                     sb.Append($"Motor[{motion.MotorNo}].Status[0] ");
                     sb.Append($"Motor[{motion.MotorNo}].HomePos ");
                     sb.Append($"Motor[{motion.MotorNo}].ActPos ");
                     sb.Append($"Motor[{motion.MotorNo}].DesPos ");
-                    sb.Append($"Motor[{motion.MotorNo}].InPos"); // PMAC 내부 InPos 상태 직접 요청
+                    sb.Append($"Motor[{motion.MotorNo}].InPos");
 
-                    // 2. 비동기 전송 및 응답 수신
                     string strResponse = await SendCommand<string>(sb.ToString());
-                    var values = strResponse.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    var values = strResponse.Split(
+                        new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    // 데이터 개수 검증 (5개의 값이 들어와야 함)
                     if (values.Length < 5)
                     {
-                        Console.WriteLine($"Motion[{motion.MotorNo}] 데이터 응답 부족: {values.Length}개");
+                        _logger.Warning("Motion[{No}] 데이터 응답 부족: {Cnt}개",
+                            motion.MotorNo, values.Length);
                         continue;
                     }
 
-                    // 3. 데이터 파싱 및 변환
                     uint status0 = Convert.ToUInt32(values[0].Replace("$", ""), 16);
                     double homePosVal = Convert.ToDouble(values[1]);
                     double actPosVal = Convert.ToDouble(values[2]);
                     double desPosVal = Convert.ToDouble(values[3]);
-                    int inPosRaw = Convert.ToInt32(values[4]); // 1: 정지(InPos), 0: 이동중
+                    int inPosRaw = Convert.ToInt32(values[4]);
 
-                    // 단위 변환 및 위치 계산
                     double scale = motion.EncoderCountPerUnit;
                     motion.CurrentPosition = (actPosVal - homePosVal) / scale;
                     motion.CommandPosition = (desPosVal - homePosVal) / scale;
 
-                    // 4. 상태 비트 분석 (Status[0] 기반)
-                    motion.IsEnabled = (status0 & 0x00002000) != 0;   // Bit 13: ClosedLoop
-                    motion.IsHomeDone = (status0 & 0x00008000) != 0;  // Bit 15: HomeComplete
-                    motion.IsError = (status0 & 0x01000000) != 0;     // Bit 24: AmpFault
-                    motion.IsPlusLimit = (status0 & 0x10000000) != 0; // Bit 28: PlusLimit
-                    motion.IsMinusLimit = (status0 & 0x20000000) != 0;// Bit 29: MinusLimit
+                    motion.IsEnabled = (status0 & 0x00002000) != 0;
+                    motion.IsHomeDone = (status0 & 0x00008000) != 0;
+                    motion.IsError = (status0 & 0x01000000) != 0;
+                    motion.IsPlusLimit = (status0 & 0x10000000) != 0;
+                    motion.IsMinusLimit = (status0 & 0x20000000) != 0;
 
-                    // 5. [핵심] Motor[i].InPos 기반 최종 상태 결정
-                    // PMAC이 판단한 InPos 값을 그대로 적용 (매우 정확함)
                     motion.InPosition = (inPosRaw == 1);
-
-                    // InPosition이면 Busy가 아님
                     motion.IsBusy = !motion.InPosition;
+                }
+                catch (InvalidOperationException)
+                {
+                    // SendCommand에서 통신 실패로 이미 재연결 트리거됨 → 루프 중단
+                    break;
                 }
                 catch (Exception ex)
                 {
-                    // 한 축이 실패해도 로그만 남기고 다음 축으로 넘어감
-                    Console.WriteLine($"Motion[{motion.MotorNo}] Update Error: {ex.Message}");
+                    _logger.Warning("Motion[{No}] Update Error: {Msg}",
+                        motion.MotorNo, ex.Message);
                 }
             }
         }
+
         /// <summary>
         /// Device 수준 인터락 체크.
         /// DAxis 에 IInterlockService 가 직접 주입되었으므로
@@ -214,7 +148,83 @@ namespace HCB.UI
         private void CheckInterlockForAxis(IAxis motion)
         { 
         }
-        
+
+        /// <summary>
+        /// 통신 실패 감지 시 호출. 재연결 루프를 백그라운드로 시작합니다.
+        /// </summary>
+        private void OnCommunicationLost(string reason)
+        {
+            if (_isReconnecting) return;
+
+            IsConnected = false;
+            _logger.Warning("[PMAC] 통신 끊김 감지: {Reason} → 재연결 시작", reason);
+
+            _ = Task.Run(() => ReconnectLoopAsync());
+        }
+
+        /// <summary>
+        /// 지수 백오프 재연결 루프.
+        /// </summary>
+        private async Task ReconnectLoopAsync()
+        {
+            if (!await _reconnectLock.WaitAsync(0)) return; // 이미 재연결 중이면 스킵
+
+            try
+            {
+                _isReconnecting = true;
+                _consecutiveFailCount = 0;
+
+                while (!IsConnected && _consecutiveFailCount < MaxRetryAttempts)
+                {
+                    _consecutiveFailCount++;
+
+                    // 지수 백오프: 1s → 2s → 4s → 8s → … → 최대 30s
+                    int delaySec = Math.Min(
+                        (int)Math.Pow(2, _consecutiveFailCount - 1),
+                        MaxRetryDelaySeconds);
+
+                    _logger.Information(
+                        "[PMAC] 재연결 시도 {N}/{Max} ({Delay}초 후)",
+                        _consecutiveFailCount, MaxRetryAttempts, delaySec);
+
+                    await Task.Delay(TimeSpan.FromSeconds(delaySec));
+
+                    try
+                    {
+                        // 기존 핸들 정리
+                        try { DTKPowerPmac.Instance.Close(_uDeviceId); }
+                        catch { /* 이미 닫혔을 수 있음 */ }
+
+                        _uDeviceId = uint.MaxValue;
+
+                        // 재초기화 → 재연결
+                        await Initialize();
+                        await Connect();
+
+                        if (IsConnected)
+                        {
+                            _logger.Information("[PMAC] 재연결 성공 (시도 {N}회)", _consecutiveFailCount);
+                            _consecutiveFailCount = 0;
+                            return;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "[PMAC] 재연결 시도 {N} 실패", _consecutiveFailCount);
+                    }
+                }
+
+                if (!IsConnected)
+                {
+                    _logger.Error("[PMAC] 최대 재시도 횟수({Max}) 초과. 수동 복구 필요.", MaxRetryAttempts);
+                }
+            }
+            finally
+            {
+                _isReconnecting = false;
+                _reconnectLock.Release();
+            }
+        }
 
         // ══════════════════════════════════════════════════════════════
         // 기존 메서드 (변경 없음)
@@ -322,9 +332,24 @@ namespace HCB.UI
             byte[] byCommand = Encoding.ASCII.GetBytes(command);
             byte[] byResponse = new byte[MAX];
 
-            DTKPowerPmac.Instance.GetResponseA(_uDeviceId, byCommand, byResponse, byResponse.Length - 1);
+            try
+            {
+                DTKPowerPmac.Instance.GetResponseA(_uDeviceId, byCommand, byResponse, byResponse.Length - 1);
+            }
+            catch (Exception ex)
+            {
+                OnCommunicationLost(ex.Message);
+                throw new InvalidOperationException($"PMAC 통신 실패: {command}", ex);
+            }
 
-            string trimmed = Encoding.ASCII.GetString(byResponse).Trim();
+            string trimmed = Encoding.ASCII.GetString(byResponse).Trim('\0').Trim();
+
+            // 빈 응답 = 연결 끊김 가능성
+            if (string.IsNullOrEmpty(trimmed))
+            {
+                OnCommunicationLost("빈 응답 수신");
+                throw new InvalidOperationException($"PMAC 빈 응답: {command}");
+            }
 
             if (trimmed.StartsWith("?"))
                 throw new Exception($"PowerPMAC Command Error for '{command}': {trimmed}");

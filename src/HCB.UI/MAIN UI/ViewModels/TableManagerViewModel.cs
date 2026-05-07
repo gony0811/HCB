@@ -20,6 +20,7 @@ namespace HCB.UI
     {
         private CancellationTokenSource _cancellationTokenSource = new();
         private readonly SequenceService _sequenceService;
+        private readonly SequenceHelper _sequenceHelper;
         private readonly DeviceManager _deviceManager;
         private IOManager ioManager;
         private ILogger _logger;
@@ -43,7 +44,7 @@ namespace HCB.UI
             IoExtensions.DO_DTABLE_VAC_1_ON, IoExtensions.DO_DTABLE_VAC_2_ON, IoExtensions.DO_DTABLE_VAC_3_ON, IoExtensions.DO_DTABLE_VAC_4_ON, IoExtensions.DO_DTABLE_VAC_5_ON, IoExtensions.DO_DTABLE_VAC_6_ON, IoExtensions.DO_DTABLE_VAC_7_ON, IoExtensions.DO_DTABLE_VAC_8_ON, IoExtensions.DO_DTABLE_VAC_9_ON,
         };
 
-        public TableManagerViewModel(IOManager ioManager, ILogger logger, SequenceService sequenceService, DeviceManager deviceManager)
+        public TableManagerViewModel(IOManager ioManager, ILogger logger, SequenceService sequenceService, DeviceManager deviceManager, SequenceHelper sequenceHelper)
         {
 
             _logger = logger;
@@ -52,16 +53,7 @@ namespace HCB.UI
             this._deviceManager = deviceManager;
 
             var ioDevice = this._deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
-
-            if (ioDevice != null)
-            {
-                for (var i = 0; i < dTableNameList.Count; i++)
-                {
-                    var result = ioManager.CreateIoVM(dTableNameList[i], dIoNameList[i], dTableNameList[i]);
-                    if(result != null) DTableList.Add(result);
-
-                }
-            }
+            _sequenceHelper = sequenceHelper;
         }
 
         public int CountDieCarrier()
@@ -90,10 +82,7 @@ namespace HCB.UI
         [RelayCommand]
         public void DieAllOn()
         {
-            foreach (var item in DTableList)
-            {
-               item.On();                
-            }
+
         }
 
         [RelayCommand]
@@ -105,6 +94,16 @@ namespace HCB.UI
                  item.Off();
                 
             }
+        }
+
+        public async Task TopDieVacToggle(int number, eOnOff onOff)
+        {
+            await IoExtensions.TopVac(_sequenceHelper, number, onOff);
+        }
+
+        public async Task BtmDieVacToggle(int number, eOnOff onOff)
+        {
+            await IoExtensions.BTMVac(_sequenceHelper, number, onOff);
         }
     }
 
