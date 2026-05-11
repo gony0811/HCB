@@ -1,13 +1,9 @@
-﻿using HCB.Data.Entity.Type;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Telerik.Windows.Controls;
-using Telerik.Windows.Documents.Fixed.Model.Data;
 using static NetMQ.NetMQSelector;
 
 namespace HCB.UI
