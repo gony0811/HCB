@@ -29,7 +29,7 @@ namespace HCB.UI
 
        
 
-        public async Task<VisionMarkResult> BtmDieVisionRightFid(CancellationToken ct)
+        public async Task<VisionMarkResult> BtmDieVisionRightFid(bool AvgMode, CancellationToken ct)
         {
             try
             {
@@ -48,7 +48,7 @@ namespace HCB.UI
 
                 result = await communicationService.RequestAFStart(CameraType.HC2_HIGH, markType: MarkType.FIDUCIAL, ct);
                 if (result == false) throw new Exception("AF 실패");
-                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC2_HIGH, "RIGHT");
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC2_HIGH, "RIGHT", AvgMode);
                 VisionResult(rFidXY);
                 fid.DxCamToMark = rFidXY.X;
                 fid.DyCamToMark = rFidXY.Y;
@@ -60,7 +60,7 @@ namespace HCB.UI
             }
         }
 
-        public async Task<VisionMarkResult> BtmDieVisionLeftFid(CancellationToken ct)
+        public async Task<VisionMarkResult> BtmDieVisionLeftFid(bool AvgMode, CancellationToken ct)
         {
             try
             {
@@ -79,7 +79,7 @@ namespace HCB.UI
 
                 result = await communicationService.RequestAFStart(CameraType.HC1_HIGH, markType: MarkType.FIDUCIAL, ct);
                 if (result == false) throw new Exception("AF 실패");
-                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC1_HIGH, "LEFT");
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC1_HIGH, "LEFT", AvgMode);
                 VisionResult(rFidXY);
                 fid.DxCamToMark = rFidXY.X;
                 fid.DyCamToMark = rFidXY.Y;
@@ -91,7 +91,7 @@ namespace HCB.UI
             }
         }
 
-        public async Task<VisionMarkResult> BtmDieVisionRightAlign(CancellationToken ct)
+        public async Task<VisionMarkResult> BtmDieVisionRightAlign(bool AvgMode, CancellationToken ct)
         {
             try
             {
@@ -110,7 +110,7 @@ namespace HCB.UI
 
                 result = await communicationService.RequestAFStart(CameraType.HC2_HIGH, markType: MarkType.ALIGN_MARK, ct);
                 if (result == false) throw new Exception("AF 실패");
-                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, "RIGHT");
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC2_HIGH, "RIGHT", AvgMode);
                 VisionResult(rFidXY);
                 fid.DxCamToMark = rFidXY.X;
                 fid.DyCamToMark = rFidXY.Y;
@@ -122,7 +122,7 @@ namespace HCB.UI
             }
         }
 
-        public async Task<VisionMarkResult> BtmDieVisionLeftAlign(CancellationToken ct)
+        public async Task<VisionMarkResult> BtmDieVisionLeftAlign(bool AvgMode, CancellationToken ct)
         {
             try
             {
@@ -141,7 +141,7 @@ namespace HCB.UI
 
                 result = await communicationService.RequestAFStart(CameraType.HC1_HIGH, markType: MarkType.ALIGN_MARK, ct);
                 if (result == false) throw new Exception("AF 실패");
-                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, "LEFT");
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, "LEFT", AvgMode);
                 VisionResult(rFidXY);
                 fid.DxCamToMark = rFidXY.X;
                 fid.DyCamToMark = rFidXY.Y;
@@ -263,7 +263,7 @@ namespace HCB.UI
             }
         }
 
-        public async Task<VisionMarkResult> TopDieVisionRightFid(CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionRightFid(bool AvgMode, CancellationToken ct)
         {
             try
             {
@@ -287,7 +287,7 @@ namespace HCB.UI
                 };
                 result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
                 if (result == false) throw new Exception("AF 실패");
-                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "RIGHT");
+                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "RIGHT", AvgMode);
                 VisionResult(rFidXY);
                 rightFid.DxCamToMark = rFidXY.X;
                 rightFid.DyCamToMark = rFidXY.Y;
@@ -300,7 +300,7 @@ namespace HCB.UI
             }
         }
 
-        public async Task<VisionMarkResult> TopDieVisionRightAlign(CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionRightAlign(bool AvgMode, CancellationToken ct)
         {
             try
             {
@@ -326,7 +326,7 @@ namespace HCB.UI
                 };
                 result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
                 if (result == false) throw new Exception("AF 실패");
-                var rAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "RIGHT");
+                var rAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "RIGHT",AvgMode);
                 VisionResult(rAlignXY);
                 rightAlign.DxCamToMark = rAlignXY.X;
                 rightAlign.DyCamToMark = rAlignXY.Y;
@@ -413,7 +413,7 @@ namespace HCB.UI
 
 
 
-        public async Task<VisionMarkResult> TopDieVisionLeftFid(CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionLeftFid(bool AvgMode, CancellationToken ct)
         {
             try
             {
@@ -438,7 +438,7 @@ namespace HCB.UI
                 };
                 result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
                 if (result == false) throw new Exception("AF 실패");
-                var lFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "LEFT");
+                var lFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "LEFT" ,AvgMode);
                 VisionResult(lFidXY);
                 leftFid.DxCamToMark = lFidXY.X;
                 leftFid.DyCamToMark = lFidXY.Y;
@@ -450,7 +450,7 @@ namespace HCB.UI
             }
         }
 
-        public async Task<VisionMarkResult> TopDieVisionLeftAlign(CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionLeftAlign(bool AvgMode, CancellationToken ct)
         {
             try
             {
@@ -468,7 +468,7 @@ namespace HCB.UI
                 await MotionsMove(z, MotionExtensions.P_LEFT_ALIGN_HIGH, ct);
                 VisionMarkResult leftAlign = new VisionMarkResult
                 {
-                    CameraType = CameraType.PC_HIGH,    // ★
+                    CameraType = CameraType.PC_HIGH,
                     MarkType = MarkType.ALIGN_MARK,
                     DirectType = DirectType.LEFT,
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
@@ -476,7 +476,7 @@ namespace HCB.UI
                 };
                 result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
                 if (result == false) throw new Exception("AF 실패");
-                var lAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "LEFT");
+                var lAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "LEFT", AvgMode);
                 VisionResult(lAlignXY);
                 leftAlign.DxCamToMark = lAlignXY.X;
                 leftAlign.DyCamToMark = lAlignXY.Y;

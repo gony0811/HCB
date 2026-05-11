@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HCB.Data.Entity;
 using HCB.Data.Repository;
 using HCB.IoC;
 using HCB.UI;
@@ -23,6 +24,13 @@ namespace HCB.UI
         [ObservableProperty]
         private AlarmHistoryDto selectedHistory;
 
+        // ================ 시스템 로그 ============================
+        [ObservableProperty]
+        private ObservableCollection<LogModel> logs = new();
+
+        private const int MaxLogCount = 1000;
+        // =========================================================
+
         // ================ 페이징 및 검색 =========================
         [ObservableProperty] private int pageSize = 20;
         [ObservableProperty] private int totalCount;
@@ -31,7 +39,7 @@ namespace HCB.UI
         [ObservableProperty] private DateTime startSearchDate = DateTime.Now.AddDays(-7); // 기본값 일주일 전
         [ObservableProperty] private DateTime endSearchDate = DateTime.Now;
         [ObservableProperty] private string searchText = string.Empty;
-        // ========================================================= 
+        // =========================================================
 
         private bool isLoading;
 
@@ -41,10 +49,10 @@ namespace HCB.UI
         {
             this.alarmService = alarmService;
             this.alarmHistoryRepository = alarmHistoryRepository;
-          
 
             alarmService.AlarmHistoryAdded += OnAlarmHistoryAdded;
             alarmService.AlarmHistoryReset += OnAlarmHistoryReset;
+            GridLogSink.LogReceived += OnLogReceived;
 
             _ = LoadPageData();
         }
@@ -132,10 +140,30 @@ namespace HCB.UI
             });
         }
 
+        /* ============================
+         * 시스템 로그 수신
+         * ============================ */
+        private void OnLogReceived(LogModel log)
+        {
+            if (log.SourceContext?.Contains("Microsoft.EntityFrameworkCore") == true)
+                return;
+            if (log.Message.StartsWith("Executed DbCommand")
+                || log.Message.StartsWith("Executing DbCommand"))
+                return;
+
+            App.Current.Dispatcher.InvokeAsync(() =>
+            {
+                Logs.Insert(0, log);
+                if (Logs.Count > MaxLogCount)
+                    Logs.RemoveAt(Logs.Count - 1);
+            });
+        }
+
         public void Dispose()
         {
             alarmService.AlarmHistoryAdded -= OnAlarmHistoryAdded;
             alarmService.AlarmHistoryReset -= OnAlarmHistoryReset;
+            GridLogSink.LogReceived -= OnLogReceived;
         }
     }
 }

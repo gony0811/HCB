@@ -120,6 +120,8 @@ namespace HCB.UI
 
         [ObservableProperty] private VernierResult vernierResult;
 
+        [ObservableProperty] private bool avgMode = false;
+
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
 
@@ -658,7 +660,7 @@ namespace HCB.UI
                 {
                     RepeatCurrent = i + 1;
                     var result = await _sequenceService.TopHighAlign(
-                        new AlignContext(), _cts.Token);
+                        new AlignContext(), AvgMode, _cts.Token);
                     results.Add(result);
                 }
                 var path = Path.Combine(
@@ -850,6 +852,12 @@ namespace HCB.UI
             }
         }
 
+        [RelayCommand]
+        public void ChangeAvgMode()
+        {
+            AvgMode = !AvgMode;
+        }
+
         private int _repeatCount = 5;
 
         // ═════════════════════════════════════════════════════
@@ -902,7 +910,7 @@ namespace HCB.UI
         {
             TopHighAlignState = StepState.InProgress;
 
-            _alignCtx = await _sequenceService.TopHighAlign(new AlignContext(), ct);
+            _alignCtx = await _sequenceService.TopHighAlign(new AlignContext(), AvgMode, ct);
 
             // UI 바인딩 — 하위 호환 프로퍼티 (Corrected ?? Raw) 자동 반환
             TopRightFid = _alignCtx.TopRightFid;
@@ -923,7 +931,7 @@ namespace HCB.UI
         {
             BtmHighAlignState = StepState.InProgress;
 
-            _alignCtx = await _sequenceService.BtmHighAlign(_alignCtx, ct);
+            _alignCtx = await _sequenceService.BtmHighAlign(_alignCtx, AvgMode, ct);
 
             // UI 바인딩 — 하위 호환 프로퍼티 (Corrected ?? Raw) 자동 반환
             BtmRightFid = _alignCtx.BtmRightFid;
