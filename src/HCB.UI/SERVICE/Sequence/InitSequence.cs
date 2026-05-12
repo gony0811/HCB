@@ -367,11 +367,11 @@ namespace HCB.UI
             await Init_Head(ct);
 
             await Task.WhenAll(
-                MotionsMove(MotionExtensions.H_X, "버니어1번", ct),
-                MotionsMove(MotionExtensions.W_Y, "버니어1번", ct)
+                MotionsMove(MotionExtensions.H_X, "1번 버니어", ct),
+                MotionsMove(MotionExtensions.W_Y, "1번 버니어", ct)
             );
             await _sequenceHelper.Silindar_R(true, ct);
-            await MotionsMove(MotionExtensions.H_Z, "", ct);
+            await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", ct);
 
             var points = new VernierPoint[]
             {                
@@ -486,6 +486,8 @@ namespace HCB.UI
                 _sequenceServiceVM.InitializeProgress = 75;
 
                 // 6. Header Home X, T 축
+                await TInit(ct);
+                await Task.Delay(1000);
                 var hx = motionDevice.FindMotionByName(MotionExtensions.H_X);
                 var ht= motionDevice.FindMotionByName(MotionExtensions.H_T);
                 var xt = new List<IAxis> { hx, ht };
@@ -574,6 +576,7 @@ namespace HCB.UI
             }
         }
 
+
         public async Task WaferAndDieLoading(eOnOff onOff, CancellationToken ct = default)
         {
             try
@@ -615,6 +618,30 @@ namespace HCB.UI
         public async Task HVacOnOff(bool onOff, CancellationToken ct =default)
         {
             await _sequenceHelper.HeadPickerVacuum(onOff ? eOnOff.On: eOnOff.Off, ct);
+        }
+
+        public async Task TInit(CancellationToken ct = default)
+        {
+            var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            await device.SendCommand("enable plc 9");
+
+            var timeout = TimeSpan.FromSeconds(300);
+            var pollInterval = TimeSpan.FromMilliseconds(100);
+
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(timeout);
+
+            while (true)
+            {
+                timeoutCts.Token.ThrowIfCancellationRequested();
+
+                bool result = await device.SendCommand<bool>("Encpha");
+                if (result)
+                    break;
+
+                await Task.Delay(pollInterval, timeoutCts.Token);
+            }
+
         }
 
         public async Task HzHome(CancellationToken ct = default)
