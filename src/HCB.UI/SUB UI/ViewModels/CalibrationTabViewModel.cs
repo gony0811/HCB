@@ -13,7 +13,6 @@ namespace HCB.UI
     [ViewModel(Lifetime.Scoped)]
     public partial class CalibrationTabViewModel : ObservableObject
     {
-        
         private readonly EqpCommunicationService _communication;
         private readonly ECParamService _ecParamService;
         private readonly SequenceService _sequenceService;
@@ -26,8 +25,8 @@ namespace HCB.UI
         private IAxis? _htAxis;   // H_T (Bond Head Theta — HcRO 회전축)
 
         // 파라미터
-        [ObservableProperty] private double aMove;
-        [ObservableProperty] private double rotationDeg;   // H_T 회전량 (HcRO 계산용)
+        [ObservableProperty] private double aMove = 0.1;
+        [ObservableProperty] private double rotationDeg = 1.5;   // H_T 회전량 (HcRO 계산용)
 
         // UI 상태
         [ObservableProperty] private bool isNotBusy = true;
@@ -71,6 +70,10 @@ namespace HCB.UI
             try
             {
                 CalibStatus = "Hc1 캘리브레이션 중...";
+                await _sequenceService.Init_Head(ct);
+                await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "OFFSET_STANBY", ct);
+
                 double theta = await GetAngle(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, ct);
                 Theta1Rad = theta;
                 Theta1Deg = theta * (180.0 / Math.PI);
@@ -94,6 +97,9 @@ namespace HCB.UI
             try
             {
                 CalibStatus = "Hc2 캘리브레이션 중...";
+                await _sequenceService.Init_Head(ct);
+                await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "OFFSET_STANBY", ct);
                 double theta = await GetAngle(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, ct);
                 Theta2Rad = theta;
                 Theta2Deg = theta * (180.0 / Math.PI);
@@ -117,6 +123,9 @@ namespace HCB.UI
             try
             {
                 CalibStatus = "Pc 캘리브레이션 중...";
+                await _sequenceService.Init_Head(ct);
+                await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "OFFSET_STANBY", ct);
                 double theta = await GetAnglePc(CameraType.PC_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, ct);
                 ThetaPRad = theta;
                 ThetaPDeg = theta * (180.0 / Math.PI);
@@ -214,6 +223,7 @@ namespace HCB.UI
 
             try
             {
+                CalibStatus = $"카메라 거리측정 시작";
                 double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
@@ -249,12 +259,12 @@ namespace HCB.UI
                     hc1Y: halfDeltaY,   // +값 (Y반전 → 하단이 +)
                     hc2X: -halfDeltaX,   // +값 (우측)
                     hc2Y: -halfDeltaY);  // -값 (Y반전 → 상단이 -)
+                CalibStatus = $"카메라 거리측정 완료";
             }
             catch (OperationCanceledException) {  }
             catch (Exception e)
             {
                 _logger.Error(e, "카메라 거리 측정 Fail");
-                throw;
             }
         }
 

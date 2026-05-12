@@ -83,15 +83,15 @@ namespace HCB.UI
         #region Top Die 고배율 측정
 
         public async Task<AlignContext> TopHighAlign(
-            AlignContext ctx, CancellationToken ct)
+            AlignContext ctx, bool avgMode, CancellationToken ct)
         {
             ctx ??= new AlignContext();            
             LoadCalibrationInto(ctx);
 
-            ctx.TopRightFidRaw = await TopDieVisionRightFid(ct);
-            ctx.TopRightAlignRaw = await TopDieVisionRightAlign(ct);
-            ctx.TopLeftFidRaw = await TopDieVisionLeftFid(ct);
-            ctx.TopLeftAlignRaw = await TopDieVisionLeftAlign(ct);
+            ctx.TopRightFidRaw = await TopDieVisionRightFid(avgMode, ct);
+            ctx.TopRightAlignRaw = await TopDieVisionRightAlign(avgMode, ct);
+            ctx.TopLeftFidRaw = await TopDieVisionLeftFid(avgMode, ct);
+            ctx.TopLeftAlignRaw = await TopDieVisionLeftAlign(avgMode, ct);
 
             // Raw → Clone → 보정 → Corrected
             ApplyTopPcCorrections(ctx);
@@ -122,17 +122,17 @@ namespace HCB.UI
         #region Btm Die 고배율 측정
 
         public async Task<AlignContext> BtmHighAlign(
-            AlignContext ctx, CancellationToken ct)
+            AlignContext ctx, bool avgMode, CancellationToken ct)
         {
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
 
             await TopDiePlace(ct);
 
             // 비전 원본 → Raw (이후 어떤 메서드도 수정 금지)
-            ctx.BtmRightFidRaw = await BtmDieVisionRightFid(ct);
-            ctx.BtmRightAlignRaw = await BtmDieVisionRightAlign(ct);
-            ctx.BtmLeftFidRaw = await BtmDieVisionLeftFid(ct);
-            ctx.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(ct);
+            ctx.BtmRightFidRaw = await BtmDieVisionRightFid(avgMode, ct);
+            ctx.BtmRightAlignRaw = await BtmDieVisionRightAlign(avgMode,ct);
+            ctx.BtmLeftFidRaw = await BtmDieVisionLeftFid(avgMode, ct);
+            ctx.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(avgMode, ct);
             //await GetHcro(ctx, ct);
             LoadCalibrationInto(ctx);   
 
@@ -665,82 +665,7 @@ namespace HCB.UI
             ctx.BtmOffsetT = topInBtmT - (CalcTheta(bLF, bRF) - CalcTheta(bLA, bRA));
         }
 
-        // ═══════════════════════════════════════════════════
-        //  Verify: 회전 후 HcRO 중심 검증
-        //   신규 비전 → Clone → 로컬 처리 → ctx 오염 없음
-        // ═══════════════════════════════════════════════════
-
-        private async Task VerifyAfterRotation(AlignContext ctx, double thetaF, CancellationToken ct)
-        {
-            // 검증용 신규 비전 측정 (ctx 와 독립)
-            var rawRF = await BtmDieVisionRightFid(ct);
-            var rawLF = await BtmDieVisionLeftFid(ct);
-
-            if (!ctx.HasHcRO) return;
-
-            // Clone → 기구 오프셋 → 회전 보정 (로컬에서만)
-            var vRF = rawRF.Clone();
-            var vLF = rawLF.Clone();
-            vRF.StageX -= ctx.Hc2Offset.X; vRF.StageY -= ctx.Hc2Offset.Y;
-            vLF.StageX -= ctx.Hc1Offset.X; vLF.StageY -= ctx.Hc1Offset.Y;
-
-            vRF = ApplyRotationToCopy(vRF, ctx.Hc2Rad);
-            vLF = ApplyRotationToCopy(vLF, ctx.Hc1Rad);
-
-            var vHcroRF = Point2D.of(vRF.CenterX - ctx.Hcro.X, vRF.CenterY - ctx.Hcro.Y);
-            var vHcroLF = Point2D.of(vLF.CenterX - ctx.Hcro.X, vLF.CenterY - ctx.Hcro.Y);
-
-            double dR = Math.Abs(
-                CalibrationMath.Distance(Point2D.Zero, ctx.HcroRF) -
-                CalibrationMath.Distance(Point2D.Zero, vHcroRF));
-            double dL = Math.Abs(
-                CalibrationMath.Distance(Point2D.Zero, ctx.HcroLF) -
-                CalibrationMath.Distance(Point2D.Zero, vHcroLF));
-
-            if (dR > 2.0 || dL > 2.0)
-                _logger.Warning($"HcRO 회전 중심 검증 실패! R={dR:F3}µm  L={dL:F3}µm");
-            else
-                _logger.Information("HcRO 회전 중심 검증 통과");
-        }
-
-        // ═══════════════════════════════════════════════════
-        //  Verify: Shift 후 위치 검증
-        //   신규 비전 → Clone → 로컬 처리 → ctx 오염 없음
-        // ═══════════════════════════════════════════════════
-
-        private async Task VerifyAfterShift(
-            AlignContext ctx, double totalShiftX, double totalShiftY, CancellationToken ct)
-        {
-            var rawRA = await BtmDieVisionRightAlign(ct);
-            var rawLA = await BtmDieVisionLeftAlign(ct);
-
-            if (!ctx.HasHcRO) return;
-
-            var vRA = rawRA.Clone();
-            var vLA = rawLA.Clone();
-            vRA.StageX -= ctx.Hc2Offset.X; vRA.StageY -= ctx.Hc2Offset.Y;
-            vLA.StageX -= ctx.Hc1Offset.X; vLA.StageY -= ctx.Hc1Offset.Y;
-
-            vRA = ApplyRotationToCopy(vRA, ctx.Hc2Rad);
-            vLA = ApplyRotationToCopy(vLA, ctx.Hc1Rad);
-
-            var vHcroRA = Point2D.of(vRA.CenterX - ctx.Hcro.X, vRA.CenterY - ctx.Hcro.Y);
-            var vHcroLA = Point2D.of(vLA.CenterX - ctx.Hcro.X, vLA.CenterY - ctx.Hcro.Y);
-
-            var expLA = Point2D.of(ctx.HcroLA.X - totalShiftX, ctx.HcroLA.Y - totalShiftY);
-            var expRA = Point2D.of(ctx.HcroRA.X - totalShiftX, ctx.HcroRA.Y - totalShiftY);
-
-            bool lOk = CalibrationMath.VerifyPositionStability(expLA, vHcroLA, 2.0);
-            bool rOk = CalibrationMath.VerifyPositionStability(expRA, vHcroRA, 2.0);
-
-            if (!lOk || !rOk)
-                _logger.Warning(
-                    $"Shift 검증 실패! " +
-                    $"L={CalibrationMath.Distance(expLA, vHcroLA):F3}µm  " +
-                    $"R={CalibrationMath.Distance(expRA, vHcroRA):F3}µm");
-            else
-                _logger.Information("Shift 위치 검증 통과");
-        }
+        
 
         // ═══════════════════════════════════════════════════
         //  핵심 유틸: Non-destructive 회전 보정

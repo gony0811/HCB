@@ -178,12 +178,12 @@ namespace HCB.UI
         }
 
         // Align 요청
-        public async Task<VisionMarkPositionResponse> RequestVisionMarkPosition(MarkType markType, CameraType cameraType, string direct)
+        public async Task<VisionMarkPositionResponse> RequestVisionMarkPosition(MarkType markType, CameraType cameraType, string direct, bool avgMode = false)
         {
             var request = MessageFactory.Create(
                 messageName: "REQUEST_VISIONMARK_POSITION",
                 unitName: "EQP",
-                content: $"<MARKTYPE>{markType}</MARKTYPE><CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT>"
+                content: $"<MARKTYPE>{markType}</MARKTYPE><CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT><AVGMODE>{avgMode}</AVGMODE>"
             );
 
             double t = cameraType switch
