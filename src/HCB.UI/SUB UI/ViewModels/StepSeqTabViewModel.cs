@@ -649,6 +649,7 @@ namespace HCB.UI
                     });
                 }
                 _logger.Information("Vernier 측정 완료 — {Count}포인트", result.v1.Count);
+                ExportHighResult();
             }
             catch (Exception e) { _logger.Warning("Vernier 측정 실패: {Msg}", e.Message); }
         }

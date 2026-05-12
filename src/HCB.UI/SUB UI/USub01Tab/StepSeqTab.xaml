@@ -948,10 +948,7 @@
                                         Command="{Binding HighResultCommand}">
                                     <TextBlock Text="결과 측정" FontSize="13" FontWeight="Bold"/>
                                 </Button>
-                                <Button Style="{StaticResource InfoButtonStyle}" Width="90" Margin="2"
-                                        Command="{Binding ExportHighResultCommand}">
-                                    <TextBlock Text="CSV 저장" FontSize="13" FontWeight="Bold"/>
-                                </Button>
+                                
                             </StackPanel>
 
 
