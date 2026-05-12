@@ -370,16 +370,16 @@ namespace HCB.UI
                 MotionsMove(MotionExtensions.H_X, "1번 버니어", ct),
                 MotionsMove(MotionExtensions.W_Y, "1번 버니어", ct)
             );
-            await _sequenceHelper.Silindar_R(true, ct);
+            //await _sequenceHelper.Silindar_R(true, ct);
             await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", ct);
 
             var points = new VernierPoint[]
-            {                
+            {
                 new("1", 0.0, 0.0,  DirectType.Vertical,   DirectType.Horizontal),
                 new("3", 9.6, 0.0,  DirectType.Horizontal, DirectType.Vertical),
                 new("5", -4.8, 4.8, DirectType.Vertical,   DirectType.Horizontal),
                 new("7", -4.8, 4.8, DirectType.Horizontal,   DirectType.Vertical),
-                new("9", 0.0, 9.6,  DirectType.Vertical,   DirectType.Horizontal),
+                new("9", 9.6, 0.0,  DirectType.Vertical,   DirectType.Horizontal),
             };
 
             var result = new VernierResult();
@@ -390,18 +390,43 @@ namespace HCB.UI
                     RelativeMotionsMove(MotionExtensions.H_X, pt.X, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, pt.Y, ct)
                 );
-                var vx = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1);
+
+                var d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1);
                 int a = pt.Dir1 == DirectType.Vertical ? 1 : -1;
                 await RelativeMotionsMove(MotionExtensions.W_Y, 0.3 * a, ct);
-                var vy = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2);
+                var d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2);
 
-                result.v1.Add(Point2D.of(vx.Value_1, vy.Value_1));
-                result.v3.Add(Point2D.of(vx.Value_3, vy.Value_3));
+                // Dir1: Vertical → Y에 저장, Horizontal → X에 저장
+                double v1x = 0, v1y = 0, v3x = 0, v3y = 0;
+
+                if (pt.Dir1 == DirectType.Vertical)
+                {
+                    v1y = d1.Value_1;
+                    v3y = d1.Value_3;
+                }
+                else
+                {
+                    v1x = d1.Value_1;
+                    v3x = d1.Value_3;
+                }
+
+                if (pt.Dir2 == DirectType.Vertical)
+                {
+                    v1y = d2.Value_1;
+                    v3y = d2.Value_3;
+                }
+                else
+                {
+                    v1x = d2.Value_1;
+                    v3x = d2.Value_3;
+                }
+
+                result.v1.Add(Point2D.of(v1x, v1y));
+                result.v3.Add(Point2D.of(v3x, v3y));
             }
-            await _sequenceHelper.Silindar_R(false, ct);
+            //await _sequenceHelper.Silindar_R(false, ct);
             return result;
         }
-
 
         public void EQStatusCheck()
         {
