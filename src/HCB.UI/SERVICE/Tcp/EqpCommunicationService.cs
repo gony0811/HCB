@@ -40,7 +40,7 @@ namespace HCB.UI
             this.sequenceServiceVM = sequenceServiceVM;
             this.sequenceHelper = sequenceHelper;
             this.alarmService = alarmService;
-            this.ecParamService = ecParamService;
+            this.ecParamService = eCParamService;
 
             var settings = new TcpSettings();
             _server = new EqpTcpServer(settings);
