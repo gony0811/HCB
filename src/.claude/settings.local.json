@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/2025_project/Hybrid Bonding 설비/3. 구현/EMC 4.7.2/Git_Clone_EMC/HCB/**)",
+      "Bash(dotnet build *)"
+    ]
+  }
+}

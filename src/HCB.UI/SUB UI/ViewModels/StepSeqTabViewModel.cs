@@ -35,7 +35,7 @@ namespace HCB.UI
         private CancellationTokenSource _cts;
 
         private AlignContext _alignCtx;
-
+        private AlignData hcbData;
         // ── Die 번호 ──────────────────────────────────────────
         [ObservableProperty] private int topDie = 1;
         [ObservableProperty] private int bottomDie = 1;
@@ -119,6 +119,9 @@ namespace HCB.UI
         [ObservableProperty] private double hrTrY;
 
         [ObservableProperty] private VernierResult vernierResult;
+
+        [ObservableProperty]
+        private ObservableCollection<VernierRow> vernierRows = new();
 
         [ObservableProperty] private bool avgMode = false;
 
@@ -508,121 +511,7 @@ namespace HCB.UI
                 _logger.Warning(e.Message);
             }
         }
-
-        [RelayCommand]
-        public async Task TopRepeatBonding()
-        {
-            ResetCts();
-            var ct = _cts.Token;
-
-            if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
-
-            RepeatCurrent = 0;
-            IsRepeatRunning = true;
-
-            try
-            {
-                while (!ct.IsCancellationRequested)
-                {
-                    RepeatCurrent++;
-
-                    TopHighAlignState = StepState.Idle;
-                    BtmHighAlignState = StepState.Idle;
-                    TopBondingState = StepState.Idle;
-
-                    await RunTopHighAlign(ct);
-                    await RunBtmHighAlign(ct);
-                    await RunTopPlace(ct);
-                    _logger.Information("반복 본딩 #{Count} 완료", RepeatCurrent);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Idle);
-                BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Idle);
-                TopBondingState = IfInProgress(TopBondingState, StepState.Idle);
-                _logger.Information("반복 본딩 중단 — {Count}회 완료 후 취소", RepeatCurrent);
-            }
-            catch (Exception e)
-            {
-                TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Failed);
-                BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Failed);
-                TopBondingState = IfInProgress(TopBondingState, StepState.Failed);
-                _logger.Warning("반복 본딩 실패 #{Count}: {Msg}", RepeatCurrent, e.Message);
-            }
-            finally
-            {
-                IsRepeatRunning = false;
-            }
-        }
-
-        // ═════════════════════════════════════════════════════
-        //  NoAlgorithmRepeat
-        //  ★ Init_Head 추가로 헤드 원점 복귀 → 누적 오차 방지
-        // ═════════════════════════════════════════════════════
-
-        [RelayCommand]
-        public async Task NoAlgorithmRepeat()
-        {
-            ResetCts();
-            var ct = _cts.Token;
-
-            RepeatCurrent = 0;
-            IsRepeatRunning = true;
-
-            try
-            {
-                while (!ct.IsCancellationRequested)
-                {
-                    RepeatCurrent++;
-
-                    TopHighAlignState = StepState.Idle;
-                    BtmHighAlignState = StepState.Idle;
-
-                    await RunTopHighAlign(ct);
-                    await RunBtmHighAlign(ct);
-                    ExportBondingResult();
-
-                    await _sequenceService.Init_Head(ct);
-
-                    _logger.Information("NoAlgorithm 반복 #{Count} 완료", RepeatCurrent);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Idle);
-                BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Idle);
-                _logger.Information("NoAlgorithm 반복 중단 — {Count}회 완료 후 취소", RepeatCurrent);
-            }
-            catch (Exception e)
-            {
-                TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Failed);
-                BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Failed);
-                _logger.Warning("NoAlgorithm 반복 실패 #{Count}: {Msg}", RepeatCurrent, e.Message);
-            }
-            finally
-            {
-                IsRepeatRunning = false;
-            }
-        }
-
-        [RelayCommand]
-        public async Task LowResult()
-        {
-            ResetCts();
-            const string centerLow = "WAFER_CENTER_LOW";
-            try
-            {
-                await _sequenceService.Init_Head(_cts.Token);
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, centerLow, _cts.Token),
-                    _sequenceService.MotionsMove(MotionExtensions.W_Y, centerLow, _cts.Token)
-                );
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, centerLow, _cts.Token);
-            }
-            catch (Exception e) { _logger.Warning(e.Message); }
-        }
-
+        
         [RelayCommand]
         public async Task HighResult()
         {
@@ -632,225 +521,52 @@ namespace HCB.UI
                 await _sequenceService.TopDiePlace(_cts.Token);
                 var result = await _sequenceService.GetVernier(_cts.Token);
                 VernierResult = result;
+
+                var names = new[] { "1", "3", "5", "7", "9" };
+                VernierRows.Clear();
+                for (int i = 0; i < result.v1.Count; i++)
+                {
+                    VernierRows.Add(new VernierRow
+                    {
+                        Name = i < names.Length ? names[i] : i.ToString(),
+                        V1X  = result.v1[i].X,
+                        V1Y  = result.v1[i].Y,
+                        V3X  = result.v3.Count > i ? result.v3[i].X : (double?)null,
+                        V3Y  = result.v3.Count > i ? result.v3[i].Y : (double?)null,
+                    });
+                }
+                _logger.Information("Vernier 측정 완료 — {Count}포인트", result.v1.Count);
             }
-            catch (Exception e)
-            {
-            }
+            catch (Exception e) { _logger.Warning("Vernier 측정 실패: {Msg}", e.Message); }
         }
 
         [RelayCommand]
-        public async Task RepeatMeasure()
+        public void ExportHighResult()
         {
-            var dialog = new RepeatMeasureDialog(_repeatCount);
-            if (dialog.ShowDialog() != true) return;
-
-            int repeat = dialog.RepeatCount;
-            _repeatCount = repeat;
-
-            ResetCts();
-            RepeatTotal = repeat;
-            RepeatCurrent = 0;
-            IsRepeatRunning = true;
-
-            var results = new List<AlignContext>();
-
-            try
+            if (VernierRows.Count == 0)
             {
-                for (int i = 0; i < repeat; i++)
-                {
-                    RepeatCurrent = i + 1;
-                    var result = await _sequenceService.TopHighAlign(
-                        new AlignContext(), AvgMode, _cts.Token);
-                    results.Add(result);
-                }
-                var path = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                    $"align_results_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
-                ExportToCsv(results, path);
+                _logger.Information("저장할 Vernier 결과가 없습니다. 먼저 결과 측정을 실행하세요.");
+                return;
             }
-            catch (OperationCanceledException) { }
-            finally
-            {
-                IsRepeatRunning = false;
-            }
+
+            var path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"vernier_{DateTime.Now:yyyyMMdd}.csv");
+
+            bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
+            var sb = new StringBuilder();
+            if (writeHeader)
+                sb.AppendLine("Time,Pos,V1_X,V1_Y,V3_X,V3_Y");
+
+            var ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            foreach (var row in VernierRows)
+                sb.AppendLine($"{ts},{row.Name},{Fn(row.V1X)},{Fn(row.V1Y)},{Fn(row.V3X)},{Fn(row.V3Y)}");
+
+            File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
+            _logger.Information("Vernier CSV 저장: {Path}", path);
         }
 
-        [RelayCommand]
-        public async Task FidAFCheck()
-        {
-            ResetCts();
-            IsRepeatRunning = true;
-            RepeatTotal = 20;
-            RepeatCurrent = 0;
-            var folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MeasureResults");
-            Directory.CreateDirectory(folder);
-            var filePath = Path.Combine(folder, "FidAF.csv");
-            try
-            {
-                bool writeHeader = !File.Exists(filePath) || new FileInfo(filePath).Length == 0;
-                using var writer = new StreamWriter(filePath, true, Encoding.UTF8);
-                if (writeHeader)
-                    await writer.WriteLineAsync("Time,HC1_X,HC1_Y,HC2_X,HC2_Y");
-                for (int i = 0; i < 20; i++)
-                {
-                    _cts.Token.ThrowIfCancellationRequested();
-                    var hc1 = await _sequenceService.VisionAFResult(
-                        CameraType.HC1_HIGH, MarkType.FIDUCIAL, DirectType.LEFT, _cts.Token);
-                    var hc2 = await _sequenceService.VisionAFResult(
-                        CameraType.HC2_HIGH, MarkType.FIDUCIAL, DirectType.RIGHT, _cts.Token);
-                    RepeatCurrent = i + 1;
-                    await writer.WriteLineAsync($"{DateTime.Now},{hc1.x:F6},{hc1.y:F6},{hc2.x:F6},{hc2.y:F6}");
-                    await writer.FlushAsync();
-                }
-                _logger.Information("FidAF(AF) CSV 저장 완료: {Path} ({Count}건)", filePath, RepeatCurrent);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.Information("FidAF(AF) 측정 취소 — {Count}회 완료", RepeatCurrent);
-            }
-            catch (Exception e)
-            {
-                _logger.Warning("FidAF(AF) 측정 실패: {Msg}", e.Message);
-            }
-            finally
-            {
-                IsRepeatRunning = false;
-            }
-        }
-
-        [RelayCommand]
-        public async Task FidNoAFCheck()
-        {
-            ResetCts();
-            IsRepeatRunning = true;
-            RepeatTotal = 20;
-            RepeatCurrent = 0;
-            var folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MeasureResults");
-            Directory.CreateDirectory(folder);
-            var filePath = Path.Combine(folder, "FidAFNO.csv");
-            try
-            {
-                bool writeHeader = !File.Exists(filePath) || new FileInfo(filePath).Length == 0;
-                using var writer = new StreamWriter(filePath, true, Encoding.UTF8);
-                if (writeHeader)
-                    await writer.WriteLineAsync("Time,HC1_X,HC1_Y,HC2_X,HC2_Y");
-                for (int i = 0; i < 20; i++)
-                {
-                    _cts.Token.ThrowIfCancellationRequested();
-                    var hc1 = await _sequenceService.VisionAFNoResult(
-                        CameraType.HC1_HIGH, MarkType.FIDUCIAL, DirectType.LEFT, _cts.Token);
-                    var hc2 = await _sequenceService.VisionAFNoResult(
-                        CameraType.HC2_HIGH, MarkType.FIDUCIAL, DirectType.RIGHT, _cts.Token);
-                    RepeatCurrent = i + 1;
-                    await writer.WriteLineAsync($"{DateTime.Now},{hc1.x:F6},{hc1.y:F6},{hc2.x:F6},{hc2.y:F6}");
-                    await writer.FlushAsync();
-                    if (i < 19)
-                        await Task.Delay(TimeSpan.FromSeconds(20), _cts.Token);
-                }
-                _logger.Information("FidNoAF CSV 저장 완료: {Path} ({Count}건)", filePath, RepeatCurrent);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.Information("FidNoAF 측정 취소 — {Count}회 완료", RepeatCurrent);
-            }
-            catch (Exception e)
-            {
-                _logger.Warning("FidNoAF 측정 실패: {Msg}", e.Message);
-            }
-            finally
-            {
-                IsRepeatRunning = false;
-            }
-        }
-
-        [RelayCommand]
-        public async Task AlignAFCheck()
-        {
-            ResetCts();
-            IsRepeatRunning = true;
-            RepeatTotal = 20;
-            RepeatCurrent = 0;
-            var folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MeasureResults");
-            Directory.CreateDirectory(folder);
-            var filePath = Path.Combine(folder, "AlignAF.csv");
-            try
-            {
-                bool writeHeader = !File.Exists(filePath) || new FileInfo(filePath).Length == 0;
-                using var writer = new StreamWriter(filePath, true, Encoding.UTF8);
-                if (writeHeader)
-                    await writer.WriteLineAsync("Time, HC1_X,HC1_Y,HC2_X,HC2_Y");
-                for (int i = 0; i < 20; i++)
-                {
-                    _cts.Token.ThrowIfCancellationRequested();
-                    var hc1 = await _sequenceService.VisionAFResult(
-                        CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, _cts.Token);
-                    var hc2 = await _sequenceService.VisionAFResult(
-                        CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, _cts.Token);
-
-                    RepeatCurrent = i + 1;
-                    await writer.WriteLineAsync($"{DateTime.Now.ToString()},{hc1.x:F6},{hc1.y:F6},{hc2.x:F6},{hc2.y:F6}");
-                    await writer.FlushAsync();
-                }
-                _logger.Information("AlignAF(AF) CSV 저장 완료: {Path} ({Count}건)", filePath, RepeatCurrent);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.Information("AlignAF(AF) 측정 취소 — {Count}회 완료", RepeatCurrent);
-            }
-            catch (Exception e)
-            {
-                _logger.Warning("AlignAF(AF) 측정 실패: {Msg}", e.Message);
-            }
-            finally
-            {
-                IsRepeatRunning = false;
-            }
-        }
-
-        [RelayCommand]
-        public async Task AlignNoAFCheck()
-        {
-            ResetCts();
-            IsRepeatRunning = true;
-            RepeatTotal = 20;
-            RepeatCurrent = 0;
-            var folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MeasureResults");
-            Directory.CreateDirectory(folder);
-            var filePath = Path.Combine(folder, "AlignAFNO.csv");
-            try
-            {
-                bool writeHeader = !File.Exists(filePath) || new FileInfo(filePath).Length == 0;
-                using var writer = new StreamWriter(filePath, true, Encoding.UTF8);
-                if (writeHeader)
-                    await writer.WriteLineAsync("Time,HC1_X,HC1_Y,HC2_X,HC2_Y");
-                for (int i = 0; i < 20; i++)
-                {
-                    _cts.Token.ThrowIfCancellationRequested();
-                    var hc1 = await _sequenceService.VisionAFNoResult(
-                        CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, _cts.Token);
-                    var hc2 = await _sequenceService.VisionAFNoResult(
-                        CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, _cts.Token);
-                    RepeatCurrent = i + 1;
-                    await writer.WriteLineAsync($"{DateTime.Now},{hc1.x:F6},{hc1.y:F6},{hc2.x:F6},{hc2.y:F6}");
-                    await writer.FlushAsync();
-                    if (i < 19)
-                        await Task.Delay(TimeSpan.FromSeconds(20), _cts.Token);
-                }
-                _logger.Information("AlignNoAF CSV 저장 완료: {Path} ({Count}건)", filePath, RepeatCurrent);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.Information("AlignNoAF 측정 취소 — {Count}회 완료", RepeatCurrent);
-            }
-            catch (Exception e)
-            {
-                _logger.Warning("AlignNoAF 측정 실패: {Msg}", e.Message);
-            }
-            finally
-            {
-                IsRepeatRunning = false;
-            }
-        }
+        
 
         [RelayCommand]
         public void ChangeAvgMode()
@@ -909,20 +625,14 @@ namespace HCB.UI
         private async Task RunTopHighAlign(CancellationToken ct)
         {
             TopHighAlignState = StepState.InProgress;
+            var data = new AlignData();
+            data.AvgMove = AvgMode;
+            hcbData = await _sequenceService.TopHighAlign(data, ct);
 
-            _alignCtx = await _sequenceService.TopHighAlign(new AlignContext(), AvgMode, ct);
-
-            // UI 바인딩 — 하위 호환 프로퍼티 (Corrected ?? Raw) 자동 반환
-            TopRightFid = _alignCtx.TopRightFid;
-            TopRightAlign = _alignCtx.TopRightAlign;
-            TopLeftFid = _alignCtx.TopLeftFid;
-            TopLeftAlign = _alignCtx.TopLeftAlign;
-            TopOffsetX = _alignCtx.TopOffsetX;
-            TopOffsetY = _alignCtx.TopOffsetY;
-            TopOffsetT = _alignCtx.TopOffsetT;
-            TopAlignRelOffsetX = _alignCtx.TopAlignRelOffsetX;
-            TopAlignRelOffsetY = _alignCtx.TopAlignRelOffsetY;
-            TopAlignRelOffsetT = _alignCtx.TopAlignRelOffsetT;
+            TopRightFid = hcbData.TopRightFidRaw;
+            TopRightAlign = hcbData.TopRightAlignRaw;
+            TopLeftFid = hcbData.TopLeftFidRaw;
+            TopLeftAlign = hcbData.TopLeftAlignRaw;
 
             TopHighAlignState = StepState.Completed;
         }
@@ -931,16 +641,12 @@ namespace HCB.UI
         {
             BtmHighAlignState = StepState.InProgress;
 
-            _alignCtx = await _sequenceService.BtmHighAlign(_alignCtx, AvgMode, ct);
+            hcbData = await _sequenceService.BtmHighAlign(hcbData, ct);
 
-            // UI 바인딩 — 하위 호환 프로퍼티 (Corrected ?? Raw) 자동 반환
-            BtmRightFid = _alignCtx.BtmRightFid;
-            BtmRightAlign = _alignCtx.BtmRightAlign;
-            BtmLeftFid = _alignCtx.BtmLeftFid;
-            BtmLeftAlign = _alignCtx.BtmLeftAlign;
-            BtmOffsetX = _alignCtx.BtmOffsetX;
-            BtmOffsetY = _alignCtx.BtmOffsetY;
-            BtmOffsetT = _alignCtx.BtmOffsetT;
+            BtmRightFid = hcbData.BtmRightFidRaw;
+            BtmRightAlign = hcbData.BtmRightAlignRaw;
+            BtmLeftFid = hcbData.BtmLeftFidRaw;
+            BtmLeftAlign = hcbData.BtmLeftAlignRaw;
 
             BtmHighAlignState = StepState.Completed;
         }
@@ -949,25 +655,12 @@ namespace HCB.UI
         {
             TopBondingState = StepState.InProgress;
             BondingHistory = new ObservableCollection<BondingDataPoint>();
-            await _sequenceService.TopPlace(_alignCtx, _recipeService, BondingHistory, ct);
+            await _sequenceService.TopPlace(hcbData, ct);
             await _sequenceService.Bonding(BondingHistory, ct);
-            //await HighResult();
-            ExportBondingResult();
             TopBondingState = StepState.Completed;
+            ExportHcbData();
         }
 
-        [RelayCommand]
-        public async Task BondingTest(CancellationToken ct)
-        {
-            BondingHistory = new ObservableCollection<BondingDataPoint>();
-            await _sequenceService.Bonding(BondingHistory, ct);
-        }
-
-        [RelayCommand]
-        public async Task DropTest(CancellationToken ct)
-        {
-            await _sequenceService.BondingTest(ct);
-        }
 
         // ═════════════════════════════════════════════════════
         //  공통 유틸
@@ -1002,280 +695,70 @@ namespace HCB.UI
         //  CSV 내보내기 — Raw + Corrected + 보정 파라미터 + 결과
         // ═════════════════════════════════════════════════════
 
-        /// <summary>
-        /// 본딩 결과 CSV 저장
-        /// 구조: [기본정보] [Top Raw] [Top Corrected] [Top Offset]
-        ///       [Btm Raw] [Btm Corrected] [Btm Offset]
-        ///       [보정 파라미터] [HcRO 좌표] [최종 결과] [Vernier]
-        /// </summary>
-        public void ExportBondingResult()
+        /// <summary>VisionMarkResult 6개 필드를 콤마로 이어 반환</summary>
+        private void ExportHcbData()
         {
-            if (_alignCtx == null)
+            if (hcbData == null)
             {
-                _logger.Information("저장할 본딩 결과가 없습니다.");
+                _logger.Information("저장할 본딩 데이터가 없습니다.");
                 return;
             }
 
             var path = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                $"bonding_result3_{DateTime.Now:yyyyMMdd}.csv");
+                $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
 
-            var fileExists = File.Exists(path);
+            bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
             var sb = new StringBuilder();
 
-            // ── 헤더 ──────────────────────────────────────────
-            if (!fileExists)
+            if (writeHeader)
             {
-                var headers = new List<string>
-                {
-                    // ── 기본 정보 ──
-                    "타임스탬프", "Top다이번호", "Bottom다이번호",
-
-                    // ── Top Raw (비전 원본) ──
-                    "TopRF_Raw_StageX", "TopRF_Raw_StageY",
-                    "TopRF_Raw_DxCam",  "TopRF_Raw_DyCam",
-                    "TopRF_Raw_CenterX","TopRF_Raw_CenterY",
-
-                    "TopRA_Raw_StageX", "TopRA_Raw_StageY",
-                    "TopRA_Raw_DxCam",  "TopRA_Raw_DyCam",
-                    "TopRA_Raw_CenterX","TopRA_Raw_CenterY",
-
-                    "TopLF_Raw_StageX", "TopLF_Raw_StageY",
-                    "TopLF_Raw_DxCam",  "TopLF_Raw_DyCam",
-                    "TopLF_Raw_CenterX","TopLF_Raw_CenterY",
-
-                    "TopLA_Raw_StageX", "TopLA_Raw_StageY",
-                    "TopLA_Raw_DxCam",  "TopLA_Raw_DyCam",
-                    "TopLA_Raw_CenterX","TopLA_Raw_CenterY",
-
-                    // ── Top Corrected (보정 후) ──
-                    "TopRF_Cor_StageX", "TopRF_Cor_StageY",
-                    "TopRF_Cor_DxCam",  "TopRF_Cor_DyCam",
-                    "TopRF_Cor_CenterX","TopRF_Cor_CenterY",
-
-                    "TopRA_Cor_StageX", "TopRA_Cor_StageY",
-                    "TopRA_Cor_DxCam",  "TopRA_Cor_DyCam",
-                    "TopRA_Cor_CenterX","TopRA_Cor_CenterY",
-
-                    "TopLF_Cor_StageX", "TopLF_Cor_StageY",
-                    "TopLF_Cor_DxCam",  "TopLF_Cor_DyCam",
-                    "TopLF_Cor_CenterX","TopLF_Cor_CenterY",
-
-                    "TopLA_Cor_StageX", "TopLA_Cor_StageY",
-                    "TopLA_Cor_DxCam",  "TopLA_Cor_DyCam",
-                    "TopLA_Cor_CenterX","TopLA_Cor_CenterY",
-
-                    // ── Top Offset ──
-                    "TopOffsetX", "TopOffsetY", "TopOffsetT",
-                    "TopRelOffsetX", "TopRelOffsetY", "TopRelOffsetT",
-
-                    // ── Btm Raw (비전 원본) ──
-                    "BtmRF_Raw_StageX", "BtmRF_Raw_StageY",
-                    "BtmRF_Raw_DxCam",  "BtmRF_Raw_DyCam",
-                    "BtmRF_Raw_CenterX","BtmRF_Raw_CenterY",
-
-                    "BtmRA_Raw_StageX", "BtmRA_Raw_StageY",
-                    "BtmRA_Raw_DxCam",  "BtmRA_Raw_DyCam",
-                    "BtmRA_Raw_CenterX","BtmRA_Raw_CenterY",
-
-                    "BtmLF_Raw_StageX", "BtmLF_Raw_StageY",
-                    "BtmLF_Raw_DxCam",  "BtmLF_Raw_DyCam",
-                    "BtmLF_Raw_CenterX","BtmLF_Raw_CenterY",
-
-                    "BtmLA_Raw_StageX", "BtmLA_Raw_StageY",
-                    "BtmLA_Raw_DxCam",  "BtmLA_Raw_DyCam",
-                    "BtmLA_Raw_CenterX","BtmLA_Raw_CenterY",
-
-                    // ── Btm Corrected (보정 후) ──
-                    "BtmRF_Cor_StageX", "BtmRF_Cor_StageY",
-                    "BtmRF_Cor_DxCam",  "BtmRF_Cor_DyCam",
-                    "BtmRF_Cor_CenterX","BtmRF_Cor_CenterY",
-
-                    "BtmRA_Cor_StageX", "BtmRA_Cor_StageY",
-                    "BtmRA_Cor_DxCam",  "BtmRA_Cor_DyCam",
-                    "BtmRA_Cor_CenterX","BtmRA_Cor_CenterY",
-
-                    "BtmLF_Cor_StageX", "BtmLF_Cor_StageY",
-                    "BtmLF_Cor_DxCam",  "BtmLF_Cor_DyCam",
-                    "BtmLF_Cor_CenterX","BtmLF_Cor_CenterY",
-
-                    "BtmLA_Cor_StageX", "BtmLA_Cor_StageY",
-                    "BtmLA_Cor_DxCam",  "BtmLA_Cor_DyCam",
-                    "BtmLA_Cor_CenterX","BtmLA_Cor_CenterY",
-
-                    // ── Btm Offset ──
-                    "BtmOffsetX", "BtmOffsetY", "BtmOffsetT",
-
-                    // ── 보정 파라미터 ──
-                    "HasPcT", "PcTRad",
-                    "HasHcRO", "Hc1Rad", "Hc2Rad",
-                    "HcRO_X", "HcRO_Y",
-                    "Hc1Offset_X", "Hc1Offset_Y",
-                    "Hc2Offset_X", "Hc2Offset_Y",
-                    "PcHcroScaleX", "PcHcroScaleY", "ScaleFallback",
-
-                    // ── HcRO 좌표 (B-Die) ──
-                    "HcroLF_X", "HcroLF_Y",
-                    "HcroLA_X", "HcroLA_Y",
-                    "HcroRF_X", "HcroRF_Y",
-                    "HcroRA_X", "HcroRA_Y",
-
-                    // ── HcRO 좌표 (T-Die) ──
-                    "HcroTopLF_X", "HcroTopLF_Y",
-                    "HcroTopLA_X", "HcroTopLA_Y",
-                    "HcroTopRF_X", "HcroTopRF_Y",
-                    "HcroTopRA_X", "HcroTopRA_Y",
-
-                    // ── 최종 결과 ──
-                    "ThetaO(rad)", "ThetaF(rad)",
-                    "ShiftX(mm)", "ShiftY(mm)",
-                    "OffsetX_Recipe", "OffsetY_Recipe", "OffsetT_Recipe",
-
-                    // ── Vernier / HighResult ──
-                    "결과BL_X", "결과BL_Y",
-                    "결과BR_X", "결과BR_Y",
-                    "결과TL_X", "결과TL_Y",
-                    "결과TR_X", "결과TR_Y",
-                    "결과C_X", "결과C_Y", "결과C_T"
-                };
-
-                sb.AppendLine(string.Join(",", headers));
-            }
-
-            // ── 데이터 행 ─────────────────────────────────────
-            var ctx = _alignCtx;
-
-            var values = new List<string>
-            {
-                // ── 기본 정보 ──
-                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                TopDie.ToString(),
-                BottomDie.ToString(),
-
-                // ── Top Raw ──
-                MarkFields(ctx.TopRightFidRaw),
-                MarkFields(ctx.TopRightAlignRaw),
-                MarkFields(ctx.TopLeftFidRaw),
-                MarkFields(ctx.TopLeftAlignRaw),
-
-                // ── Top Corrected ──
-                MarkFields(ctx.TopRightFidCorrected),
-                MarkFields(ctx.TopRightAlignCorrected),
-                MarkFields(ctx.TopLeftFidCorrected),
-                MarkFields(ctx.TopLeftAlignCorrected),
-
-                // ── Top Offset ──
-                F(ctx.TopOffsetX), F(ctx.TopOffsetY), F(ctx.TopOffsetT),
-                F(ctx.TopAlignRelOffsetX), F(ctx.TopAlignRelOffsetY), F(ctx.TopAlignRelOffsetT),
-
-                // ── Btm Raw ──
-                MarkFields(ctx.BtmRightFidRaw),
-                MarkFields(ctx.BtmRightAlignRaw),
-                MarkFields(ctx.BtmLeftFidRaw),
-                MarkFields(ctx.BtmLeftAlignRaw),
-
-                // ── Btm Corrected ──
-                MarkFields(ctx.BtmRightFidCorrected),
-                MarkFields(ctx.BtmRightAlignCorrected),
-                MarkFields(ctx.BtmLeftFidCorrected),
-                MarkFields(ctx.BtmLeftAlignCorrected),
-
-                // ── Btm Offset ──
-                F(ctx.BtmOffsetX), F(ctx.BtmOffsetY), F(ctx.BtmOffsetT),
-
-                // ── 보정 파라미터 ──
-                ctx.HasPcT.ToString(), F(ctx.PcTRad),
-                ctx.HasHcRO.ToString(), F(ctx.Hc1Rad), F(ctx.Hc2Rad),
-                Pt(ctx.Hcro),
-                Pt(ctx.Hc1Offset),
-                Pt(ctx.Hc2Offset),
-                F(ctx.PcHcroScaleX), F(ctx.PcHcroScaleY), ctx.ScaleFallbackApplied.ToString(),
-
-                // ── HcRO 좌표 (B-Die) ──
-                Pt(ctx.HcroLF), Pt(ctx.HcroLA),
-                Pt(ctx.HcroRF), Pt(ctx.HcroRA),
-
-                // ── HcRO 좌표 (T-Die) ──
-                Pt(ctx.HcroTopLF), Pt(ctx.HcroTopLA),
-                Pt(ctx.HcroTopRF), Pt(ctx.HcroTopRA),
-
-                // ── 최종 결과 ──
-                F(ctx.FinalThetaO), F(ctx.FinalThetaF),
-                F(ctx.FinalShiftX), F(ctx.FinalShiftY),
-                F(ctx.OffsetXApplied), F(ctx.OffsetYApplied), F(ctx.OffsetTApplied),
-
-                // ── Vernier / HighResult ──
-                F(HrBlX), F(HrBlY),
-                F(HrBrX), F(HrBrY),
-                F(HrTlX), F(HrTlY),
-                F(HrTrX), F(HrTrY),
-                F(DetailX), F(DetailY), F(DetailT)
-            };
-
-            sb.AppendLine(string.Join(",", values));
-
-            File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
-            _logger.Information("본딩 결과 저장: {Path}", path);
-        }
-
-        // ═════════════════════════════════════════════════════
-        //  RepeatMeasure 전용 CSV (Raw + Corrected 비교)
-        // ═════════════════════════════════════════════════════
-
-        private void ExportToCsv(List<AlignContext> results, string filePath)
-        {
-            var sb = new StringBuilder();
-
-            sb.AppendLine(string.Join(",",
-                "Index",
-                // Raw
-                "TopRF_Raw_StageX", "TopRF_Raw_StageY", "TopRF_Raw_DxCam", "TopRF_Raw_DyCam", "TopRF_Raw_CenterX", "TopRF_Raw_CenterY",
-                "TopRA_Raw_StageX", "TopRA_Raw_StageY", "TopRA_Raw_DxCam", "TopRA_Raw_DyCam", "TopRA_Raw_CenterX", "TopRA_Raw_CenterY",
-                "TopLF_Raw_StageX", "TopLF_Raw_StageY", "TopLF_Raw_DxCam", "TopLF_Raw_DyCam", "TopLF_Raw_CenterX", "TopLF_Raw_CenterY",
-                "TopLA_Raw_StageX", "TopLA_Raw_StageY", "TopLA_Raw_DxCam", "TopLA_Raw_DyCam", "TopLA_Raw_CenterX", "TopLA_Raw_CenterY",
-                // Corrected
-                "TopRF_Cor_StageX", "TopRF_Cor_StageY", "TopRF_Cor_DxCam", "TopRF_Cor_DyCam", "TopRF_Cor_CenterX", "TopRF_Cor_CenterY",
-                "TopRA_Cor_StageX", "TopRA_Cor_StageY", "TopRA_Cor_DxCam", "TopRA_Cor_DyCam", "TopRA_Cor_CenterX", "TopRA_Cor_CenterY",
-                "TopLF_Cor_StageX", "TopLF_Cor_StageY", "TopLF_Cor_DxCam", "TopLF_Cor_DyCam", "TopLF_Cor_CenterX", "TopLF_Cor_CenterY",
-                "TopLA_Cor_StageX", "TopLA_Cor_StageY", "TopLA_Cor_DxCam", "TopLA_Cor_DyCam", "TopLA_Cor_CenterX", "TopLA_Cor_CenterY",
-                // Offset
-                "TopOffsetX", "TopOffsetY", "TopOffsetT",
-                "TopRelOffsetX", "TopRelOffsetY", "TopRelOffsetT",
-                // 보정 파라미터
-                "HasPcT", "PcTRad"
-            ));
-
-            for (int i = 0; i < results.Count; i++)
-            {
-                var ctx = results[i];
                 sb.AppendLine(string.Join(",",
-                    i + 1,
-                    // Raw
-                    MarkFields(ctx.TopRightFidRaw),
-                    MarkFields(ctx.TopRightAlignRaw),
-                    MarkFields(ctx.TopLeftFidRaw),
-                    MarkFields(ctx.TopLeftAlignRaw),
-                    // Corrected
-                    MarkFields(ctx.TopRightFidCorrected),
-                    MarkFields(ctx.TopRightAlignCorrected),
-                    MarkFields(ctx.TopLeftFidCorrected),
-                    MarkFields(ctx.TopLeftAlignCorrected),
-                    // Offset
-                    F(ctx.TopOffsetX), F(ctx.TopOffsetY), F(ctx.TopOffsetT),
-                    F(ctx.TopAlignRelOffsetX), F(ctx.TopAlignRelOffsetY), F(ctx.TopAlignRelOffsetT),
-                    // 보정 파라미터
-                    ctx.HasPcT.ToString(), F(ctx.PcTRad)
+                    "Time", "AvgMode",
+                    // Top 비전
+                    "TopRF_StageX", "TopRF_StageY", "TopRF_DxCam", "TopRF_DyCam", "TopRF_CenterX", "TopRF_CenterY",
+                    "TopRA_StageX", "TopRA_StageY", "TopRA_DxCam", "TopRA_DyCam", "TopRA_CenterX", "TopRA_CenterY",
+                    "TopLF_StageX", "TopLF_StageY", "TopLF_DxCam", "TopLF_DyCam", "TopLF_CenterX", "TopLF_CenterY",
+                    "TopLA_StageX", "TopLA_StageY", "TopLA_DxCam", "TopLA_DyCam", "TopLA_CenterX", "TopLA_CenterY",
+                    // Btm 비전
+                    "BtmRF_StageX", "BtmRF_StageY", "BtmRF_DxCam", "BtmRF_DyCam", "BtmRF_CenterX", "BtmRF_CenterY",
+                    "BtmRA_StageX", "BtmRA_StageY", "BtmRA_DxCam", "BtmRA_DyCam", "BtmRA_CenterX", "BtmRA_CenterY",
+                    "BtmLF_StageX", "BtmLF_StageY", "BtmLF_DxCam", "BtmLF_DyCam", "BtmLF_CenterX", "BtmLF_CenterY",
+                    "BtmLA_StageX", "BtmLA_StageY", "BtmLA_DxCam", "BtmLA_DyCam", "BtmLA_CenterX", "BtmLA_CenterY",
+                    // 캘리브레이션 파라미터
+                    "PcTRad", "Hc1Rad", "Hc2Rad",
+                    "Hcro_X", "Hcro_Y",
+                    "Hc2Offset_X", "Hc2Offset_Y",
+                    // 레시피 오프셋
+                    "OffsetX", "OffsetY", "OffsetT"
                 ));
             }
 
-            File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
+            sb.AppendLine(string.Join(",",
+                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                hcbData.AvgMove,
+                // Top 비전
+                MarkFields(hcbData.TopRightFidRaw),
+                MarkFields(hcbData.TopRightAlignRaw),
+                MarkFields(hcbData.TopLeftFidRaw),
+                MarkFields(hcbData.TopLeftAlignRaw),
+                // Btm 비전
+                MarkFields(hcbData.BtmRightFidRaw),
+                MarkFields(hcbData.BtmRightAlignRaw),
+                MarkFields(hcbData.BtmLeftFidRaw),
+                MarkFields(hcbData.BtmLeftAlignRaw),
+                // 캘리브레이션 파라미터
+                F(hcbData.PcTRad), F(hcbData.Hc1Rad), F(hcbData.Hc2Rad),
+                F(hcbData.Hcro.X), F(hcbData.Hcro.Y),
+                F(hcbData.Hc2Offset.X), F(hcbData.Hc2Offset.Y),
+                // 레시피 오프셋
+                F(hcbData.OffsetXY.X), F(hcbData.OffsetXY.Y), F(hcbData.OffsetT)
+            ));
+
+            File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
+            _logger.Information("본딩 데이터 저장: {Path}", path);
         }
 
-        // ═════════════════════════════════════════════════════
-        //  CSV 유틸
-        // ═════════════════════════════════════════════════════
-
-        /// <summary>VisionMarkResult 6개 필드를 콤마로 이어 반환</summary>
         private static string MarkFields(VisionMarkResult m)
         {
             if (m == null) return ",,,,,";
@@ -1285,29 +768,14 @@ namespace HCB.UI
                 F(m.CenterX), F(m.CenterY));
         }
 
-        /// <summary>Point2D → "X,Y"</summary>
-        private static string Pt(Point2D p)
-        {
-            if (p == null) return ",";
-            return $"{F(p.X)},{F(p.Y)}";
-        }
+      
 
         /// <summary>double → 소수점 6자리 문자열</summary>
         private static string F(double v) => v.ToString("F6");
 
-        private static void WriteMarkRow(StringBuilder sb, string label, VisionMarkResult mark)
-        {
-            if (mark == null)
-            {
-                sb.AppendLine($"{label},(미측정),,,,, ");
-                return;
-            }
+        /// <summary>nullable double → 소수점 6자리 문자열 (null이면 빈 문자열)</summary>
+        private static string Fn(double? v) => v.HasValue ? v.Value.ToString("F6") : string.Empty;
 
-            sb.AppendLine(string.Join(",",
-                label,
-                mark.StageX, mark.StageY,
-                mark.DxCamToMark, mark.DyCamToMark,
-                mark.CenterX, mark.CenterY));
-        }
+       
     }
 }

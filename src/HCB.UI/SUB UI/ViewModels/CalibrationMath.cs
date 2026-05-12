@@ -1,4 +1,5 @@
 ﻿using System;
+using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
 {
@@ -100,6 +101,15 @@ namespace HCB.UI
                 cos * point.X - sin * point.Y,
                 sin * point.X + cos * point.Y);
         }
+        public static Point2D ApplyRotation(VisionMarkResult point, double thetaRad)
+        {
+            double cos = Math.Cos(thetaRad);
+            double sin = Math.Sin(thetaRad);
+            return Point2D.of(
+                cos * point.DxCamToMark - sin * point.DyCamToMark,
+                sin * point.DxCamToMark + cos * point.DyCamToMark);
+        }
+
         // ═══════════════════════════════════════════════════════════════════
         //  4. Pc → HcRO 변환 유틸리티 (PDF p.11-13)
         // ═══════════════════════════════════════════════════════════════════

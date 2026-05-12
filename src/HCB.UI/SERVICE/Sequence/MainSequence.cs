@@ -106,13 +106,11 @@ namespace HCB.UI
         public async Task<AlignData> TopHighAlign(
             AlignData data, CancellationToken ct)
         {
-            data ??= new AlignData();
-            
-
-            data.TopRightFidRaw = await TopDieVisionRightFid(ct);
-            data.TopRightAlignRaw = await TopDieVisionRightAlign(ct);
-            data.TopLeftFidRaw = await TopDieVisionLeftFid(ct);
-            data.TopLeftAlignRaw = await TopDieVisionLeftAlign(ct);
+            data ??= new AlignData();            
+            data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
+            data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove,ct);
+            data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, ct);
+            data.TopLeftAlignRaw = await TopDieVisionLeftAlign( data.AvgMove, ct);
 
             return data;
         }
@@ -152,17 +150,17 @@ namespace HCB.UI
 
             await TopDiePlace(ct);
 
-            data.BtmRightFidRaw = await BtmDieVisionRightFid(ct);
-            data.BtmRightAlignRaw = await BtmDieVisionRightAlign(ct);
-            data.BtmLeftFidRaw = await BtmDieVisionLeftFid(ct);
-            data.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(ct);
+            data.BtmRightFidRaw = await BtmDieVisionRightFid(data.AvgMove, ct);
+            data.BtmRightAlignRaw = await BtmDieVisionRightAlign(   data.AvgMove, ct);
+            data.BtmLeftFidRaw = await BtmDieVisionLeftFid(data.AvgMove, ct);
+            data.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(data.AvgMove, ct);
             return data;
         }
 
         #endregion
 
         #region Top Die Place 및 Hcro 연산 
-        public async Task TopPlace(AlignData data, ObservableCollection<BondingDataPoint> bondingDataPoints, CancellationToken ct)
+        public async Task TopPlace(AlignData data, CancellationToken ct)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             LoadCalibrationInto(data);
@@ -222,62 +220,22 @@ namespace HCB.UI
 
             double shiftX = tCenter.X - bCenter.X + data.OffsetXY.X;
             double shiftY = tCenter.Y - bCenter.Y + data.OffsetXY.Y;
+
+
+            await Task.WhenAll(
+                MotionsMove(MotionExtensions.H_X, shiftX, ct),
+                MotionsMove(MotionExtensions.W_Y, shiftY, ct),
+                MotionsMove(MotionExtensions.H_T, thetaF, ct)
+                );
         }
 
         #endregion
-
-
-        public async Task GetHcro(AlignContext ctx, CancellationToken ct)
-        {
-            try
-            {
-                var hc1_x = ParseDouble(_paramService.FindByName("HC1_X").Value);
-                var hc1_y = ParseDouble(_paramService.FindByName("HC1_Y").Value);
-                var hc2_x = ParseDouble(_paramService.FindByName("HC2_X").Value);
-                var hc2_y = ParseDouble(_paramService.FindByName("HC2_Y").Value);
-
-                var hc1_0 = await VisionResult(CameraType.HC1_HIGH, MarkType.FIDUCIAL, DirectType.LEFT, MotionExtensions.W_Y, ct);
-                var hc2_0 = await VisionResult(CameraType.HC2_HIGH, MarkType.FIDUCIAL, DirectType.RIGHT, MotionExtensions.W_Y, ct);
-
-                await MotionsMove(MotionExtensions.H_T, 1.5, ct);
-
-                var hc1_15 = await VisionResult(CameraType.HC1_HIGH, MarkType.FIDUCIAL, DirectType.LEFT, MotionExtensions.W_Y, ct);
-                var hc2_15 = await VisionResult(CameraType.HC2_HIGH, MarkType.FIDUCIAL, DirectType.RIGHT, MotionExtensions.W_Y, ct);
-
-                _logger.Information($"HC1_param=({hc1_x},{hc1_y}), HC2_param=({hc2_x},{hc2_y})");
-                _logger.Information($"hc1_0=({hc1_0.CenterX},{hc1_0.CenterY})");
-                _logger.Information($"hc1_15=({hc1_15.CenterX},{hc1_15.CenterY})");
-                _logger.Information($"hc2_0=({hc2_0.CenterX},{hc2_0.CenterY})");
-                _logger.Information($"hc2_15=({hc2_15.CenterX},{hc2_15.CenterY})");
-
-                // ── 회전 중심 계산 ────────────────────────────────────
-                var hcRO = CalibrationMath.ComputeHcRO2(
-                    Point2D.of(hc1_0.CenterX + hc1_x, hc1_0.CenterY + hc1_y),
-                    Point2D.of(hc1_15.CenterX + hc1_x, hc1_15.CenterY + hc1_y),
-                    Point2D.of(hc2_0.CenterX + hc2_x, hc2_0.CenterY + hc2_y),
-                    Point2D.of(hc2_15.CenterX + hc2_x, hc2_15.CenterY + hc2_y));
-                      
-                ECParamDto dto = _paramService.FindByName(MotionExtensions.HCRO_X);
-                dto.Value = hcRO.X.ToString();
-                dto.ValueType = Data.Entity.Type.ValueType.Double;
-                if (dto.Id == 0) { await _paramService.AddParam(dto); }
-                else { await _paramService.UpdateParam(dto); }
-
-                ECParamDto dto2 = _paramService.FindByName(MotionExtensions.HCRO_Y);
-                dto2.Value = hcRO.Y.ToString();
-                dto2.ValueType = Data.Entity.Type.ValueType.Double;
-                if (dto2.Id == 0) { await _paramService.AddParam(dto2); }
-                else { await _paramService.UpdateParam(dto2); }
-                await MotionsMove(MotionExtensions.H_T, 0, ct);
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception e) { _logger.Error(e, "CreateHcRo failed"); }
-        }
 
         // ═══════════════════════════════════════════════════
         //  Step 3: 각도 보정 → Shift → 본딩
         //   BtmHighAlign 완료 후 ctx.Hcro* 필요
         // ═══════════════════════════════════════════════════
+
 
         public async Task TopPlace(
             AlignContext ctx, RecipeService recipeService, ObservableCollection<BondingDataPoint> bondingDataPoints, CancellationToken ct)
@@ -425,14 +383,13 @@ namespace HCB.UI
 
         private void LoadCalibrationInto(AlignData data)
         {
-            var pcTParam = _paramService.FindByName(MotionExtensions.PC_T);
-            var hc1Param = _paramService.FindByName(MotionExtensions.HC1_T);
-            var hc2Param = _paramService.FindByName(MotionExtensions.HC2_T);
+            var pcT = _paramService.FindByName(MotionExtensions.PC_T);
+            var hc1T = _paramService.FindByName(MotionExtensions.HC1_T);
+            var hc2T= _paramService.FindByName(MotionExtensions.HC2_T);
             var hcroXParam = _paramService.FindByName(MotionExtensions.HCRO_X);
             var hcroYParam = _paramService.FindByName(MotionExtensions.HCRO_Y);
             var hc2XParam = _paramService.FindByName(MotionExtensions.HC2_X);
             var hc2YParam = _paramService.FindByName(MotionExtensions.HC2_Y);
-            
 
             data.OffsetXY = new Point2D(
                 double.Parse(_recipeService.FindByParam("X_ALIGN_OFFSET").Value),
@@ -440,19 +397,47 @@ namespace HCB.UI
             data.OffsetT = double.Parse(_recipeService.FindByParam("T_ALIGN_OFFSET").Value);
 
             var HasHcRO = hcroXParam.Id != 0 && hcroYParam.Id != 0
-                       && hc1Param.Id != 0 && hc2Param.Id != 0
+                       && hc1T.Id != 0 && hc2T.Id != 0
                        && hc2XParam.Id != 0 && hc2YParam.Id != 0;
-            var HasPcT = pcTParam.Id != 0;
 
             if (HasHcRO)
             {
-                data.Hc1Rad = CalibrationMath.ToRadian(ParseDouble(hc1Param.Value));
-                data.Hc2Rad = CalibrationMath.ToRadian(ParseDouble(hc2Param.Value));
+                data.Hc1Rad = CalibrationMath.ToRadian(ParseDouble(hc1T.Value));
+                data.Hc2Rad = CalibrationMath.ToRadian(ParseDouble(hc2T.Value));
+                data.PcTRad = CalibrationMath.ToRadian(ParseDouble(pcT.Value));
                 data.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
                 data.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
+
+                // 카메라 회전량 보정: DxCamToMark/DyCamToMark in-place 적용
+                // Top(P-Cam) → PcTRad,  Btm Left(Hc1) → Hc1Rad,  Btm Right(Hc2) → Hc2Rad
+                ApplyCameraRotation(data.TopLeftFidRaw,    data.PcTRad);
+                ApplyCameraRotation(data.TopRightFidRaw,   data.PcTRad);
+                ApplyCameraRotation(data.TopLeftAlignRaw,  data.PcTRad);
+                ApplyCameraRotation(data.TopRightAlignRaw, data.PcTRad);
+
+                ApplyCameraRotation(data.BtmLeftFidRaw,    data.Hc1Rad);
+                ApplyCameraRotation(data.BtmLeftAlignRaw,  data.Hc1Rad);
+                ApplyCameraRotation(data.BtmRightFidRaw,   data.Hc2Rad);
+                ApplyCameraRotation(data.BtmRightAlignRaw, data.Hc2Rad);
             }
-            if (HasPcT)
-                data.PcTRad = CalibrationMath.ToRadian(ParseDouble(pcTParam.Value));
+            else
+            {
+                throw new Exception("데이터를 찾을 수 없습니다");
+            }
+        }
+
+        private static void ApplyCameraRotation(VisionMarkResult m, double rad)
+        {
+            if (m == null) return;
+            var p = CalibrationMath.ApplyRotation(
+                Point2D.of(m.DxCamToMark, m.DyCamToMark), rad);
+            m.DxCamToMark = p.X;
+            m.DyCamToMark = p.Y;
+        }
+
+        private void TCorr(VisionMarkResult vision)
+        {
+
         }
         // ═══════════════════════════════════════════════════
         //  private: Top(Pc) 보정

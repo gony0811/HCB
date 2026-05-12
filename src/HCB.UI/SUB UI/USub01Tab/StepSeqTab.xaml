@@ -810,12 +810,6 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- 반복 측정 버튼 -->
-                                <Button Grid.Column="4" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
-                                        Command="{Binding NoAlgorithmRepeatCommand}"
-                                        IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
-                                    <TextBlock Text="반복 측정" FontSize="12" FontWeight="Bold"/>
-                                </Button>
 
                                 <!-- INFO 버튼 -->
                                 <Button Grid.Column="5" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
@@ -891,15 +885,6 @@
                                     <TextBlock Text="BONDING" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
                                     <TextBlock Text="Hybrid Bonding" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                 </StackPanel>
-                                <Button Grid.Column="3" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
-                                        Command="{Binding BondingTestCommand}">
-                                    <TextBlock Text="Bonding" FontSize="12" FontWeight="Bold"/>
-                                </Button>
-
-                                <Button Grid.Column="4" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
-                                        Command="{Binding DropTestCommand}">
-                                    <TextBlock Text="PickUp" FontSize="12" FontWeight="Bold"/>
-                                </Button>
                                 <Button Grid.Column="5" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
                                         Command="{Binding TopHighAlignInfoCommand}">
                                     <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
@@ -917,104 +902,58 @@
                     <Border Grid.Row="2" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
                             Margin="16,0,16,0" Padding="0,10,0,14">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
-                            <!-- Vernier 결과 표시 -->
-                            <Border Background="#060F1A" CornerRadius="6" Padding="12,8" Margin="0,0,8,0" BorderBrush="#1C3A52" BorderThickness="1" VerticalAlignment="Center">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="16"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="16"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="16"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- RV3 -->
-                                    <StackPanel Grid.Column="0">
-                                        <Border Background="#14452A" CornerRadius="3" Padding="8,2" HorizontalAlignment="Center" Margin="0,0,0,4">
-                                            <TextBlock Text="RV3" Foreground="#2ECC71" FontSize="11" FontWeight="Bold"/>
-                                        </Border>
-                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                            <TextBlock Text="X " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
-                                            <TextBlock Text="{Binding VernierResult.RV3.X, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                            <TextBlock Text="Y " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
-                                            <TextBlock Text="{Binding VernierResult.RV3.Y, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                    </StackPanel>
-
-
-                                    <!-- 구분선 -->
-                                    <Rectangle Grid.Column="1" Width="1" Fill="#1C3A52" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
-
-                                    <!-- LV3 -->
-                                    <StackPanel Grid.Column="2">
-                                        <Border Background="#14452A" CornerRadius="3" Padding="8,2" HorizontalAlignment="Center" Margin="0,0,0,4">
-                                            <TextBlock Text="LV3" Foreground="#2ECC71" FontSize="11" FontWeight="Bold"/>
-                                        </Border>
-                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                            <TextBlock Text="X " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
-                                            <TextBlock Text="{Binding VernierResult.LV3.X, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                            <TextBlock Text="Y " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
-                                            <TextBlock Text="{Binding VernierResult.LV3.Y, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    <!-- 구분선 -->
-                                    <Rectangle Grid.Column="3" Width="1" Fill="#1C3A52" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
-
-                                    <!-- RV1 -->
-                                    <StackPanel Grid.Column="4">
-                                        <Border Background="#14452A" CornerRadius="3" Padding="8,2" HorizontalAlignment="Center" Margin="0,0,0,4">
-                                            <TextBlock Text="RV1" Foreground="#2ECC71" FontSize="11" FontWeight="Bold"/>
-                                        </Border>
-                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                            <TextBlock Text="X " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
-                                            <TextBlock Text="{Binding VernierResult.RV1.X, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                            <TextBlock Text="Y " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
-                                            <TextBlock Text="{Binding VernierResult.RV1.Y, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    
-
-                                    <!-- 구분선 -->
-                                    <Rectangle Grid.Column="5" Width="1" Fill="#1C3A52" VerticalAlignment="Stretch" HorizontalAlignment="Center"/>
-
-                                    <!-- LV1 -->
-                                    <StackPanel Grid.Column="6">
-                                        <Border Background="#14452A" CornerRadius="3" Padding="8,2" HorizontalAlignment="Center" Margin="0,0,0,4">
-                                            <TextBlock Text="LV1" Foreground="#2ECC71" FontSize="11" FontWeight="Bold"/>
-                                        </Border>
-                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                            <TextBlock Text="X " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
-                                            <TextBlock Text="{Binding VernierResult.LV1.X, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                            <TextBlock Text="Y " Foreground="#5E8BAA" FontSize="12" FontFamily="Consolas"/>
-                                            <TextBlock Text="{Binding VernierResult.LV1.Y, StringFormat={}{0:F3}}" Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Grid>
+                            <!-- Vernier 결과 DataGrid -->
+                            <Border Background="#060F1A" CornerRadius="6" Margin="0,0,8,0"
+                                    BorderBrush="#1C3A52" BorderThickness="1" VerticalAlignment="Center">
+                                <DataGrid ItemsSource="{Binding VernierRows}"
+                                          AutoGenerateColumns="False" IsReadOnly="True"
+                                          Background="Transparent" BorderThickness="0"
+                                          RowBackground="Transparent"
+                                          AlternatingRowBackground="#0A1628"
+                                          Foreground="#ECF0F1" FontSize="11" FontFamily="Consolas"
+                                          CanUserResizeRows="False" CanUserAddRows="False"
+                                          GridLinesVisibility="None" RowHeaderWidth="0"
+                                          ColumnHeaderHeight="22" RowHeight="20"
+                                          MaxHeight="140">
+                                    <DataGrid.ColumnHeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader"
+                                               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                                            <Setter Property="Background" Value="#0A1628"/>
+                                            <Setter Property="Foreground" Value="#2ECC71"/>
+                                            <Setter Property="FontSize" Value="11"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                            <Setter Property="BorderBrush" Value="#1C3A52"/>
+                                            <Setter Property="Padding" Value="6,2"/>
+                                        </Style>
+                                    </DataGrid.ColumnHeaderStyle>
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell"
+                                               BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Padding" Value="6,1"/>
+                                        </Style>
+                                    </DataGrid.CellStyle>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Pos" Binding="{Binding Name}"                      Width="32"/>
+                                        <DataGridTextColumn Header="V1-X" Binding="{Binding V1X, StringFormat={}{0:F3}}" Width="60"/>
+                                        <DataGridTextColumn Header="V1-Y" Binding="{Binding V1Y, StringFormat={}{0:F3}}" Width="60"/>
+                                        <DataGridTextColumn Header="V3-X" Binding="{Binding V3X, StringFormat={}{0:F3}}" Width="60"/>
+                                        <DataGridTextColumn Header="V3-Y" Binding="{Binding V3Y, StringFormat={}{0:F3}}" Width="60"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
                             </Border>
-                            <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
-                                    Command="{Binding HighResultCommand}">
-                                <TextBlock Text="결과 측정" FontSize="13" FontWeight="Bold"/>
-                            </Button>
+                            <StackPanel VerticalAlignment="Center">
+                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+                                        Command="{Binding HighResultCommand}">
+                                    <TextBlock Text="결과 측정" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                                <Button Style="{StaticResource InfoButtonStyle}" Width="90" Margin="2"
+                                        Command="{Binding ExportHighResultCommand}">
+                                    <TextBlock Text="CSV 저장" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                            </StackPanel>
 
-                            <Button Style="{StaticResource InfoButtonStyle}" Width="90" Margin="2"
-                                    Command="{Binding TopRepeatBondingCommand}"
-                                    IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <TextBlock Text="반복 본딩" FontSize="13" FontWeight="Bold"/>
-                                </StackPanel>
-                            </Button>
 
 
                             <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"

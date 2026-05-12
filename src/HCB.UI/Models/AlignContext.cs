@@ -114,7 +114,8 @@ namespace HCB.UI
         public Point2D Hc2Offset { get; set; }
 
         public Point2D OffsetXY { get; set; }
-        public double OffsetT { get; set; } 
+        public double OffsetT { get; set; }
 
+        public bool AvgMove { get; set; } = false;
     }
 }
