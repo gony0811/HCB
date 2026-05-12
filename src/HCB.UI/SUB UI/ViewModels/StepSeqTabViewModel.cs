@@ -122,6 +122,8 @@ namespace HCB.UI
 
         [ObservableProperty] private bool avgMode = false;
 
+        [ObservableProperty]
+        private ObservableCollection<VernierRow> vernierRows = new();
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
 
@@ -629,14 +631,54 @@ namespace HCB.UI
             _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
             try
             {
-                await _sequenceService.TopDiePlace(_cts.Token);
+                //await _sequenceService.TopDiePlace(_cts.Token);
                 var result = await _sequenceService.GetVernier(_cts.Token);
                 VernierResult = result;
+
+                var names = new[] { "1", "3", "5", "7", "9" };
+                VernierRows.Clear();
+                for (int i = 0; i < result.v1.Count; i++)
+                {
+                    VernierRows.Add(new VernierRow
+                    {
+                        Name = i < names.Length ? names[i] : i.ToString(),
+                        V1X = result.v1[i].X,
+                        V1Y = result.v1[i].Y,
+                        V3X = result.v3.Count > i ? result.v3[i].X : (double?)null,
+                        V3Y = result.v3.Count > i ? result.v3[i].Y : (double?)null,
+                    });
+                }
+                _logger.Information("Vernier 측정 완료 — {Count}포인트", result.v1.Count);
             }
-            catch (Exception e)
-            {
-            }
+            catch (Exception e) { _logger.Warning("Vernier 측정 실패: {Msg}", e.Message); }
         }
+
+        [RelayCommand]
+        public void ExportHighResult()
+        {
+            if (VernierRows.Count == 0)
+            {
+                _logger.Information("저장할 Vernier 결과가 없습니다. 먼저 결과 측정을 실행하세요.");
+                return;
+            }
+
+            var path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"vernier_{DateTime.Now:yyyyMMdd}.csv");
+
+            bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
+            var sb = new StringBuilder();
+            if (writeHeader)
+                sb.AppendLine("Time,Pos,V1_X,V1_Y,V3_X,V3_Y");
+
+            var ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            foreach (var row in VernierRows)
+                sb.AppendLine($"{ts},{row.Name},{Fn(row.V1X)},{Fn(row.V1Y)},{Fn(row.V3X)},{Fn(row.V3Y)}");
+
+            File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
+            _logger.Information("Vernier CSV 저장: {Path}", path);
+        }
+
 
         [RelayCommand]
         public async Task RepeatMeasure()
@@ -1221,7 +1263,7 @@ namespace HCB.UI
         // ═════════════════════════════════════════════════════
         //  RepeatMeasure 전용 CSV (Raw + Corrected 비교)
         // ═════════════════════════════════════════════════════
-
+        private static string Fn(double? v) => v.HasValue ? v.Value.ToString("F6") : string.Empty;
         private void ExportToCsv(List<AlignContext> results, string filePath)
         {
             var sb = new StringBuilder();

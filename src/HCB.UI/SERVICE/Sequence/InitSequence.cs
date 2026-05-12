@@ -356,7 +356,7 @@ namespace HCB.UI
 
         public async Task<VernierResponse> MeasureVeriner(CameraType cameraType, DirectType directType)
         {
-            
+            await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.VERNIER);
             var result = await communicationService.RequestVernier(cameraType, directType);
             //if (result.Result == Result.NG) throw new Exception("비전 통신 에러");
             return result;
@@ -364,71 +364,41 @@ namespace HCB.UI
 
         public async Task<VernierResult> GetVernier(CancellationToken ct = default)
         {
-            VernierResult result = new VernierResult();
-            if (double.TryParse(_recipeService.FindByParam("TopDieThickness").Value, out double topDieThickness))
-            { }
-            else
+            await Init_Head(ct);
+
+            await Task.WhenAll(
+                MotionsMove(MotionExtensions.H_X, "1번 버니어", ct),
+                MotionsMove(MotionExtensions.W_Y, "1번 버니어", ct)
+            );
+            //await _sequenceHelper.Silindar_R(true, ct);
+            await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", ct);
+
+            var points = new VernierPoint[]
             {
-                throw new Exception("레시피 TopDieThickness값이 Double타입이 아닙니다");
-            }
+                new("1", 0.0, 0.0,  DirectType.Vertical,   DirectType.Horizontal),
+                new("3", 9.6, 0.0,  DirectType.Horizontal, DirectType.Vertical),
+                new("5", -4.8, 4.8, DirectType.Vertical,   DirectType.Horizontal),
+                new("7", -4.8, 4.8, DirectType.Horizontal,   DirectType.Vertical),
+                new("9", 9.6, 0.0,  DirectType.Vertical,   DirectType.Horizontal),
+            };
 
-            if (double.TryParse(_recipeService.FindByParam("BtmDieThickness").Value, out double btmDieThickness))
-            { }
-            else
+            var result = new VernierResult();
+
+            foreach (var pt in points)
             {
-                throw new Exception("레시피 btmDieThickness값이 Double타입이 아닙니다");
+                await Task.WhenAll(
+                    RelativeMotionsMove(MotionExtensions.H_X, pt.X, ct),
+                    RelativeMotionsMove(MotionExtensions.W_Y, pt.Y, ct)
+                );
+                var vx = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1);
+                int a = pt.Dir1 == DirectType.Vertical ? 1 : -1;
+                await RelativeMotionsMove(MotionExtensions.W_Y, 0.3 * a, ct);
+                var vy = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2);
+
+                result.v1.Add(Point2D.of(vx.Value_1, vy.Value_1));
+                result.v3.Add(Point2D.of(vx.Value_3, vy.Value_3));
             }
-
-            // 1. Vernier 우측 상단 이동
-            await Task.WhenAll(
-                RelativeMotionsMove(MotionExtensions.H_X, -1.42, ct),
-                RelativeMotionsMove(MotionExtensions.W_Y, -1.2, ct)
-            );
-            await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.VERNIER);
-            // 수평: X축을 알 수 있음
-            var rVh = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Horizontal);
-            result.RV1.X = rVh.Value_1;
-            result.RV3.X = rVh.Value_3;
-
-            await RelativeMotionsMove(MotionExtensions.W_Y, -0.3, ct);
-
-            // 수직: Y축을 알 수 있음.
-            var rVv = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Vertical);
-            result.RV1.Y = rVv.Value_1;
-            result.RV3.Y = rVv.Value_3;
-
-            await Task.WhenAll(
-                RelativeMotionsMove(MotionExtensions.H_X, -4.8, ct),
-                RelativeMotionsMove(MotionExtensions.W_Y, 4.8, ct)
-            );
-
-
-            var cVv = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Vertical);
-            result.CV1.X = cVv.Value_1;
-            result.CV3.X = cVv.Value_3;
-
-            await RelativeMotionsMove(MotionExtensions.W_Y, 0.3, ct);
-
-            var cVh = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Horizontal);
-            result.CV1.X = cVh.Value_1;
-            result.CV3.X = cVh.Value_3;
-
-
-            await Task.WhenAll(
-                RelativeMotionsMove(MotionExtensions.H_X, -4.8, ct),
-                RelativeMotionsMove(MotionExtensions.W_Y, 4.8, ct)
-            );
-
-            var lVh = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Horizontal);
-            result.RV1.X = lVh.Value_1;
-            result.RV3.X = lVh.Value_3;
-
-            await RelativeMotionsMove(MotionExtensions.W_Y, -0.3, ct);
-            var lVv = await MeasureVeriner(CameraType.HC2_HIGH, DirectType.Vertical);
-            result.RV1.Y = lVv.Value_1;
-            result.RV3.Y = lVv.Value_3;
-            
-
+            //await _sequenceHelper.Silindar_R(false, ct);
             return result;
         }
 
@@ -475,7 +445,7 @@ namespace HCB.UI
                 await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct);
                 _sequenceServiceVM.InitializeProgress = 30;
                 // 3. 전체 Servo On 
-                _sequenceServiceVM.ServoOn= StepState.InProgress;
+                _sequenceServiceVM.ServoOn = StepState.InProgress;
                 bool servoResult = await Init_ServoAllOn(ct);
                 if (!servoResult)
                 {
@@ -515,8 +485,10 @@ namespace HCB.UI
                 _sequenceServiceVM.InitializeProgress = 75;
 
                 // 6. Header Home X, T 축
+                await TInit(ct);
+                await Task.Delay(1000);
                 var hx = motionDevice.FindMotionByName(MotionExtensions.H_X);
-                var ht= motionDevice.FindMotionByName(MotionExtensions.H_T);
+                var ht = motionDevice.FindMotionByName(MotionExtensions.H_T);
                 var xt = new List<IAxis> { hx, ht };
 
                 _sequenceServiceVM.HXHome = StepState.InProgress;
@@ -576,7 +548,31 @@ namespace HCB.UI
             }
         }
 
-       public async Task Init_Load(CancellationToken ct = default)
+
+        public async Task TInit(CancellationToken ct = default)
+        {
+            var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            await device.SendCommand("enable plc 9");
+
+            var timeout = TimeSpan.FromSeconds(300);
+            var pollInterval = TimeSpan.FromMilliseconds(100);
+
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(timeout);
+
+            while (true)
+            {
+                timeoutCts.Token.ThrowIfCancellationRequested();
+
+                string result = await device.SendCommand<string>("Encpha");
+                if (result.Equals("1"))
+                    break;
+
+                await Task.Delay(pollInterval, timeoutCts.Token);
+            }
+
+        }
+        public async Task Init_Load(CancellationToken ct = default)
         {
             try
             {
