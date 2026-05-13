@@ -340,7 +340,7 @@ namespace HCB.UI
         //        if (!string.IsNullOrEmpty(msg.Data?.Content))
         //        {
         //            var xml = msg.Data?.ToXml();
-                    
+
         //            if (Enum.TryParse(xml?.Element("RESULT")?.Value, out Result r))
         //                result = r;
         //        }
@@ -368,41 +368,46 @@ namespace HCB.UI
         {
             var msgName = msg.Header?.MessageName ?? "";
             var replyName = msgName.Replace("REQUEST_", "REPLY_");
-
             Result result = Result.NG;
             string axis = "";
             double distance = 0;
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            _logger.Information($"[MotionMove] 시작 - {msgName}");
 
             try
             {
                 if (!string.IsNullOrEmpty(msg.Data?.Content))
                 {
                     var innerXml = XElement.Parse($"<R>{msg.Data.Content}</R>");
-
                     axis = innerXml.Element("AXIS")?.Value ?? "";
                     distance = double.TryParse(innerXml.Element("DISTANCE")?.Value, out var d) ? d : 0;
 
-                    var validAxes = new HashSet<string> { "H_X", "H_Z", "H_T", "D_Y", "P_Y", "W_Y", "W_T" };
+                    _logger.Information($"[MotionMove] 축={axis}, 거리={distance:F4}");
 
+                    var validAxes = new HashSet<string> { "H_X", "H_Z", "H_T", "D_Y", "P_Y", "W_Y", "W_T" };
                     if (validAxes.Contains(axis.ToUpperInvariant()))
                     {
-                        result = await sequenceHelper.RelativeMoveAsync(axis, 0, distance, ct) ? Result.OK : Result.NG;
+                        result = await sequenceHelper.RelativeMoveAsync(axis, 100, distance, ct) ? Result.OK : Result.NG;
                     }
                 }
             }
             catch (Exception ex)
             {
+                _logger.Warning($"[MotionMove] 예외: {ex.Message}");
                 result = Result.NG;
             }
 
+            sw.Stop();
+
             var currentPosition = sequenceHelper.CurrentPosition(axis);
-            var r = result == Result.OK ? "OK": "NG";
+            _logger.Information($"[MotionMove] 완료 - 축={axis}, 결과={result}, 현재위치={currentPosition:F4}, 소요={sw.ElapsedMilliseconds}ms");
+
             var response = MessageFactory.Create(
                 messageName: replyName,
                 unitName: "EQP",
-                content:$"<RESULT>{result}</RESULT><AXIS>{axis.ToUpper()}</AXIS><DISTANCE>{currentPosition}</DISTANCE>"
+                content: $"<RESULT>{result}</RESULT><AXIS>{axis.ToUpper()}</AXIS><DISTANCE>{currentPosition}</DISTANCE>"
             );
-
             await _server.SendAsync(response);
         }
         #endregion
