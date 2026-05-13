@@ -703,14 +703,11 @@ namespace HCB.UI
                 _logger.Information("저장할 본딩 데이터가 없습니다.");
                 return;
             }
-
             var path = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                 $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
-
             bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
             var sb = new StringBuilder();
-
             if (writeHeader)
             {
                 sb.AppendLine(string.Join(",",
@@ -730,10 +727,18 @@ namespace HCB.UI
                     "Hcro_X", "Hcro_Y",
                     "Hc2Offset_X", "Hc2Offset_Y",
                     // 레시피 오프셋
-                    "OffsetX", "OffsetY", "OffsetT"
+                    "OffsetX", "OffsetY", "OffsetT",
+                    // TopPlace 중간값
+                    "LDist_X", "LDist_Y", "RDist_X", "RDist_Y",
+                    "BFL_X", "BFL_Y", "BFR_X", "BFR_Y",
+                    "BL_X", "BL_Y", "BR_X", "BR_Y",
+                    "TL_X", "TL_Y", "TR_X", "TR_Y",
+                    "SpecTheta", "BTheta", "TTheta", "ThetaF", "ThetaFRad",
+                    "TCenter_X", "TCenter_Y", "BCenter_X", "BCenter_Y",
+                    // 결과
+                    "ResultX", "ResultY", "ResultT"
                 ));
             }
-
             sb.AppendLine(string.Join(",",
                 DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                 hcbData.AvgMove,
@@ -752,12 +757,25 @@ namespace HCB.UI
                 F(hcbData.Hcro.X), F(hcbData.Hcro.Y),
                 F(hcbData.Hc2Offset.X), F(hcbData.Hc2Offset.Y),
                 // 레시피 오프셋
-                F(hcbData.OffsetXY.X), F(hcbData.OffsetXY.Y), F(hcbData.OffsetT)
+                F(hcbData.OffsetXY.X), F(hcbData.OffsetXY.Y), F(hcbData.OffsetT),
+                // TopPlace 중간값
+                Pt(hcbData.LDist), Pt(hcbData.RDist),
+                Pt(hcbData.BFL), Pt(hcbData.BFR),
+                Pt(hcbData.BL), Pt(hcbData.BR),
+                Pt(hcbData.TL), Pt(hcbData.TR),
+                F(hcbData.SpecTheta), F(hcbData.BTheta), F(hcbData.TTheta),
+                F(hcbData.ThetaF), F(hcbData.ThetaFRad),
+                Pt(hcbData.TCenter), Pt(hcbData.BCenter),
+                // 결과
+                F(hcbData.ResultX), F(hcbData.ResultY), F(hcbData.ResultT)
             ));
-
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
             _logger.Information("본딩 데이터 저장: {Path}", path);
         }
+
+        // Point2D → "X,Y" 헬퍼
+        private static string Pt(Point2D p) =>
+            p == null ? "," : $"{F(p.X)},{F(p.Y)}";
 
         private static string MarkFields(VisionMarkResult m)
         {

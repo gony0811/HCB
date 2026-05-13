@@ -116,6 +116,33 @@ namespace HCB.UI
         public Point2D OffsetXY { get; set; }
         public double OffsetT { get; set; }
 
+        // ── TopPlace 중간 계산값 ──
+        public Point2D LDist { get; set; }       // Top Left: Align - Fid (cam)
+        public Point2D RDist { get; set; }       // Top Right: Align - Fid (cam)
+
+        public Point2D BL { get; set; }          // Btm Left Align (HcRO 기준)
+        public Point2D BR { get; set; }          // Btm Right Align (HcRO 기준)
+        public Point2D TL { get; set; }          // Top Left (회전 후, HcRO 기준)
+        public Point2D TR { get; set; }          // Top Right (회전 후, HcRO 기준)
+        public Point2D BFL { get; set; }         // Btm Left Fid (raw)
+        public Point2D BFR { get; set; }         // Btm Right Fid (raw)
+
+        public double BTheta { get; set; }       // atan2(br-bl) rad
+        public double TTheta { get; set; }       // atan2(tr-tl) rad
+        public double ThetaF { get; set; }       // 최종 보정 θ (deg)
+        public double ThetaFRad { get; set; }    // thetaF in rad
+        public double SpecTheta { get; set; }    // 레시피 SPEC_THETA
+
+        public Point2D TCenter { get; set; }     // Top 중심
+        public Point2D BCenter { get; set; }     // Btm 중심
+
+
+        public double ResultX { get; set; }
+        public double ResultY { get; set; }
+        public double ResultT { get; set; }
+
+
         public bool AvgMove { get; set; } = false;
+
     }
 }

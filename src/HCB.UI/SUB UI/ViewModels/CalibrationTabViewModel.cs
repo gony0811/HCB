@@ -124,8 +124,8 @@ namespace HCB.UI
             {
                 CalibStatus = "Pc 캘리브레이션 중...";
                 await _sequenceService.Init_Head(ct);
-                await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "OFFSET_STANBY", ct);
+                await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.P_Y], "P_LEFT_HIGH", ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "P_LEFT_FIDUCIAL_HIGH", ct);
                 double theta = await GetAnglePc(CameraType.PC_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, ct);
                 ThetaPRad = theta;
                 ThetaPDeg = theta * (180.0 / Math.PI);

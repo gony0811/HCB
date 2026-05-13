@@ -397,7 +397,7 @@ namespace HCB.UI
 
                     if (validAxes.Contains(axis.ToUpperInvariant()))
                     {
-                        result = await sequenceHelper.RelativeMoveAsync(axis, 0, distance, ct) ? Result.OK : Result.NG;
+                        result = await sequenceHelper.RelativeMoveAsync(axis, 100, distance, ct) ? Result.OK : Result.NG;
                     }
                 }
             }

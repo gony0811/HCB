@@ -172,11 +172,12 @@ namespace HCB.UI
             var rDist = Point2D.of(
                 data.TopRightAlignRaw.CenterX - data.TopRightFidRaw.CenterX,
                 data.TopRightAlignRaw.CenterY - data.TopRightFidRaw.CenterY);
+            data.LDist = lDist;
+            data.RDist = rDist;
 
             // ── 2. 좌표계 통합: P-Cam → Hc1, Hc2 Cam ──
             Point2D camOffset = data.Hc2Offset;
 
-            // Bottom 마크 (Align)
             Point2D bl = Point2D.of(
                 data.BtmLeftAlignRaw.DxCamToMark,
                 data.BtmLeftAlignRaw.DyCamToMark);
@@ -184,15 +185,15 @@ namespace HCB.UI
                 camOffset.X + data.BtmRightAlignRaw.DxCamToMark,
                 camOffset.Y + data.BtmRightAlignRaw.DyCamToMark);
 
-            // Bottom Fiducial (Top 마크 기준점으로 사용)
             Point2D bfl = Point2D.of(
                 data.BtmLeftFidRaw.DxCamToMark,
                 data.BtmLeftFidRaw.DyCamToMark);
             Point2D bfr = Point2D.of(
                 camOffset.X + data.BtmRightFidRaw.DxCamToMark,
                 camOffset.Y + data.BtmRightFidRaw.DyCamToMark);
+            data.BFL = bfl;
+            data.BFR = bfr;
 
-            // Top 마크 = Bottom Fiducial DxCam + Dist
             Point2D tl = Point2D.of(bfl.X + lDist.X, bfl.Y + lDist.Y);
             Point2D tr = Point2D.of(bfr.X + rDist.X, bfr.Y + rDist.Y);
 
@@ -203,14 +204,20 @@ namespace HCB.UI
             tl = Point2D.of(tl.X - hcro.X, tl.Y - hcro.Y);
             tr = Point2D.of(tr.X - hcro.X, tr.Y - hcro.Y);
 
-            double thetaS = ParseRecipe("SPEC_THETA");  // Degree
+            double thetaS = ParseRecipe("SPEC_THETA");
             double specXs = ParseRecipe("SPEC_X");
             double specYs = ParseRecipe("SPEC_Y");
 
-            double bTheta = Math.Atan2(br.Y - bl.Y, br.X - bl.X);   // Radian
-            double tTheta = Math.Atan2(tr.Y - tl.Y, tr.X - tl.X);   // Radian
+            double bTheta = Math.Atan2(br.Y - bl.Y, br.X - bl.X);
+            double tTheta = Math.Atan2(tr.Y - tl.Y, tr.X - tl.X);
             double thetaF = thetaS - CalibrationMath.ToDegree(tTheta - bTheta);
             double thetaF_rad = CalibrationMath.ToRadian(thetaF);
+
+            data.SpecTheta = thetaS;
+            data.BTheta = bTheta;
+            data.TTheta = tTheta;
+            data.ThetaF = thetaF;
+            data.ThetaFRad = thetaF_rad;
 
             tl = CalibrationMath.ApplyRotation(tl, thetaF_rad);
             tr = CalibrationMath.ApplyRotation(tr, thetaF_rad);
@@ -218,15 +225,25 @@ namespace HCB.UI
             Point2D tCenter = Point2D.of((tl.X + tr.X) / 2.0, (tl.Y + tr.Y) / 2.0);
             Point2D bCenter = Point2D.of((bl.X + br.X) / 2.0, (bl.Y + br.Y) / 2.0);
 
+            data.BL = bl;
+            data.BR = br;
+            data.TL = tl;
+            data.TR = tr;
+            data.TCenter = tCenter;
+            data.BCenter = bCenter;
+
             double shiftX = tCenter.X - bCenter.X + data.OffsetXY.X;
             double shiftY = tCenter.Y - bCenter.Y + data.OffsetXY.Y;
 
+            data.ResultX = shiftX;
+            data.ResultY = shiftY;
+            data.ResultT = thetaF;
 
             await Task.WhenAll(
-                MotionsMove(MotionExtensions.H_X, shiftX, ct),
-                MotionsMove(MotionExtensions.W_Y, shiftY, ct),
-                MotionsMove(MotionExtensions.H_T, thetaF, ct)
-                );
+                RelativeMotionsMove(MotionExtensions.H_X, shiftX, ct),
+                RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct)
+            //RelativeMotionsMove(MotionExtensions.H_T, -thetaF, ct)
+            );
         }
 
         #endregion
@@ -410,15 +427,15 @@ namespace HCB.UI
 
                 // 카메라 회전량 보정: DxCamToMark/DyCamToMark in-place 적용
                 // Top(P-Cam) → PcTRad,  Btm Left(Hc1) → Hc1Rad,  Btm Right(Hc2) → Hc2Rad
-                ApplyCameraRotation(data.TopLeftFidRaw,    data.PcTRad);
-                ApplyCameraRotation(data.TopRightFidRaw,   data.PcTRad);
-                ApplyCameraRotation(data.TopLeftAlignRaw,  data.PcTRad);
-                ApplyCameraRotation(data.TopRightAlignRaw, data.PcTRad);
+                //ApplyCameraRotation(data.TopLeftFidRaw,    data.PcTRad);
+                //ApplyCameraRotation(data.TopRightFidRaw,   data.PcTRad);
+                //ApplyCameraRotation(data.TopLeftAlignRaw,  data.PcTRad);
+                //ApplyCameraRotation(data.TopRightAlignRaw, data.PcTRad);
 
-                ApplyCameraRotation(data.BtmLeftFidRaw,    data.Hc1Rad);
-                ApplyCameraRotation(data.BtmLeftAlignRaw,  data.Hc1Rad);
-                ApplyCameraRotation(data.BtmRightFidRaw,   data.Hc2Rad);
-                ApplyCameraRotation(data.BtmRightAlignRaw, data.Hc2Rad);
+                //ApplyCameraRotation(data.BtmLeftFidRaw,    data.Hc1Rad);
+                //ApplyCameraRotation(data.BtmLeftAlignRaw,  data.Hc1Rad);
+                //ApplyCameraRotation(data.BtmRightFidRaw,   data.Hc2Rad);
+                //ApplyCameraRotation(data.BtmRightAlignRaw, data.Hc2Rad);
             }
             else
             {
