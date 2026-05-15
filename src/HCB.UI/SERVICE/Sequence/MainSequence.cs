@@ -159,7 +159,7 @@ namespace HCB.UI
 
         #endregion
 
-        #region Top Die Place 및 Hcro 연산 
+        #region Top Die Place 및 Hcro 연산
         public async Task TopPlace(AlignData data, CancellationToken ct)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
@@ -243,8 +243,8 @@ namespace HCB.UI
 
             await Task.WhenAll(
                 RelativeMotionsMove(MotionExtensions.H_X, shiftX, ct),
-                RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct)
-                //RelativeMotionsMove(MotionExtensions.H_T, -thetaF, ct)
+                RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct),
+                RelativeMotionsMove(MotionExtensions.H_T, thetaF, ct)
             );
         }
 
