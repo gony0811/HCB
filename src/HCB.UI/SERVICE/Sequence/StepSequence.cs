@@ -536,7 +536,7 @@ namespace HCB.UI
             await File.AppendAllTextAsync(path, sb.ToString(), ct);
         }
 
-        public async Task Bonding(ObservableCollection<BondingDataPoint> bondingDataPoints, CancellationToken ct)
+        public async Task Bonding(AlignData data, ObservableCollection<BondingDataPoint> bondingDataPoints, CancellationToken ct)
         {
             var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
             try
@@ -550,6 +550,12 @@ namespace HCB.UI
                 int decTime = await GetRecipeInt("DEC_TIME");
                 double loadCell = await GetRecipe("LOADCELL");
                 double current = await GetRecipe("CURRENT");
+
+                await Task.WhenAll(
+                    RelativeMotionsMove(MotionExtensions.H_X, data.ResultX, ct),
+                    RelativeMotionsMove(MotionExtensions.W_Y, data.ResultY, ct),
+                    RelativeMotionsMove(MotionExtensions.H_T, -data.ResultT, ct)
+                );
 
                 await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
                 await Task.Delay(200, ct);

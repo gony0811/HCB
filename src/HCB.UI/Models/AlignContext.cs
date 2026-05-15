@@ -137,9 +137,9 @@ namespace HCB.UI
         public Point2D BCenter { get; set; }     // Btm 중심
 
 
-        public double ResultX { get; set; }
-        public double ResultY { get; set; }
-        public double ResultT { get; set; }
+        public double ResultX { get; set; } = 0;
+        public double ResultY { get; set; } = 0;
+        public double ResultT { get; set; } = 0;
 
 
         public bool AvgMove { get; set; } = false;

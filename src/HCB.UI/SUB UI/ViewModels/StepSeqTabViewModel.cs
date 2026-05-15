@@ -123,7 +123,7 @@ namespace HCB.UI
         [ObservableProperty]
         private ObservableCollection<VernierRow> vernierRows = new();
 
-        [ObservableProperty] private bool avgMode = false;
+        [ObservableProperty] private bool avgMode = true;
 
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
@@ -475,6 +475,22 @@ namespace HCB.UI
             catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
+        [RelayCommand]
+        public async Task AlignTest()
+        {
+            ResetCts();
+            try
+            {
+                await RunTopLowAlign(_cts.Token);
+                await RunTopPickup(_cts.Token);
+                await RunTopHighAlign(_cts.Token);
+                await RunBtmHighAlign(_cts.Token);
+                await RunTopPlace(_cts.Token);
+            }
+            catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
+            catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
+        }
+
         // ═════════════════════════════════════════════════════
         //  TOP 시퀀스 — Full (1→2→3→4→5)
         // ═════════════════════════════════════════════════════
@@ -656,11 +672,20 @@ namespace HCB.UI
             TopBondingState = StepState.InProgress;
             BondingHistory = new ObservableCollection<BondingDataPoint>();
             await _sequenceService.TopPlace(hcbData, ct);
-            await _sequenceService.Bonding(BondingHistory, ct);
+            await _sequenceService.Bonding(hcbData, BondingHistory, ct);
             TopBondingState = StepState.Completed;
             ExportHcbData();
         }
 
+        private async Task RunTopPlaceNotBonding(CancellationToken ct)
+        {
+            TopBondingState = StepState.InProgress;
+            BondingHistory = new ObservableCollection<BondingDataPoint>();
+            await _sequenceService.TopPlace(hcbData, ct);
+            //await _sequenceService.Bonding(hcbData, BondingHistory, ct);
+            TopBondingState = StepState.Completed;
+            ExportHcbData();
+        }
 
         // ═════════════════════════════════════════════════════
         //  공통 유틸
@@ -703,9 +728,12 @@ namespace HCB.UI
                 _logger.Information("저장할 본딩 데이터가 없습니다.");
                 return;
             }
-            var path = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
+            var dir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    "HCB", "데이터");
+            Directory.CreateDirectory(dir);  // 폴더 없으면 자동 생성
+
+            var path = Path.Combine(dir, $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
             bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
             var sb = new StringBuilder();
             if (writeHeader)

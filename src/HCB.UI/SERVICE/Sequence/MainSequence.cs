@@ -241,11 +241,11 @@ namespace HCB.UI
             data.ResultY = shiftY;
             data.ResultT = thetaF;
 
-            await Task.WhenAll(
-                RelativeMotionsMove(MotionExtensions.H_X, shiftX, ct),
-                RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct),
-                RelativeMotionsMove(MotionExtensions.H_T, thetaF, ct)
-            );
+            //await Task.WhenAll(
+            //    RelativeMotionsMove(MotionExtensions.H_X, shiftX, ct),
+            //    RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct),
+            //    RelativeMotionsMove(MotionExtensions.H_T, thetaF, ct)
+            //);
         }
 
         #endregion
