@@ -165,7 +165,7 @@ namespace HCB.UI
             if (data == null) throw new ArgumentNullException(nameof(data));
             LoadCalibrationInto(data);
 
-            // ── 1. Top Die: Fiducial → Align 거리 ──
+            // ── STEP 1: Top Die — Fid→Align 이동량 ──
             var lDist = Point2D.of(
                 data.TopLeftAlignRaw.CenterX - data.TopLeftFidRaw.CenterX,
                 data.TopLeftAlignRaw.CenterY - data.TopLeftFidRaw.CenterY);
@@ -175,39 +175,39 @@ namespace HCB.UI
             data.LDist = lDist;
             data.RDist = rDist;
 
-            // ── 2. 좌표계 통합: P-Cam → Hc1, Hc2 Cam ──
+            // ── STEP 2: Btm Die 좌표 통합 + Top 위치 생성 ──
+            // Btm: Stage 기준 X:-, Y:- → DxCam 부호 반전
             Point2D camOffset = data.Hc2Offset;
 
             Point2D bl = Point2D.of(
-                data.BtmLeftAlignRaw.DxCamToMark,
-                data.BtmLeftAlignRaw.DyCamToMark);
+                -data.BtmLeftAlignRaw.DxCamToMark,
+                -data.BtmLeftAlignRaw.DyCamToMark);
             Point2D br = Point2D.of(
-                camOffset.X + data.BtmRightAlignRaw.DxCamToMark,
-                camOffset.Y + data.BtmRightAlignRaw.DyCamToMark);
+                camOffset.X - data.BtmRightAlignRaw.DxCamToMark,
+                camOffset.Y - data.BtmRightAlignRaw.DyCamToMark);
 
             Point2D bfl = Point2D.of(
-                data.BtmLeftFidRaw.DxCamToMark,
-                data.BtmLeftFidRaw.DyCamToMark);
+                -data.BtmLeftFidRaw.DxCamToMark,
+                -data.BtmLeftFidRaw.DyCamToMark);
             Point2D bfr = Point2D.of(
-                camOffset.X + data.BtmRightFidRaw.DxCamToMark,
-                camOffset.Y + data.BtmRightFidRaw.DyCamToMark);
+                camOffset.X - data.BtmRightFidRaw.DxCamToMark,
+                camOffset.Y - data.BtmRightFidRaw.DyCamToMark);
             data.BFL = bfl;
             data.BFR = bfr;
 
-            Point2D tl = Point2D.of(bfl.X + lDist.X, bfl.Y + lDist.Y);
-            Point2D tr = Point2D.of(bfr.X + rDist.X, bfr.Y + rDist.Y);
+            // Top: Center 기준 X:-, Y:+ → lDist에 (-X, -Y) 적용
+            Point2D tl = Point2D.of(bfl.X - lDist.X, bfl.Y - lDist.Y);
+            Point2D tr = Point2D.of(bfr.X - rDist.X, bfr.Y - rDist.Y);
 
-            // ── 3. 회전중심(HCRO) 기준으로 좌표 이동 ──
+            // ── STEP 3: 회전중심(HCRO) 기준으로 좌표 이동 ──
             Point2D hcro = data.Hcro;
             bl = Point2D.of(bl.X - hcro.X, bl.Y - hcro.Y);
             br = Point2D.of(br.X - hcro.X, br.Y - hcro.Y);
             tl = Point2D.of(tl.X - hcro.X, tl.Y - hcro.Y);
             tr = Point2D.of(tr.X - hcro.X, tr.Y - hcro.Y);
 
+            // ── STEP 4: θ 계산 ──
             double thetaS = ParseRecipe("SPEC_THETA");
-            double specXs = ParseRecipe("SPEC_X");
-            double specYs = ParseRecipe("SPEC_Y");
-
             double bTheta = Math.Atan2(br.Y - bl.Y, br.X - bl.X);
             double tTheta = Math.Atan2(tr.Y - tl.Y, tr.X - tl.X);
             double thetaF = thetaS - CalibrationMath.ToDegree(tTheta - bTheta);
@@ -219,9 +219,11 @@ namespace HCB.UI
             data.ThetaF = thetaF;
             data.ThetaFRad = thetaF_rad;
 
+            // ── STEP 5: Top 마크 회전 보정 ──
             tl = CalibrationMath.ApplyRotation(tl, thetaF_rad);
             tr = CalibrationMath.ApplyRotation(tr, thetaF_rad);
 
+            // ── STEP 6: Shift 계산 ──
             Point2D tCenter = Point2D.of((tl.X + tr.X) / 2.0, (tl.Y + tr.Y) / 2.0);
             Point2D bCenter = Point2D.of((bl.X + br.X) / 2.0, (bl.Y + br.Y) / 2.0);
 
@@ -242,7 +244,7 @@ namespace HCB.UI
             await Task.WhenAll(
                 RelativeMotionsMove(MotionExtensions.H_X, shiftX, ct),
                 RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct)
-            //RelativeMotionsMove(MotionExtensions.H_T, -thetaF, ct)
+                //RelativeMotionsMove(MotionExtensions.H_T, -thetaF, ct)
             );
         }
 
