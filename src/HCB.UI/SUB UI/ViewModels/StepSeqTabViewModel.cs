@@ -268,6 +268,13 @@ namespace HCB.UI
             catch (Exception e) { _logger.Error(e.Message); }
         }
 
+        [RelayCommand]
+        public async Task WaferLoad()
+        {
+            ResetCts();
+            await _sequenceService.Init_Head(_cts.Token);
+            await _sequenceService.MotionsMove(MotionExtensions.W_Y, 0, _cts.Token);
+        }
         // ═════════════════════════════════════════════════════
         //  Info 팝업 커맨드
         // ═════════════════════════════════════════════════════
