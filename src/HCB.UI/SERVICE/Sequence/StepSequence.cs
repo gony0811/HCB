@@ -552,8 +552,8 @@ namespace HCB.UI
                 double current = await GetRecipe("CURRENT");
 
                 await Task.WhenAll(
-                    RelativeMotionsMove(MotionExtensions.H_X, data.ResultX, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, data.ResultY, ct),
+                    //RelativeMotionsMove(MotionExtensions.H_X, -data.ResultX, ct),
+                    //RelativeMotionsMove(MotionExtensions.W_Y, -data.ResultY, ct),
                     RelativeMotionsMove(MotionExtensions.H_T, -data.ResultT, ct)
                 );
 

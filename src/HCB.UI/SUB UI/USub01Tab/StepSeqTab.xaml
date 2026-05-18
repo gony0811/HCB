@@ -954,7 +954,10 @@
                                 </Button>
                             </StackPanel>
 
-
+                            <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+                                    Command="{Binding AlignTestCommand}">
+                                <TextBlock Text="3회 반복 측정" FontSize="13" FontWeight="Bold"/>
+                            </Button>
 
                             <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
                                     Command="{Binding TopRunFullSequenceCommand}">

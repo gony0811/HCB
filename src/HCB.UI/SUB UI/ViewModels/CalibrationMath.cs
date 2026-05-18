@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
@@ -32,6 +33,59 @@ namespace HCB.UI
         // ═══════════════════════════════════════════════════════════════════
         //  2. HcRO 회전 중심 산출
         // ═══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// 최소자승법 원 피팅 (Kåsa method)
+        /// (x - cx)² + (y - cy)² = r² 에 대한 선형화 풀이
+        /// 
+        /// 전개: x² + y² = 2·cx·x + 2·cy·y + (r² - cx² - cy²)
+        /// A·x + B·y + C = x² + y²  형태의 연립방정식을 최소자승으로 풂
+        /// </summary>
+        public static Point2D FitCircleCenter(List<Point2D> points)
+        {
+            if (points.Count < 3)
+                throw new ArgumentException("최소 3개 이상의 점이 필요합니다.");
+
+            // ── 수치 안정성을 위한 중심 이동 ──
+            double meanX = 0, meanY = 0;
+            foreach (var p in points) { meanX += p.X; meanY += p.Y; }
+            meanX /= points.Count;
+            meanY /= points.Count;
+
+            // ── 정규 방정식 구성 ──
+            // A·[cx', cy'] = b  (2x2 시스템)
+            // 여기서 cx' = cx - meanX, cy' = cy - meanY
+            double Suu = 0, Suv = 0, Svv = 0;
+            double Suuu = 0, Suvv = 0, Svvv = 0, Svuu = 0;
+
+            foreach (var p in points)
+            {
+                double u = p.X - meanX;
+                double v = p.Y - meanY;
+                Suu += u * u;
+                Suv += u * v;
+                Svv += v * v;
+                Suuu += u * u * u;
+                Suvv += u * v * v;
+                Svvv += v * v * v;
+                Svuu += v * u * u;
+            }
+
+            // 연립방정식:
+            // Suu·cx' + Suv·cy' = (Suuu + Suvv) / 2
+            // Suv·cx' + Svv·cy' = (Svvv + Svuu) / 2
+            double rhs1 = (Suuu + Suvv) / 2.0;
+            double rhs2 = (Svvv + Svuu) / 2.0;
+
+            double det = Suu * Svv - Suv * Suv;
+            if (Math.Abs(det) < 1e-20)
+                throw new InvalidOperationException(
+                    "원 피팅 실패: 점들이 일직선 위에 있습니다.");
+
+            double cx = (rhs1 * Svv - rhs2 * Suv) / det + meanX;
+            double cy = (rhs2 * Suu - rhs1 * Suv) / det + meanY;
+
+            return Point2D.of(cx, cy);
+        }
 
         /// <summary>
         /// 회전 좌표계 원점 HcRO = (HX(C), WY(C)) 계산.

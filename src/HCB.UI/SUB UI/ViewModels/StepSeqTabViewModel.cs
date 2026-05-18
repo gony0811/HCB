@@ -268,6 +268,13 @@ namespace HCB.UI
             }
             catch (Exception e) { _logger.Error(e.Message); }
         }
+        [RelayCommand]
+        public async Task WaferLoad()
+        {
+            ResetCts();
+            await _sequenceService.Init_Head(_cts.Token);
+            await _sequenceService.MotionsMove(MotionExtensions.W_Y, 0, _cts.Token);
+        }
 
         // ═════════════════════════════════════════════════════
         //  Info 팝업 커맨드
@@ -483,9 +490,18 @@ namespace HCB.UI
             {
                 await RunTopLowAlign(_cts.Token);
                 await RunTopPickup(_cts.Token);
-                await RunTopHighAlign(_cts.Token);
-                await RunBtmHighAlign(_cts.Token);
-                await RunTopPlace(_cts.Token);
+                for (int i=0; i < 3; i++)
+                {
+                    await RunTopHighAlign(_cts.Token);
+                    await RunBtmHighAlign(_cts.Token);
+                    TopBondingState = StepState.InProgress;
+                    BondingHistory = new ObservableCollection<BondingDataPoint>();
+                    await _sequenceService.TopPlace(hcbData, _cts.Token);
+                    TopBondingState = StepState.Completed;
+                    ExportHcbData();
+                }
+                await _sequenceService.Bonding(hcbData, BondingHistory, _cts.Token);
+
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
             catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
@@ -677,16 +693,6 @@ namespace HCB.UI
             ExportHcbData();
         }
 
-        private async Task RunTopPlaceNotBonding(CancellationToken ct)
-        {
-            TopBondingState = StepState.InProgress;
-            BondingHistory = new ObservableCollection<BondingDataPoint>();
-            await _sequenceService.TopPlace(hcbData, ct);
-            //await _sequenceService.Bonding(hcbData, BondingHistory, ct);
-            TopBondingState = StepState.Completed;
-            ExportHcbData();
-        }
-
         // ═════════════════════════════════════════════════════
         //  공통 유틸
         // ═════════════════════════════════════════════════════
@@ -723,83 +729,85 @@ namespace HCB.UI
         /// <summary>VisionMarkResult 6개 필드를 콤마로 이어 반환</summary>
         private void ExportHcbData()
         {
-            if (hcbData == null)
-            {
-                _logger.Information("저장할 본딩 데이터가 없습니다.");
-                return;
-            }
             var dir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                    "HCB", "데이터");
-            Directory.CreateDirectory(dir);  // 폴더 없으면 자동 생성
-
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                "HCB", "데이터");
+            Directory.CreateDirectory(dir);
             var path = Path.Combine(dir, $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
+
             bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
             var sb = new StringBuilder();
+
             if (writeHeader)
             {
                 sb.AppendLine(string.Join(",",
                     "Time", "AvgMode",
-                    // Top 비전
                     "TopRF_StageX", "TopRF_StageY", "TopRF_DxCam", "TopRF_DyCam", "TopRF_CenterX", "TopRF_CenterY",
                     "TopRA_StageX", "TopRA_StageY", "TopRA_DxCam", "TopRA_DyCam", "TopRA_CenterX", "TopRA_CenterY",
                     "TopLF_StageX", "TopLF_StageY", "TopLF_DxCam", "TopLF_DyCam", "TopLF_CenterX", "TopLF_CenterY",
                     "TopLA_StageX", "TopLA_StageY", "TopLA_DxCam", "TopLA_DyCam", "TopLA_CenterX", "TopLA_CenterY",
-                    // Btm 비전
                     "BtmRF_StageX", "BtmRF_StageY", "BtmRF_DxCam", "BtmRF_DyCam", "BtmRF_CenterX", "BtmRF_CenterY",
                     "BtmRA_StageX", "BtmRA_StageY", "BtmRA_DxCam", "BtmRA_DyCam", "BtmRA_CenterX", "BtmRA_CenterY",
                     "BtmLF_StageX", "BtmLF_StageY", "BtmLF_DxCam", "BtmLF_DyCam", "BtmLF_CenterX", "BtmLF_CenterY",
                     "BtmLA_StageX", "BtmLA_StageY", "BtmLA_DxCam", "BtmLA_DyCam", "BtmLA_CenterX", "BtmLA_CenterY",
-                    // 캘리브레이션 파라미터
                     "PcTRad", "Hc1Rad", "Hc2Rad",
                     "Hcro_X", "Hcro_Y",
                     "Hc2Offset_X", "Hc2Offset_Y",
-                    // 레시피 오프셋
                     "OffsetX", "OffsetY", "OffsetT",
-                    // TopPlace 중간값
                     "LDist_X", "LDist_Y", "RDist_X", "RDist_Y",
                     "BFL_X", "BFL_Y", "BFR_X", "BFR_Y",
                     "BL_X", "BL_Y", "BR_X", "BR_Y",
                     "TL_X", "TL_Y", "TR_X", "TR_Y",
                     "SpecTheta", "BTheta", "TTheta", "ThetaF", "ThetaFRad",
                     "TCenter_X", "TCenter_Y", "BCenter_X", "BCenter_Y",
-                    // 결과
                     "ResultX", "ResultY", "ResultT"
                 ));
             }
+
             sb.AppendLine(string.Join(",",
                 DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                hcbData.AvgMove,
+                hcbData?.AvgMove ?? true,
                 // Top 비전
-                MarkFields(hcbData.TopRightFidRaw),
-                MarkFields(hcbData.TopRightAlignRaw),
-                MarkFields(hcbData.TopLeftFidRaw),
-                MarkFields(hcbData.TopLeftAlignRaw),
+                hcbData != null ? MarkFields(hcbData.TopRightFidRaw) : NullMark(),
+                hcbData != null ? MarkFields(hcbData.TopRightAlignRaw) : NullMark(),
+                hcbData != null ? MarkFields(hcbData.TopLeftFidRaw) : NullMark(),
+                hcbData != null ? MarkFields(hcbData.TopLeftAlignRaw) : NullMark(),
                 // Btm 비전
-                MarkFields(hcbData.BtmRightFidRaw),
-                MarkFields(hcbData.BtmRightAlignRaw),
-                MarkFields(hcbData.BtmLeftFidRaw),
-                MarkFields(hcbData.BtmLeftAlignRaw),
+                hcbData != null ? MarkFields(hcbData.BtmRightFidRaw) : NullMark(),
+                hcbData != null ? MarkFields(hcbData.BtmRightAlignRaw) : NullMark(),
+                hcbData != null ? MarkFields(hcbData.BtmLeftFidRaw) : NullMark(),
+                hcbData != null ? MarkFields(hcbData.BtmLeftAlignRaw) : NullMark(),
                 // 캘리브레이션 파라미터
-                F(hcbData.PcTRad), F(hcbData.Hc1Rad), F(hcbData.Hc2Rad),
-                F(hcbData.Hcro.X), F(hcbData.Hcro.Y),
-                F(hcbData.Hc2Offset.X), F(hcbData.Hc2Offset.Y),
+                F(hcbData?.PcTRad), F(hcbData?.Hc1Rad), F(hcbData?.Hc2Rad),
+                hcbData?.Hcro != null ? F(hcbData.Hcro.X) : "",
+                hcbData?.Hcro != null ? F(hcbData.Hcro.Y) : "",
+                hcbData?.Hc2Offset != null ? F(hcbData.Hc2Offset.X) : "",
+                hcbData?.Hc2Offset != null ? F(hcbData.Hc2Offset.Y) : "",
                 // 레시피 오프셋
-                F(hcbData.OffsetXY.X), F(hcbData.OffsetXY.Y), F(hcbData.OffsetT),
+                hcbData?.OffsetXY != null ? F(hcbData.OffsetXY.X) : "",
+                hcbData?.OffsetXY != null ? F(hcbData.OffsetXY.Y) : "",
+                F(hcbData?.OffsetT),
                 // TopPlace 중간값
-                Pt(hcbData.LDist), Pt(hcbData.RDist),
-                Pt(hcbData.BFL), Pt(hcbData.BFR),
-                Pt(hcbData.BL), Pt(hcbData.BR),
-                Pt(hcbData.TL), Pt(hcbData.TR),
-                F(hcbData.SpecTheta), F(hcbData.BTheta), F(hcbData.TTheta),
-                F(hcbData.ThetaF), F(hcbData.ThetaFRad),
-                Pt(hcbData.TCenter), Pt(hcbData.BCenter),
+                hcbData != null ? Pt(hcbData.LDist) : NullPt(),
+                hcbData != null ? Pt(hcbData.RDist) : NullPt(),
+                hcbData != null ? Pt(hcbData.BFL) : NullPt(),
+                hcbData != null ? Pt(hcbData.BFR) : NullPt(),
+                hcbData != null ? Pt(hcbData.BL) : NullPt(),
+                hcbData != null ? Pt(hcbData.BR) : NullPt(),
+                hcbData != null ? Pt(hcbData.TL) : NullPt(),
+                hcbData != null ? Pt(hcbData.TR) : NullPt(),
+                F(hcbData?.SpecTheta), F(hcbData?.BTheta), F(hcbData?.TTheta),
+                F(hcbData?.ThetaF), F(hcbData?.ThetaFRad),
+                hcbData != null ? Pt(hcbData.TCenter) : NullPt(),
+                hcbData != null ? Pt(hcbData.BCenter) : NullPt(),
                 // 결과
-                F(hcbData.ResultX), F(hcbData.ResultY), F(hcbData.ResultT)
+                F(hcbData?.ResultX), F(hcbData?.ResultY), F(hcbData?.ResultT)
             ));
+
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
             _logger.Information("본딩 데이터 저장: {Path}", path);
         }
+
 
         // Point2D → "X,Y" 헬퍼
         private static string Pt(Point2D p) =>
@@ -814,10 +822,10 @@ namespace HCB.UI
                 F(m.CenterX), F(m.CenterY));
         }
 
-      
-
         /// <summary>double → 소수점 6자리 문자열</summary>
-        private static string F(double v) => v.ToString("F6");
+        private static string NullMark() => ",,,,,";  // MarkFields가 6개 컬럼이면
+        private static string NullPt() => ",";       // Pt가 2개 컬럼이면
+        private static string F(double? v) => v?.ToString("F6") ?? "";
 
         /// <summary>nullable double → 소수점 6자리 문자열 (null이면 빈 문자열)</summary>
         private static string Fn(double? v) => v.HasValue ? v.Value.ToString("F6") : string.Empty;

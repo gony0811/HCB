@@ -210,7 +210,7 @@ namespace HCB.UI
             double thetaS = ParseRecipe("SPEC_THETA");
             double bTheta = Math.Atan2(br.Y - bl.Y, br.X - bl.X);
             double tTheta = Math.Atan2(tr.Y - tl.Y, tr.X - tl.X);
-            double thetaF = thetaS - CalibrationMath.ToDegree(tTheta - bTheta);
+            double thetaF = thetaS - CalibrationMath.ToDegree(tTheta - bTheta) + data.OffsetT;
             double thetaF_rad = CalibrationMath.ToRadian(thetaF);
 
             data.SpecTheta = thetaS;
