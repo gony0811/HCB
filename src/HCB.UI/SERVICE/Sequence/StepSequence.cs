@@ -536,7 +536,6 @@ namespace HCB.UI
 
             await File.AppendAllTextAsync(path, sb.ToString(), ct);
         }
-
         public async Task Bonding(ObservableCollection<BondingDataPoint> bondingDataPoints, CancellationToken ct)
         {
             var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
@@ -551,6 +550,7 @@ namespace HCB.UI
                 int decTime = await GetRecipeInt("DEC_TIME");
                 double loadCell = await GetRecipe("LOADCELL");
                 double current = await GetRecipe("CURRENT");
+                int vacOffMs = await GetRecipeInt("VAC_OFF_TIME");   // Vacuum OFF 시점 (ms)
 
                 await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
                 await Task.Delay(200, ct);
@@ -561,9 +561,8 @@ namespace HCB.UI
                 await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
                 await device.SendCommand(MotionExtensions.BONDING_START + $"=1");
 
-                // Polling으로 본딩 완료 상태 + LoadCell 데이터 추적
                 const int pollingIntervalMs = 100;
-                int timeoutMs = accTime + contTime + decTime + 2000; // 폴링 오버헤드 마진
+                int timeoutMs = accTime + contTime + decTime + 2000;
                 var sw = Stopwatch.StartNew();
                 bool bondingComplete = false;
                 bool vacuumOff = false;
@@ -574,15 +573,15 @@ namespace HCB.UI
                 {
                     ct.ThrowIfCancellationRequested();
 
-                    // AccTime 중간 시점에 Vacuum OFF
-                    if (!vacuumOff && sw.ElapsedMilliseconds >= accTime / 2)
+                    // 설정 시점에 Vacuum OFF
+                    if (!vacuumOff && sw.ElapsedMilliseconds >= vacOffMs)
                     {
                         await HVacOnOff(false, ct);
                         vacuumOff = true;
-                        _logger.Information("AccTime 중간 → Vacuum OFF ({Elapsed}ms)", sw.ElapsedMilliseconds);
+                        _logger.Information("Vacuum OFF ({Elapsed}ms, 설정={VacOffMs}ms)",
+                            sw.ElapsedMilliseconds, vacOffMs);
                     }
 
-                    // LoadCell 아날로그 값 읽기
                     double forceValue = 0;
                     string analog = await device.SendCommand<string>(MotionExtensions.ANALOG_INPUT);
                     if (double.TryParse(analog.Trim(), out forceValue))
@@ -598,7 +597,6 @@ namespace HCB.UI
                         _logger.Warning("AnalogInput 파싱 실패: {Response}", analog);
                     }
 
-                    // 본딩 완료 상태 확인
                     string strResponse = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
                     var values = strResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -613,7 +611,6 @@ namespace HCB.UI
                         _logger.Warning("Bonding 상태 응답 파싱 실패: {Response}", strResponse);
                     }
 
-                    // 완료되지 않았을 때만 타임아웃 체크 + 대기
                     if (!bondingComplete)
                     {
                         if (sw.ElapsedMilliseconds > timeoutMs)
@@ -649,6 +646,7 @@ namespace HCB.UI
                     await device.SendCommand(MotionExtensions.BONDING_INIT + $"=1");
                     await Task.Delay(100);
                     await device.SendCommand(MotionExtensions.BONDING_INIT + $"=0");
+                    await Init_Head(ct);
                 }
                 catch (Exception ex)
                 {
@@ -656,7 +654,6 @@ namespace HCB.UI
                 }
             }
         }
-
         public async Task BondingTest(CancellationToken ct)
         {
             var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);

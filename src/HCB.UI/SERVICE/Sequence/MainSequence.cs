@@ -301,7 +301,6 @@ namespace HCB.UI
             ctx.OffsetTApplied = offsetT;
 
             //await Bonding(bondingDataPoints, ct);
-            await Init_Head(ct);
             await Task.Delay(2000);
         }
 
@@ -351,14 +350,14 @@ namespace HCB.UI
 
             if (ctx.HasHcRO)
             {
-                ctx.Hc1Rad = ParseDouble(hc1Param.Value) * Math.PI / 180.0;
-                ctx.Hc2Rad = ParseDouble(hc2Param.Value) * Math.PI / 180.0;
+                ctx.Hc1Rad = ParseDouble(hc1Param.Value);
+                ctx.Hc2Rad = ParseDouble(hc2Param.Value);
                 ctx.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
                 ctx.Hc1Offset = Point2D.of(ParseDouble(hc1XParam.Value), ParseDouble(hc1YParam.Value));
                 ctx.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
             }
             if (ctx.HasPcT)
-                ctx.PcTRad = ParseDouble(pcTParam.Value) * Math.PI / 180.0;
+                ctx.PcTRad = ParseDouble(pcTParam.Value);
         }
 
         // ═══════════════════════════════════════════════════
