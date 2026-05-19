@@ -226,7 +226,7 @@ namespace HCB.UI
                     return new VisionMarkPositionResponse { Result = Result.NG };
                 }
             }
-            var xy = CalibrationMath.ApplyRotation(Point2D.of(response.X, response.Y), -t);
+            var xy = CalibrationMath.ApplyRotation(Point2D.of(response.X, response.Y), t);
 
             return new VisionMarkPositionResponse
             {

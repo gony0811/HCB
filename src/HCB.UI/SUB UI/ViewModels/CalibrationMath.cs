@@ -29,7 +29,14 @@ namespace HCB.UI
             double theta = Math.Asin(sin2Theta) / 2.0;
             return theta;
         }
-
+        public static double ComputeCameraTheta2(double moveX, double deltaX, double deltaY)
+        {
+            // X축만 이동한 경우
+            // 관측: visionDx = moveX * cosθ, visionDy = moveX * sinθ
+            // deltaY = visionDy - 0 = moveX * sinθ
+            // deltaX = visionDx - moveX = moveX * (cosθ - 1) ≈ 0 (작은 각도)
+            return Math.Atan2(deltaY, moveX + deltaX);
+        }
         // ═══════════════════════════════════════════════════════════════════
         //  2. HcRO 회전 중심 산출
         // ═══════════════════════════════════════════════════════════════════

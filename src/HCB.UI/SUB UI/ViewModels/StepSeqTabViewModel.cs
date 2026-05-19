@@ -567,12 +567,12 @@ namespace HCB.UI
                         V3Y  = result.v3.Count > i ? result.v3[i].Y : (double?)null,
                     });
                 }
+                ExportHighResult();
                 _logger.Information("Vernier 측정 완료 — {Count}포인트", result.v1.Count);
             }
             catch (Exception e) { _logger.Warning("Vernier 측정 실패: {Msg}", e.Message); }
         }
 
-        [RelayCommand]
         public void ExportHighResult()
         {
             if (VernierRows.Count == 0)
@@ -580,10 +580,12 @@ namespace HCB.UI
                 _logger.Information("저장할 Vernier 결과가 없습니다. 먼저 결과 측정을 실행하세요.");
                 return;
             }
-
-            var path = Path.Combine(
+            var dir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                $"vernier_{DateTime.Now:yyyyMMdd}.csv");
+                "HCB", "결과 데이터");
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
+           
 
             bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
             var sb = new StringBuilder();

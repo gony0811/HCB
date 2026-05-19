@@ -86,8 +86,7 @@ namespace HCB.UI
                 Theta1Rad = theta;
                 Theta1Deg = theta * (180.0 / Math.PI);
 
-                // 기대값 45°와의 차이를 저장
-                double correction = 45.0 - Theta1Deg;
+                double correction = theta;
                 dto = _ecParamService.FindByName(MotionExtensions.HC1_T);
                 dto.Value = correction.ToString("F6");
                 dto.ValueType = ValueType.Double;
@@ -124,7 +123,7 @@ namespace HCB.UI
                 Theta2Deg = theta * (180.0 / Math.PI);
 
                 // 기대값 45°와의 차이를 저장
-                double correction = 45.0 - Theta2Deg;
+                double correction = theta;
                 dto = _ecParamService.FindByName(MotionExtensions.HC2_T);
                 dto.Value = correction.ToString("F6");
                 dto.ValueType = ValueType.Double;
@@ -146,14 +145,14 @@ namespace HCB.UI
             {
                 CalibStatus = "Pc 캘리브레이션 중...";
                 await _sequenceService.Init_Head(ct);
-                await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.P_Y], "P_LEFT_HIGH", ct);
+                await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.P_Y], "T축 보정", ct);
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, "P_LEFT_FIDUCIAL_HIGH", ct);
 
                 double theta = await GetAnglePc(CameraType.PC_HIGH, MarkType.FIDUCIAL, DirectType.LEFT, ct);
                 ThetaPRad = theta;
                 ThetaPDeg = theta * (180.0 / Math.PI);
 
-                double correction = 45.0 - ThetaPDeg;
+                double correction = theta;
                 ECParamDto dto = _ecParamService.FindByName(MotionExtensions.PC_T);
                 dto.Value = correction.ToString("F6");
                 dto.ValueType = ValueType.Double;
@@ -394,41 +393,39 @@ namespace HCB.UI
                 throw;
             }
         }
-        private async Task<double> GetAnglePc(CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct = default)
+        private async Task<double> GetAnglePc(CameraType cameraType, MarkType markType,
+                DirectType directType, CancellationToken ct = default)
         {
             try
             {
                 // 1. 현재 위치에서 비전 좌표 읽기
                 await _communication.RequestAFStart(cameraType, markType, ct);
-                var beforeVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+                var beforeVision = await _communication.RequestVisionMarkPosition(
+                    markType, cameraType, directType.ToString());
                 if (beforeVision == null) throw new Exception("beforeVision 응답 null");
                 if (beforeVision.Result == Result.NG) throw new Exception("비전 측정 실패");
 
-                // 2. AMove만큼 대각선 이동
+                // 2. X축으로만 이동
                 if (Math.Abs(AMove) < 1e-10)
                     throw new Exception("AMove 값이 0입니다");
 
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, _hxAxis!.CurrentPosition - AMove, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.P_Y, _pyAxis!.CurrentPosition + AMove, ct)
-                );
+                await _sequenceService.MotionsMove(MotionExtensions.H_X,
+                    _hxAxis!.CurrentPosition - AMove, ct);
 
                 // 3. 이동 후 비전 좌표 읽기
                 await _communication.RequestAFStart(cameraType, markType, ct);
-                var afterVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+                var afterVision = await _communication.RequestVisionMarkPosition(
+                    markType, cameraType, directType.ToString());
                 if (afterVision == null) throw new Exception("afterVision 응답 null");
                 if (afterVision.Result == Result.NG) throw new Exception("이동 후 비전 측정 실패");
 
-                // 4. beforeVision 잔차를 빼서 순수 이동분만 추출
+                // 4. 순수 이동분 추출 (기대값: X방향 AMove, Y방향 0)
                 double deltaX = (afterVision.X - beforeVision.X) - (-AMove);
-                double deltaY = (afterVision.Y - beforeVision.Y) - (-AMove);
+                double deltaY = (afterVision.Y - beforeVision.Y) - 0; // Y 이동 없으므로 기대값 0
 
-                return CalibrationMath.ComputeCameraTheta(AMove, deltaX, deltaY);
+                return CalibrationMath.ComputeCameraTheta2(AMove, deltaX, deltaY);
             }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
+            catch (OperationCanceledException) { throw; }
             catch (Exception e)
             {
                 _logger.Error(e, "GetAnglePc failed");
