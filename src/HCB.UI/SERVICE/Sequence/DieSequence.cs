@@ -383,33 +383,17 @@ namespace HCB.UI
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
                 string[] xy = { MotionExtensions.H_X, MotionExtensions.D_Y };
-                if (double.TryParse(_recipeService.FindByParam("ShankLowOffsetX").Value, out double xOffset))
-                { }
-                else
-                {
-                    throw new Exception("레시피 ShankLowOffsetX값이 Double타입이 아닙니다");
-                }
+                int accTime = await GetRecipeInt("ACC_TIME");
+                int contTime = await GetRecipeInt("CONT_TIME");
+                int decTime = await GetRecipeInt("DEC_TIME");
+                double loadCell = await GetRecipe("LOADCELL");
+                double current = await GetRecipe("CURRENT");
+                int vacOffMs = await GetRecipeInt("VAC_OFF_TIME");
+                double xOffset = await GetRecipe("ShankLowOffsetX");
+                double yOffset = await GetRecipe("ShankLowOffsetY");
+                double topDieThickness = await GetRecipe("TopDieThickness");
+                double ShankToDieOffset = await GetRecipe("ShankToDieOffset");
 
-                if (double.TryParse(_recipeService.FindByParam("ShankLowOffsetY").Value, out double yOffset))
-                { }
-                else
-                {
-                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
-                }
-
-                if (double.TryParse(_recipeService.FindByParam("TopDieThickness").Value, out double topDieThickness))
-                { }
-                else
-                {
-                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
-                }
-
-                if (double.TryParse(_recipeService.FindByParam("ShankToDieOffset").Value, out double ShankToDieOffset))
-                { }
-                else
-                {
-                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
-                }
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 var goPickup = await Task.WhenAll(
@@ -421,13 +405,69 @@ namespace HCB.UI
                 if (!goPickup.All(r => r)) throw new Exception("픽업 위치로 이동 실패");
                 await _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, -correction?.Theta ?? 0, ct);
 
+                // pick up
+                //await Task.Delay(200, ct);
+                //var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                //await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
+                //await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
+                //await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
+                //await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
+                //await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
+                //await device.SendCommand(MotionExtensions.BONDING_START + $"=1");
+                //// Polling으로 본딩 완료 상태 + LoadCell 데이터 추적
+                //const int pollingIntervalMs = 100;
+                //int timeoutMs = accTime + contTime + decTime + 2000; // 폴링 오버헤드 마진
+                //var sw = Stopwatch.StartNew();
+                //bool bondingComplete = false;
+                //bool vacuumOff = false;
+
+                //while (!bondingComplete)
+                //{
+                //    ct.ThrowIfCancellationRequested();
+
+                //    // 설정 시점에 Vacuum OFF
+                //    if (!vacuumOff && sw.ElapsedMilliseconds >= vacOffMs)
+                //    {
+                //        await HVacOnOff(false, ct);
+                //        vacuumOff = true;
+                //        _logger.Information("Vacuum OFF ({Elapsed}ms, 설정={VacOffMs}ms)",
+                //            sw.ElapsedMilliseconds, vacOffMs);
+                //    }
+
+                //    double forceValue = 0;
+                //    string analog = await device.SendCommand<string>(MotionExtensions.ANALOG_INPUT);
+
+
+                //    string strResponse = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
+                //    var values = strResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                //    if (values.Length > 0 && bool.TryParse(values[0], out bool result))
+                //    {
+                //        _logger.Information("Bonding 상태: {Result} | Force: {Force:F3}N (경과: {Elapsed}ms)",
+                //            result, forceValue, sw.ElapsedMilliseconds);
+                //        bondingComplete = result;
+                //    }
+                //    else
+                //    {
+                //        _logger.Warning("Bonding 상태 응답 파싱 실패: {Response}", strResponse);
+                //    }
+
+                //    if (!bondingComplete)
+                //    {
+                //        if (sw.ElapsedMilliseconds > timeoutMs)
+                //            throw new TimeoutException($"Bonding 완료 대기 시간 초과 ({timeoutMs}ms)");
+
+                //        await Task.Delay(pollingIntervalMs, ct);
+                //    }
+                //}
+
                 await MotionsMove(MotionExtensions.H_Z, ShankToDieOffset-topDieThickness, ct);
-                
+
                 var headPicker = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
                 await _sequenceHelper.TopVac(vacNum, eOnOff.Off, ct);
                 await Task.Delay(2000);
                 if (!headPicker) throw new Exception("Head에 Pick된 Die가 없습니다");
-                
+
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
             }

@@ -673,7 +673,7 @@ namespace HCB.UI
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, -data.ResultX, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, -data.ResultY, ct),
-                    RelativeMotionsMove(MotionExtensions.H_T, -data.ResultT, ct)
+                    RelativeMotionsMove(MotionExtensions.H_T, data.ResultT, ct)
                 );
 
                 await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);

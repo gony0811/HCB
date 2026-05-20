@@ -82,25 +82,25 @@ namespace HCB.UI
 
         #region Top Die 고배율 측정
 
-        public async Task<AlignContext> TopHighAlign(
-            AlignContext ctx, bool avgMode, CancellationToken ct)
-        {
-            ctx ??= new AlignContext();            
-            LoadCalibrationInto(ctx);
+        //public async Task<AlignContext> TopHighAlign(
+        //    AlignContext ctx, bool avgMode, CancellationToken ct)
+        //{
+        //    ctx ??= new AlignContext();            
+        //    LoadCalibrationInto(ctx);
 
-            ctx.TopRightFidRaw = await TopDieVisionRightFid(avgMode, ct);
-            ctx.TopRightAlignRaw = await TopDieVisionRightAlign(avgMode, ct);
-            ctx.TopLeftFidRaw = await TopDieVisionLeftFid(avgMode, ct);
-            ctx.TopLeftAlignRaw = await TopDieVisionLeftAlign(avgMode, ct);
+        //    ctx.TopRightFidRaw = await TopDieVisionRightFid(avgMode, ct);
+        //    ctx.TopRightAlignRaw = await TopDieVisionRightAlign(avgMode, ct);
+        //    ctx.TopLeftFidRaw = await TopDieVisionLeftFid(avgMode, ct);
+        //    ctx.TopLeftAlignRaw = await TopDieVisionLeftAlign(avgMode, ct);
 
-            // Raw → Clone → 보정 → Corrected
-            ApplyTopPcCorrections(ctx);
+        //    // Raw → Clone → 보정 → Corrected
+        //    ApplyTopPcCorrections(ctx);
 
-            // Corrected 기반 오프셋 계산
-            ComputeTopOffsets(ctx);
+        //    // Corrected 기반 오프셋 계산
+        //    ComputeTopOffsets(ctx);
 
-            return ctx;
-        }
+        //    return ctx;
+        //}
 
 
         public async Task<AlignData> TopHighAlign(
@@ -119,29 +119,29 @@ namespace HCB.UI
 
         #region Btm Die 고배율 측정
 
-        public async Task<AlignContext> BtmHighAlign(
-            AlignContext ctx, bool avgMode, CancellationToken ct)
-        {
-            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+        //public async Task<AlignContext> BtmHighAlign(
+        //    AlignContext ctx, bool avgMode, CancellationToken ct)
+        //{
+        //    if (ctx == null) throw new ArgumentNullException(nameof(ctx));
 
-            await TopDiePlace(ct);
+        //    await TopDiePlace(ct);
 
-            // 비전 원본 → Raw (이후 어떤 메서드도 수정 금지)
-            ctx.BtmRightFidRaw = await BtmDieVisionRightFid(avgMode, ct);
-            ctx.BtmRightAlignRaw = await BtmDieVisionRightAlign(avgMode,ct);
-            ctx.BtmLeftFidRaw = await BtmDieVisionLeftFid(avgMode, ct);
-            ctx.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(avgMode, ct);
-            //await GetHcro(ctx, ct);
-            LoadCalibrationInto(ctx);   
+        //    // 비전 원본 → Raw (이후 어떤 메서드도 수정 금지)
+        //    ctx.BtmRightFidRaw = await BtmDieVisionRightFid(avgMode, ct);
+        //    ctx.BtmRightAlignRaw = await BtmDieVisionRightAlign(avgMode,ct);
+        //    ctx.BtmLeftFidRaw = await BtmDieVisionLeftFid(avgMode, ct);
+        //    ctx.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(avgMode, ct);
+        //    //await GetHcro(ctx, ct);
+        //    LoadCalibrationInto(ctx);   
 
-            // 카메라 오프셋 + 회전 보정
-            ApplyBtmCorrections(ctx);
-            // 회전 중심 좌표로 변환
-            ComputeHcroCoords(ctx);
-            ComputeBtmOffsets(ctx);
+        //    // 카메라 오프셋 + 회전 보정
+        //    ApplyBtmCorrections(ctx);
+        //    // 회전 중심 좌표로 변환
+        //    ComputeHcroCoords(ctx);
+        //    ComputeBtmOffsets(ctx);
 
-            return ctx;
-        }
+        //    return ctx;
+        //}
 
         public async Task<AlignData> BtmHighAlign(
             AlignData data, CancellationToken ct)
