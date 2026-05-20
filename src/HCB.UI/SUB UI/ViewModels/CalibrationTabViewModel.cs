@@ -86,14 +86,14 @@ namespace HCB.UI
                 Theta1Rad = theta;
                 Theta1Deg = theta * (180.0 / Math.PI);
 
-                double correction = theta;
+                double correction = -theta;
                 dto = _ecParamService.FindByName(MotionExtensions.HC1_T);
                 dto.Value = correction.ToString("F6");
                 dto.ValueType = ValueType.Double;
                 if (dto.Id == 0) await _ecParamService.AddParam(dto);
                 else await _ecParamService.UpdateParam(dto);
 
-                CalibStatus = $"Hc1 완료  Θ = {Theta1Deg:F4}°, 보정 = {correction:F4}°";
+                CalibStatus = $"Hc1 완료  Θ = {Theta1Deg:F4}°, 보정 = {correction:F4} Rad";
             }
             catch (OperationCanceledException) { CalibStatus = "취소됨"; }
             catch (Exception e) { _logger.Error(e, "Hc1 Angle calibration failed"); CalibStatus = $"오류: {e.Message}"; }
@@ -122,15 +122,14 @@ namespace HCB.UI
                 Theta2Rad = theta;
                 Theta2Deg = theta * (180.0 / Math.PI);
 
-                // 기대값 45°와의 차이를 저장
-                double correction = theta;
+                double correction = -theta;
                 dto = _ecParamService.FindByName(MotionExtensions.HC2_T);
                 dto.Value = correction.ToString("F6");
                 dto.ValueType = ValueType.Double;
                 if (dto.Id == 0) await _ecParamService.AddParam(dto);
                 else await _ecParamService.UpdateParam(dto);
 
-                CalibStatus = $"Hc2 완료  Θ = {Theta2Deg:F4}°, 보정 = {correction:F4}°";
+                CalibStatus = $"Hc2 완료  Θ = {Theta2Deg:F4}°, 보정 = {correction:F4} Rad";
             }
             catch (OperationCanceledException) { CalibStatus = "취소됨"; }
             catch (Exception e) { _logger.Error(e, "Hc2 Angle calibration failed"); CalibStatus = $"오류: {e.Message}"; }
@@ -143,6 +142,12 @@ namespace HCB.UI
             IsNotBusy = false;
             try
             {
+                ECParamDto dto = _ecParamService.FindByName(MotionExtensions.PC_T);
+                dto.Value = "0";
+                dto.ValueType = ValueType.Double;
+                if (dto.Id == 0) await _ecParamService.AddParam(dto);
+                else await _ecParamService.UpdateParam(dto);
+
                 CalibStatus = "Pc 캘리브레이션 중...";
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.P_Y], "T축 보정", ct);
@@ -152,14 +157,13 @@ namespace HCB.UI
                 ThetaPRad = theta;
                 ThetaPDeg = theta * (180.0 / Math.PI);
 
-                double correction = theta;
-                ECParamDto dto = _ecParamService.FindByName(MotionExtensions.PC_T);
+                double correction = -theta;
                 dto.Value = correction.ToString("F6");
                 dto.ValueType = ValueType.Double;
                 if (dto.Id == 0) await _ecParamService.AddParam(dto);
                 else await _ecParamService.UpdateParam(dto);
 
-                CalibStatus = $"Pc 완료  Θ = {ThetaPDeg:F4}°, 보정 = {correction:F4}°";
+                CalibStatus = $"Pc 완료  Θ = {ThetaPDeg:F4}°, 보정 = {correction:F4} Rad";
             }
             catch (OperationCanceledException) { CalibStatus = "취소됨"; throw; }
             catch (Exception e) { _logger.Error(e, "Pc Angle calibration failed"); CalibStatus = $"오류: {e.Message}"; }
@@ -349,52 +353,8 @@ namespace HCB.UI
                 await _ecParamService.UpdateParam(param);
             }
         }
-        private async Task<double> GetAngle(CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct = default)
-        {
-            try
-            {
-                // 1. 현재 위치에서 비전 좌표 읽기
-                await _communication.RequestAFStart(cameraType, markType, ct);
-                var beforeVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
-                if (beforeVision == null) throw new Exception("beforeVision 응답 null");
-                if (beforeVision.Result == Result.NG) throw new Exception("비전 측정 실패");
-
-                // 2. AMove만큼 대각선 이동
-                if (Math.Abs(AMove) < 1e-10)
-                    throw new Exception("AMove 값이 0입니다");
-
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, _hxAxis!.CurrentPosition + AMove, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.W_Y, _wyAxis!.CurrentPosition + AMove, ct)
-                );
-
-                // 3. 이동 후 비전 좌표 읽기
-                await _communication.RequestAFStart(cameraType, markType, ct);
-                var afterVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
-                if (afterVision == null) throw new Exception("afterVision 응답 null");
-                if (afterVision.Result == Result.NG) throw new Exception("이동 후 비전 측정 실패");
-
-                // 4. 비전 좌표 변화량에서 기대 이동분을 빼서 순수 잔차 추출
-                //    스테이지 +AMove → 비전에서 마크는 -AMove 방향으로 관측
-                double deltaX = (afterVision.X - beforeVision.X) - (-AMove);
-                double deltaY = (afterVision.Y - beforeVision.Y) - (-AMove);
-
-                // ComputeCameraTheta는 원래 센터링 후 (beforeVision ≈ 0) 상태에서
-                // afterVision의 잔차를 받도록 설계되었으므로 동일한 형태로 전달
-                return CalibrationMath.ComputeCameraTheta(AMove, deltaX, deltaY);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e, "GetAngle failed");
-                throw;
-            }
-        }
-        private async Task<double> GetAnglePc(CameraType cameraType, MarkType markType,
-                DirectType directType, CancellationToken ct = default)
+        private async Task<double> GetAngle(CameraType cameraType, MarkType markType,
+    DirectType directType, CancellationToken ct = default)
         {
             try
             {
@@ -405,7 +365,54 @@ namespace HCB.UI
                 if (beforeVision == null) throw new Exception("beforeVision 응답 null");
                 if (beforeVision.Result == Result.NG) throw new Exception("비전 측정 실패");
 
-                // 2. X축으로만 이동
+                // 2. H_X축으로만 AMove 이동 (대각선 이동 제거)
+                if (Math.Abs(AMove) < 1e-10)
+                    throw new Exception("AMove 값이 0입니다");
+
+                await _sequenceService.MotionsMove(MotionExtensions.H_X,
+                    _hxAxis!.CurrentPosition + AMove, ct);
+
+                // 3. 이동 후 비전 좌표 읽기
+                await _communication.RequestAFStart(cameraType, markType, ct);
+                var afterVision = await _communication.RequestVisionMarkPosition(
+                    markType, cameraType, directType.ToString());
+                if (afterVision == null) throw new Exception("afterVision 응답 null");
+                if (afterVision.Result == Result.NG) throw new Exception("이동 후 비전 측정 실패");
+
+                // 4. 전체 비전 이동량으로 카메라 각도 계산
+                //    스테이지 +AMove → 비전에서 마크: (-AMove·cosθ, -AMove·sinθ)
+                double fullDx = afterVision.X - beforeVision.X;
+                double fullDy = afterVision.Y - beforeVision.Y;
+
+                double theta = Math.Atan2(-fullDy, -fullDx);
+
+                // 축 반전(π 근처)인 경우 소각도 분리
+                if (theta > Math.PI / 2) theta -= Math.PI;
+                else if (theta < -Math.PI / 2) theta += Math.PI;
+
+                return theta;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "GetAngle failed");
+                throw;
+            }
+        }
+
+        private async Task<double> GetAnglePc(CameraType cameraType, MarkType markType,
+            DirectType directType, CancellationToken ct = default)
+        {
+            try
+            {
+                // 1. 현재 위치에서 비전 좌표 읽기
+                await _communication.RequestAFStart(cameraType, markType, ct);
+                var beforeVision = await _communication.RequestVisionMarkPosition(
+                    markType, cameraType, directType.ToString());
+                if (beforeVision == null) throw new Exception("beforeVision 응답 null");
+                if (beforeVision.Result == Result.NG) throw new Exception("비전 측정 실패");
+
+                // 2. H_X축으로 -AMove 이동
                 if (Math.Abs(AMove) < 1e-10)
                     throw new Exception("AMove 값이 0입니다");
 
@@ -419,11 +426,16 @@ namespace HCB.UI
                 if (afterVision == null) throw new Exception("afterVision 응답 null");
                 if (afterVision.Result == Result.NG) throw new Exception("이동 후 비전 측정 실패");
 
-                // 4. 순수 이동분 추출 (기대값: X방향 AMove, Y방향 0)
-                double deltaX = (afterVision.X - beforeVision.X) - (-AMove);
-                double deltaY = (afterVision.Y - beforeVision.Y) - 0; // Y 이동 없으므로 기대값 0
+                // 4. 전체 비전 이동량으로 카메라 각도 계산
+                //    스테이지 -AMove → 비전에서 마크: (AMove·cosθ, AMove·sinθ)
+                // 4. 전체 비전 이동량으로 카메라 각도 계산
+                double fullDx = afterVision.X - beforeVision.X;
+                double fullDy = afterVision.Y - beforeVision.Y;
 
-                return CalibrationMath.ComputeCameraTheta2(AMove, deltaX, deltaY);
+                double theta = Math.Atan2(fullDy, fullDx);
+                if (theta > Math.PI / 2) theta -= Math.PI;
+                else if (theta < -Math.PI / 2) theta += Math.PI;
+                return theta;
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception e)
