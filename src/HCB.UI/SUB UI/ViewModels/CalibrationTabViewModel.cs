@@ -213,7 +213,10 @@ namespace HCB.UI
                 CalibStatus = "Hc1 캘리브레이션 중...";
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC1_T_OFFSET", ct);
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "OFFSET_STANBY", ct);
+                double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
+                double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
+                double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
                 double theta = await GetAngle(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, ct);
                 Theta1Rad = theta;
@@ -258,7 +261,10 @@ namespace HCB.UI
                 CalibStatus = "Hc2 캘리브레이션 중...";
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC2_T_OFFSET", ct);
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "OFFSET_STANBY", ct);
+                double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
+                double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
+                double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
                 double theta = await GetAngle(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, ct);
                 Theta2Rad = theta;
@@ -305,7 +311,10 @@ namespace HCB.UI
                     _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION, ct),
                     _sequenceService.MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, ct));
 
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "OFFSET_STANBY", ct);
+                double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
+                double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
+                double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
                 // Hc1 센터링
                 CalibStatus = "Hc1 센터링 중...";
