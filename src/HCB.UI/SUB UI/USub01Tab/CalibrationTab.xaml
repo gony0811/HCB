@@ -13,6 +13,8 @@
                 <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
+            <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
+
             <!-- 캘리브레이션 실행 버튼 -->
             <Style x:Key="CalibBtnStyle" TargetType="Button">
                 <Setter Property="Background" Value="#1A3A5C"/>
@@ -50,7 +52,7 @@
                 </Setter>
             </Style>
 
-            <!-- CalibComboStyle 교체 -->
+            <!-- CalibComboStyle -->
             <Style x:Key="CalibComboStyle" TargetType="ComboBox">
                 <Setter Property="Foreground" Value="#ECF0F1"/>
                 <Setter Property="FontSize" Value="16"/>
@@ -128,7 +130,6 @@
                 </Setter>
             </Style>
 
-
             <Style x:Key="CalibTextBoxStyle" TargetType="TextBox">
                 <Setter Property="Background" Value="#0A1628"/>
                 <Setter Property="Foreground" Value="#ECF0F1"/>
@@ -162,109 +163,113 @@
                 <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
                            VerticalAlignment="Bottom" Margin="12,32,12,0"/>
 
-                <StackPanel Grid.Row="1" Margin="16,16,16,16">
+                <!-- ★ ScrollViewer로 감싸서 넘침 방지 -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16,16,16,16">
 
-                    <!-- ① HC 카메라 각도 -->
-                    <TextBlock Text="HC 카메라 각도" Foreground="#5E8BAA"
-                               FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
-                               Margin="0,0,0,12">
-                        HC1 / HC2 카메라 FoV 안에 Fiducial Mark가 보이는 위치로
-                        Stage를 이동한 뒤 실행하세요.
-                    </TextBlock>
+                        <!-- ① HC 카메라 각도 -->
+                        <TextBlock Text="HC 카메라 각도" Foreground="#5E8BAA"
+                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="0,0,0,12">
+                            HC1 / HC2 카메라 FoV 안에 Fiducial Mark가 보이는 위치로
+                            Stage를 이동한 뒤 실행하세요.
+                        </TextBlock>
 
-                    <Button Style="{StaticResource CalibBtnStyle}"
-                            Content="Hc1 각도 캘리브레이션"
-                            Command="{Binding Hc1AngleCommand}"
-                            Margin="0,0,0,10"/>
+                        <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="Hc1 각도 캘리브레이션"
+                                Command="{Binding Hc1AngleCommand}"
+                                Margin="0,0,0,10"/>
 
-                    <Button Style="{StaticResource CalibBtnStyle}"
-                            Content="Hc2 각도 캘리브레이션"
-                            Command="{Binding Hc2AngleCommand}"
-                            Margin="0,0,0,10"/>
+                        <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="Hc2 각도 캘리브레이션"
+                                Command="{Binding Hc2AngleCommand}"
+                                Margin="0,0,0,10"/>
 
-                    <Button Style="{StaticResource CalibBtnStyle}"
-                            Content="카메라 Hc1/Hc2 거리 계산"
-                            Command="{Binding CameraDistanceCommand}"/>
+                        <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="카메라 Hc1/Hc2 거리 계산"
+                                Command="{Binding CameraDistanceCommand}"/>
 
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
 
-                    <!-- ② Pc 카메라 각도 -->
-                    <TextBlock Text="Pc 카메라 각도" Foreground="#5E8BAA"
-                               FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
-                               Margin="0,0,0,12">
-                        P_LEFT_FIDUCIAL 위치로 Stage를 이동한 뒤 실행하세요.
-                    </TextBlock>
+                        <!-- ② Pc 카메라 각도 -->
+                        <TextBlock Text="Pc 카메라 각도" Foreground="#5E8BAA"
+                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="0,0,0,12">
+                            P_LEFT_FIDUCIAL 위치로 Stage를 이동한 뒤 실행하세요.
+                        </TextBlock>
 
-                    <Button Style="{StaticResource CalibBtnStyle}"
-                            Content="Pc 각도 캘리브레이션"
-                            Command="{Binding PcAngleCommand}"/>
+                        <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="Pc 각도 캘리브레이션"
+                                Command="{Binding PcAngleCommand}"/>
 
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
 
-                    <!-- ③ HcRO 회전 중심 -->
-                    <TextBlock Text="HcRO 회전 중심" Foreground="#5E8BAA"
-                               FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
-                               Margin="0,0,0,12">
-                        Hc1 / Hc2 마크가 보이는 위치로 이동한 뒤 실행하세요.
-                    </TextBlock>
+                        <!-- ③ HcRO 회전 중심 -->
+                        <TextBlock Text="HcRO 회전 중심" Foreground="#5E8BAA"
+                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="0,0,0,12">
+                            Hc1 / Hc2 마크가 보이는 위치로 이동한 뒤 실행하세요.
+                        </TextBlock>
 
-                    <Button Style="{StaticResource CalibBtnStyle}"
-                            Content="HcRO 회전 중심 계산"
-                            Command="{Binding CreateHcRoCommand}"/>
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
+                        <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="HcRO 회전 중심 계산"
+                                Command="{Binding CreateHcRoCommand}"/>
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
 
-                    <TextBlock Text="전체 캘리브레이션" Foreground="#5E8BAA"
-           FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
-           Margin="0,0,0,12">
-    HC1→HC2→거리→PC→HcRO 순서로 자동 실행합니다.
-                    </TextBlock>
+                        <!-- ④ 전체 캘리브레이션 -->
+                        <TextBlock Text="전체 캘리브레이션" Foreground="#5E8BAA"
+                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="0,0,0,12">
+                            HC1→HC2→거리→PC→HcRO 순서로 자동 실행합니다.
+                        </TextBlock>
 
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="36"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="반복 횟수" Foreground="#5E8BAA" FontSize="18"
-               VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Style="{StaticResource CalibTextBoxStyle}"
-                                Text="{Binding CalibRepeatCount, UpdateSourceTrigger=LostFocus}"/>
-                        <TextBlock Grid.Column="2" Text="회"
-                                   Foreground="#5E8BAA" FontSize="16"
-                                   VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    </Grid>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="36"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="반복 횟수" Foreground="#5E8BAA" FontSize="18"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Style="{StaticResource CalibTextBoxStyle}"
+                                     Text="{Binding CalibRepeatCount, UpdateSourceTrigger=LostFocus}"/>
+                            <TextBlock Grid.Column="2" Text="회"
+                                       Foreground="#5E8BAA" FontSize="16"
+                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        </Grid>
 
-                    <Button Style="{StaticResource CalibBtnStyle}"
-        Content="전체 캘리브레이션 실행"
-        Command="{Binding RunFullCalibrationCommand}"
-        Margin="0,0,0,10"/>
+                        <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="전체 캘리브레이션 실행"
+                                Command="{Binding RunFullCalibrationCommand}"
+                                Margin="0,0,0,10"/>
 
-                    <Button Content="중지" Height="42" FontSize="15" FontWeight="SemiBold"
-                            Cursor="Hand" Foreground="#ECF0F1"
-                            Command="{Binding StopCalibrationCommand}"
-                            Margin="0,0,0,10"
-                            IsEnabled="{Binding IsNotBusy, Converter={StaticResource InverseBoolConverter}}">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="#8B1A1A" BorderBrush="#C0392B" BorderThickness="1"
-                    CornerRadius="6">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                        <Button Content="중지" Height="42" FontSize="15" FontWeight="SemiBold"
+                                Cursor="Hand" Foreground="#ECF0F1"
+                                Command="{Binding StopCalibrationCommand}"
+                                Margin="0,0,0,10"
+                                IsEnabled="{Binding IsNotBusy, Converter={StaticResource InverseBoolConverter}}">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="#8B1A1A" BorderBrush="#C0392B" BorderThickness="1"
+                                            CornerRadius="6">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
 
-                    <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
-                            CornerRadius="6" Padding="10,8">
-                        <TextBlock Text="{Binding CalibProgress}"
-                             Foreground="#E67E22" FontSize="14" TextWrapping="Wrap"/>
-                    </Border>
+                        <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+                                CornerRadius="6" Padding="10,8">
+                            <TextBlock Text="{Binding CalibProgress}"
+                                       Foreground="#E67E22" FontSize="14" TextWrapping="Wrap"/>
+                        </Border>
 
-                </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
         </Border>
 
@@ -385,30 +390,30 @@
 
                         <!-- ═══ 정밀도 검증 ═══ -->
                         <TextBlock Text="정밀도 검증" Foreground="#5E8BAA"
-           FontSize="13" FontWeight="SemiBold"
-           Margin="16,4,16,6"/>
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Margin="16,4,16,6"/>
                         <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
-           Margin="16,0,16,12">
-    카메라를 선택하고 임의 위치에서 실행하면, 비전 측정→이동→재측정으로 잔차를 확인합니다.
+                                   Margin="16,0,16,12">
+                            카메라를 선택하고 임의 위치에서 실행하면, 비전 측정→이동→재측정으로 잔차를 확인합니다.
                         </TextBlock>
 
                         <!-- 카메라 선택 -->
                         <ComboBox Style="{StaticResource CalibComboStyle}" Margin="16,0,16,8"
-          ItemsSource="{Binding Source={local:EnumValues {x:Type local:CameraType}}}"
-          SelectedItem="{Binding SelectedCamera}"/>
+                                  ItemsSource="{Binding Source={local:EnumValues {x:Type local:CameraType}}}"
+                                  SelectedItem="{Binding SelectedCamera}"/>
 
                         <!-- 마크 선택 -->
                         <ComboBox Style="{StaticResource CalibComboStyle}" Margin="16,0,16,8"
-          ItemsSource="{Binding Source={local:EnumValues {x:Type local:MarkType}}}"
-          SelectedItem="{Binding SelectedMark}"/>
+                                  ItemsSource="{Binding Source={local:EnumValues {x:Type local:MarkType}}}"
+                                  SelectedItem="{Binding SelectedMark}"/>
 
                         <!-- 방향 선택 -->
                         <ComboBox Style="{StaticResource CalibComboStyle}" Margin="16,0,16,12"
                                   ItemsSource="{Binding Source={local:EnumValues {x:Type local:DirectType}}}"
                                   SelectedItem="{Binding SelectedDirect}"/>
 
-                                                <!-- 검증 실행 버튼 -->
-                                                <Button Style="{StaticResource CalibBtnStyle}"
+                        <!-- 검증 실행 버튼 -->
+                        <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="정밀도 검증 실행"
                                 Command="{Binding VerifyAlignmentAccuracyCommand}"
                                 Margin="16,0,16,8"/>
