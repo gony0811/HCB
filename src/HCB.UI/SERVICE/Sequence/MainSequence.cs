@@ -210,7 +210,7 @@ namespace HCB.UI
             double thetaS = ParseRecipe("SPEC_THETA");
             double bTheta = Math.Atan2(br.Y - bl.Y, br.X - bl.X);
             double tTheta = Math.Atan2(tr.Y - tl.Y, tr.X - tl.X);
-            double thetaF = thetaS - CalibrationMath.ToDegree(tTheta - bTheta) + data.OffsetT;
+            double thetaF = thetaS - CalibrationMath.ToDegree(tTheta - bTheta);
             double thetaF_rad = CalibrationMath.ToRadian(thetaF);
 
             data.SpecTheta = thetaS;
@@ -234,12 +234,12 @@ namespace HCB.UI
             data.TCenter = tCenter;
             data.BCenter = bCenter;
 
-            double shiftX = tCenter.X - bCenter.X + data.OffsetXY.X;
-            double shiftY = tCenter.Y - bCenter.Y + data.OffsetXY.Y;
+            double shiftX = tCenter.X - bCenter.X;
+            double shiftY = tCenter.Y - bCenter.Y;
 
-            data.ResultX = shiftX;
-            data.ResultY = shiftY;
-            data.ResultT = thetaF;
+            data.ResultX = shiftX + data.OffsetXY.X;
+            data.ResultY = shiftY + data.OffsetXY.Y;
+            data.ResultT = thetaF + data.OffsetT;
 
             //await Task.WhenAll(
             //    RelativeMotionsMove(MotionExtensions.H_X, shiftX, ct),

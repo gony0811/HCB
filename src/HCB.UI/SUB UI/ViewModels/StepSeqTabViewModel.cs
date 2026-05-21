@@ -490,7 +490,7 @@ namespace HCB.UI
             {
                 await RunTopLowAlign(_cts.Token);
                 await RunTopPickup(_cts.Token);
-                for (int i=0; i < 3; i++)
+                for (int i=0; i < 3000; i++)
                 {
                     await RunTopHighAlign(_cts.Token);
                     await RunBtmHighAlign(_cts.Token);
@@ -501,7 +501,6 @@ namespace HCB.UI
                     ExportHcbData();
                 }
                 await _sequenceService.Bonding(hcbData, BondingHistory, _cts.Token);
-
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
             catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }

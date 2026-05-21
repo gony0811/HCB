@@ -244,7 +244,6 @@ namespace HCB.UI
         [RelayCommand]
         public async Task CameraDistance(CancellationToken ct = default)
         {
-            const double SafeGap = 0.1;
             const double MeasureOffsetX = -12.5;
             const double MeasureOffsetY = 7.0;
             const double Tolerance = 0.001;
@@ -262,8 +261,7 @@ namespace HCB.UI
                     _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION, ct),
                     _sequenceService.MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, ct));
 
-                double zTarget = shankToWaferOffset - topDieThickness - btmDieThickness - SafeGap;
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, zTarget, ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "OFFSET_STANBY", ct);
 
                 // ── Hc1 센터링: 마크를 카메라 중심에 맞춤 ──
                 CalibStatus = "Hc1 센터링 중...";
@@ -365,12 +363,9 @@ namespace HCB.UI
                 if (beforeVision == null) throw new Exception("beforeVision 응답 null");
                 if (beforeVision.Result == Result.NG) throw new Exception("비전 측정 실패");
 
-                // 2. H_X축으로만 AMove 이동 (대각선 이동 제거)
-                if (Math.Abs(AMove) < 1e-10)
-                    throw new Exception("AMove 값이 0입니다");
 
                 await _sequenceService.MotionsMove(MotionExtensions.H_X,
-                    _hxAxis!.CurrentPosition + AMove, ct);
+                    _hxAxis!.CurrentPosition + 0.55, ct);
 
                 // 3. 이동 후 비전 좌표 읽기
                 await _communication.RequestAFStart(cameraType, markType, ct);
@@ -417,7 +412,7 @@ namespace HCB.UI
                     throw new Exception("AMove 값이 0입니다");
 
                 await _sequenceService.MotionsMove(MotionExtensions.H_X,
-                    _hxAxis!.CurrentPosition - AMove, ct);
+                    _hxAxis!.CurrentPosition + 0.55, ct);
 
                 // 3. 이동 후 비전 좌표 읽기
                 await _communication.RequestAFStart(cameraType, markType, ct);
