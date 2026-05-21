@@ -59,15 +59,12 @@ namespace HCB.UI
             // 2. 초기화 로직 실행
             // 이 위치에서 다음 단계의 이벤트를 사용하여 초기화 함수를 호출해야 합니다.
             SplashScreenUpdate("애플리케이션 구동 시작...", 0);
-            
 
             _host = StartUp.BuildHost(e.Args);
 
             SplashScreenUpdate("호스트 빌드 완료.", 10);
 
             SplashScreenUpdate("어플리케이션 초기화 및 구동 시작", 15);
-
-
 
             SplashScreenUpdate("데이터베이스 연결 및 초기화...", 20);
             await StartUp.InitDatabaseAsync(_host);
@@ -101,8 +98,6 @@ namespace HCB.UI
 
             FluentPalette.LoadPreset(FluentPalette.ColorVariation.Dark);
             FluentPalette palette = FluentPalette.Palette;
-            // 2. 원하는 색상으로 강조 색상 (Accent Color) 변경
-            // 예: Telerik의 기본 파란색 대신 진한 주황색으로 변경
             palette.AccentColor = Color.FromRgb(0x00, 0x80, 0x80); // 주황색 (Dark Orange)
             RadWindowInteropHelper.SetShowInTaskbar(mainWindow, true);
 

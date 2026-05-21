@@ -50,6 +50,97 @@
                 </Setter>
             </Style>
 
+            <!-- CalibComboStyle 교체 -->
+            <Style x:Key="CalibComboStyle" TargetType="ComboBox">
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="FontSize" Value="16"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBox">
+                            <Grid>
+                                <ToggleButton x:Name="ToggleButton"
+                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                  Focusable="False" ClickMode="Press">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border Background="#0A1628" BorderBrush="#2A5A8C"
+                                        BorderThickness="1" CornerRadius="4">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="32"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Path Grid.Column="1" Data="M 0 0 L 4 4 L 8 0 Z"
+                                              Fill="#5E8BAA" HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+                                <ContentPresenter Margin="10,0,32,0"
+                                      Content="{TemplateBinding SelectionBoxItem}"
+                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                      VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
+                           Focusable="False" AllowsTransparency="True">
+                                    <Border Background="#0A1628" BorderBrush="#2A5A8C"
+                                BorderThickness="1" CornerRadius="4"
+                                MaxHeight="300" MinWidth="{TemplateBinding ActualWidth}">
+                                        <ScrollViewer>
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="ItemContainerStyle">
+                    <Setter.Value>
+                        <Style TargetType="ComboBoxItem">
+                            <Setter Property="Foreground" Value="#ECF0F1"/>
+                            <Setter Property="Background" Value="#0A1628"/>
+                            <Setter Property="Padding" Value="10,6"/>
+                            <Setter Property="FontSize" Value="16"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ComboBoxItem">
+                                        <Border Background="{TemplateBinding Background}"
+                                    Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsHighlighted" Value="True">
+                                                <Setter Property="Background" Value="#1A3A5C"/>
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="#234E7A"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+
+            <Style x:Key="CalibTextBoxStyle" TargetType="TextBox">
+                <Setter Property="Background" Value="#0A1628"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="CaretBrush" Value="#ECF0F1"/>
+                <Setter Property="BorderBrush" Value="#2A5A8C"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="FontSize" Value="18"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Padding" Value="8,4"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="TextAlignment" Value="Right"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -57,7 +148,7 @@
           IsEnabled="{Binding IsNotBusy}">
 
         <!-- ══════════════════════════════════════════════
-             좌측 : 파라미터 설정 + 캘리브레이션 실행
+             좌측 : 캘리브레이션 실행
         ══════════════════════════════════════════════ -->
         <Border Background="#0D1B2A" CornerRadius="8" Margin="6"
                 BorderBrush="#1C3A52" BorderThickness="1">
@@ -73,56 +164,7 @@
 
                 <StackPanel Grid.Row="1" Margin="16,16,16,16">
 
-                    <!-- ① 파라미터 설정 -->
-                    <TextBlock Text="파라미터" Foreground="#5E8BAA"
-                               FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition Width="36"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="이동량 A"
-                                   Foreground="#5E8BAA" FontSize="18"
-                                   VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1"
-                                 Text="{Binding AMove, UpdateSourceTrigger=LostFocus, StringFormat=G}"
-                                 Background="#0A1628" Foreground="#ECF0F1"
-                                 BorderBrush="#2A5A8C" BorderThickness="1"
-                                 FontSize="18" Height="40"
-                                 TextAlignment="Right" Padding="8,4"
-                                 VerticalContentAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Text="mm"
-                                   Foreground="#5E8BAA" FontSize="16"
-                                   VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    </Grid>
-
-                    <!-- H_T 회전량 -->
-                    <Grid Margin="0,10,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition Width="36"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="H_T 회전량"
-                                   Foreground="#5E8BAA" FontSize="18"
-                                   VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1"
-                                 Text="{Binding RotationDeg, UpdateSourceTrigger=LostFocus, StringFormat=G}"
-                                 Background="#0A1628" Foreground="#ECF0F1"
-                                 BorderBrush="#2A5A8C" BorderThickness="1"
-                                 FontSize="18" Height="40"
-                                 TextAlignment="Right" Padding="8,4"
-                                 VerticalContentAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Text="°"
-                                   Foreground="#5E8BAA" FontSize="16"
-                                   VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    </Grid>
-
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
-
-                    <!-- ② HC 카메라 각도 -->
+                    <!-- ① HC 카메라 각도 -->
                     <TextBlock Text="HC 카메라 각도" Foreground="#5E8BAA"
                                FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
                     <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
@@ -134,59 +176,100 @@
                     <Button Style="{StaticResource CalibBtnStyle}"
                             Content="Hc1 각도 캘리브레이션"
                             Command="{Binding Hc1AngleCommand}"
-                            Margin="0,0,0,10"
-                            ToolTip="HC1_HIGH: ① AF → ② 마크 센터링 → ③ (A,A) 이동 → ④ 재촬영 → ⑤ Θ1 계산"/>
+                            Margin="0,0,0,10"/>
 
                     <Button Style="{StaticResource CalibBtnStyle}"
                             Content="Hc2 각도 캘리브레이션"
                             Command="{Binding Hc2AngleCommand}"
-                            Margin="0,0,0,10"
-                            ToolTip="HC2_HIGH: ① AF → ② 마크 센터링 → ③ (A,A) 이동 → ④ 재촬영 → ⑤ Θ2 계산"/>
+                            Margin="0,0,0,10"/>
 
                     <Button Style="{StaticResource CalibBtnStyle}"
                             Content="카메라 Hc1/Hc2 거리 계산"
-                            Command="{Binding CameraDistanceCommand}"
-                            Margin="0,0,0,0"
-                            ToolTip="카메라 거리 계산"/>
-                    
+                            Command="{Binding CameraDistanceCommand}"/>
+
                     <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
 
-                    <!-- ③ Pc 카메라 각도 -->
+                    <!-- ② Pc 카메라 각도 -->
                     <TextBlock Text="Pc 카메라 각도" Foreground="#5E8BAA"
                                FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
                     <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
                                Margin="0,0,0,12">
                         P_LEFT_FIDUCIAL 위치로 Stage를 이동한 뒤 실행하세요.
-                        (PY 축 기반 이동 — W_Y 대신 P_Y 사용)
                     </TextBlock>
 
                     <Button Style="{StaticResource CalibBtnStyle}"
                             Content="Pc 각도 캘리브레이션"
-                            Command="{Binding PcAngleCommand}"
-                            ToolTip="PC_HIGH: ① AF → ② 마크 센터링(PY) → ③ (A,A) 이동 → ④ 재촬영 → ⑤ Θp 계산"/>
+                            Command="{Binding PcAngleCommand}"/>
 
                     <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
 
-                    <!-- ④ HcRO 회전 중심 -->
+                    <!-- ③ HcRO 회전 중심 -->
                     <TextBlock Text="HcRO 회전 중심" Foreground="#5E8BAA"
                                FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
                     <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
                                Margin="0,0,0,12">
                         Hc1 / Hc2 마크가 보이는 위치로 이동한 뒤 실행하세요.
-                        H_T를 회전량만큼 회전하며 두 마크의 호(Chord)로 중심을 역산합니다.
                     </TextBlock>
 
                     <Button Style="{StaticResource CalibBtnStyle}"
                             Content="HcRO 회전 중심 계산"
-                            Command="{Binding CreateHcRoCommand}"
-                            ToolTip="① Hc1 센터링 → ② H_T 회전 → ③ Hc1 재센터링 → ④ H_T 복귀 → ⑤ Hc2 동일 반복 → ⑥ ComputeHcRO"/>
+                            Command="{Binding CreateHcRoCommand}"/>
+                    <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
+
+                    <TextBlock Text="전체 캘리브레이션" Foreground="#5E8BAA"
+           FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                    <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+           Margin="0,0,0,12">
+    HC1→HC2→거리→PC→HcRO 순서로 자동 실행합니다.
+                    </TextBlock>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="36"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="반복 횟수" Foreground="#5E8BAA" FontSize="18"
+               VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Style="{StaticResource CalibTextBoxStyle}"
+                                Text="{Binding CalibRepeatCount, UpdateSourceTrigger=LostFocus}"/>
+                        <TextBlock Grid.Column="2" Text="회"
+                                   Foreground="#5E8BAA" FontSize="16"
+                                   VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </Grid>
+
+                    <Button Style="{StaticResource CalibBtnStyle}"
+        Content="전체 캘리브레이션 실행"
+        Command="{Binding RunFullCalibrationCommand}"
+        Margin="0,0,0,10"/>
+
+                    <Button Content="중지" Height="42" FontSize="15" FontWeight="SemiBold"
+                            Cursor="Hand" Foreground="#ECF0F1"
+                            Command="{Binding StopCalibrationCommand}"
+                            Margin="0,0,0,10"
+                            IsEnabled="{Binding IsNotBusy, Converter={StaticResource InverseBoolConverter}}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="#8B1A1A" BorderBrush="#C0392B" BorderThickness="1"
+                    CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+                            CornerRadius="6" Padding="10,8">
+                        <TextBlock Text="{Binding CalibProgress}"
+                             Foreground="#E67E22" FontSize="14" TextWrapping="Wrap"/>
+                    </Border>
 
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- ══════════════════════════════════════════════
-             우측 : 캘리브레이션 결과
+             우측 : 캘리브레이션 결과 + 정밀도 검증
         ══════════════════════════════════════════════ -->
         <Border Grid.Column="1" Background="#0D1B2A" CornerRadius="8" Margin="6"
                 BorderBrush="#1C3A52" BorderThickness="1">
@@ -201,149 +284,145 @@
                 <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
                            VerticalAlignment="Bottom" Margin="12,32,12,0"/>
 
-                <StackPanel Grid.Row="1" Margin="0,4,0,0">
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="0,4,0,0">
 
-                    <!-- Hc1 결과 -->
-                    <TextBlock Text="Hc1 카메라  (HC1_HIGH)"
-                               Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"
-                               Margin="16,12,16,8"/>
+                        <!-- Hc1 결과 -->
+                        <TextBlock Text="Hc1 카메라  (HC1_HIGH)"
+                                   Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"
+                                   Margin="16,12,16,8"/>
 
-                    <Grid Margin="16,6,16,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Θ1" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Theta1Rad, StringFormat=F6}"
-                                       Foreground="#ECF0F1" FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text=" rad" Foreground="#5E8BAA" FontSize="16"
-                                       VerticalAlignment="Bottom" Margin="2,0,0,2"/>
-                        </StackPanel>
-                    </Grid>
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+                        <Grid Margin="16,6,16,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Θ1" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Theta1Deg, StringFormat=F4}"
+                                           Foreground="#2ECC71" FontSize="20" FontWeight="SemiBold"/>
+                                <TextBlock Text=" °" Foreground="#5E8BAA" FontSize="16"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                            </StackPanel>
+                        </Grid>
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
 
-                    <Grid Margin="16,6,16,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Θ1" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Theta1Deg, StringFormat=F4}"
-                                       Foreground="#2ECC71" FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text=" °" Foreground="#5E8BAA" FontSize="16"
-                                       VerticalAlignment="Bottom" Margin="2,0,0,2"/>
-                        </StackPanel>
-                    </Grid>
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+                        <!-- Hc2 결과 -->
+                        <TextBlock Text="Hc2 카메라  (HC2_HIGH)"
+                                   Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"
+                                   Margin="16,16,16,8"/>
 
-                    <!-- Hc2 결과 -->
-                    <TextBlock Text="Hc2 카메라  (HC2_HIGH)"
-                               Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"
-                               Margin="16,16,16,8"/>
+                        <Grid Margin="16,6,16,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Θ2" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Theta2Deg, StringFormat=F4}"
+                                           Foreground="#2ECC71" FontSize="20" FontWeight="SemiBold"/>
+                                <TextBlock Text=" °" Foreground="#5E8BAA" FontSize="16"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                            </StackPanel>
+                        </Grid>
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
 
-                    <Grid Margin="16,6,16,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Θ2" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Theta2Rad, StringFormat=F6}"
-                                       Foreground="#ECF0F1" FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text=" rad" Foreground="#5E8BAA" FontSize="16"
-                                       VerticalAlignment="Bottom" Margin="2,0,0,2"/>
-                        </StackPanel>
-                    </Grid>
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+                        <!-- Pc 결과 -->
+                        <TextBlock Text="Pc 카메라  (PC_HIGH)"
+                                   Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"
+                                   Margin="16,16,16,8"/>
 
-                    <Grid Margin="16,6,16,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Θ2" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Theta2Deg, StringFormat=F4}"
-                                       Foreground="#2ECC71" FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text=" °" Foreground="#5E8BAA" FontSize="16"
-                                       VerticalAlignment="Bottom" Margin="2,0,0,2"/>
-                        </StackPanel>
-                    </Grid>
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+                        <Grid Margin="16,6,16,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Θp" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding ThetaPDeg, StringFormat=F4}"
+                                           Foreground="#2ECC71" FontSize="20" FontWeight="SemiBold"/>
+                                <TextBlock Text=" °" Foreground="#5E8BAA" FontSize="16"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                            </StackPanel>
+                        </Grid>
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
 
-                    <!-- Pc 결과 -->
-                    <TextBlock Text="Pc 카메라  (PC_HIGH)"
-                               Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"
-                               Margin="16,16,16,8"/>
+                        <!-- HcRO 결과 -->
+                        <TextBlock Text="HcRO 회전 중심"
+                                   Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"
+                                   Margin="16,16,16,8"/>
 
-                    <Grid Margin="16,6,16,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Θp" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding ThetaPRad, StringFormat=F6}"
-                                       Foreground="#ECF0F1" FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text=" rad" Foreground="#5E8BAA" FontSize="16"
-                                       VerticalAlignment="Bottom" Margin="2,0,0,2"/>
-                        </StackPanel>
-                    </Grid>
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+                        <Grid Margin="16,6,16,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="HX(C)" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding HcROX, StringFormat=F4}"
+                                           Foreground="#ECF0F1" FontSize="20" FontWeight="SemiBold"/>
+                                <TextBlock Text=" mm" Foreground="#5E8BAA" FontSize="16"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                            </StackPanel>
+                        </Grid>
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
 
-                    <Grid Margin="16,6,16,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Θp" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding ThetaPDeg, StringFormat=F4}"
-                                       Foreground="#2ECC71" FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text=" °" Foreground="#5E8BAA" FontSize="16"
-                                       VerticalAlignment="Bottom" Margin="2,0,0,2"/>
-                        </StackPanel>
-                    </Grid>
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+                        <Grid Margin="16,6,16,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="WY(C)" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding HcROY, StringFormat=F4}"
+                                           Foreground="#ECF0F1" FontSize="20" FontWeight="SemiBold"/>
+                                <TextBlock Text=" mm" Foreground="#5E8BAA" FontSize="16"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                            </StackPanel>
+                        </Grid>
 
-                    <!-- HcRO 결과 -->
-                    <TextBlock Text="HcRO 회전 중심  [HX(C), WY(C)]"
-                               Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"
-                               Margin="16,16,16,8"/>
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,12"/>
 
-                    <Grid Margin="16,6,16,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="HX(C)" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding HcROX, StringFormat=F4}"
-                                       Foreground="#ECF0F1" FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text=" mm" Foreground="#5E8BAA" FontSize="16"
-                                       VerticalAlignment="Bottom" Margin="2,0,0,2"/>
-                        </StackPanel>
-                    </Grid>
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+                        <!-- ═══ 정밀도 검증 ═══ -->
+                        <TextBlock Text="정밀도 검증" Foreground="#5E8BAA"
+           FontSize="13" FontWeight="SemiBold"
+           Margin="16,4,16,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+           Margin="16,0,16,12">
+    카메라를 선택하고 임의 위치에서 실행하면, 비전 측정→이동→재측정으로 잔차를 확인합니다.
+                        </TextBlock>
 
-                    <Grid Margin="16,6,16,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="WY(C)" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding HcROY, StringFormat=F4}"
-                                       Foreground="#ECF0F1" FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text=" mm" Foreground="#5E8BAA" FontSize="16"
-                                       VerticalAlignment="Bottom" Margin="2,0,0,2"/>
-                        </StackPanel>
-                    </Grid>
-                    <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+                        <!-- 카메라 선택 -->
+                        <ComboBox Style="{StaticResource CalibComboStyle}" Margin="16,0,16,8"
+          ItemsSource="{Binding Source={local:EnumValues {x:Type local:CameraType}}}"
+          SelectedItem="{Binding SelectedCamera}"/>
 
-                </StackPanel>
+                        <!-- 마크 선택 -->
+                        <ComboBox Style="{StaticResource CalibComboStyle}" Margin="16,0,16,8"
+          ItemsSource="{Binding Source={local:EnumValues {x:Type local:MarkType}}}"
+          SelectedItem="{Binding SelectedMark}"/>
+
+                        <!-- 방향 선택 -->
+                        <ComboBox Style="{StaticResource CalibComboStyle}" Margin="16,0,16,12"
+                                  ItemsSource="{Binding Source={local:EnumValues {x:Type local:DirectType}}}"
+                                  SelectedItem="{Binding SelectedDirect}"/>
+
+                                                <!-- 검증 실행 버튼 -->
+                                                <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="정밀도 검증 실행"
+                                Command="{Binding VerifyAlignmentAccuracyCommand}"
+                                Margin="16,0,16,8"/>
+
+                        <!-- 검증 결과 -->
+                        <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,16" Padding="14,10">
+                            <TextBlock Text="{Binding VerifyResult}"
+                                       Foreground="#E67E22" FontSize="14"
+                                       TextWrapping="Wrap"/>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
 
                 <!-- 진행 상태 -->
                 <Border Grid.Row="2"

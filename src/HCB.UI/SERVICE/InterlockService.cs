@@ -83,16 +83,23 @@ namespace HCB.UI
 
         private void Initialize()
         {
-            _HX = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_X);
-            _HZ = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_Z);
-            _HT = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.H_T);
-            _hz = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.h_z);
-            _PY = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.P_Y);
-            _WY = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.W_Y);
-            _WT = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.W_T);
-            _DY = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName).FindMotionByName(MotionExtensions.D_Y);
-
-            _powerPmacDevice = _deviceManager.GetDevice<PmacIoDevice>(MotionExtensions.PMacIoDeviceName);
+            try
+            {
+                var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                _HX = device.FindMotionByName(MotionExtensions.H_X);
+                _HZ = device.FindMotionByName(MotionExtensions.H_Z);
+                _HT = device.FindMotionByName(MotionExtensions.H_T);
+                _hz = device.FindMotionByName(MotionExtensions.h_z);
+                _PY = device.FindMotionByName(MotionExtensions.P_Y);
+                _WY = device.FindMotionByName(MotionExtensions.W_Y);
+                _WT = device.FindMotionByName(MotionExtensions.W_T);
+                _DY = device.FindMotionByName(MotionExtensions.D_Y);
+                _powerPmacDevice = _deviceManager.GetDevice<PmacIoDevice>(MotionExtensions.PMacIoDeviceName);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning(ex, "InterlockService 초기화 실패 — 디바이스 미준비 상태로 시작");
+            }
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)

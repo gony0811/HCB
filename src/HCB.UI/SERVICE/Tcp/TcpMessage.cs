@@ -4,6 +4,7 @@ using System.Drawing.Text;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Markup;
 using System.Xml.Linq;
 
 namespace HCB.UI
@@ -223,7 +224,13 @@ namespace HCB.UI
         OK, 
         NG
     }
-
+    public class EnumValues : MarkupExtension
+    {
+        private readonly Type _enumType;
+        public EnumValues(Type enumType) => _enumType = enumType;
+        public override object ProvideValue(IServiceProvider serviceProvider)
+            => Enum.GetValues(_enumType);
+    }
 
     public class MotionMoveCommand
     {
