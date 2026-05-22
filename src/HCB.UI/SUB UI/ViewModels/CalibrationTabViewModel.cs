@@ -236,7 +236,6 @@ namespace HCB.UI
             {
                 _logger.Error(e, "Hc1 Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
-                throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }
@@ -279,12 +278,11 @@ namespace HCB.UI
 
                 CalibStatus = $"Hc2 완료  Θ = {Theta2Deg:F4}°, 보정 = {correction:F6} Rad";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨";}
             catch (Exception e)
             {
                 _logger.Error(e, "Hc2 Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
-                throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }
@@ -375,7 +373,6 @@ namespace HCB.UI
             {
                 _logger.Error(e, "카메라 거리 측정 Fail");
                 CalibStatus = $"오류: {e.Message}";
-                throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }
@@ -415,12 +412,11 @@ namespace HCB.UI
 
                 CalibStatus = $"Pc 완료  Θ = {ThetaPDeg:F4}°, 보정 = {correction:F6} Rad";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨";}
             catch (Exception e)
             {
                 _logger.Error(e, "Pc Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
-                throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }
@@ -493,12 +489,11 @@ namespace HCB.UI
 
                 CalibStatus = $"HcRO 완료  X = {HcROX:F4}  Y = {HcROY:F4}";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
             catch (Exception e)
             {
                 _logger.Error(e, "CreateHcRo failed");
                 CalibStatus = $"오류: {e.Message}";
-                throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }

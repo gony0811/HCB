@@ -11,7 +11,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Telerik.Windows.Controls.DataVisualization.Map.BingRest;
 using static HCB.UI.SequenceService;
 using static HCB.UI.SERVICE.CalibrationService;
 
@@ -34,8 +33,8 @@ namespace HCB.UI
         // ── CancellationToken ─────────────────────────────────
         private CancellationTokenSource _cts;
 
-        private AlignContext _alignCtx;
         private AlignData hcbData;
+
         // ── Die 번호 ──────────────────────────────────────────
         [ObservableProperty] private int topDie = 1;
         [ObservableProperty] private int bottomDie = 1;
@@ -90,11 +89,10 @@ namespace HCB.UI
         [ObservableProperty] private StepState topLowAlignState = StepState.Idle;
         [ObservableProperty] private StepState topPickupState = StepState.Idle;
         [ObservableProperty] private StepState topHighAlignState = StepState.Idle;
-        [ObservableProperty] private StepState topPlaceState = StepState.Idle;
+        [ObservableProperty] private StepState topCorrState = StepState.Idle;
         [ObservableProperty] private StepState topBondingState = StepState.Idle;
 
         [ObservableProperty] private double hzPosition;
-
         [ObservableProperty] private double detailX;
         [ObservableProperty] private double detailY;
         [ObservableProperty] private double detailT;
@@ -109,43 +107,31 @@ namespace HCB.UI
         [ObservableProperty] private int repeatTotal;
 
         // ── HighResult 회전 보정 결과 ─────────────────────────
-        [ObservableProperty] private double hrBlX;
-        [ObservableProperty] private double hrBlY;
-        [ObservableProperty] private double hrBrX;
-        [ObservableProperty] private double hrBrY;
-        [ObservableProperty] private double hrTlX;
-        [ObservableProperty] private double hrTlY;
-        [ObservableProperty] private double hrTrX;
-        [ObservableProperty] private double hrTrY;
+        [ObservableProperty] private double hrBlX, hrBlY, hrBrX, hrBrY;
+        [ObservableProperty] private double hrTlX, hrTlY, hrTrX, hrTrY;
 
         [ObservableProperty] private VernierResult vernierResult;
-
-        [ObservableProperty]
-        private ObservableCollection<VernierRow> vernierRows = new();
-
+        [ObservableProperty] private ObservableCollection<VernierRow> vernierRows = new();
         [ObservableProperty] private bool avgMode = true;
 
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
 
-        partial void OnRepeatCurrentChanged(int value) =>
-            OnPropertyChanged(nameof(RepeatProgressText));
-        partial void OnRepeatTotalChanged(int value) =>
-            OnPropertyChanged(nameof(RepeatProgressText));
+        partial void OnRepeatCurrentChanged(int value) => OnPropertyChanged(nameof(RepeatProgressText));
+        partial void OnRepeatTotalChanged(int value) => OnPropertyChanged(nameof(RepeatProgressText));
 
         // ── D-Table IO ────────────────────────────────────────
         public SequenceServiceVM SequenceServiceVM { get; }
 
         [ObservableProperty]
-        private ObservableCollection<SensorIoItemViewModel> dTableList
-            = new ObservableCollection<SensorIoItemViewModel>();
+        private ObservableCollection<SensorIoItemViewModel> dTableList = new();
 
-        private readonly List<string> _dTableNameList = new List<string>
+        private readonly List<string> _dTableNameList = new()
         {
             "DIE 1","DIE 2","DIE 3","DIE 4","DIE 5","DIE 6","DIE 7","DIE 8","DIE 9",
         };
 
-        private readonly List<string> _dIoNameList = new List<string>
+        private readonly List<string> _dIoNameList = new()
         {
             IoExtensions.DO_DTABLE_VAC_1_ON, IoExtensions.DO_DTABLE_VAC_2_ON,
             IoExtensions.DO_DTABLE_VAC_3_ON, IoExtensions.DO_DTABLE_VAC_4_ON,
@@ -178,7 +164,6 @@ namespace HCB.UI
             _ecParamService = eCParamService;
 
             var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
-            var p = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
             if (ioDevice != null)
             {
                 for (var i = 0; i < _dTableNameList.Count; i++)
@@ -192,18 +177,18 @@ namespace HCB.UI
         // ═════════════════════════════════════════════════════
         //  STOP
         // ═════════════════════════════════════════════════════
+
         [RelayCommand]
         public async Task Stop()
         {
             if (_cts == null || _cts.IsCancellationRequested) return;
-
             _cts.Cancel();
             await _sequenceService.StopAsync(_cts.Token);
 
             InitState = StepState.Idle;
             BtmLowAlignState = BtmPickupState = BtmPlaceState = StepState.Idle;
             TopLowAlignState = TopPickupState = TopHighAlignState
-                             = TopPlaceState = StepState.Idle;
+                             = TopCorrState = TopBondingState = StepState.Idle;
         }
 
         // ═════════════════════════════════════════════════════
@@ -226,7 +211,7 @@ namespace HCB.UI
         }
 
         // ═════════════════════════════════════════════════════
-        //  DIE LOAD
+        //  DIE LOAD / WAFER LOAD
         // ═════════════════════════════════════════════════════
 
         [RelayCommand]
@@ -238,36 +223,26 @@ namespace HCB.UI
                 await _sequenceService.DTableLoading(_cts.Token);
 
                 bool confirmed = false;
-                List<int> topList = new List<int>();
-                List<int> botList = new List<int>();
+                List<int> topList = new(), botList = new();
 
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    var dialog = new VacuumSelector
-                    {
-                        WindowStartupLocation = WindowStartupLocation.CenterScreen
-                    };
+                    var dialog = new VacuumSelector { WindowStartupLocation = WindowStartupLocation.CenterScreen };
                     dialog.ShowDialog();
                     confirmed = dialog.DialogResult == true;
-                    if (confirmed)
-                    {
-                        topList = dialog.TopDieVacuums;
-                        botList = dialog.BotDieVacuums;
-                    }
+                    if (confirmed) { topList = dialog.TopDieVacuums; botList = dialog.BotDieVacuums; }
                 });
 
                 if (!confirmed) return;
-
                 if (topList.Count > 0) TopDie = topList[0];
                 if (botList.Count > 0) BottomDie = botList[0];
 
-                _logger.Information(
-                    "Die Load 선택 완료 — TOP: [{Top}]  BOT: [{Bot}]",
-                    string.Join(", ", topList),
-                    string.Join(", ", botList));
+                _logger.Information("Die Load 선택 완료 — TOP: [{Top}]  BOT: [{Bot}]",
+                    string.Join(", ", topList), string.Join(", ", botList));
             }
             catch (Exception e) { _logger.Error(e.Message); }
         }
+
         [RelayCommand]
         public async Task WaferLoad()
         {
@@ -277,7 +252,7 @@ namespace HCB.UI
         }
 
         // ═════════════════════════════════════════════════════
-        //  Info 팝업 커맨드
+        //  Info 팝업
         // ═════════════════════════════════════════════════════
 
         [RelayCommand] public void InitInfo() => IsInitInfoOpen = true;
@@ -288,13 +263,9 @@ namespace HCB.UI
         {
             var (rf, ra, lf, la) = (TopRightFid, TopRightAlign, TopLeftFid, TopLeftAlign);
             _ = RunDialogOnNewThread(() =>
-            {
                 new TopHighAlignInfoWindow(rf, ra, lf, la)
-                {
-                    Header = "고배율 보정 정보 (Top Die)",
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen
-                }.ShowDialog();
-            });
+                { Header = "고배율 보정 정보 (Top Die)", WindowStartupLocation = WindowStartupLocation.CenterScreen }
+                .ShowDialog());
         }
 
         [RelayCommand]
@@ -302,13 +273,9 @@ namespace HCB.UI
         {
             var (rf, ra, lf, la) = (BtmRightFid, BtmRightAlign, BtmLeftFid, BtmLeftAlign);
             _ = RunDialogOnNewThread(() =>
-            {
                 new TopHighAlignInfoWindow(rf, ra, lf, la, useWaferY: true)
-                {
-                    Header = "고배율 보정 정보 (Bottom Die)",
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen
-                }.ShowDialog();
-            });
+                { Header = "고배율 보정 정보 (Bottom Die)", WindowStartupLocation = WindowStartupLocation.CenterScreen }
+                .ShowDialog());
         }
 
         [RelayCommand]
@@ -316,16 +283,13 @@ namespace HCB.UI
         {
             var history = BondingHistory.ToList();
             _ = RunDialogOnNewThread(() =>
-            {
                 new BondingInfoWindow(_recipeService, history)
-                {
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen
-                }.ShowDialog();
-            });
+                { WindowStartupLocation = WindowStartupLocation.CenterScreen }
+                .ShowDialog());
         }
 
         // ═════════════════════════════════════════════════════
-        //  BOTTOM 시퀀스
+        //  BOTTOM 시퀀스 — 개별
         // ═════════════════════════════════════════════════════
 
         [RelayCommand]
@@ -352,10 +316,8 @@ namespace HCB.UI
             {
                 if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); return; }
                 if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 해주세요"); return; }
-
                 BtmPickupState = StepState.InProgress;
-                await _sequenceService.DTablePickup(SequenceService.DieType.Bottom, BottomDie, VisionBtmLowAlign, _cts.Token);
-                //await _sequenceService.DTableBTMPickup(BottomDie, VisionBtmLowAlign, _cts.Token);
+                await _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, _cts.Token);
                 BtmPickupState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmPickupState = StepState.Idle; }
@@ -388,12 +350,10 @@ namespace HCB.UI
                 BtmLowAlignState = StepState.InProgress;
                 VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(BottomDie, MarkType.DIE_CENTER_BOTTOM, ct);
                 BtmLowAlignState = StepState.Completed;
-
                 if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 실패"); return; }
 
                 BtmPickupState = StepState.InProgress;
-                await _sequenceService.DTableBTMPickup(BottomDie, VisionBtmLowAlign, ct);
-                await _sequenceHelper.BTMVac(BottomDie, eOnOff.Off, ct);
+                await _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, ct);
                 BtmPickupState = StepState.Completed;
 
                 BtmPlaceState = StepState.InProgress;
@@ -416,7 +376,9 @@ namespace HCB.UI
         }
 
         // ═════════════════════════════════════════════════════
-        //  TOP 시퀀스 — 개별 커맨드
+        //  TOP 시퀀스 — 개별 (6단계)
+        //  1. 저배율 보정  2. Pickup  3. 고배율(Top)
+        //  4. 고배율(Btm)  5. 보정    6. 본딩
         // ═════════════════════════════════════════════════════
 
         [RelayCommand]
@@ -426,7 +388,9 @@ namespace HCB.UI
             try
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
-                await RunTopLowAlign(_cts.Token);
+                TopLowAlignState = StepState.InProgress;
+                VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, _cts.Token);
+                TopLowAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopLowAlignState = StepState.Idle; }
             catch (Exception e) { TopLowAlignState = StepState.Failed; _logger.Warning(e.Message); }
@@ -440,7 +404,9 @@ namespace HCB.UI
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
                 if (VisionTopLowAlign == null) { _logger.Information("Top Die Align 해주세요"); return; }
-                await RunTopPickup(_cts.Token);
+                TopPickupState = StepState.InProgress;
+                await _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, _cts.Token);
+                TopPickupState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopPickupState = StepState.Idle; }
             catch (Exception e) { TopPickupState = StepState.Failed; _logger.Warning(e.Message); }
@@ -452,7 +418,14 @@ namespace HCB.UI
             ResetCts();
             try
             {
-                await RunTopHighAlign(_cts.Token);
+                TopHighAlignState = StepState.InProgress;
+                var data = new AlignData { AvgMove = AvgMode };
+                hcbData = await _sequenceService.TopHighAlign(data, _cts.Token);
+                TopRightFid = hcbData.TopRightFidRaw;
+                TopRightAlign = hcbData.TopRightAlignRaw;
+                TopLeftFid = hcbData.TopLeftFidRaw;
+                TopLeftAlign = hcbData.TopLeftAlignRaw;
+                TopHighAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopHighAlignState = StepState.Idle; }
             catch (Exception e) { TopHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
@@ -464,65 +437,164 @@ namespace HCB.UI
             ResetCts();
             try
             {
-                await RunBtmHighAlign(_cts.Token);
+                BtmHighAlignState = StepState.InProgress;
+                hcbData = await _sequenceService.BtmHighAlign(hcbData, _cts.Token);
+                BtmRightFid = hcbData.BtmRightFidRaw;
+                BtmRightAlign = hcbData.BtmRightAlignRaw;
+                BtmLeftFid = hcbData.BtmLeftFidRaw;
+                BtmLeftAlign = hcbData.BtmLeftAlignRaw;
+                BtmHighAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmHighAlignState = StepState.Idle; }
             catch (Exception e) { BtmHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
         [RelayCommand]
-        public async Task TopPlace()
+        public async Task TopCorr()
         {
             ResetCts();
             try
             {
-                await RunTopPlace(_cts.Token);
+                TopCorrState = StepState.InProgress;
+                await _sequenceService.TopPlace(hcbData, _cts.Token);
+                await _sequenceService.BondingCorr(hcbData, _cts.Token);
+                TopCorrState = StepState.Completed;
             }
-            catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
-            catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (OperationCanceledException) { TopCorrState = StepState.Idle; }
+            catch (Exception e) { TopCorrState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
         [RelayCommand]
-        public async Task AlignTest()
+        public async Task TopBonding()
         {
             ResetCts();
             try
             {
-                await RunTopLowAlign(_cts.Token);
-                await RunTopPickup(_cts.Token);
-                for (int i=0; i < 3000; i++)
-                {
-                    await RunTopHighAlign(_cts.Token);
-                    await RunBtmHighAlign(_cts.Token);
-                    TopBondingState = StepState.InProgress;
-                    BondingHistory = new ObservableCollection<BondingDataPoint>();
-                    await _sequenceService.TopPlace(hcbData, _cts.Token);
-                    TopBondingState = StepState.Completed;
-                    ExportHcbData();
-                }
-                await _sequenceService.Bonding(hcbData, BondingHistory, _cts.Token);
+                TopBondingState = StepState.InProgress;
+                BondingHistory = new ObservableCollection<BondingDataPoint>();
+                await _sequenceService.BondingPress(BondingHistory, _cts.Token);
+                TopBondingState = StepState.Completed;
+                ExportHcbData();
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
             catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
         // ═════════════════════════════════════════════════════
-        //  TOP 시퀀스 — Full (1→2→3→4→5)
+        //  AlignTest (반복 테스트)
+        // ═════════════════════════════════════════════════════
+
+        [RelayCommand]
+        public async Task AlignTest()
+        {
+            ResetCts();
+            var ct = _cts.Token;
+            try
+            {
+                // 1. 저배율 + 2. Pickup
+                TopLowAlignState = StepState.InProgress;
+                VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, ct);
+                TopLowAlignState = StepState.Completed;
+
+                TopPickupState = StepState.InProgress;
+                await _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct);
+                TopPickupState = StepState.Completed;
+
+                // 3~5 반복
+                for (int i = 0; i < 3000; i++)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    TopHighAlignState = StepState.InProgress;
+                    var data = new AlignData { AvgMove = AvgMode };
+                    hcbData = await _sequenceService.TopHighAlign(data, ct);
+                    TopRightFid = hcbData.TopRightFidRaw;
+                    TopRightAlign = hcbData.TopRightAlignRaw;
+                    TopLeftFid = hcbData.TopLeftFidRaw;
+                    TopLeftAlign = hcbData.TopLeftAlignRaw;
+                    TopHighAlignState = StepState.Completed;
+
+                    BtmHighAlignState = StepState.InProgress;
+                    hcbData = await _sequenceService.BtmHighAlign(hcbData, ct);
+                    BtmRightFid = hcbData.BtmRightFidRaw;
+                    BtmRightAlign = hcbData.BtmRightAlignRaw;
+                    BtmLeftFid = hcbData.BtmLeftFidRaw;
+                    BtmLeftAlign = hcbData.BtmLeftAlignRaw;
+                    BtmHighAlignState = StepState.Completed;
+
+                    TopCorrState = StepState.InProgress;
+                    await _sequenceService.TopPlace(hcbData, ct);
+                    await _sequenceService.BondingCorr(hcbData, ct);
+                    TopCorrState = StepState.Completed;
+
+                    ExportHcbData();
+                }
+
+                // 6. 본딩
+                TopBondingState = StepState.InProgress;
+                BondingHistory = new ObservableCollection<BondingDataPoint>();
+                await _sequenceService.BondingPress(BondingHistory, ct);
+                TopBondingState = StepState.Completed;
+                ExportHcbData();
+            }
+            catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
+            catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
+        }
+
+        // ═════════════════════════════════════════════════════
+        //  TOP Full (1→2→3→4→5→6)
         // ═════════════════════════════════════════════════════
 
         [RelayCommand]
         public async Task TopRunFullSequence()
         {
             ResetCts();
+            var ct = _cts.Token;
             try
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
 
-                await RunTopLowAlign(_cts.Token);
-                await RunTopPickup(_cts.Token);
-                await RunTopHighAlign(_cts.Token);
-                await RunBtmHighAlign(_cts.Token);
-                await RunTopPlace(_cts.Token);
+                // 1. 저배율 보정
+                TopLowAlignState = StepState.InProgress;
+                VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, ct);
+                TopLowAlignState = StepState.Completed;
+
+                // 2. Pickup
+                TopPickupState = StepState.InProgress;
+                await _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct);
+                TopPickupState = StepState.Completed;
+
+                // 3. 고배율 측정 (Top)
+                TopHighAlignState = StepState.InProgress;
+                var data = new AlignData { AvgMove = AvgMode };
+                hcbData = await _sequenceService.TopHighAlign(data, ct);
+                TopRightFid = hcbData.TopRightFidRaw;
+                TopRightAlign = hcbData.TopRightAlignRaw;
+                TopLeftFid = hcbData.TopLeftFidRaw;
+                TopLeftAlign = hcbData.TopLeftAlignRaw;
+                TopHighAlignState = StepState.Completed;
+
+                // 4. 고배율 측정 (Btm)
+                BtmHighAlignState = StepState.InProgress;
+                hcbData = await _sequenceService.BtmHighAlign(hcbData, ct);
+                BtmRightFid = hcbData.BtmRightFidRaw;
+                BtmRightAlign = hcbData.BtmRightAlignRaw;
+                BtmLeftFid = hcbData.BtmLeftFidRaw;
+                BtmLeftAlign = hcbData.BtmLeftAlignRaw;
+                BtmHighAlignState = StepState.Completed;
+
+                // 5. 보정
+                TopCorrState = StepState.InProgress;
+                await _sequenceService.TopPlace(hcbData, ct);
+                await _sequenceService.BondingCorr(hcbData, ct);
+                TopCorrState = StepState.Completed;
+
+                // 6. 본딩
+                TopBondingState = StepState.InProgress;
+                BondingHistory = new ObservableCollection<BondingDataPoint>();
+                await _sequenceService.BondingPress(BondingHistory, ct);
+                TopBondingState = StepState.Completed;
+                ExportHcbData();
             }
             catch (OperationCanceledException)
             {
@@ -530,6 +602,7 @@ namespace HCB.UI
                 TopPickupState = IfInProgress(TopPickupState, StepState.Idle);
                 TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Idle);
                 BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Idle);
+                TopCorrState = IfInProgress(TopCorrState, StepState.Idle);
                 TopBondingState = IfInProgress(TopBondingState, StepState.Idle);
             }
             catch (Exception e)
@@ -538,15 +611,20 @@ namespace HCB.UI
                 TopPickupState = IfInProgress(TopPickupState, StepState.Failed);
                 TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Failed);
                 BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Failed);
+                TopCorrState = IfInProgress(TopCorrState, StepState.Failed);
                 TopBondingState = IfInProgress(TopBondingState, StepState.Failed);
                 _logger.Warning(e.Message);
             }
         }
-        
+
+        // ═════════════════════════════════════════════════════
+        //  HighResult (Vernier)
+        // ═════════════════════════════════════════════════════
+
         [RelayCommand]
         public async Task HighResult()
         {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
+            ResetCts();
             try
             {
                 await _sequenceService.TopDiePlace(_cts.Token);
@@ -560,10 +638,10 @@ namespace HCB.UI
                     VernierRows.Add(new VernierRow
                     {
                         Name = i < names.Length ? names[i] : i.ToString(),
-                        V1X  = result.v1[i].X,
-                        V1Y  = result.v1[i].Y,
-                        V3X  = result.v3.Count > i ? result.v3[i].X : (double?)null,
-                        V3Y  = result.v3.Count > i ? result.v3[i].Y : (double?)null,
+                        V1X = result.v1[i].X,
+                        V1Y = result.v1[i].Y,
+                        V3X = result.v3.Count > i ? result.v3[i].X : null,
+                        V3Y = result.v3.Count > i ? result.v3[i].Y : null,
                     });
                 }
                 ExportHighResult();
@@ -572,45 +650,11 @@ namespace HCB.UI
             catch (Exception e) { _logger.Warning("Vernier 측정 실패: {Msg}", e.Message); }
         }
 
-        public void ExportHighResult()
-        {
-            if (VernierRows.Count == 0)
-            {
-                _logger.Information("저장할 Vernier 결과가 없습니다. 먼저 결과 측정을 실행하세요.");
-                return;
-            }
-            var dir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                "HCB", "결과 데이터");
-            Directory.CreateDirectory(dir);
-            var path = Path.Combine(dir, $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
-           
-
-            bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
-            var sb = new StringBuilder();
-            if (writeHeader)
-                sb.AppendLine("Time,Pos,V1_X,V1_Y,V3_X,V3_Y");
-
-            var ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            foreach (var row in VernierRows)
-                sb.AppendLine($"{ts},{row.Name},{Fn(row.V1X)},{Fn(row.V1Y)},{Fn(row.V3X)},{Fn(row.V3Y)}");
-
-            File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
-            _logger.Information("Vernier CSV 저장: {Path}", path);
-        }
-
-        
-
         [RelayCommand]
-        public void ChangeAvgMode()
-        {
-            AvgMode = !AvgMode;
-        }
-
-        private int _repeatCount = 5;
+        public void ChangeAvgMode() => AvgMode = !AvgMode;
 
         // ═════════════════════════════════════════════════════
-        //  공개 Reset 메서드
+        //  Reset 메서드
         // ═════════════════════════════════════════════════════
 
         public async Task BtmInit()
@@ -625,78 +669,15 @@ namespace HCB.UI
         public async Task TopInit()
         {
             ResetCts();
-            try
-            {
-                await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, _cts.Token);
-                TopDie = 0;
-                VisionTopLowAlign = null;
-                _alignCtx = null;
-                TopLowAlignState = TopPickupState = TopHighAlignState
-                                  = TopPlaceState = StepState.Idle;
-            }
-            catch { throw; }
+            await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, _cts.Token);
+            TopDie = 0;
+            VisionTopLowAlign = null;
+            TopLowAlignState = TopPickupState = TopHighAlignState
+                             = TopCorrState = TopBondingState = StepState.Idle;
         }
 
         // ═════════════════════════════════════════════════════
-        //  내부 Run* 메서드
-        // ═════════════════════════════════════════════════════
-
-        private async Task RunTopLowAlign(CancellationToken ct)
-        {
-            TopLowAlignState = StepState.InProgress;
-            VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, ct);
-            TopLowAlignState = StepState.Completed;
-        }
-
-        private async Task RunTopPickup(CancellationToken ct)
-        {
-            TopPickupState = StepState.InProgress;
-            await _sequenceService.DTablePickup(SequenceService.DieType.Top, TopDie, VisionTopLowAlign, _cts.Token);
-            //await _sequenceService.TopPickup(TopDie, VisionTopLowAlign, ct);
-            TopPickupState = StepState.Completed;
-        }
-
-        private async Task RunTopHighAlign(CancellationToken ct)
-        {
-            TopHighAlignState = StepState.InProgress;
-            var data = new AlignData();
-            data.AvgMove = AvgMode;
-            hcbData = await _sequenceService.TopHighAlign(data, ct);
-
-            TopRightFid = hcbData.TopRightFidRaw;
-            TopRightAlign = hcbData.TopRightAlignRaw;
-            TopLeftFid = hcbData.TopLeftFidRaw;
-            TopLeftAlign = hcbData.TopLeftAlignRaw;
-
-            TopHighAlignState = StepState.Completed;
-        }
-
-        private async Task RunBtmHighAlign(CancellationToken ct)
-        {
-            BtmHighAlignState = StepState.InProgress;
-
-            hcbData = await _sequenceService.BtmHighAlign(hcbData, ct);
-
-            BtmRightFid = hcbData.BtmRightFidRaw;
-            BtmRightAlign = hcbData.BtmRightAlignRaw;
-            BtmLeftFid = hcbData.BtmLeftFidRaw;
-            BtmLeftAlign = hcbData.BtmLeftAlignRaw;
-
-            BtmHighAlignState = StepState.Completed;
-        }
-
-        private async Task RunTopPlace(CancellationToken ct)
-        {
-            TopBondingState = StepState.InProgress;
-            BondingHistory = new ObservableCollection<BondingDataPoint>();
-            await _sequenceService.TopPlace(hcbData, ct);
-            await _sequenceService.Bonding(hcbData, BondingHistory, ct);
-            TopBondingState = StepState.Completed;
-            ExportHcbData();
-        }
-
-        // ═════════════════════════════════════════════════════
-        //  공통 유틸
+        //  유틸
         // ═════════════════════════════════════════════════════
 
         private void ResetCts()
@@ -725,15 +706,35 @@ namespace HCB.UI
         }
 
         // ═════════════════════════════════════════════════════
-        //  CSV 내보내기 — Raw + Corrected + 보정 파라미터 + 결과
+        //  CSV 내보내기
         // ═════════════════════════════════════════════════════
 
-        /// <summary>VisionMarkResult 6개 필드를 콤마로 이어 반환</summary>
+        public void ExportHighResult()
+        {
+            if (VernierRows.Count == 0)
+            {
+                _logger.Information("저장할 Vernier 결과가 없습니다.");
+                return;
+            }
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
+
+            bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
+            var sb = new StringBuilder();
+            if (writeHeader) sb.AppendLine("Time,Pos,V1_X,V1_Y,V3_X,V3_Y");
+
+            var ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            foreach (var row in VernierRows)
+                sb.AppendLine($"{ts},{row.Name},{Fn(row.V1X)},{Fn(row.V1Y)},{Fn(row.V3X)},{Fn(row.V3Y)}");
+
+            File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
+            _logger.Information("Vernier CSV 저장: {Path}", path);
+        }
+
         private void ExportHcbData()
         {
-            var dir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                "HCB", "데이터");
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "데이터");
             Directory.CreateDirectory(dir);
             var path = Path.Combine(dir, $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
 
@@ -753,8 +754,7 @@ namespace HCB.UI
                     "BtmLF_StageX", "BtmLF_StageY", "BtmLF_DxCam", "BtmLF_DyCam", "BtmLF_CenterX", "BtmLF_CenterY",
                     "BtmLA_StageX", "BtmLA_StageY", "BtmLA_DxCam", "BtmLA_DyCam", "BtmLA_CenterX", "BtmLA_CenterY",
                     "PcTRad", "Hc1Rad", "Hc2Rad",
-                    "Hcro_X", "Hcro_Y",
-                    "Hc2Offset_X", "Hc2Offset_Y",
+                    "Hcro_X", "Hcro_Y", "Hc2Offset_X", "Hc2Offset_Y",
                     "OffsetX", "OffsetY", "OffsetT",
                     "LDist_X", "LDist_Y", "RDist_X", "RDist_Y",
                     "BFL_X", "BFL_Y", "BFR_X", "BFR_Y",
@@ -762,76 +762,44 @@ namespace HCB.UI
                     "TL_X", "TL_Y", "TR_X", "TR_Y",
                     "SpecTheta", "BTheta", "TTheta", "ThetaF", "ThetaFRad",
                     "TCenter_X", "TCenter_Y", "BCenter_X", "BCenter_Y",
-                    "ResultX", "ResultY", "ResultT"
-                ));
+                    "ResultX", "ResultY", "ResultT"));
             }
 
             sb.AppendLine(string.Join(",",
                 DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                 hcbData?.AvgMove ?? true,
-                // Top 비전
                 hcbData != null ? MarkFields(hcbData.TopRightFidRaw) : NullMark(),
                 hcbData != null ? MarkFields(hcbData.TopRightAlignRaw) : NullMark(),
                 hcbData != null ? MarkFields(hcbData.TopLeftFidRaw) : NullMark(),
                 hcbData != null ? MarkFields(hcbData.TopLeftAlignRaw) : NullMark(),
-                // Btm 비전
                 hcbData != null ? MarkFields(hcbData.BtmRightFidRaw) : NullMark(),
                 hcbData != null ? MarkFields(hcbData.BtmRightAlignRaw) : NullMark(),
                 hcbData != null ? MarkFields(hcbData.BtmLeftFidRaw) : NullMark(),
                 hcbData != null ? MarkFields(hcbData.BtmLeftAlignRaw) : NullMark(),
-                // 캘리브레이션 파라미터
                 F(hcbData?.PcTRad), F(hcbData?.Hc1Rad), F(hcbData?.Hc2Rad),
-                hcbData?.Hcro != null ? F(hcbData.Hcro.X) : "",
-                hcbData?.Hcro != null ? F(hcbData.Hcro.Y) : "",
-                hcbData?.Hc2Offset != null ? F(hcbData.Hc2Offset.X) : "",
-                hcbData?.Hc2Offset != null ? F(hcbData.Hc2Offset.Y) : "",
-                // 레시피 오프셋
-                hcbData?.OffsetXY != null ? F(hcbData.OffsetXY.X) : "",
-                hcbData?.OffsetXY != null ? F(hcbData.OffsetXY.Y) : "",
+                hcbData?.Hcro != null ? F(hcbData.Hcro.X) : "", hcbData?.Hcro != null ? F(hcbData.Hcro.Y) : "",
+                hcbData?.Hc2Offset != null ? F(hcbData.Hc2Offset.X) : "", hcbData?.Hc2Offset != null ? F(hcbData.Hc2Offset.Y) : "",
+                hcbData?.OffsetXY != null ? F(hcbData.OffsetXY.X) : "", hcbData?.OffsetXY != null ? F(hcbData.OffsetXY.Y) : "",
                 F(hcbData?.OffsetT),
-                // TopPlace 중간값
-                hcbData != null ? Pt(hcbData.LDist) : NullPt(),
-                hcbData != null ? Pt(hcbData.RDist) : NullPt(),
-                hcbData != null ? Pt(hcbData.BFL) : NullPt(),
-                hcbData != null ? Pt(hcbData.BFR) : NullPt(),
-                hcbData != null ? Pt(hcbData.BL) : NullPt(),
-                hcbData != null ? Pt(hcbData.BR) : NullPt(),
-                hcbData != null ? Pt(hcbData.TL) : NullPt(),
-                hcbData != null ? Pt(hcbData.TR) : NullPt(),
+                hcbData != null ? Pt(hcbData.LDist) : NullPt(), hcbData != null ? Pt(hcbData.RDist) : NullPt(),
+                hcbData != null ? Pt(hcbData.BFL) : NullPt(), hcbData != null ? Pt(hcbData.BFR) : NullPt(),
+                hcbData != null ? Pt(hcbData.BL) : NullPt(), hcbData != null ? Pt(hcbData.BR) : NullPt(),
+                hcbData != null ? Pt(hcbData.TL) : NullPt(), hcbData != null ? Pt(hcbData.TR) : NullPt(),
                 F(hcbData?.SpecTheta), F(hcbData?.BTheta), F(hcbData?.TTheta),
                 F(hcbData?.ThetaF), F(hcbData?.ThetaFRad),
-                hcbData != null ? Pt(hcbData.TCenter) : NullPt(),
-                hcbData != null ? Pt(hcbData.BCenter) : NullPt(),
-                // 결과
-                F(hcbData?.ResultX), F(hcbData?.ResultY), F(hcbData?.ResultT)
-            ));
+                hcbData != null ? Pt(hcbData.TCenter) : NullPt(), hcbData != null ? Pt(hcbData.BCenter) : NullPt(),
+                F(hcbData?.ResultX), F(hcbData?.ResultY), F(hcbData?.ResultT)));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
             _logger.Information("본딩 데이터 저장: {Path}", path);
         }
 
-
-        // Point2D → "X,Y" 헬퍼
-        private static string Pt(Point2D p) =>
-            p == null ? "," : $"{F(p.X)},{F(p.Y)}";
-
-        private static string MarkFields(VisionMarkResult m)
-        {
-            if (m == null) return ",,,,,";
-            return string.Join(",",
-                F(m.StageX), F(m.StageY),
-                F(m.DxCamToMark), F(m.DyCamToMark),
-                F(m.CenterX), F(m.CenterY));
-        }
-
-        /// <summary>double → 소수점 6자리 문자열</summary>
-        private static string NullMark() => ",,,,,";  // MarkFields가 6개 컬럼이면
-        private static string NullPt() => ",";       // Pt가 2개 컬럼이면
+        private static string Pt(Point2D p) => p == null ? "," : $"{F(p.X)},{F(p.Y)}";
+        private static string MarkFields(VisionMarkResult m) =>
+            m == null ? ",,,,," : string.Join(",", F(m.StageX), F(m.StageY), F(m.DxCamToMark), F(m.DyCamToMark), F(m.CenterX), F(m.CenterY));
+        private static string NullMark() => ",,,,,";
+        private static string NullPt() => ",";
         private static string F(double? v) => v?.ToString("F6") ?? "";
-
-        /// <summary>nullable double → 소수점 6자리 문자열 (null이면 빈 문자열)</summary>
         private static string Fn(double? v) => v.HasValue ? v.Value.ToString("F6") : string.Empty;
-
-       
     }
 }

@@ -700,204 +700,232 @@
                                VerticalAlignment="Bottom" Margin="16,44,16,0"/>
 
                     <!-- Steps -->
-                    <StackPanel Grid.Row="1" Margin="0,8,0,8">
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,8,0,8">
+                        <StackPanel  Margin="0,8,0,8">
 
-                        <!-- Step 1 : 저배율 보정 -->
-                        <Border Background="#0A1628" CornerRadius="6" Margin="16,6,16,6">
-                            <Grid Margin="14,10,14,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
+                            <!-- Step 1 : 저배율 보정 -->
+                            <Border Background="#0A1628" CornerRadius="6" Margin="16,6,16,6">
+                                <Grid Margin="14,10,14,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
                                         Width="28" Height="28" Margin="0,0,10,0">
-                                    <TextBlock Text="1" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
+                                        <TextBlock Text="1" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
+                                    </Border>
+                                    <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding TopLowAlignState}" Margin="0,0,10,0"/>
-                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBlock Text="저배율 보정" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Low Magnification Calibration" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
-                                </StackPanel>
-                                <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Text="저배율 보정" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Low Magnification Calibration" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
                                         Command="{Binding TopLowAlignCommand}">
-                                    <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
-                                </Button>
-                            </Grid>
-                        </Border>
+                                        <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
 
-                        <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
+                            <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
 
-                        <!-- Step 2 : PICK UP -->
-                        <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
-                            <Grid Margin="14,10,14,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
+                            <!-- Step 2 : PICK UP -->
+                            <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
+                                <Grid Margin="14,10,14,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
                                         Width="28" Height="28" Margin="0,0,10,0">
-                                    <TextBlock Text="2" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
+                                        <TextBlock Text="2" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
+                                    </Border>
+                                    <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding TopPickupState}" Margin="0,0,10,0"/>
-                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBlock Text="PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Die Pick Up" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
-                                </StackPanel>
-                                <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Text="PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Die Pick Up" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
                                         Command="{Binding TopPickupCommand}">
-                                    <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
-                                </Button>
-                            </Grid>
-                        </Border>
+                                        <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
 
-                        <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
+                            <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
 
-                        <!-- Step 3 : 고배율 보정 (Top die) -->
-                        <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
-                            <Grid Margin="14,10,14,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                            <!-- Step 3 : 고배율 보정 (Top die) -->
+                            <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
+                                <Grid Margin="14,10,14,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!-- 번호 뱃지 -->
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!-- 램프 -->
+                                        <ColumnDefinition Width="*"/>
+                                        <!-- 타이틀 -->
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!-- 진행 표시 -->
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!-- 반복 측정 버튼 -->
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!-- INFO 버튼 -->
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!-- START 버튼 -->
+                                    </Grid.ColumnDefinitions>
+
                                     <!-- 번호 뱃지 -->
-                                    <ColumnDefinition Width="Auto"/>
-                                    <!-- 램프 -->
-                                    <ColumnDefinition Width="*"/>
-                                    <!-- 타이틀 -->
-                                    <ColumnDefinition Width="Auto"/>
-                                    <!-- 진행 표시 -->
-                                    <ColumnDefinition Width="Auto"/>
-                                    <!-- 반복 측정 버튼 -->
-                                    <ColumnDefinition Width="Auto"/>
-                                    <!-- INFO 버튼 -->
-                                    <ColumnDefinition Width="Auto"/>
-                                    <!-- START 버튼 -->
-                                </Grid.ColumnDefinitions>
-
-                                <!-- 번호 뱃지 -->
-                                <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
+                                    <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
                                         Width="28" Height="28" Margin="0,0,10,0">
-                                    <TextBlock Text="3" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
+                                        <TextBlock Text="3" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
+                                    </Border>
 
-                                <!-- 램프 -->
-                                <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
+                                    <!-- 램프 -->
+                                    <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding TopHighAlignState}" Margin="0,0,10,0"/>
 
-                                <!-- 타이틀 -->
-                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBlock Text="고배율 보정 (Top die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                    <TextBlock Text="High Magnification Calibration - Top" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
-                                </StackPanel>
+                                    <!-- 타이틀 -->
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Text="고배율 측정 (Top die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <TextBlock Text="High Magnification Calibration - Top" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                    </StackPanel>
 
-                                <!-- 진행 표시 (반복 중일 때만 표시) -->
-                                <Border Grid.Column="3"
+                                    <!-- 진행 표시 (반복 중일 때만 표시) -->
+                                    <Border Grid.Column="3"
                                         Background="#0D2335" CornerRadius="6" Padding="12,6"
                                         Margin="0,0,8,0"
                                         Visibility="{Binding IsRepeatRunning, Converter={StaticResource BoolToVis}}">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="⟳ " Foreground="#2ECC71" FontSize="13" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{Binding RepeatProgressText}"
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="⟳ " Foreground="#2ECC71" FontSize="13" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding RepeatProgressText}"
                                                    Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
                                                    FontWeight="Bold" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                        </StackPanel>
+                                    </Border>
 
 
-                                <!-- INFO 버튼 -->
-                                <Button Grid.Column="5" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
+                                    <!-- INFO 버튼 -->
+                                    <Button Grid.Column="5" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
                                         Command="{Binding OpenTopHighAlignInfoCommand}">
-                                    <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
-                                </Button>
+                                        <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
+                                    </Button>
 
-                                <!-- START 버튼 -->
-                                <Button Grid.Column="6" Style="{StaticResource StartButtonStyle}"
+                                    <!-- START 버튼 -->
+                                    <Button Grid.Column="6" Style="{StaticResource StartButtonStyle}"
                                         Command="{Binding TopHighAlignCommand}">
-                                    <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
-                                </Button>
+                                        <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
+                                    </Button>
 
-                            </Grid>
-                        </Border>
+                                </Grid>
+                            </Border>
 
-                        <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
+                            <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
 
-                        <!-- Step 4 : 고배율 보정 (Bottom die) -->
-                        <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
-                            <Grid Margin="14,10,14,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
+                            <!-- Step 4 : 고배율 보정 (Bottom die) -->
+                            <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
+                                <Grid Margin="14,10,14,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
                                         Width="28" Height="28" Margin="0,0,10,0">
-                                    <TextBlock Text="4" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
+                                        <TextBlock Text="4" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
+                                    </Border>
+                                    <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding BtmHighAlignState}" Margin="0,0,10,0"/>
-                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBlock Text="고배율 보정 (Bottom die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                    <TextBlock Text="High Magnification Calibration - Bottom" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
-                                </StackPanel>
-                                <Button Grid.Column="3" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Text="고배율 측정 (Bottom die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <TextBlock Text="High Magnification Calibration - Bottom" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="3" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
                                         Command="{Binding BtmHighAlignInfoCommand}">
-                                    <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
-                                </Button>
-                                <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
+                                        <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
+                                    </Button>
+                                    <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
                                         Command="{Binding BtmHighAlignCommand}">
-                                    <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
-                                </Button>
-                            </Grid>
-                        </Border>
+                                        <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
 
-                        <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
+                            <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
 
-                        <!-- Step 5 : BONDING -->
-                        <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
-                            <Grid Margin="14,10,14,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
+                            <!-- Step 5 : 보정 (Correction) -->
+                            <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
+                                <Grid Margin="14,10,14,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
                                         Width="28" Height="28" Margin="0,0,10,0">
-                                    <TextBlock Text="5" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
+                                        <TextBlock Text="5" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
+                                    </Border>
+                                    <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
+                                                State="{Binding TopCorrState}" Margin="0,0,10,0"/>
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Text="보정" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Alignment Correction" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
+                                        Command="{Binding TopCorrCommand}">
+                                        <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
+
+                            <!-- Step 6 : BONDING -->
+                            <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
+                                <Grid Margin="14,10,14,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
+                                        Width="28" Height="28" Margin="0,0,10,0">
+                                        <TextBlock Text="6" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding TopBondingState}" Margin="0,0,10,0"/>
-                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBlock Text="BONDING" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Hybrid Bonding" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
-                                </StackPanel>
-                                <Button Grid.Column="5" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Text="BONDING" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Hybrid Bonding" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="3" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
                                         Command="{Binding TopHighAlignInfoCommand}">
-                                    <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
-                                </Button>
-                                <Button Grid.Column="6" Style="{StaticResource StartButtonStyle}"
-                                        Command="{Binding TopPlaceCommand}">
-                                    <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
-                                </Button>
-                            </Grid>
-                        </Border>
+                                        <TextBlock Text="INFO" FontSize="12" FontWeight="Bold"/>
+                                    </Button>
+                                    <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
+                                        Command="{Binding TopBondingCommand}">
+                                        <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
 
-                    </StackPanel>
-
+                        </StackPanel>
+                    </ScrollViewer>
                     <!-- Footer -->
                     <Border Grid.Row="2" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
                             Margin="16,0,16,0" Padding="0,10,0,14">

@@ -20,15 +20,10 @@ namespace HCB.UI
         //  Public Sequence Entry Points
         // ═══════════════════════════════════════════════════
 
-        public enum DieType
-        {
-            Top,
-            Bottom
-        }
 
         public async Task DTablePickup(DieType dieType, int vacNum, VisionMarkPositionResponse? correction, CancellationToken ct)
         {
-            string label = dieType == DieType.Top ? "TOP" : "BTM";
+            string label = dieType == DieType.TOP ? "TOP" : "BTM";
             try
             {
                 _logger.Information("{Label} Die pickup Start", label);
@@ -42,7 +37,7 @@ namespace HCB.UI
                 double shankToDieOffset = await GetRecipe("ShankToDieOffset");
 
                 // ── Die 타입별 레시피 ──
-                string thicknessKey = dieType == DieType.Top ? "TopDieThickness" : "BtmDieThickness";
+                string thicknessKey = dieType == DieType.TOP ? "TopDieThickness" : "BtmDieThickness";
 
                 double dieThickness = await GetRecipe(thicknessKey);
                 int accTime = await GetRecipeInt("PICKUP_ACC_TIME");
@@ -220,7 +215,7 @@ namespace HCB.UI
         /// </summary>
         private async Task SwitchDTableVacuum(DieType dieType, int vacNum, eOnOff onOff, CancellationToken ct)
         {
-            if (dieType == DieType.Top)
+            if (dieType == DieType.TOP)
                 await _sequenceHelper.TopVac(vacNum, onOff, ct);
             else
                 await _sequenceHelper.BTMVac(vacNum, onOff, ct);
