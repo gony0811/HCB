@@ -111,6 +111,7 @@ namespace HCB.UI
         public const string HC2_Y= "HC2_Y";
         public const string HC2_T = "HC2_T";
 
+        public const string PC_W_T = "PC_W_T";
         // OUTPUT
         public const string ANALOG_INPUT = "Slave_1007_Plat_00920002_1007_2205_1_SubIndex001";
         public const string BONDING_START = "Slave_1007_Plat_00920002_1007_22F3_1_SubIndex001"; //0: DEFAULT, 1: 시작 

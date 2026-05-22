@@ -186,10 +186,11 @@ namespace HCB.UI
                 content: $"<MARKTYPE>{markType}</MARKTYPE><CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT><AVGMODE>{avgMode}</AVGMODE>"
             );
 
+            double pcWT = Double.Parse(ecParamService.FindByName(MotionExtensions.PC_W_T).Value);
             double t = cameraType switch
             {
-                CameraType.HC1_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC1_T).Value),
-                CameraType.HC2_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC2_T).Value),
+                CameraType.HC1_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC1_T).Value) + pcWT,
+                CameraType.HC2_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC2_T).Value) + pcWT,
                 CameraType.PC_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.PC_T).Value),
                 _ => 0
             };
@@ -226,6 +227,7 @@ namespace HCB.UI
                     return new VisionMarkPositionResponse { Result = Result.NG };
                 }
             }
+
             var xy = CalibrationMath.ApplyRotation(Point2D.of(response.X, response.Y), t);
 
             return new VisionMarkPositionResponse
