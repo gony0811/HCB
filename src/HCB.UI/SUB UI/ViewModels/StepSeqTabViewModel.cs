@@ -354,8 +354,8 @@ namespace HCB.UI
                 if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 해주세요"); return; }
 
                 BtmPickupState = StepState.InProgress;
-                await _sequenceService.DTableBTMPickup(BottomDie, VisionBtmLowAlign, _cts.Token);
-                await _sequenceHelper.BTMVac(BottomDie, eOnOff.Off, _cts.Token);
+                await _sequenceService.DTablePickup(SequenceService.DieType.Bottom, BottomDie, VisionBtmLowAlign, _cts.Token);
+                //await _sequenceService.DTableBTMPickup(BottomDie, VisionBtmLowAlign, _cts.Token);
                 BtmPickupState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmPickupState = StepState.Idle; }
@@ -651,7 +651,8 @@ namespace HCB.UI
         private async Task RunTopPickup(CancellationToken ct)
         {
             TopPickupState = StepState.InProgress;
-            await _sequenceService.TopPickup(TopDie, VisionTopLowAlign, ct);
+            await _sequenceService.DTablePickup(SequenceService.DieType.Top, TopDie, VisionTopLowAlign, _cts.Token);
+            //await _sequenceService.TopPickup(TopDie, VisionTopLowAlign, ct);
             TopPickupState = StepState.Completed;
         }
 

@@ -4,7 +4,9 @@ using SharpDX.Direct2D1.Effects;
 using SharpDX.Direct3D9;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.InteropServices.Marshalling;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +19,351 @@ namespace HCB.UI
         // ═══════════════════════════════════════════════════
         //  Public Sequence Entry Points
         // ═══════════════════════════════════════════════════
+
+        public enum DieType
+        {
+            Top,
+            Bottom
+        }
+
+        public async Task DTablePickup(DieType dieType, int vacNum, VisionMarkPositionResponse? correction, CancellationToken ct)
+        {
+            string label = dieType == DieType.Top ? "TOP" : "BTM";
+            try
+            {
+                _logger.Information("{Label} Die pickup Start", label);
+                EQStatusCheck();
+
+                var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+                // ── 공통 레시피 ──
+                double xOffset = await GetRecipe("ShankLowOffsetX");
+                double yOffset = await GetRecipe("ShankLowOffsetY");
+                double shankToDieOffset = await GetRecipe("ShankToDieOffset");
+
+                // ── Die 타입별 레시피 ──
+                string thicknessKey = dieType == DieType.Top ? "TopDieThickness" : "BtmDieThickness";
+
+                double dieThickness = await GetRecipe(thicknessKey);
+                int accTime = await GetRecipeInt("PICKUP_ACC_TIME");
+                int contTime = await GetRecipeInt("PICKUP_CONT_TIME");
+                int decTime = await GetRecipeInt("PICKUP_DEC_TIME");
+                double loadCell = await GetRecipe("PICKUP_LOADCELL");
+                double current = await GetRecipe("PICKUP_CURRENT");
+                int headVacOnMs = await GetRecipeInt("PICKUP_HEAD_VAC_ON_TIME");
+                int dtableVacOffMs = await GetRecipeInt("PICKUP_DTABLE_VAC_OFF_TIME");
+                double readyPosition = await GetRecipe("PICKUP_READY_POSITION");
+
+                // ── 1. Head 안전 위치 이동 ──
+                await Init_Head(ct);
+
+                // ── 2. 픽업 위치 이동 + 보정 ──
+                double corrX = correction?.X ?? 0;
+                double corrY = correction?.Y ?? 0;
+                double corrT = correction?.Theta ?? 0;
+
+                var xyTask = Task.WhenAll(
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, xOffset - corrX, ct),
+                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, yOffset - corrY, ct)
+                );
+                var tTask = MotionsMove(MotionExtensions.H_T, -corrT, ct);
+
+                var goPickup = await xyTask;
+                await tTask;
+
+                if (!goPickup.All(r => r)) throw new Exception("픽업 위치로 이동 실패");
+
+                // ── 3. Z축 하강 ──
+                await MotionsMove(MotionExtensions.H_Z, shankToDieOffset - dieThickness - readyPosition, ct);
+                await Task.Delay(200, ct);
+
+                // ── 4. 가압 시퀀스 ──
+                // 이전 상태 클리어
+                await device.SendCommand(MotionExtensions.BONDING_START + "=0");
+                await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
+                await Task.Delay(100);
+                await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
+                await Task.Delay(50);
+
+                // 클리어 확인
+                string preCheck = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
+                int preStatus = int.TryParse(preCheck.Trim(), out int ps) ? ps : -1;
+                _logger.Information("{Label} 가압 시작 전 상태: {Status}", label, preStatus);
+                if (preStatus != 0)
+                    _logger.Warning("{Label} STATUS_COMPLETE가 0으로 초기화되지 않음: {Status}", label, preStatus);
+
+                // 파라미터 설정 + 시작
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
+                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
+                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
+                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
+                await device.SendCommand(MotionExtensions.BONDING_START + "=1");
+
+                const int pollingIntervalMs = 100;
+                int timeoutMs = accTime + contTime + decTime + 2000;
+                var sw = Stopwatch.StartNew();
+                bool pressComplete = false;
+                bool headVacOn = false;
+                bool dtableVacOff = false;
+                _logger.Information("{Label} PICKUP 파라미터: ACC={Acc}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}",
+                    label, accTime, contTime, decTime, loadCell, current);
+                while (!pressComplete)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    long elapsed = sw.ElapsedMilliseconds;
+                    var loopSw = Stopwatch.StartNew();
+
+                    // Head 진공 ON 시점 + 픽업 센서 확인
+                    if (!headVacOn && elapsed >= headVacOnMs)
+                    {
+                        var picked = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
+                        headVacOn = true;
+                        _logger.Information("{Label} Head Vacuum ON ({Elapsed}ms, 설정={SetMs}ms)",
+                            label, elapsed, headVacOnMs);
+                        if (!picked) throw new Exception("Head에 Pick된 Die가 없습니다");
+                    }
+
+                    // DTable 진공 OFF 시점
+                    if (!dtableVacOff && elapsed >= dtableVacOffMs)
+                    {
+                        await SwitchDTableVacuum(dieType, vacNum, eOnOff.Off, ct);
+                        dtableVacOff = true;
+                        _logger.Information("{Label} DTable Vacuum OFF ({Elapsed}ms, 설정={SetMs}ms)",
+                            label, elapsed, dtableVacOffMs);
+                    }
+
+                    double forceValue = 0;
+                    string analog = await device.SendCommand<string>(MotionExtensions.ANALOG_INPUT);
+                    if (double.TryParse(analog.Trim(), out forceValue))
+                    {
+                        _logger.Debug("Force: {Force:F3}N ({Elapsed}ms)",
+                            forceValue * 0.00373, sw.ElapsedMilliseconds);
+                    }
+                    else
+                    {
+                        _logger.Warning("AnalogInput 파싱 실패: {Response}", analog);
+                    }
+
+                    string strResponse = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
+                    _logger.Debug("BONDING_STATUS_COMPLETE 원본 응답: [{Response}]", strResponse);
+
+                    var values = strResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (values.Length > 0 && int.TryParse(values[0].Trim(), out int statusCode))
+                    {
+                        pressComplete = statusCode == 6;
+                        _logger.Information("{Label} Pickup press 상태: {Code} (complete={Complete}) | Force: {Force:F3}N (경과: {Elapsed}ms)",
+                            label, statusCode, pressComplete, forceValue * 0.00373, sw.ElapsedMilliseconds);
+                    }
+                    else
+                    {
+                        _logger.Warning("파싱 실패 | Length={Len}, values[0]=[{Val}], 원본=[{Raw}]",
+                            values.Length, values.Length > 0 ? values[0] : "EMPTY", strResponse);
+                    }
+
+                    loopSw.Stop();
+                    _logger.Debug("폴링 루프 1회 소요: {LoopMs}ms", loopSw.ElapsedMilliseconds);
+
+                    if (!pressComplete)
+                    {
+                        if (sw.ElapsedMilliseconds > timeoutMs)
+                            throw new TimeoutException($"{label} Pickup press 완료 대기 시간 초과 ({timeoutMs}ms)");
+
+                        await Task.Delay(pollingIntervalMs, ct);
+                    }
+                }
+
+                sw.Stop();
+                _logger.Information("{Label} Pickup press 완료 (총 소요: {Elapsed}ms)", label, sw.ElapsedMilliseconds);
+
+                // ── 5. 복귀 ──
+                await Task.Delay(300);
+                await Init_Head(ct);
+                await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Warning("{Label} Pickup 작업이 취소되었습니다.", label);
+                throw;
+            }
+            catch (TimeoutException ex)
+            {
+                _logger.Error(ex, "{Label} Pickup press 타임아웃", label);
+                throw;
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "{Label} Pickup 실패", label);
+                throw new Exception(e.Message);
+            }
+            finally
+            {
+                try
+                {
+                    var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                    await device.SendCommand(MotionExtensions.BONDING_START + "=0");
+                    await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
+                    await Task.Delay(100);
+                    await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
+                    _logger.Information("Pickup press 초기화 완료");
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Pickup press 초기화 실패");
+                }
+            }
+        }
+        /// <summary>
+        /// DieType에 따라 DTable 진공을 전환하는 헬퍼
+        /// </summary>
+        private async Task SwitchDTableVacuum(DieType dieType, int vacNum, eOnOff onOff, CancellationToken ct)
+        {
+            if (dieType == DieType.Top)
+                await _sequenceHelper.TopVac(vacNum, onOff, ct);
+            else
+                await _sequenceHelper.BTMVac(vacNum, onOff, ct);
+        }
+
+        public async Task DieDrop(int vacNum, CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("BtmDieDrop Start");
+                EQStatusCheck();
+
+                var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+                double btmDieThickness = await GetRecipe("BtmDieThickness");
+                double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
+                double readyPosition = await GetRecipe("DROP_READY_POSITION");
+                int accTime = await GetRecipeInt("DROP_ACC_TIME");
+                int contTime = await GetRecipeInt("DROP_CONT_TIME");
+                int decTime = await GetRecipeInt("DROP_DEC_TIME");
+                double loadCell = await GetRecipe("DROP_LOADCELL");
+                double current = await GetRecipe("DROP_CURRENT");
+                int wtableVacOnMs = await GetRecipeInt("DROP_WTABLE_VAC_ON_TIME");   // WTable 진공 ON 시점
+                int headVacOffMs = await GetRecipeInt("DROP_HEAD_VAC_OFF_TIME");     // Head 진공 OFF 시점
+
+                // ── 1. 이동 ──
+                await Init_Head(ct);
+                await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+
+                // ── 2. Z축 하강 ──
+                await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - btmDieThickness - readyPosition, ct);
+                await Task.Delay(200, ct);
+
+                // ── 3. 가압 시퀀스 ──
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
+                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
+                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
+                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
+                await device.SendCommand(MotionExtensions.BONDING_START + $"=1");
+
+                const int pollingIntervalMs = 100;
+                int timeoutMs = accTime + contTime + decTime + 2000;
+                var sw = Stopwatch.StartNew();
+                bool pressComplete = false;
+                bool wtableVacOn = false;
+                bool headVacOff = false;
+
+                while (!pressComplete)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    long elapsed = sw.ElapsedMilliseconds;
+
+                    // WTable 진공 ON 시점 (받는 쪽 먼저 흡착)
+                    if (!wtableVacOn && elapsed >= wtableVacOnMs)
+                    {
+                        await _sequenceHelper.WTableVacuum(vacNum, eOnOff.On, ct);
+                        wtableVacOn = true;
+                        _logger.Information("WTable Vacuum ON ({Elapsed}ms, 설정={SetMs}ms)",
+                            elapsed, wtableVacOnMs);
+                    }
+
+                    // Head 진공 OFF 시점 (놓는 쪽 해제)
+                    if (!headVacOff && elapsed >= headVacOffMs)
+                    {
+                        var released = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
+                        headVacOff = true;
+                        _logger.Information("Head Vacuum OFF ({Elapsed}ms, 설정={SetMs}ms)",
+                            elapsed, headVacOffMs);
+                        if (!released) throw new Exception("HeadPicker를 확인해주세요");
+                    }
+
+                    double forceValue = 0;
+                    string analog = await device.SendCommand<string>(MotionExtensions.ANALOG_INPUT);
+                    if (double.TryParse(analog.Trim(), out forceValue))
+                    {
+                        _logger.Debug("Force: {Force:F3}N ({Elapsed}ms)",
+                            forceValue * 0.00373, sw.ElapsedMilliseconds);
+                    }
+
+                    string strResponse = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
+                    var values = strResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (values.Length > 0 && bool.TryParse(values[0], out bool result))
+                    {
+                        _logger.Information("Drop press 상태: {Result} | Force: {Force:F3}N (경과: {Elapsed}ms)",
+                            result, forceValue * 0.00373, sw.ElapsedMilliseconds);
+                        pressComplete = result;
+                    }
+                    else
+                    {
+                        _logger.Warning("Drop press 상태 응답 파싱 실패: {Response}", strResponse);
+                    }
+
+                    if (!pressComplete)
+                    {
+                        if (sw.ElapsedMilliseconds > timeoutMs)
+                            throw new TimeoutException($"Drop press 완료 대기 시간 초과 ({timeoutMs}ms)");
+
+                        await Task.Delay(pollingIntervalMs, ct);
+                    }
+                }
+
+                sw.Stop();
+                _logger.Information("BtmDieDrop press 완료 (총 소요: {Elapsed}ms)", sw.ElapsedMilliseconds);
+
+                // ── 4. 복귀 ──
+                await Init_Head(ct);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Warning("BtmDieDrop 작업이 취소되었습니다.");
+                throw;
+            }
+            catch (TimeoutException ex)
+            {
+                _logger.Error(ex, "BtmDieDrop press 타임아웃");
+                throw;
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "BtmDieDrop 실패");
+                throw new Exception(e.Message);
+            }
+            finally
+            {
+                try
+                {
+                    var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                    await device.SendCommand(MotionExtensions.BONDING_START + $"=0");
+                    await device.SendCommand(MotionExtensions.BONDING_INIT + $"=1");
+                    await Task.Delay(100);
+                    await device.SendCommand(MotionExtensions.BONDING_INIT + $"=0");
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Drop press 초기화 실패");
+                }
+            }
+        }
+
+
 
         public async Task MachineStartAsync(int topDie, int btmDie, CancellationToken ct)
         {
@@ -81,26 +428,6 @@ namespace HCB.UI
         #endregion
 
         #region Top Die 고배율 측정
-
-        //public async Task<AlignContext> TopHighAlign(
-        //    AlignContext ctx, bool avgMode, CancellationToken ct)
-        //{
-        //    ctx ??= new AlignContext();            
-        //    LoadCalibrationInto(ctx);
-
-        //    ctx.TopRightFidRaw = await TopDieVisionRightFid(avgMode, ct);
-        //    ctx.TopRightAlignRaw = await TopDieVisionRightAlign(avgMode, ct);
-        //    ctx.TopLeftFidRaw = await TopDieVisionLeftFid(avgMode, ct);
-        //    ctx.TopLeftAlignRaw = await TopDieVisionLeftAlign(avgMode, ct);
-
-        //    // Raw → Clone → 보정 → Corrected
-        //    ApplyTopPcCorrections(ctx);
-
-        //    // Corrected 기반 오프셋 계산
-        //    ComputeTopOffsets(ctx);
-
-        //    return ctx;
-        //}
 
 
         public async Task<AlignData> TopHighAlign(
