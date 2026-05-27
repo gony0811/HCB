@@ -590,6 +590,114 @@ namespace HCB.UI
             finally { IsNotBusy = true; }
         }
 
+
+        // CalibrationTabViewModel 에 추가
+
+        #region ── 2D Mapping ──
+
+        [ObservableProperty] private CameraType mappingCamera = CameraType.HC1_HIGH;
+        [ObservableProperty] private MarkType mappingMark = MarkType.FIDUCIAL;
+        [ObservableProperty] private DirectType mappingDirect = DirectType.LEFT;
+        [ObservableProperty] private double mappingStepMm = 2.0;
+        [ObservableProperty] private int mappingGridSize = 8;
+        [ObservableProperty] private string mappingProgress = "-";
+
+        [RelayCommand]
+        public async Task RunMapping2D(CancellationToken ct = default)
+        {
+            if (!IsNotBusy) return;
+            IsNotBusy = false;
+            ct = GetToken();
+            try
+            {
+                int g = MappingGridSize;
+                double step = MappingStepMm;
+                bool isPc = MappingCamera is CameraType.PC_HIGH or CameraType.PC_LOW;
+                string yAxis = isPc ? MotionExtensions.P_Y : MotionExtensions.W_Y;
+                double ox = _hxAxis!.CurrentPosition;
+                double oy = yAxis == MotionExtensions.P_Y
+                    ? _pyAxis!.CurrentPosition : _wyAxis!.CurrentPosition;
+
+                // P-Camera: X만 반전, W-Camera(Hc1/Hc2): X,Y 모두 반전
+                double xSign = -1.0;
+                double ySign = isPc ? 1.0 : -1.0;
+
+                var dx = new double[g, g];
+                var dy = new double[g, g];
+                int total = g * g;
+                CalibStatus = "2D Mapping 시작";
+
+                for (int row = 0; row < g; row++)
+                {
+                    for (int col = 0; col < g; col++)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        int ac = (row % 2 == 0) ? col : (g - 1 - col);
+                        MappingProgress = $"{row * g + col + 1}/{total}";
+
+                        await Task.WhenAll(
+                            _sequenceService.MotionsMove(MotionExtensions.H_X, ox + ac * step * xSign, ct),
+                            _sequenceService.MotionsMove(yAxis, oy + row * step * ySign, ct));
+
+                        await _communication.RequestAFStart(MappingCamera, MappingMark, ct);
+                        var v = await _communication.RequestVisionMarkPosition(
+                            MappingMark, MappingCamera, MappingDirect.ToString());
+
+                        if (v == null || v.Result == Result.NG)
+                            throw new Exception($"비전 실패 @ R{row} C{ac}");
+
+                        // Hc1/Hc2: (-X, -Y), Pc: (-X, +Y)
+                        dx[row, ac] = -v.X * 1000.0;
+                        dy[row, ac] = (isPc ? v.Y : -v.Y) * 1000.0;
+                    }
+                }
+
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, ox, ct),
+                    _sequenceService.MotionsMove(yAxis, oy, ct));
+
+                // CSV — 셀마다 "(X, Y)" μm
+                string folder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    "HCB", "2D Mapping");
+                Directory.CreateDirectory(folder);
+                string path = Path.Combine(folder,
+                    $"Mapping2D_{MappingCamera}_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+
+                using var sw = new StreamWriter(path, false, System.Text.Encoding.UTF8);
+                sw.Write("μm,");
+                for (int c = 0; c < g; c++)
+                    sw.Write($"COL{c}{(c < g - 1 ? "," : "")}");
+                sw.WriteLine();
+
+                for (int r = 0; r < g; r++)
+                {
+                    sw.Write($"ROW{r},");
+                    for (int c = 0; c < g; c++)
+                    {
+                        sw.Write($"\"({dx[r, c]:F1}  {dy[r, c]:F1})\"{(c < g - 1 ? "," : "")}");
+                    }
+                    sw.WriteLine();
+                }
+
+                MappingProgress = $"완료 {total}pt";
+                CalibStatus = $"완료 → {Path.GetFileName(path)}";
+                _logger.Information("2D Mapping 완료: {Path}", path);
+            }
+            catch (OperationCanceledException)
+            {
+                MappingProgress = "중지됨";
+                CalibStatus = "사용자 중지";
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "RunMapping2D failed");
+                CalibStatus = $"오류: {e.Message}";
+            }
+            finally { IsNotBusy = true; }
+        } 
+
+        #endregion
         // ══════════════════════════════════════════════
         //  Private 헬퍼
         // ══════════════════════════════════════════════
@@ -685,5 +793,6 @@ namespace HCB.UI
                 throw;
             }
         }
+
     }
 }

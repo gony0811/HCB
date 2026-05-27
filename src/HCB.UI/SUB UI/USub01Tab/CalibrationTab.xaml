@@ -268,6 +268,103 @@
                                        Foreground="#E67E22" FontSize="14" TextWrapping="Wrap"/>
                         </Border>
 
+                        <!-- ══════════════════════════════════════════════
+     ⑤ 2D Mapping — 좌측 StackPanel 맨 아래에 추가
+     (전체 캘리브레이션 중지 버튼 + CalibProgress Border 아래)
+══════════════════════════════════════════════ -->
+
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
+
+                        <TextBlock Text="2D Mapping" Foreground="#5E8BAA"
+           FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+           Margin="0,0,0,12">
+    MasterGlass 원점(0,0)에서 시작하여 8×8 그리드를 2mm 간격으로 측정합니다.
+    결과는 Desktop/HCB/2D Mapping 에 CSV로 저장됩니다.
+                        </TextBlock>
+
+                        <!-- 카메라 선택 -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="카메라" Foreground="#5E8BAA" FontSize="16"
+               VerticalAlignment="Center"/>
+                            <ComboBox Grid.Column="1" Style="{StaticResource CalibComboStyle}"
+              ItemsSource="{Binding Source={local:EnumValues {x:Type local:CameraType}}}"
+              SelectedItem="{Binding MappingCamera}"/>
+                        </Grid>
+
+                        <!-- 마크 선택 -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="마크" Foreground="#5E8BAA" FontSize="16"
+               VerticalAlignment="Center"/>
+                            <ComboBox Grid.Column="1" Style="{StaticResource CalibComboStyle}"
+              ItemsSource="{Binding Source={local:EnumValues {x:Type local:MarkType}}}"
+              SelectedItem="{Binding MappingMark}"/>
+                        </Grid>
+
+                        <!-- 방향 선택 -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="방향" Foreground="#5E8BAA" FontSize="16"
+               VerticalAlignment="Center"/>
+                            <ComboBox Grid.Column="1" Style="{StaticResource CalibComboStyle}"
+              ItemsSource="{Binding Source={local:EnumValues {x:Type local:DirectType}}}"
+              SelectedItem="{Binding MappingDirect}"/>
+                        </Grid>
+
+                        <!-- Step / Grid 설정 -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="36"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="이동 간격" Foreground="#5E8BAA" FontSize="16"
+               VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Style="{StaticResource CalibTextBoxStyle}"
+             Text="{Binding MappingStepMm, UpdateSourceTrigger=LostFocus}"/>
+                            <TextBlock Grid.Column="2" Text="mm" Foreground="#5E8BAA" FontSize="16"
+               VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="36"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="그리드" Foreground="#5E8BAA" FontSize="16"
+               VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Style="{StaticResource CalibTextBoxStyle}"
+             Text="{Binding MappingGridSize, UpdateSourceTrigger=LostFocus}"/>
+                            <TextBlock Grid.Column="2" Text="×N" Foreground="#5E8BAA" FontSize="16"
+               VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        </Grid>
+
+                        <!-- 실행 버튼 -->
+                        <Button Style="{StaticResource CalibBtnStyle}"
+        Content="2D Mapping 실행"
+        Command="{Binding RunMapping2DCommand}"
+        Margin="0,0,0,10"/>
+
+                        <!-- 진행률 -->
+                        <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+        CornerRadius="6" Padding="10,8">
+                            <TextBlock Text="{Binding MappingProgress}"
+               Foreground="#E67E22" FontSize="14" TextWrapping="Wrap"/>
+                        </Border>
+
+
                     </StackPanel>
                 </ScrollViewer>
             </Grid>
