@@ -186,7 +186,7 @@ namespace HCB.UI
                 content: $"<MARKTYPE>{markType}</MARKTYPE><CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT><AVGMODE>{avgMode}</AVGMODE>"
             );
 
-            double pcWT = Double.Parse(ecParamService.FindByName(MotionExtensions.PC_W_T).Value);
+            double pcWT = CalibrationMath.ToRadian(Double.Parse(ecParamService.FindByName(MotionExtensions.PC_W_T).Value));
             double t = cameraType switch
             {
                 CameraType.HC1_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC1_T).Value) + pcWT,

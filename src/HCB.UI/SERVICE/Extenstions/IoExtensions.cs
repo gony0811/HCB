@@ -224,9 +224,9 @@ namespace HCB.UI
             else
             {
                 device.SetDigital(DO_HEADER_EJECTOR_VAC_ON, false);
-                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, true);
-                await Task.Delay(1000);
-                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, false);
+                //device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, true);
+                //await Task.Delay(1000);
+                //device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, false);
             }
 
             //return await helper.WaitUntilAsync(
