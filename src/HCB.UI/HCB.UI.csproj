@@ -110,10 +110,22 @@
   <Page Include="SUB UI\Title\TitleBar.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\USub01Tab\AlignResultWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub01Tab\AutoTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub01Tab\BondingInfoWindow.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\USub01Tab\CalibrationTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub01Tab\LoadingTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub01Tab\ManualTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\USub01Tab\StepSeqTab.xaml">
@@ -178,15 +190,6 @@
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\TimeRange\TimeRange.xaml">
-    <Generator>MSBuild:Compile</Generator>
-  </Page>
-  <Page Include="SUB UI\USub01Tab\AutoTab.xaml">
-    <Generator>MSBuild:Compile</Generator>
-  </Page>
-  <Page Include="SUB UI\USub01Tab\LoadingTab.xaml">
-    <Generator>MSBuild:Compile</Generator>
-  </Page>
-  <Page Include="SUB UI\USub01Tab\ManualTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
   <Page Include="SUB UI\USub08Tab\MotionDeviceView.xaml">
@@ -286,8 +289,14 @@
   <Compile Include="SUB UI\PromptModal\VacuumSelector.xaml.cs" />
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
   <Compile Include="SUB UI\Title\Headerbar.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\AlignResultWindow.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\AutoTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\BondingInfoWindow.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\CalibrationTab.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\LoadingTab.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\ManualTab.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\RunInformation.cs" />
+  <Compile Include="SUB UI\USub01Tab\RunningStatus.cs" />
   <Compile Include="SUB UI\USub01Tab\StepLamp.cs" />
   <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\TopHighAlignInfoWindow.xaml.cs" />
@@ -385,13 +394,8 @@
   <Compile Include="SUB UI\StateCell\Type.cs" />
   <Compile Include="SUB UI\TimeRange\TimeRange.xaml.cs" />
   <Compile Include="SUB UI\TimeRange\TimeRangeViewModel.cs" />
-  <Compile Include="SUB UI\USub01Tab\AutoTab.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\AutoTabViewModel.cs" />
-  <Compile Include="SUB UI\USub01Tab\LoadingTab.xaml.cs" />
-  <Compile Include="SUB UI\USub01Tab\ManualTab.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\ManualTabViewModel.cs" />
-  <Compile Include="SUB UI\USub01Tab\RunInformation.cs" />
-  <Compile Include="SUB UI\USub01Tab\RunningStatus.cs" />
   <Compile Include="SUB UI\ViewModels\DeviceCreateVM.cs" />
   <Compile Include="SUB UI\USub08Tab\DeviceDetailTemplateSelector.cs" />
   <Compile Include="SUB UI\USub08Tab\DeviceDetailViewModelFactory.cs" />

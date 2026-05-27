@@ -175,8 +175,10 @@ namespace HCB.UI
 
                 // ── 5. 복귀 ──
                 await Task.Delay(300);
-                await Init_Head(ct);
-                await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
+                await Task.WhenAll(
+                    Init_Head(ct),
+                    MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct)
+                );
             }
             catch (OperationCanceledException)
             {
@@ -428,7 +430,8 @@ namespace HCB.UI
         public async Task<AlignData> TopHighAlign(
             AlignData data, CancellationToken ct)
         {
-            data ??= new AlignData();            
+            data ??= new AlignData();
+            await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
             data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
             data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove,ct);
             data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, ct);
@@ -440,30 +443,6 @@ namespace HCB.UI
         #endregion
 
         #region Btm Die 고배율 측정
-
-        //public async Task<AlignContext> BtmHighAlign(
-        //    AlignContext ctx, bool avgMode, CancellationToken ct)
-        //{
-        //    if (ctx == null) throw new ArgumentNullException(nameof(ctx));
-
-        //    await TopDiePlace(ct);
-
-        //    // 비전 원본 → Raw (이후 어떤 메서드도 수정 금지)
-        //    ctx.BtmRightFidRaw = await BtmDieVisionRightFid(avgMode, ct);
-        //    ctx.BtmRightAlignRaw = await BtmDieVisionRightAlign(avgMode,ct);
-        //    ctx.BtmLeftFidRaw = await BtmDieVisionLeftFid(avgMode, ct);
-        //    ctx.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(avgMode, ct);
-        //    //await GetHcro(ctx, ct);
-        //    LoadCalibrationInto(ctx);   
-
-        //    // 카메라 오프셋 + 회전 보정
-        //    ApplyBtmCorrections(ctx);
-        //    // 회전 중심 좌표로 변환
-        //    ComputeHcroCoords(ctx);
-        //    ComputeBtmOffsets(ctx);
-
-        //    return ctx;
-        //}
 
         public async Task<AlignData> BtmHighAlign(
             AlignData data, CancellationToken ct)
@@ -563,6 +542,8 @@ namespace HCB.UI
             data.ResultY = shiftY + data.OffsetXY.Y;
             data.ResultT = thetaF + data.OffsetT;
 
+
+
             //await Task.WhenAll(
             //    RelativeMotionsMove(MotionExtensions.H_X, shiftX, ct),
             //    RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct),
@@ -572,156 +553,15 @@ namespace HCB.UI
 
         #endregion
 
-        // ═══════════════════════════════════════════════════
-        //  Step 3: 각도 보정 → Shift → 본딩
-        //   BtmHighAlign 완료 후 ctx.Hcro* 필요
-        // ═══════════════════════════════════════════════════
 
 
-        public async Task TopPlace(
-            AlignContext ctx, RecipeService recipeService, ObservableCollection<BondingDataPoint> bondingDataPoints, CancellationToken ct)
-        {
-            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
-
-            var offsetX = double.Parse(_recipeService.FindByParam("X_ALIGN_OFFSET").Value);
-            var offsetY = double.Parse(_recipeService.FindByParam("Y_ALIGN_OFFSET").Value);
-            var offsetT = double.Parse(_recipeService.FindByParam("T_ALIGN_OFFSET").Value);
-
-            // ── 입력값 전체 로깅 ─────────────────────────────────
-            _logger.Information($"[INPUT] HcroLA    = ({ctx.HcroLA.X:F4}, {ctx.HcroLA.Y:F4})");
-            _logger.Information($"[INPUT] HcroRA    = ({ctx.HcroRA.X:F4}, {ctx.HcroRA.Y:F4})");
-            _logger.Information($"[INPUT] HcroLF    = ({ctx.HcroLF.X:F4}, {ctx.HcroLF.Y:F4})");
-            _logger.Information($"[INPUT] HcroRF    = ({ctx.HcroRF.X:F4}, {ctx.HcroRF.Y:F4})");
-            _logger.Information($"[INPUT] HcroTopLA = ({ctx.HcroTopLA.X:F4}, {ctx.HcroTopLA.Y:F4})");
-            _logger.Information($"[INPUT] HcroTopRA = ({ctx.HcroTopRA.X:F4}, {ctx.HcroTopRA.Y:F4})");
-            _logger.Information($"[INPUT] HcroTopLF = ({ctx.HcroTopLF.X:F4}, {ctx.HcroTopLF.Y:F4})");
-            _logger.Information($"[INPUT] HcroTopRF = ({ctx.HcroTopRF.X:F4}, {ctx.HcroTopRF.Y:F4})");
-
-            // ── B-Die 중심 ───────────────────────────────────────
-            double btmCenterX = (ctx.HcroLA.X + ctx.HcroRA.X) / 2.0;
-            double btmCenterY = (ctx.HcroLA.Y + ctx.HcroRA.Y) / 2.0;
-            _logger.Information($"[BTM]   Center    = ({btmCenterX:F4}, {btmCenterY:F4})");
-
-            // ── T-Die 중심 (회전 전) ─────────────────────────────
-            double topCenterBeforeX = (ctx.HcroTopLA.X + ctx.HcroTopRA.X) / 2.0;
-            double topCenterBeforeY = (ctx.HcroTopLA.Y + ctx.HcroTopRA.Y) / 2.0;
-            _logger.Information($"[TOP]   Center(before rotate) = ({topCenterBeforeX:F4}, {topCenterBeforeY:F4})");
-
-            // ── 얼라인 Angle 연산 ────────────────────────────────
-            double thetaO = CalibrationMath.ComputeAlignAngle(
-                ctx.HcroLA, ctx.HcroRA,
-                ctx.HcroTopLA, ctx.HcroTopRA);      // rad 
-            double thetaS = ParseRecipe("SPEC_THETA") * Math.PI / 180.0;     //rad 
-            double specXs = ParseRecipe("SPEC_X");
-            double specYs = ParseRecipe("SPEC_Y");
-            double thetaF = thetaO - thetaS + offsetT * Math.PI / 180.0;
-
-            _logger.Information($"[ANGLE] ThetaO = {thetaO:F6}rad ({thetaO * 180 / Math.PI:F4}deg)");
-            _logger.Information($"[ANGLE] ThetaS = {thetaS:F6}rad ({thetaS * 180 / Math.PI:F4}deg)");
-            _logger.Information($"[ANGLE] ThetaF = {thetaF:F6}rad ({thetaF * 180 / Math.PI:F4}deg)");
-            _logger.Information($"[SPEC]  SpecXs = {specXs:F4}  SpecYs = {specYs:F4}");
-
-            // ── hT 회전 ──────────────────────────────────────────
-            await RelativeMotionsMove(MotionExtensions.H_T, -thetaF * 180.0 / Math.PI, ct);
-
-            // ── Shift 연산 ───────────────────────────────────────
-            Point2D hcroTopLTPrime = CalibrationMath.RotateAroundPivot(
-                ctx.HcroTopLA, Point2D.Zero, thetaF);
-            Point2D hcroTopRTPrime = CalibrationMath.RotateAroundPivot(
-                ctx.HcroTopRA, Point2D.Zero, thetaF);
-
-            _logger.Information($"[ROT]   HcroTopLA → Prime = ({hcroTopLTPrime.X:F4}, {hcroTopLTPrime.Y:F4})");
-            _logger.Information($"[ROT]   HcroTopRA → Prime = ({hcroTopRTPrime.X:F4}, {hcroTopRTPrime.Y:F4})");
-
-            // T-Die 중심 (회전 후)
-            double topCenterX = (hcroTopLTPrime.X + hcroTopRTPrime.X) / 2.0;
-            double topCenterY = (hcroTopLTPrime.Y + hcroTopRTPrime.Y) / 2.0;
-            _logger.Information($"[TOP]   Center(after rotate) = ({topCenterX:F4}, {topCenterY:F4})");
-
-            // T-Die - B-Die 차이
-            _logger.Information($"[DIFF]  X = {topCenterX - btmCenterX:F4}");
-            _logger.Information($"[DIFF]  Y = {topCenterY - btmCenterY:F4}");
-
-            double shiftX = topCenterX - btmCenterX + offsetX;
-            double shiftY = topCenterY - btmCenterY + offsetY;
-
-            _logger.Information($"[SHIFT] X = {shiftX:F4}  Y = {shiftY:F4}");
-
-            await Task.WhenAll(
-                RelativeMotionsMove(MotionExtensions.H_X, -shiftX, ct),
-                RelativeMotionsMove(MotionExtensions.W_Y, -shiftY, ct));
-
-            //await RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct);
-
-            ctx.FinalThetaO = thetaO;
-            ctx.FinalThetaF = thetaF;
-            ctx.FinalShiftX = shiftX;
-            ctx.FinalShiftY = shiftY;
-            ctx.OffsetXApplied = offsetX;
-            ctx.OffsetYApplied = offsetY;
-            ctx.OffsetTApplied = offsetT;
-
-            //await Bonding(bondingDataPoints, ct);
-            await Init_Head(ct);
-            await Task.Delay(2000);
-        }
-
-        // ═══════════════════════════════════════════════════
-        //  Full Sequence (개별 단계 조합)
-        //  ★ ctx 는 반드시 새 인스턴스 생성
-        // ═══════════════════════════════════════════════════
-
-        //public async Task<AlignContext> TopRunFullSequence(
-        //    int topDie,
-        //    VisionMarkPositionResponse visionTopLowAlign,
-        //    RecipeService recipeService,
-        //    ObservableCollection<BondingDataPoint> bondingDataPoints,
-        //    CancellationToken ct)
-        //{
-        //    var visionResult = await TopLowAlign(topDie, ct);
-        //    await TopPickup(topDie, visionResult, ct);
-
-        //    var ctx = await TopHighAlign(new AlignContext(), ct);
-        //    ctx = await BtmHighAlign(ctx, ct);
-        //    await TopPlace(ctx, recipeService, bondingDataPoints, ct);
-
-        //    return ctx;
-        //}
+        
 
         // ═══════════════════════════════════════════════════
         //  private: 캘리브레이션 파라미터 로드
         // ═══════════════════════════════════════════════════
 
-        private void LoadCalibrationInto(AlignContext ctx)
-        {
-            var pcTParam = _paramService.FindByName(MotionExtensions.PC_T);
-            var hc1Param = _paramService.FindByName(MotionExtensions.HC1_T);
-            var hc2Param = _paramService.FindByName(MotionExtensions.HC2_T);
-            var hcroXParam = _paramService.FindByName(MotionExtensions.HCRO_X);
-            var hcroYParam = _paramService.FindByName(MotionExtensions.HCRO_Y);
-            var hc1XParam = _paramService.FindByName(MotionExtensions.HC1_X);
-            var hc1YParam = _paramService.FindByName(MotionExtensions.HC1_Y);
-            var hc2XParam = _paramService.FindByName(MotionExtensions.HC2_X);
-            var hc2YParam = _paramService.FindByName(MotionExtensions.HC2_Y);
-
-            ctx.HasHcRO = hcroXParam.Id != 0 && hcroYParam.Id != 0
-                       && hc1Param.Id != 0 && hc2Param.Id != 0
-                       && hc1XParam.Id != 0 && hc1YParam.Id != 0
-                       && hc2XParam.Id != 0 && hc2YParam.Id != 0;
-            ctx.HasPcT = pcTParam.Id != 0;
-
-            if (ctx.HasHcRO)
-            {
-                ctx.Hc1Rad = ParseDouble(hc1Param.Value) * Math.PI / 180.0;
-                ctx.Hc2Rad = ParseDouble(hc2Param.Value) * Math.PI / 180.0;
-                ctx.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
-                ctx.Hc1Offset = Point2D.of(ParseDouble(hc1XParam.Value), ParseDouble(hc1YParam.Value));
-                ctx.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
-            }
-            if (ctx.HasPcT)
-                ctx.PcTRad = ParseDouble(pcTParam.Value) * Math.PI / 180.0;
-        }
-
+        
         private void LoadCalibrationInto(AlignData data)
         {
             var pcT = _paramService.FindByName(MotionExtensions.PC_T);

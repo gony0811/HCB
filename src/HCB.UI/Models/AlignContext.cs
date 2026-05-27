@@ -136,6 +136,11 @@ namespace HCB.UI
         public Point2D TCenter { get; set; }     // Top 중심
         public Point2D BCenter { get; set; }     // Btm 중심
 
+        // 선분 길이 측정값
+        public double BtmAlignDist { get; set; }
+        public double TopAlignDist { get; set; }
+        public double BtmFidDist { get; set; }
+        public double TopFidDist { get; set; }
 
         public double ResultX { get; set; } = 0;
         public double ResultY { get; set; } = 0;

@@ -257,26 +257,7 @@ namespace HCB.UI
 
         [RelayCommand] public void InitInfo() => IsInitInfoOpen = true;
         [RelayCommand] public void CloseInitInfo() => IsInitInfoOpen = false;
-
-        [RelayCommand]
-        public void OpenTopHighAlignInfo()
-        {
-            var (rf, ra, lf, la) = (TopRightFid, TopRightAlign, TopLeftFid, TopLeftAlign);
-            _ = RunDialogOnNewThread(() =>
-                new TopHighAlignInfoWindow(rf, ra, lf, la)
-                { Header = "고배율 보정 정보 (Top Die)", WindowStartupLocation = WindowStartupLocation.CenterScreen }
-                .ShowDialog());
-        }
-
-        [RelayCommand]
-        public void BtmHighAlignInfo()
-        {
-            var (rf, ra, lf, la) = (BtmRightFid, BtmRightAlign, BtmLeftFid, BtmLeftAlign);
-            _ = RunDialogOnNewThread(() =>
-                new TopHighAlignInfoWindow(rf, ra, lf, la, useWaferY: true)
-                { Header = "고배율 보정 정보 (Bottom Die)", WindowStartupLocation = WindowStartupLocation.CenterScreen }
-                .ShowDialog());
-        }
+        
 
         [RelayCommand]
         public void TopHighAlignInfo()
@@ -421,6 +402,7 @@ namespace HCB.UI
                 TopHighAlignState = StepState.InProgress;
                 var data = new AlignData { AvgMove = AvgMode };
                 hcbData = await _sequenceService.TopHighAlign(data, _cts.Token);
+            
                 TopRightFid = hcbData.TopRightFidRaw;
                 TopRightAlign = hcbData.TopRightAlignRaw;
                 TopLeftFid = hcbData.TopLeftFidRaw;
@@ -439,6 +421,7 @@ namespace HCB.UI
             {
                 BtmHighAlignState = StepState.InProgress;
                 hcbData = await _sequenceService.BtmHighAlign(hcbData, _cts.Token);
+
                 BtmRightFid = hcbData.BtmRightFidRaw;
                 BtmRightAlign = hcbData.BtmRightAlignRaw;
                 BtmLeftFid = hcbData.BtmLeftFidRaw;
@@ -449,6 +432,59 @@ namespace HCB.UI
             catch (Exception e) { BtmHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
         }
 
+        // ── StepSeqTabViewModel에 추가할 코드 ──
+
+        // 1) ComputeDistances 헬퍼 (중복 제거)
+        private void ComputeDistances()
+        {
+            if (hcbData == null) return;
+
+            if (hcbData.BL != null && hcbData.BR != null)
+                hcbData.BtmAlignDist = CalibrationMath.Dist(hcbData.BR, hcbData.BL);
+            if (hcbData.TL != null && hcbData.TR != null)
+                hcbData.TopAlignDist = CalibrationMath.Dist(hcbData.TR, hcbData.TL);
+            if (hcbData.BFL != null && hcbData.BFR != null)
+                hcbData.BtmFidDist = CalibrationMath.Dist(hcbData.BFR, hcbData.BFL);
+            if (hcbData.TopLeftFidRaw != null && hcbData.TopRightFidRaw != null)
+            {
+                var dx = hcbData.TopRightFidRaw.CenterX - hcbData.TopLeftFidRaw.CenterX;
+                var dy = hcbData.TopRightFidRaw.CenterY - hcbData.TopLeftFidRaw.CenterY;
+                hcbData.TopFidDist = Math.Sqrt(dx * dx + dy * dy);
+            }
+        }
+
+        // 2) 정렬 결과 팝업 커맨드
+        [RelayCommand]
+        public void OpenAlignResult()
+        {
+            if (hcbData == null)
+            {
+                _logger.Information("보정 데이터가 없습니다. TopPlace를 먼저 수행하세요.");
+                return;
+            }
+
+            ComputeDistances();
+
+            // Recipe에서 기준 거리 읽기 (없으면 NaN)
+            double refAlign = double.NaN, refFid = double.NaN;
+            var recipe = _recipeService?.UseRecipe;
+            if (recipe != null)
+            {
+                var pa = recipe.ParamList.FirstOrDefault(p => p.Name == "RefAlignDist");
+                var pf = recipe.ParamList.FirstOrDefault(p => p.Name == "RefFidDist");
+                if (pa != null && double.TryParse(pa.Value, out double a)) refAlign = a;
+                if (pf != null && double.TryParse(pf.Value, out double f)) refFid = f;
+            }
+
+            var data = hcbData;
+            _ = RunDialogOnNewThread(() =>
+                new AlignResultWindow(data, refAlign, refFid)
+                {
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                }.ShowDialog());
+        }
+
+        // 3) TopCorr에서 중복 코드를 ComputeDistances()로 교체
         [RelayCommand]
         public async Task TopCorr()
         {
@@ -457,6 +493,7 @@ namespace HCB.UI
             {
                 TopCorrState = StepState.InProgress;
                 await _sequenceService.TopPlace(hcbData, _cts.Token);
+                ComputeDistances();  // ← 한 줄로 교체
                 await _sequenceService.BondingCorr(hcbData, _cts.Token);
                 TopCorrState = StepState.Completed;
             }
@@ -524,7 +561,6 @@ namespace HCB.UI
 
                     TopCorrState = StepState.InProgress;
                     await _sequenceService.TopPlace(hcbData, ct);
-                    await _sequenceService.BondingCorr(hcbData, ct);
                     TopCorrState = StepState.Completed;
 
                     ExportHcbData();
@@ -533,9 +569,9 @@ namespace HCB.UI
                 // 6. 본딩
                 TopBondingState = StepState.InProgress;
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
+                await _sequenceService.BondingCorr(hcbData, ct);
                 await _sequenceService.BondingPress(BondingHistory, ct);
                 TopBondingState = StepState.Completed;
-                ExportHcbData();
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
             catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
@@ -738,6 +774,8 @@ namespace HCB.UI
             Directory.CreateDirectory(dir);
             var path = Path.Combine(dir, $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
 
+            
+
             bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
             var sb = new StringBuilder();
 
@@ -762,7 +800,9 @@ namespace HCB.UI
                     "TL_X", "TL_Y", "TR_X", "TR_Y",
                     "SpecTheta", "BTheta", "TTheta", "ThetaF", "ThetaFRad",
                     "TCenter_X", "TCenter_Y", "BCenter_X", "BCenter_Y",
-                    "ResultX", "ResultY", "ResultT"));
+                    "ResultX", "ResultY", "ResultT",
+                    // ── 추가: 선분 길이 ──
+                    "BtmAlignDist", "TopAlignDist", "BtmFidDist", "TopFidDist"));
             }
 
             sb.AppendLine(string.Join(",",
@@ -788,12 +828,24 @@ namespace HCB.UI
                 F(hcbData?.SpecTheta), F(hcbData?.BTheta), F(hcbData?.TTheta),
                 F(hcbData?.ThetaF), F(hcbData?.ThetaFRad),
                 hcbData != null ? Pt(hcbData.TCenter) : NullPt(), hcbData != null ? Pt(hcbData.BCenter) : NullPt(),
-                F(hcbData?.ResultX), F(hcbData?.ResultY), F(hcbData?.ResultT)));
+                F(hcbData?.ResultX), F(hcbData?.ResultY), F(hcbData?.ResultT),
+                // ── 추가: 선분 길이 ──
+                F(hcbData?.BtmAlignDist), F(hcbData?.TopAlignDist),
+                F(hcbData?.BtmFidDist), F(hcbData?.TopFidDist)));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
+
+            // ── 로그 출력 ──
+            if (hcbData != null)
+            {
+                _logger.Information(
+                    "선분 길이 — BtmAlign: {BA:F4}mm, TopAlign: {TA:F4}mm, BtmFid: {BF:F4}mm, TopFid: {TF:F4}mm",
+                    hcbData.BtmAlignDist, hcbData.TopAlignDist,
+                    hcbData.BtmFidDist, hcbData.TopFidDist);
+            }
+
             _logger.Information("본딩 데이터 저장: {Path}", path);
         }
-
         private static string Pt(Point2D p) => p == null ? "," : $"{F(p.X)},{F(p.Y)}";
         private static string MarkFields(VisionMarkResult m) =>
             m == null ? ",,,,," : string.Join(",", F(m.StageX), F(m.StageY), F(m.DxCamToMark), F(m.DyCamToMark), F(m.CenterX), F(m.CenterY));

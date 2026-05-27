@@ -6,6 +6,12 @@ namespace HCB.UI
 {
     public static class CalibrationMath
     {
+        public static double Dist(Point2D a, Point2D b)
+        {
+            var dx = b.X - a.X;
+            var dy = b.Y - a.Y;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
         // ═══════════════════════════════════════════════════════════════════
         //  1. 카메라 각도 산출
         // ═══════════════════════════════════════════════════════════════════

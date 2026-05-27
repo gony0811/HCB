@@ -1,0 +1,289 @@
+<telerik:RadWindow x:Class="HCB.UI.AlignResultWindow"
+                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+                   Style="{StaticResource RadWindowStyle}"
+                   WindowStartupLocation="CenterOwner"
+                   Width="1280" Height="720"
+                   ResizeMode="NoResize">
+
+    <telerik:RadWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </telerik:RadWindow.Resources>
+
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="360"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ── 좌측: 회전 중심 좌표계 기준 그래프 ── -->
+        <Border Grid.Column="0" Background="#0D1E30" CornerRadius="6" ClipToBounds="True"
+                Margin="0,0,10,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="회전 중심 좌표계 (Rotation Center Frame)"
+                           Foreground="#88CCFF" FontSize="13" FontWeight="Bold"
+                           Margin="14,10,0,0"/>
+                <Canvas x:Name="GraphCanvas" Grid.Row="1"
+                        SizeChanged="GraphCanvas_SizeChanged"/>
+            </Grid>
+        </Border>
+
+        <!-- ── 우측: 선분 길이 & 오차 정보 ── -->
+        <ScrollViewer Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+
+                <!-- ═══ 선분 길이 비교 ═══ -->
+                <TextBlock Text="선분 길이 비교" FontSize="14" FontWeight="Bold"
+                           Foreground="White" Margin="0,0,0,8"/>
+
+                <TextBlock Text="Align Mark 간 거리 (L ↔ R)" Foreground="#88CCFF"
+                           FontSize="11" Margin="0,0,0,4"/>
+
+                <!-- Top Align -->
+                <Border Background="#0A1628" CornerRadius="5" Padding="10,8" Margin="0,0,0,6">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" Fill="#3498DB" VerticalAlignment="Center"
+                                     Margin="0,0,6,0"/>
+                            <TextBlock Text="Top Align" Foreground="#AADDFF" FontSize="12"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="측정" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="TopAlignDistText" Grid.Row="0" Grid.Column="1"
+                                       Foreground="White" FontFamily="Consolas" FontSize="13"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="기준" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="TopAlignRefText" Grid.Row="1" Grid.Column="1"
+                                       Foreground="#FFCC66" FontFamily="Consolas" FontSize="13"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="오차" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="TopAlignErrText" Grid.Row="2" Grid.Column="1"
+                                       FontFamily="Consolas" FontSize="13" FontWeight="Bold"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Btm Align -->
+                <Border Background="#0A1628" CornerRadius="5" Padding="10,8" Margin="0,0,0,6">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" Fill="#E74C3C" VerticalAlignment="Center"
+                                     Margin="0,0,6,0"/>
+                            <TextBlock Text="Btm Align" Foreground="#FFAAAA" FontSize="12"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="측정" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="BtmAlignDistText" Grid.Row="0" Grid.Column="1"
+                                       Foreground="White" FontFamily="Consolas" FontSize="13"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="기준" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="BtmAlignRefText" Grid.Row="1" Grid.Column="1"
+                                       Foreground="#FFCC66" FontFamily="Consolas" FontSize="13"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="오차" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="BtmAlignErrText" Grid.Row="2" Grid.Column="1"
+                                       FontFamily="Consolas" FontSize="13" FontWeight="Bold"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Rectangle Height="1" Fill="#1C3A52" Margin="0,6,0,10"/>
+
+                <TextBlock Text="Fiducial Mark 간 거리 (L ↔ R)" Foreground="#FFCC66"
+                           FontSize="11" Margin="0,0,0,4"/>
+
+                <!-- Top Fid -->
+                <Border Background="#0A1628" CornerRadius="5" Padding="10,8" Margin="0,0,0,6">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" Fill="#2ECC71" VerticalAlignment="Center"
+                                     Margin="0,0,6,0"/>
+                            <TextBlock Text="Top Fid" Foreground="#AAEEBB" FontSize="12"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="측정" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="TopFidDistText" Grid.Row="0" Grid.Column="1"
+                                       Foreground="White" FontFamily="Consolas" FontSize="13"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="기준" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="TopFidRefText" Grid.Row="1" Grid.Column="1"
+                                       Foreground="#FFCC66" FontFamily="Consolas" FontSize="13"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="오차" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="TopFidErrText" Grid.Row="2" Grid.Column="1"
+                                       FontFamily="Consolas" FontSize="13" FontWeight="Bold"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Btm Fid -->
+                <Border Background="#0A1628" CornerRadius="5" Padding="10,8" Margin="0,0,0,6">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" Fill="#F39C12" VerticalAlignment="Center"
+                                     Margin="0,0,6,0"/>
+                            <TextBlock Text="Btm Fid" Foreground="#FFD699" FontSize="12"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="측정" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="BtmFidDistText" Grid.Row="0" Grid.Column="1"
+                                       Foreground="White" FontFamily="Consolas" FontSize="13"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="기준" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="BtmFidRefText" Grid.Row="1" Grid.Column="1"
+                                       Foreground="#FFCC66" FontFamily="Consolas" FontSize="13"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="오차" Foreground="#5E8BAA" FontSize="11"/>
+                            <TextBlock x:Name="BtmFidErrText" Grid.Row="2" Grid.Column="1"
+                                       FontFamily="Consolas" FontSize="13" FontWeight="Bold"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Rectangle Height="1" Fill="#1C3A52" Margin="0,6,0,10"/>
+
+                <!-- ═══ 오차 요약 ═══ -->
+                <TextBlock Text="오차 요약" FontSize="14" FontWeight="Bold"
+                           Foreground="White" Margin="0,0,0,6"/>
+                <Border Background="#112030" CornerRadius="5" Padding="10,8" Margin="0,0,0,6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Top Δ(Fid−Align)"
+                                   Foreground="#5E8BAA" FontSize="10"/>
+                        <TextBlock x:Name="TopDeltaText" Grid.Row="0" Grid.Column="1"
+                                   Foreground="White" FontFamily="Consolas" FontSize="12"
+                                   HorizontalAlignment="Right"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Btm Δ(Fid−Align)"
+                                   Foreground="#5E8BAA" FontSize="10"/>
+                        <TextBlock x:Name="BtmDeltaText" Grid.Row="1" Grid.Column="1"
+                                   Foreground="White" FontFamily="Consolas" FontSize="12"
+                                   HorizontalAlignment="Right"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Top−Btm Align 차이"
+                                   Foreground="#5E8BAA" FontSize="10"/>
+                        <TextBlock x:Name="AlignDiffText" Grid.Row="2" Grid.Column="1"
+                                   Foreground="White" FontFamily="Consolas" FontSize="12"
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+                </Border>
+
+                <!-- ═══ 보정 결과 (ResultX/Y/T) ═══ -->
+                <TextBlock Text="보정 결과" FontSize="14" FontWeight="Bold"
+                           Foreground="White" Margin="0,8,0,6"/>
+                <Border Background="#112030" CornerRadius="5" Padding="10,8" Margin="0,0,0,6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Shift X" Foreground="#5E8BAA" FontSize="11"/>
+                        <TextBlock x:Name="ResultXText" Grid.Row="0" Grid.Column="1"
+                                   Foreground="#2ECC71" FontFamily="Consolas" FontSize="13"
+                                   FontWeight="Bold" HorizontalAlignment="Right"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Shift Y" Foreground="#5E8BAA" FontSize="11"/>
+                        <TextBlock x:Name="ResultYText" Grid.Row="1" Grid.Column="1"
+                                   Foreground="#2ECC71" FontFamily="Consolas" FontSize="13"
+                                   FontWeight="Bold" HorizontalAlignment="Right"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Theta" Foreground="#5E8BAA" FontSize="11"/>
+                        <TextBlock x:Name="ResultTText" Grid.Row="2" Grid.Column="1"
+                                   Foreground="#2ECC71" FontFamily="Consolas" FontSize="13"
+                                   FontWeight="Bold" HorizontalAlignment="Right"/>
+                    </Grid>
+                </Border>
+
+                <!-- 범례 -->
+                <Border Background="#0A1220" CornerRadius="4" Padding="8,8" Margin="0,10,0,0">
+                    <StackPanel>
+                        <TextBlock Text="범례" Foreground="#88CCFF" FontSize="11" Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Width="8" Height="8" Fill="#3498DB" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Top Align (TL / TR)" Foreground="#AAA" FontSize="10"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Width="8" Height="8" Fill="#E74C3C" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Btm Align (BL / BR)" Foreground="#AAA" FontSize="10"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Width="8" Height="8" Fill="#2ECC71" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Btm Fid (BFL / BFR)" Foreground="#AAA" FontSize="10"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Rectangle Width="8" Height="8" Fill="#F39C12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Top Center" Foreground="#AAA" FontSize="10"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Rectangle Width="8" Height="8" Fill="#9B59B6" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Btm Center" Foreground="#AAA" FontSize="10"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Width="8" Height="8" Fill="White" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="회전 중심 (HcRO)" Foreground="#AAA" FontSize="10"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</telerik:RadWindow>
