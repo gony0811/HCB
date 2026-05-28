@@ -421,7 +421,7 @@ namespace HCB.UI
                 TopHighAlignState = StepState.InProgress;
                 var data = new AlignData { AvgMove = AvgMode };
                 hcbData = await _sequenceService.TopHighAlign(data, _cts.Token);
-
+                ComputeDistances();
                 TopRightFid = hcbData.TopRightFidRaw;
                 TopRightAlign = hcbData.TopRightAlignRaw;
                 TopLeftFid = hcbData.TopLeftFidRaw;
@@ -440,7 +440,7 @@ namespace HCB.UI
             {
                 BtmHighAlignState = StepState.InProgress;
                 hcbData = await _sequenceService.BtmHighAlign(hcbData, _cts.Token);
-
+                ComputeDistances();
                 BtmRightFid = hcbData.BtmRightFidRaw;
                 BtmRightAlign = hcbData.BtmRightAlignRaw;
                 BtmLeftFid = hcbData.BtmLeftFidRaw;
