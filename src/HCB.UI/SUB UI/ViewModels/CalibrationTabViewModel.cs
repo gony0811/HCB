@@ -618,15 +618,21 @@ namespace HCB.UI
                 double oy = yAxis == MotionExtensions.P_Y
                     ? _pyAxis!.CurrentPosition : _wyAxis!.CurrentPosition;
 
-                // P-Camera: X만 반전, W-Camera(Hc1/Hc2): X,Y 모두 반전
-                double xSign = -1.0;
-                double ySign = isPc ? 1.0 : -1.0;
+                // 이동 부호: P-Table (-X, -Y), W-Table (+X, +Y)
+                double xMoveSign = isPc ? -1.0 : 1.0;
+                double yMoveSign = isPc ? -1.0 : 1.0;
+
+                // 비전 결과 부호: P-Table (-X, +Y), W-Table (-X, -Y)
+                double xVisionSign = -1.0;
+                double yVisionSign = isPc ? 1.0 : -1.0;
 
                 var dx = new double[g, g];
                 var dy = new double[g, g];
+                var stageX = new double[g, g];
+                var stageY = new double[g, g];
                 int total = g * g;
                 CalibStatus = "2D Mapping 시작";
-
+                await _communication.RequestAFStart(MappingCamera, MappingMark, ct);
                 for (int row = 0; row < g; row++)
                 {
                     for (int col = 0; col < g; col++)
@@ -634,49 +640,59 @@ namespace HCB.UI
                         ct.ThrowIfCancellationRequested();
                         int ac = (row % 2 == 0) ? col : (g - 1 - col);
                         MappingProgress = $"{row * g + col + 1}/{total}";
-
                         await Task.WhenAll(
-                            _sequenceService.MotionsMove(MotionExtensions.H_X, ox + ac * step * xSign, ct),
-                            _sequenceService.MotionsMove(yAxis, oy + row * step * ySign, ct));
-
-                        await _communication.RequestAFStart(MappingCamera, MappingMark, ct);
+                            _sequenceService.MotionsMove(MotionExtensions.H_X, ox + ac * step * xMoveSign, ct),
+                            _sequenceService.MotionsMove(yAxis, oy + row * step * yMoveSign, ct));
+                        
                         var v = await _communication.RequestVisionMarkPosition(
                             MappingMark, MappingCamera, MappingDirect.ToString());
-
                         if (v == null || v.Result == Result.NG)
                             throw new Exception($"비전 실패 @ R{row} C{ac}");
-
-                        // Hc1/Hc2: (-X, -Y), Pc: (-X, +Y)
-                        dx[row, ac] = -v.X * 1000.0;
-                        dy[row, ac] = (isPc ? v.Y : -v.Y) * 1000.0;
+                        dx[row, ac] = v.X * xVisionSign * 1000.0;
+                        dy[row, ac] = v.Y * yVisionSign * 1000.0;
+                        stageX[row, ac] = _hxAxis!.CurrentPosition;
+                        stageY[row, ac] = yAxis == MotionExtensions.P_Y
+                            ? _pyAxis!.CurrentPosition : _wyAxis!.CurrentPosition;
                     }
                 }
-
                 await Task.WhenAll(
                     _sequenceService.MotionsMove(MotionExtensions.H_X, ox, ct),
                     _sequenceService.MotionsMove(yAxis, oy, ct));
 
-                // CSV — 셀마다 "(X, Y)" μm
                 string folder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                     "HCB", "2D Mapping");
                 Directory.CreateDirectory(folder);
                 string path = Path.Combine(folder,
                     $"Mapping2D_{MappingCamera}_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
-
                 using var sw = new StreamWriter(path, false, System.Text.Encoding.UTF8);
+
+                // ── 비전 오차 (μm) ──
+                sw.WriteLine("=== Vision Offset (μm) ===");
                 sw.Write("μm,");
                 for (int c = 0; c < g; c++)
                     sw.Write($"COL{c}{(c < g - 1 ? "," : "")}");
                 sw.WriteLine();
-
                 for (int r = 0; r < g; r++)
                 {
                     sw.Write($"ROW{r},");
                     for (int c = 0; c < g; c++)
-                    {
                         sw.Write($"\"({dx[r, c]:F1}  {dy[r, c]:F1})\"{(c < g - 1 ? "," : "")}");
-                    }
+                    sw.WriteLine();
+                }
+
+                // ── 스테이지 좌표 (mm) ──
+                sw.WriteLine();
+                sw.WriteLine("=== Stage Position (mm) ===");
+                sw.Write("mm,");
+                for (int c = 0; c < g; c++)
+                    sw.Write($"COL{c}{(c < g - 1 ? "," : "")}");
+                sw.WriteLine();
+                for (int r = 0; r < g; r++)
+                {
+                    sw.Write($"ROW{r},");
+                    for (int c = 0; c < g; c++)
+                        sw.Write($"\"({stageX[r, c]:F4}  {stageY[r, c]:F4})\"{(c < g - 1 ? "," : "")}");
                     sw.WriteLine();
                 }
 
@@ -695,7 +711,7 @@ namespace HCB.UI
                 CalibStatus = $"오류: {e.Message}";
             }
             finally { IsNotBusy = true; }
-        } 
+        }
 
         #endregion
         // ══════════════════════════════════════════════

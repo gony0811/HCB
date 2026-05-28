@@ -7,11 +7,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Telerik.Licensing.Json;
-using Telerik.Windows.Controls;
-using Telerik.Windows.Controls.DataVisualization.Map.BingRest;
-using Telerik.Windows.Diagrams.Core;
-
 namespace HCB.UI
 {
     [Service(Lifetime.Singleton)]
@@ -186,7 +181,7 @@ namespace HCB.UI
                 content: $"<MARKTYPE>{markType}</MARKTYPE><CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT><AVGMODE>{avgMode}</AVGMODE>"
             );
 
-            double pcWT = CalibrationMath.ToRadian(Double.Parse(ecParamService.FindByName(MotionExtensions.PC_W_T).Value));
+            double pcWT = Double.Parse(ecParamService.FindByName(MotionExtensions.PC_W_T).Value);
             double t = cameraType switch
             {
                 CameraType.HC1_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC1_T).Value) + pcWT,

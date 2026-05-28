@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices.Marshalling;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using static HCB.UI.SERVICE.CalibrationService;
@@ -424,18 +425,29 @@ namespace HCB.UI
         }
         #endregion
 
-        #region Top Die 고배율 측정
 
+
+        #region Top Die 고배율 측정
 
         public async Task<AlignData> TopHighAlign(
             AlignData data, CancellationToken ct)
         {
             data ??= new AlignData();
-            await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
-            data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
-            data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove,ct);
-            data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, ct);
-            data.TopLeftAlignRaw = await TopDieVisionLeftAlign( data.AvgMove, ct);
+            try
+            {
+                await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
+                data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
+                await PTable2DMappingOn();
+                data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove, ct);
+                data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, ct);
+                data.TopLeftAlignRaw = await TopDieVisionLeftAlign(data.AvgMove, ct);
+            }catch(Exception e)
+            {
+                throw new Exception(e.Message);
+            }finally
+            {
+                await PTable2DMappingOff();
+            }
 
             return data;
         }
@@ -553,15 +565,29 @@ namespace HCB.UI
 
         #endregion
 
+        public async Task PTable2DMappingOn()
+        {
+            var pmac = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            
+            await pmac.SendCommand("CompTable[0].sf[0]=1");
+            await pmac.SendCommand("CompTable[1].sf[0]=1");
+            await pmac.SendCommand("CompTable[2].sf[0]=0");
+            await pmac.SendCommand("CompTable[3].sf[0]=0");
+            await pmac.SendCommand("sys.Compenable=4");
 
+        }
 
-        
+        public async Task PTable2DMappingOff()
+        {
+            var pmac = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            await pmac.SendCommand("sys.Compenable=0");
+        }
 
         // ═══════════════════════════════════════════════════
         //  private: 캘리브레이션 파라미터 로드
         // ═══════════════════════════════════════════════════
 
-        
+
         private void LoadCalibrationInto(AlignData data)
         {
             var pcT = _paramService.FindByName(MotionExtensions.PC_T);
