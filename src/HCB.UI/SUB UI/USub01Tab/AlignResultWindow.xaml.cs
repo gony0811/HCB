@@ -14,38 +14,36 @@ namespace HCB.UI
     public partial class AlignResultWindow : RadWindow
     {
         private readonly Func<AlignData> _dataProvider;
-        private readonly double _refAlignDist;
-        private readonly double _refFidDist;
+        private readonly double _refTopAlignDist = 13.5;
+        private readonly double _refBtmAlignDist = 14.365584;
         private readonly DispatcherTimer _timer;
 
         /// <summary>
         /// 실시간 모드: dataProvider 콜백으로 매 갱신마다 최신 AlignData를 가져옴
         /// </summary>
         public AlignResultWindow(Func<AlignData> dataProvider,
-                                 double refAlignDist = double.NaN,
-                                 double refFidDist = double.NaN)
+                         double refTopAlignDist = double.NaN,
+                         double refBtmAlignDist = double.NaN)
         {
             InitializeComponent();
             _dataProvider = dataProvider;
-            _refAlignDist = refAlignDist;
-            _refFidDist = refFidDist;
+            _refTopAlignDist = refTopAlignDist;
+            _refBtmAlignDist = refBtmAlignDist;
 
             Header = "정렬 결과 — 회전 중심 좌표계";
 
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
             _timer.Tick += (s, e) => UpdateAll();
-
             Loaded += (s, e) => { UpdateAll(); _timer.Start(); };
             Closed += (s, e) => _timer.Stop();
         }
 
         /// <summary>
-        /// 스냅샷 모드: 고정된 AlignData 한 장만 표시 (기존 호환)
+        /// 스냅샷 모드 (기존 호환)
         /// </summary>
         public AlignResultWindow(AlignData data,
-                                 double refAlignDist = double.NaN,
-                                 double refFidDist = double.NaN)
-            : this(() => data, refAlignDist, refFidDist)
+                                 double refAlignDist = double.NaN)
+            : this(() => data, refAlignDist)
         {
         }
 
@@ -65,43 +63,20 @@ namespace HCB.UI
             if (data == null)
             {
                 TopAlignDistText.Text = BtmAlignDistText.Text = "N/A";
-                TopFidDistText.Text = BtmFidDistText.Text = "N/A";
                 TopAlignRefText.Text = BtmAlignRefText.Text = "—";
-                TopFidRefText.Text = BtmFidRefText.Text = "—";
                 TopAlignErrText.Text = BtmAlignErrText.Text = "—";
-                TopFidErrText.Text = BtmFidErrText.Text = "—";
-                TopDeltaText.Text = BtmDeltaText.Text = AlignDiffText.Text = "N/A";
+                AlignDiffText.Text = "N/A";
                 ResultXText.Text = ResultYText.Text = ResultTText.Text = "—";
                 return;
             }
 
-            // ── 개별 항목 ──
+            // ── Top / Btm Align 거리 ──
             SetDistRow(TopAlignDistText, TopAlignRefText, TopAlignErrText,
-                       data.TopAlignDist, _refAlignDist);
+                data.TopAlignDist, _refTopAlignDist);
             SetDistRow(BtmAlignDistText, BtmAlignRefText, BtmAlignErrText,
-                       data.BtmAlignDist, _refAlignDist);
-            SetDistRow(TopFidDistText, TopFidRefText, TopFidErrText,
-                       data.TopFidDist, _refFidDist);
-            SetDistRow(BtmFidDistText, BtmFidRefText, BtmFidErrText,
-                       data.BtmFidDist, _refFidDist);
+                       data.BtmAlignDist, _refBtmAlignDist);
 
-            // ── 오차 요약 ──
-            if (data.TopFidDist > 0 && data.TopAlignDist > 0)
-            {
-                double d = data.TopFidDist - data.TopAlignDist;
-                TopDeltaText.Text = FormatErr(d);
-                TopDeltaText.Foreground = ErrBrush(d);
-            }
-            else TopDeltaText.Text = "N/A";
-
-            if (data.BtmFidDist > 0 && data.BtmAlignDist > 0)
-            {
-                double d = data.BtmFidDist - data.BtmAlignDist;
-                BtmDeltaText.Text = FormatErr(d);
-                BtmDeltaText.Foreground = ErrBrush(d);
-            }
-            else BtmDeltaText.Text = "N/A";
-
+            // ── 오차 요약: Top − Btm ──
             if (data.TopAlignDist > 0 && data.BtmAlignDist > 0)
             {
                 double d = data.TopAlignDist - data.BtmAlignDist;
@@ -162,7 +137,7 @@ namespace HCB.UI
         }
 
         // ════════════════════════════════════════════════════
-        //  좌측 그래프: 회전 중심 좌표계 기준 포인트
+        //  좌측 그래프
         // ════════════════════════════════════════════════════
 
         private void GraphCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -196,7 +171,6 @@ namespace HCB.UI
             if (data.TCenter != null) points.Add(("TC", data.TCenter.X, data.TCenter.Y, Color.FromRgb(243, 156, 18), true));
             if (data.BCenter != null) points.Add(("BC", data.BCenter.X, data.BCenter.Y, Color.FromRgb(155, 89, 182), true));
 
-            // 회전 중심 (원점) — 항상 표시
             points.Add(("HcRO", 0, 0, Colors.White, true));
 
             if (points.Count <= 1)
@@ -259,8 +233,9 @@ namespace HCB.UI
                 AddLine(CX(minX), CY(0), CX(maxX), CY(0), crossColor, 1, isDashed: true);
             }
 
-            // ── 선분 그리기 (양쪽 점이 있을 때만) ──
+            // ── 선분 그리기 ──
 
+            // Top Align (TL → TR)
             if (data.TL != null && data.TR != null)
             {
                 AddLine(CX(data.TL.X), CY(data.TL.Y),
@@ -273,6 +248,7 @@ namespace HCB.UI
                                  data.TopAlignDist, Color.FromRgb(52, 152, 219));
             }
 
+            // Btm Align (BL → BR)
             if (data.BL != null && data.BR != null)
             {
                 AddLine(CX(data.BL.X), CY(data.BL.Y),
@@ -285,18 +261,15 @@ namespace HCB.UI
                                  data.BtmAlignDist, Color.FromRgb(231, 76, 60));
             }
 
+            // Btm Fid (BFL → BFR) — 점선, 거리 라벨 없음
             if (data.BFL != null && data.BFR != null)
             {
                 AddLine(CX(data.BFL.X), CY(data.BFL.Y),
                         CX(data.BFR.X), CY(data.BFR.Y),
                         Color.FromArgb(140, 46, 204, 113), 1.5, isDashed: true);
-
-                if (data.BtmFidDist > 0)
-                    AddDistLabel(CX((data.BFL.X + data.BFR.X) / 2),
-                                 CY((data.BFL.Y + data.BFR.Y) / 2) + 6,
-                                 data.BtmFidDist, Color.FromRgb(46, 204, 113));
             }
 
+            // TCenter → BCenter 연결
             if (data.TCenter != null && data.BCenter != null)
             {
                 AddLine(CX(data.TCenter.X), CY(data.TCenter.Y),
@@ -323,8 +296,7 @@ namespace HCB.UI
                         Color.FromArgb(160, 160, 200, 230), 9);
             }
 
-            // ── 포인트 개수 표시 ──
-            int totalMarks = points.Count - 1; // HcRO 제외
+            int totalMarks = points.Count - 1;
             AddText(w - 120, 8, $"포인트: {totalMarks}/8",
                     Color.FromArgb(140, 160, 190, 220), 10);
         }

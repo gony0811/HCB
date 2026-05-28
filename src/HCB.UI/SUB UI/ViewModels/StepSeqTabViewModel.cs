@@ -261,9 +261,9 @@ namespace HCB.UI
         [RelayCommand]
         public void OpenTopHighAlignInfo()
         {
-            var (refAlign, refFid) = GetRefDistances();
+            var (refTop, refBtm) = GetRefAlignDists();
             _ = RunDialogOnNewThread(() =>
-                new AlignResultWindow(() => { ComputeDistances(); return hcbData; }, refAlign, refFid)
+                new AlignResultWindow(() => { ComputeDistances(); return hcbData; }, refTop, refBtm)
                 { Header = "정렬 결과 — 실시간", WindowStartupLocation = WindowStartupLocation.CenterScreen }
                 .ShowDialog());
         }
@@ -271,9 +271,9 @@ namespace HCB.UI
         [RelayCommand]
         public void BtmHighAlignInfo()
         {
-            var (refAlign, refFid) = GetRefDistances();
+            var (refTop, refBtm) = GetRefAlignDists();
             _ = RunDialogOnNewThread(() =>
-                new AlignResultWindow(() => { ComputeDistances(); return hcbData; }, refAlign, refFid)
+                new AlignResultWindow(() => { ComputeDistances(); return hcbData; }, refTop, refBtm)
                 { Header = "정렬 결과 — 실시간", WindowStartupLocation = WindowStartupLocation.CenterScreen }
                 .ShowDialog());
         }
@@ -719,10 +719,17 @@ namespace HCB.UI
 
             if (hcbData.BL != null && hcbData.BR != null)
                 hcbData.BtmAlignDist = CalibrationMath.Dist(hcbData.BR, hcbData.BL);
-            if (hcbData.TL != null && hcbData.TR != null)
-                hcbData.TopAlignDist = CalibrationMath.Dist(hcbData.TR, hcbData.TL);
+            
             if (hcbData.BFL != null && hcbData.BFR != null)
                 hcbData.BtmFidDist = CalibrationMath.Dist(hcbData.BFR, hcbData.BFL);
+
+            if (hcbData.TopLeftAlignRaw != null && hcbData.TopRightAlignRaw != null)
+            {
+                var dx = hcbData.TopRightAlignRaw.CenterX - hcbData.TopLeftAlignRaw.CenterX;
+                var dy = hcbData.TopRightAlignRaw.CenterY - hcbData.TopLeftAlignRaw.CenterY;
+                hcbData.TopAlignDist = Math.Sqrt(dx * dx + dy * dy);
+            }
+
             if (hcbData.TopLeftFidRaw != null && hcbData.TopRightFidRaw != null)
             {
                 var dx = hcbData.TopRightFidRaw.CenterX - hcbData.TopLeftFidRaw.CenterX;
@@ -731,18 +738,19 @@ namespace HCB.UI
             }
         }
 
-        private (double refAlign, double refFid) GetRefDistances()
+        // ViewModel - GetRefAlignDist → 두 개로 분리
+        private (double refTop, double refBtm) GetRefAlignDists()
         {
-            double refAlign = double.NaN, refFid = double.NaN;
+            double refTop = double.NaN, refBtm = double.NaN;
             var recipe = _recipeService?.UseRecipe;
             if (recipe != null)
             {
-                var pa = recipe.ParamList.FirstOrDefault(p => p.Name == "RefAlignDist");
-                var pf = recipe.ParamList.FirstOrDefault(p => p.Name == "RefFidDist");
-                if (pa != null && double.TryParse(pa.Value, out double a)) refAlign = a;
-                if (pf != null && double.TryParse(pf.Value, out double f)) refFid = f;
+                var pt = recipe.ParamList.FirstOrDefault(p => p.Name == "RefTopAlignDist");
+                var pb = recipe.ParamList.FirstOrDefault(p => p.Name == "RefBtmAlignDist");
+                if (pt != null && double.TryParse(pt.Value, out double t)) refTop = t;
+                if (pb != null && double.TryParse(pb.Value, out double b)) refBtm = b;
             }
-            return (refAlign, refFid);
+            return (refTop, refBtm);
         }
 
         // ═════════════════════════════════════════════════════
