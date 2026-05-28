@@ -14,16 +14,13 @@ namespace HCB.UI
     public partial class AlignResultWindow : RadWindow
     {
         private readonly Func<AlignData> _dataProvider;
-        private readonly double _refTopAlignDist = 13.5;
-        private readonly double _refBtmAlignDist = 14.365584;
+        private readonly double _refTopAlignDist;
+        private readonly double _refBtmAlignDist;
         private readonly DispatcherTimer _timer;
 
-        /// <summary>
-        /// 실시간 모드: dataProvider 콜백으로 매 갱신마다 최신 AlignData를 가져옴
-        /// </summary>
         public AlignResultWindow(Func<AlignData> dataProvider,
-                         double refTopAlignDist = double.NaN,
-                         double refBtmAlignDist = double.NaN)
+                                 double refTopAlignDist = 13.5,
+                                 double refBtmAlignDist = 14.365584)
         {
             InitializeComponent();
             _dataProvider = dataProvider;
@@ -38,12 +35,10 @@ namespace HCB.UI
             Closed += (s, e) => _timer.Stop();
         }
 
-        /// <summary>
-        /// 스냅샷 모드 (기존 호환)
-        /// </summary>
         public AlignResultWindow(AlignData data,
-                                 double refAlignDist = double.NaN)
-            : this(() => data, refAlignDist)
+                                 double refTopAlignDist = 13.5,
+                                 double refBtmAlignDist = 14.365584)
+            : this(() => data, refTopAlignDist, refBtmAlignDist)
         {
         }
 
@@ -55,7 +50,7 @@ namespace HCB.UI
         }
 
         // ════════════════════════════════════════════════════
-        //  우측 패널: 선분 길이 & 오차
+        //  우측 패널
         // ════════════════════════════════════════════════════
 
         private void UpdateDistancePanel(AlignData data)
@@ -65,27 +60,25 @@ namespace HCB.UI
                 TopAlignDistText.Text = BtmAlignDistText.Text = "N/A";
                 TopAlignRefText.Text = BtmAlignRefText.Text = "—";
                 TopAlignErrText.Text = BtmAlignErrText.Text = "—";
-                AlignDiffText.Text = "N/A";
+                FidDiffText.Text = "N/A";
                 ResultXText.Text = ResultYText.Text = ResultTText.Text = "—";
                 return;
             }
 
-            // ── Top / Btm Align 거리 ──
             SetDistRow(TopAlignDistText, TopAlignRefText, TopAlignErrText,
-                data.TopAlignDist, _refTopAlignDist);
+                       data.TopAlignDist, _refTopAlignDist);
             SetDistRow(BtmAlignDistText, BtmAlignRefText, BtmAlignErrText,
                        data.BtmAlignDist, _refBtmAlignDist);
 
-            // ── 오차 요약: Top − Btm ──
-            if (data.TopAlignDist > 0 && data.BtmAlignDist > 0)
+            // Top Fid − Btm Fid 차이
+            if (data.TopFidDist > 0 && data.BtmFidDist > 0)
             {
-                double d = data.TopAlignDist - data.BtmAlignDist;
-                AlignDiffText.Text = FormatErr(d);
-                AlignDiffText.Foreground = ErrBrush(d);
+                double d = data.TopFidDist - data.BtmFidDist;
+                FidDiffText.Text = FormatErr(d);
+                FidDiffText.Foreground = ErrBrush(d);
             }
-            else AlignDiffText.Text = "N/A";
+            else FidDiffText.Text = "N/A";
 
-            // ── 보정 결과 ──
             ResultXText.Text = data.ResultX.ToString("+0.0000;-0.0000;0.0000") + " mm";
             ResultYText.Text = data.ResultY.ToString("+0.0000;-0.0000;0.0000") + " mm";
             ResultTText.Text = data.ResultT.ToString("+0.0000;-0.0000;0.0000") + " °";
@@ -97,7 +90,6 @@ namespace HCB.UI
             if (measured > 0)
             {
                 measTb.Text = $"{measured:F4} mm";
-
                 if (!double.IsNaN(reference) && reference > 0)
                 {
                     refTb.Text = $"{reference:F4} mm";
@@ -159,7 +151,6 @@ namespace HCB.UI
                 return;
             }
 
-            // ── 포인트 수집 (있는 것만) ──
             var points = new List<(string name, double x, double y, Color color, bool isSquare)>();
 
             if (data.TL != null) points.Add(("TL", data.TL.X, data.TL.Y, Color.FromRgb(52, 152, 219), false));
@@ -170,7 +161,6 @@ namespace HCB.UI
             if (data.BFR != null) points.Add(("BFR", data.BFR.X, data.BFR.Y, Color.FromRgb(46, 204, 113), false));
             if (data.TCenter != null) points.Add(("TC", data.TCenter.X, data.TCenter.Y, Color.FromRgb(243, 156, 18), true));
             if (data.BCenter != null) points.Add(("BC", data.BCenter.X, data.BCenter.Y, Color.FromRgb(155, 89, 182), true));
-
             points.Add(("HcRO", 0, 0, Colors.White, true));
 
             if (points.Count <= 1)
@@ -179,7 +169,6 @@ namespace HCB.UI
                 return;
             }
 
-            // ── 범위 계산 ──
             double minX = points.Min(p => p.x);
             double maxX = points.Max(p => p.x);
             double minY = points.Min(p => p.y);
@@ -204,18 +193,15 @@ namespace HCB.UI
             double CX(double x) => offsetX + (x - minX) * scale;
             double CY(double y) => h - offsetY - (y - minY) * scale;
 
-            // ── 격자선 ──
             var gridColor = Color.FromArgb(30, 150, 180, 220);
             const int div = 5;
             for (int i = 0; i <= div; i++)
             {
                 double t = (double)i / div;
-
                 double gx = minX + t * rangeX;
                 AddLine(CX(gx), CY(minY), CX(gx), CY(maxY), gridColor, 1);
                 AddText(CX(gx) - 16, CY(minY) + 4, gx.ToString("F3"),
                         Color.FromArgb(100, 140, 170, 200), 9);
-
                 double gy = minY + t * rangeY;
                 AddLine(CX(minX), CY(gy), CX(maxX), CY(gy), gridColor, 1);
                 AddText(CX(minX) - 52, CY(gy) - 7, gy.ToString("F3"),
@@ -225,7 +211,6 @@ namespace HCB.UI
             AddText(w / 2, CY(minY) + 18, "X (mm)", Color.FromArgb(160, 160, 190, 220), 10);
             AddText(CX(minX) - 52, pad - 16, "Y (mm)", Color.FromArgb(160, 160, 190, 220), 10);
 
-            // ── 원점 십자선 ──
             if (0 >= minX && 0 <= maxX && 0 >= minY && 0 <= maxY)
             {
                 var crossColor = Color.FromArgb(60, 255, 255, 255);
@@ -233,35 +218,28 @@ namespace HCB.UI
                 AddLine(CX(minX), CY(0), CX(maxX), CY(0), crossColor, 1, isDashed: true);
             }
 
-            // ── 선분 그리기 ──
-
-            // Top Align (TL → TR)
             if (data.TL != null && data.TR != null)
             {
                 AddLine(CX(data.TL.X), CY(data.TL.Y),
                         CX(data.TR.X), CY(data.TR.Y),
                         Color.FromArgb(180, 52, 152, 219), 2.0);
-
                 if (data.TopAlignDist > 0)
                     AddDistLabel(CX((data.TL.X + data.TR.X) / 2),
                                  CY((data.TL.Y + data.TR.Y) / 2) - 16,
                                  data.TopAlignDist, Color.FromRgb(52, 152, 219));
             }
 
-            // Btm Align (BL → BR)
             if (data.BL != null && data.BR != null)
             {
                 AddLine(CX(data.BL.X), CY(data.BL.Y),
                         CX(data.BR.X), CY(data.BR.Y),
                         Color.FromArgb(180, 231, 76, 60), 2.0);
-
                 if (data.BtmAlignDist > 0)
                     AddDistLabel(CX((data.BL.X + data.BR.X) / 2),
                                  CY((data.BL.Y + data.BR.Y) / 2) + 6,
                                  data.BtmAlignDist, Color.FromRgb(231, 76, 60));
             }
 
-            // Btm Fid (BFL → BFR) — 점선, 거리 라벨 없음
             if (data.BFL != null && data.BFR != null)
             {
                 AddLine(CX(data.BFL.X), CY(data.BFL.Y),
@@ -269,7 +247,6 @@ namespace HCB.UI
                         Color.FromArgb(140, 46, 204, 113), 1.5, isDashed: true);
             }
 
-            // TCenter → BCenter 연결
             if (data.TCenter != null && data.BCenter != null)
             {
                 AddLine(CX(data.TCenter.X), CY(data.TCenter.Y),
@@ -277,17 +254,14 @@ namespace HCB.UI
                         Color.FromArgb(80, 200, 200, 200), 1.2, isDashed: true);
             }
 
-            // ── 포인트 그리기 ──
             const double r = 6;
             foreach (var (name, x, y, color, isSquare) in points)
             {
                 double cx = CX(x);
                 double cy = CY(y);
 
-                if (isSquare)
-                    AddSquare(cx, cy, r, color);
-                else
-                    AddPoint(cx, cy, r, color);
+                if (isSquare) AddSquare(cx, cy, r, color);
+                else AddPoint(cx, cy, r, color);
 
                 string label = name == "HcRO" ? "O (HcRO)" : name;
                 AddText(cx + r + 3, cy - 12, label, color, 11);
@@ -301,7 +275,6 @@ namespace HCB.UI
                     Color.FromArgb(140, 160, 190, 220), 10);
         }
 
-        // ── 선분 길이 라벨 ──
         private void AddDistLabel(double cx, double cy, double dist, Color color)
         {
             var border = new Border
@@ -323,8 +296,6 @@ namespace HCB.UI
             Canvas.SetTop(border, cy);
             GraphCanvas.Children.Add(border);
         }
-
-        // ── 그래프 헬퍼 ──
 
         private void AddLine(double x1, double y1, double x2, double y2,
                              Color color, double thickness, bool isDashed = false)
@@ -352,8 +323,7 @@ namespace HCB.UI
                 Stroke = new SolidColorBrush(Colors.White),
                 StrokeThickness = 1
             };
-            Canvas.SetLeft(e, cx - radius);
-            Canvas.SetTop(e, cy - radius);
+            Canvas.SetLeft(e, cx - radius); Canvas.SetTop(e, cy - radius);
             GraphCanvas.Children.Add(e);
         }
 
@@ -367,8 +337,7 @@ namespace HCB.UI
                 Stroke = new SolidColorBrush(Colors.White),
                 StrokeThickness = 1
             };
-            Canvas.SetLeft(rect, cx - half);
-            Canvas.SetTop(rect, cy - half);
+            Canvas.SetLeft(rect, cx - half); Canvas.SetTop(rect, cy - half);
             GraphCanvas.Children.Add(rect);
         }
 
@@ -380,8 +349,7 @@ namespace HCB.UI
                 Foreground = new SolidColorBrush(color),
                 FontSize = fontSize
             };
-            Canvas.SetLeft(tb, x);
-            Canvas.SetTop(tb, y);
+            Canvas.SetLeft(tb, x); Canvas.SetTop(tb, y);
             GraphCanvas.Children.Add(tb);
         }
 
@@ -394,8 +362,7 @@ namespace HCB.UI
                 FontSize = 14,
                 TextAlignment = TextAlignment.Center
             };
-            Canvas.SetLeft(tb, w / 2 - 140);
-            Canvas.SetTop(tb, h / 2 - 20);
+            Canvas.SetLeft(tb, w / 2 - 140); Canvas.SetTop(tb, h / 2 - 20);
             GraphCanvas.Children.Add(tb);
         }
     }

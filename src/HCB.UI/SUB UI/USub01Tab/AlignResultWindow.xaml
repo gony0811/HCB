@@ -126,9 +126,9 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Top−Btm Align 차이"
-                                   Foreground="#5E8BAA" FontSize="10"/>
-                        <TextBlock x:Name="AlignDiffText" Grid.Row="0" Grid.Column="1"
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Top−Btm Fid 차이"
+                                    Foreground="#5E8BAA" FontSize="10"/>
+                        <TextBlock x:Name="FidDiffText" Grid.Row="0" Grid.Column="1"
                                    Foreground="White" FontFamily="Consolas" FontSize="12"
                                    HorizontalAlignment="Right"/>
                     </Grid>
