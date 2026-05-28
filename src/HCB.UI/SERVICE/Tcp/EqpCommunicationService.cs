@@ -7,11 +7,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Telerik.Licensing.Json;
-using Telerik.Windows.Controls;
-using Telerik.Windows.Controls.DataVisualization.Map.BingRest;
-using Telerik.Windows.Diagrams.Core;
-
 namespace HCB.UI
 {
     [Service(Lifetime.Singleton)]
