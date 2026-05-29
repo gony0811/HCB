@@ -430,25 +430,26 @@ namespace HCB.UI
         #region Top Die 고배율 측정
 
         public async Task<AlignData> TopHighAlign(
-            AlignData data, CancellationToken ct)
+                AlignData data, CancellationToken ct)
         {
             data ??= new AlignData();
             try
             {
                 await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
                 data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
-                await PTable2DMappingOn();
+                if (data.Use2DMapping) await PTable2DMappingOn();
                 data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove, ct);
                 data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, ct);
                 data.TopLeftAlignRaw = await TopDieVisionLeftAlign(data.AvgMove, ct);
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 throw new Exception(e.Message);
-            }finally
-            {
-                await PTable2DMappingOff();
             }
-
+            finally
+            {
+                if (data.Use2DMapping) await PTable2DMappingOff();
+            }
             return data;
         }
 

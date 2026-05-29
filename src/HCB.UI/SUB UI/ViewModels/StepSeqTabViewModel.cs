@@ -113,6 +113,10 @@ namespace HCB.UI
         [ObservableProperty] private VernierResult vernierResult;
         [ObservableProperty] private ObservableCollection<VernierRow> vernierRows = new();
         [ObservableProperty] private bool avgMode = true;
+        [ObservableProperty] private bool use2DMapping = true;
+
+        [RelayCommand]
+        public void Change2DMapping() => Use2DMapping = !Use2DMapping;
 
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
@@ -178,7 +182,13 @@ namespace HCB.UI
         //  STOP
         // ═════════════════════════════════════════════════════
 
-        [RelayCommand]
+        // 1. 플래그 추가
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(StopCommand))]
+        private bool canStop = true;
+
+        // 2. Stop 커맨드에 CanExecute 조건 추가
+        [RelayCommand(CanExecute = nameof(CanStop))]
         public async Task Stop()
         {
             if (_cts == null || _cts.IsCancellationRequested) return;
@@ -190,7 +200,12 @@ namespace HCB.UI
             TopLowAlignState = TopPickupState = TopHighAlignState
                              = TopCorrState = TopBondingState = StepState.Idle;
         }
-
+        private async Task RunNoStop(Func<Task> action)
+        {
+            CanStop = false;
+            try { await action(); }
+            finally { CanStop = true; }
+        }
         // ═════════════════════════════════════════════════════
         //  INIT
         // ═════════════════════════════════════════════════════
@@ -317,12 +332,13 @@ namespace HCB.UI
                 if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); return; }
                 if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 해주세요"); return; }
                 BtmPickupState = StepState.InProgress;
-                await _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, _cts.Token);
+                await RunNoStop(() => _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, _cts.Token));
                 BtmPickupState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmPickupState = StepState.Idle; }
             catch (Exception e) { BtmPickupState = StepState.Failed; _logger.Warning(e.Message); }
         }
+
 
         [RelayCommand]
         public async Task BtmPlace()
@@ -353,7 +369,7 @@ namespace HCB.UI
                 if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 실패"); return; }
 
                 BtmPickupState = StepState.InProgress;
-                await _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, ct);
+                await RunNoStop(() => _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, ct));
                 BtmPickupState = StepState.Completed;
 
                 BtmPlaceState = StepState.InProgress;
@@ -405,12 +421,13 @@ namespace HCB.UI
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
                 if (VisionTopLowAlign == null) { _logger.Information("Top Die Align 해주세요"); return; }
                 TopPickupState = StepState.InProgress;
-                await _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, _cts.Token);
+                await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, _cts.Token));
                 TopPickupState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopPickupState = StepState.Idle; }
             catch (Exception e) { TopPickupState = StepState.Failed; _logger.Warning(e.Message); }
         }
+
 
         [RelayCommand]
         public async Task TopHighAlign()
@@ -419,7 +436,7 @@ namespace HCB.UI
             try
             {
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode };
+                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping };
                 hcbData = await _sequenceService.TopHighAlign(data, _cts.Token);
                 ComputeDistances();
                 TopRightFid = hcbData.TopRightFidRaw;
@@ -475,7 +492,7 @@ namespace HCB.UI
             {
                 TopBondingState = StepState.InProgress;
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
-                await _sequenceService.BondingPress(BondingHistory, _cts.Token);
+                await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, _cts.Token));
                 TopBondingState = StepState.Completed;
                 ExportHcbData();
             }
@@ -500,7 +517,7 @@ namespace HCB.UI
                 TopLowAlignState = StepState.Completed;
 
                 TopPickupState = StepState.InProgress;
-                await _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct);
+                await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
                 TopPickupState = StepState.Completed;
 
                 // 3~5 반복
@@ -509,7 +526,7 @@ namespace HCB.UI
                     ct.ThrowIfCancellationRequested();
 
                     TopHighAlignState = StepState.InProgress;
-                    var data = new AlignData { AvgMove = AvgMode };
+                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping };
                     hcbData = await _sequenceService.TopHighAlign(data, ct);
                     TopRightFid = hcbData.TopRightFidRaw;
                     TopRightAlign = hcbData.TopRightAlignRaw;
@@ -536,8 +553,11 @@ namespace HCB.UI
                 // 6. 본딩
                 TopBondingState = StepState.InProgress;
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
-                await _sequenceService.BondingCorr(hcbData, ct);
-                await _sequenceService.BondingPress(BondingHistory, ct);
+                await RunNoStop(async () =>
+                {
+                    await _sequenceService.BondingCorr(hcbData, ct);
+                    await _sequenceService.BondingPress(BondingHistory, ct);
+                });
                 TopBondingState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
@@ -564,12 +584,12 @@ namespace HCB.UI
 
                 // 2. Pickup
                 TopPickupState = StepState.InProgress;
-                await _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct);
+                await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
                 TopPickupState = StepState.Completed;
 
                 // 3. 고배율 측정 (Top)
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode };
+                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping };
                 hcbData = await _sequenceService.TopHighAlign(data, ct);
                 TopRightFid = hcbData.TopRightFidRaw;
                 TopRightAlign = hcbData.TopRightAlignRaw;
@@ -596,8 +616,9 @@ namespace HCB.UI
                 // 6. 본딩
                 TopBondingState = StepState.InProgress;
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
-                await _sequenceService.BondingPress(BondingHistory, ct);
+                await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, ct));
                 TopBondingState = StepState.Completed;
+
                 ExportHcbData();
             }
             catch (OperationCanceledException)

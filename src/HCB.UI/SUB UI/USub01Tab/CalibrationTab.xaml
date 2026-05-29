@@ -145,9 +145,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="6" local:GridHelper.Columns="1*, 1*"
-          IsEnabled="{Binding IsNotBusy}">
-
+    <Grid Margin="6" local:GridHelper.Columns="1*, 1*">
         <!-- ══════════════════════════════════════════════
              좌측 : 캘리브레이션 실행
         ══════════════════════════════════════════════ -->
@@ -179,16 +177,19 @@
                         <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="Hc1 각도 캘리브레이션"
                                 Command="{Binding Hc1AngleCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
                                 Margin="0,0,0,10"/>
 
                         <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="Hc2 각도 캘리브레이션"
                                 Command="{Binding Hc2AngleCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
                                 Margin="0,0,0,10"/>
 
                         <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="카메라 Hc1/Hc2 거리 계산"
-                                Command="{Binding CameraDistanceCommand}"/>
+                                Command="{Binding CameraDistanceCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
 
                         <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
 
@@ -202,7 +203,9 @@
 
                         <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="Pc 각도 캘리브레이션"
-                                Command="{Binding PcAngleCommand}"/>
+                                Command="{Binding PcAngleCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
+
 
                         <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
 
@@ -216,7 +219,8 @@
 
                         <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="HcRO 회전 중심 계산"
-                                Command="{Binding CreateHcRoCommand}"/>
+                                Command="{Binding CreateHcRoCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
                         <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
 
                         <!-- ④ 전체 캘리브레이션 -->
@@ -245,6 +249,7 @@
                         <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="전체 캘리브레이션 실행"
                                 Command="{Binding RunFullCalibrationCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
                                 Margin="0,0,0,10"/>
 
                         <Button Content="중지" Height="42" FontSize="15" FontWeight="SemiBold"
@@ -513,6 +518,7 @@
                         <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="정밀도 검증 실행"
                                 Command="{Binding VerifyAlignmentAccuracyCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
                                 Margin="16,0,16,8"/>
 
                         <!-- 검증 결과 -->

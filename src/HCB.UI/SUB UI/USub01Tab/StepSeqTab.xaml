@@ -650,6 +650,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <Border Background="#14452A" CornerRadius="4" Padding="10,4"
                                 VerticalAlignment="Center" Margin="0,0,12,0">
@@ -695,7 +696,42 @@
                                 </Style>
                             </Button.Style>
                         </Button>
-                    </Grid>
+                        <Button Grid.Column="3" Margin="6,0,0,0"
+                                Command="{Binding Change2DMappingCommand}"
+                                MinWidth="100" Height="32">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Bd"
+                                                        Background="#1A2332"
+                                                        BorderBrush="#2A3A4A"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6"
+                                                        Padding="12,4">
+                                                    <TextBlock x:Name="Txt"
+                                                               Text="2D Map OFF"
+                                                               Foreground="#8899AA"
+                                                               FontSize="13"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding Use2DMapping}" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="#0F6E56"/>
+                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#1D9E75"/>
+                                                        <Setter TargetName="Txt" Property="Text" Value="2D Map ON"/>
+                                                        <Setter TargetName="Txt" Property="Foreground" Value="#E1F5EE"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                </Grid>
                     <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
                                VerticalAlignment="Bottom" Margin="16,44,16,0"/>
 
