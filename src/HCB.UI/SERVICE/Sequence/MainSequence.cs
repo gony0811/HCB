@@ -478,6 +478,7 @@ namespace HCB.UI
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             LoadCalibrationInto(data);
+            CompensateHc2Offset(data);
 
             // ── STEP 1: Top Die — Fid→Align 이동량 ──
             var lDist = Point2D.of(
@@ -554,14 +555,6 @@ namespace HCB.UI
             data.ResultX = shiftX + data.OffsetXY.X;
             data.ResultY = shiftY + data.OffsetXY.Y;
             data.ResultT = thetaF + data.OffsetT;
-
-
-
-            //await Task.WhenAll(
-            //    RelativeMotionsMove(MotionExtensions.H_X, shiftX, ct),
-            //    RelativeMotionsMove(MotionExtensions.W_Y, shiftY, ct),
-            //    RelativeMotionsMove(MotionExtensions.H_T, thetaF, ct)
-            //);
         }
 
         #endregion
@@ -615,18 +608,6 @@ namespace HCB.UI
                 data.PcTRad = CalibrationMath.ToRadian(ParseDouble(pcT.Value));
                 data.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
                 data.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
-
-                // 카메라 회전량 보정: DxCamToMark/DyCamToMark in-place 적용
-                // Top(P-Cam) → PcTRad,  Btm Left(Hc1) → Hc1Rad,  Btm Right(Hc2) → Hc2Rad
-                //ApplyCameraRotation(data.TopLeftFidRaw,    data.PcTRad);
-                //ApplyCameraRotation(data.TopRightFidRaw,   data.PcTRad);
-                //ApplyCameraRotation(data.TopLeftAlignRaw,  data.PcTRad);
-                //ApplyCameraRotation(data.TopRightAlignRaw, data.PcTRad);
-
-                //ApplyCameraRotation(data.BtmLeftFidRaw,    data.Hc1Rad);
-                //ApplyCameraRotation(data.BtmLeftAlignRaw,  data.Hc1Rad);
-                //ApplyCameraRotation(data.BtmRightFidRaw,   data.Hc2Rad);
-                //ApplyCameraRotation(data.BtmRightAlignRaw, data.Hc2Rad);
             }
             else
             {
@@ -634,251 +615,63 @@ namespace HCB.UI
             }
         }
 
-        private static void ApplyCameraRotation(VisionMarkResult m, double rad)
-        {
-            if (m == null) return;
-            var p = CalibrationMath.ApplyRotation(
-                Point2D.of(m.DxCamToMark, m.DyCamToMark), rad);
-            m.DxCamToMark = p.X;
-            m.DyCamToMark = p.Y;
-        }
+        /// <summary>
+        /// 피듀셜 마크 변화량으로 Hc2Offset을 보정한다.
+        ///   delta = −(dLF − dRF)
+        ///   dLF = 현재 Hc1 DxCam − 기준 Hc1 DxCam
+        ///   dRF = 현재 Hc2 DxCam − 기준 Hc2 DxCam
+        ///   보정 Hc2Offset = 기준 Hc2Offset + delta
+        /// </summary>
 
-        private void TCorr(VisionMarkResult vision)
+        private void CompensateHc2Offset(AlignData d)
         {
+            if (d?.BtmLeftFidRaw == null || d.BtmRightFidRaw == null
+                || d.Hc2Offset == null || d.Hcro == null)
+                return;
 
-        }
-        // ═══════════════════════════════════════════════════
-        //  private: Top(Pc) 보정
-        //   Raw → Clone → 회전 보정 → Corrected
-        //   ★ Raw 읽기만, 쓰기는 Corrected 에만
-        // ═══════════════════════════════════════════════════
+            // 피듀셜 기준값만 DB에서 조회
+            var refLfDxParam = _paramService.FindByName("Hc1FidRefDx");
+            var refLfDyParam = _paramService.FindByName("Hc1FidRefDy");
+            var refRfDxParam = _paramService.FindByName("Hc2FidRefDx");
+            var refRfDyParam = _paramService.FindByName("Hc2FidRefDy");
 
-        private static void ApplyTopPcCorrections(AlignContext ctx)
-        {
-            if (!ctx.HasPcT)
+            if (string.IsNullOrEmpty(refLfDxParam?.Value) || string.IsNullOrEmpty(refRfDxParam?.Value))
             {
-                // 보정 없이 Raw 복사본을 Corrected 에 저장
-                ctx.TopRightFidCorrected = ctx.TopRightFidRaw.Clone();
-                ctx.TopRightAlignCorrected = ctx.TopRightAlignRaw.Clone();
-                ctx.TopLeftFidCorrected = ctx.TopLeftFidRaw.Clone();
-                ctx.TopLeftAlignCorrected = ctx.TopLeftAlignRaw.Clone();
+                _logger.Warning("피듀셜 기준값 미설정 — 보정 스킵");
                 return;
             }
 
-            // Clone → 회전 보정 → Corrected
-            ctx.TopRightFidCorrected = ApplyRotationToCopy(ctx.TopRightFidRaw, ctx.PcTRad);
-            ctx.TopRightAlignCorrected = ApplyRotationToCopy(ctx.TopRightAlignRaw, ctx.PcTRad);
-            ctx.TopLeftFidCorrected = ApplyRotationToCopy(ctx.TopLeftFidRaw, ctx.PcTRad);
-            ctx.TopLeftAlignCorrected = ApplyRotationToCopy(ctx.TopLeftAlignRaw, ctx.PcTRad);
-        }
-
-        // ═══════════════════════════════════════════════════
-        //  private: Btm(Hc) 보정
-        //   Raw → Clone → 기구 오프셋 → Hc 회전 → Corrected
-        //   ★ Raw 읽기만, 쓰기는 Corrected 에만
-        // ═══════════════════════════════════════════════════
-
-        private static void ApplyBtmCorrections(AlignContext ctx)
-        {
-            // ── Raw → Clone (원본 보존) ──────────────────────
-            var rightFid = ctx.BtmRightFidRaw.Clone();
-            var rightAlign = ctx.BtmRightAlignRaw.Clone();
-            var leftFid = ctx.BtmLeftFidRaw.Clone();
-            var leftAlign = ctx.BtmLeftAlignRaw.Clone();
-
-            // ── 기구 오프셋 적용 (Clone 에만) ────────────────
-            rightFid.StageX += ctx.Hc2Offset.X; rightFid.StageY += ctx.Hc2Offset.Y;
-            rightAlign.StageX += ctx.Hc2Offset.X; rightAlign.StageY += ctx.Hc2Offset.Y;
-            leftFid.StageX += ctx.Hc1Offset.X; leftFid.StageY += ctx.Hc1Offset.Y;
-            leftAlign.StageX += ctx.Hc1Offset.X; leftAlign.StageY += ctx.Hc1Offset.Y;
-
-            // ── Hc 카메라 회전 보정 ──────────────────────────
-            if (ctx.HasHcRO)
+            if (!double.TryParse(refLfDxParam.Value, out double refLfDx) ||
+                !double.TryParse(refLfDyParam.Value, out double refLfDy) ||
+                !double.TryParse(refRfDxParam.Value, out double refRfDx) ||
+                !double.TryParse(refRfDyParam.Value, out double refRfDy))
             {
-                rightFid = ApplyRotationToCopy(rightFid, ctx.Hc2Rad);
-                rightAlign = ApplyRotationToCopy(rightAlign, ctx.Hc2Rad);
-                leftFid = ApplyRotationToCopy(leftFid, ctx.Hc1Rad);
-                leftAlign = ApplyRotationToCopy(leftAlign, ctx.Hc1Rad);
+                _logger.Warning("피듀셜 기준값 파싱 실패 — 보정 스킵");
+                return;
             }
 
-            // ── Corrected 저장 ───────────────────────────────
-            ctx.BtmRightFidCorrected = rightFid;
-            ctx.BtmRightAlignCorrected = rightAlign;
-            ctx.BtmLeftFidCorrected = leftFid;
-            ctx.BtmLeftAlignCorrected = leftAlign;
+            double dLfX = d.BtmLeftFidRaw.DxCamToMark - refLfDx;
+            double dLfY = d.BtmLeftFidRaw.DyCamToMark - refLfDy;
+            double dRfX = d.BtmRightFidRaw.DxCamToMark - refRfDx;
+            double dRfY = d.BtmRightFidRaw.DyCamToMark - refRfDy;
+
+            // Hc2Offset 보정: -(dLf - dRf)
+            double hc2DeltaX = -(dLfX - dRfX);
+            double hc2DeltaY = -(dLfY - dRfY);
+            d.Hc2Offset = new Point2D(d.Hc2Offset.X + hc2DeltaX, d.Hc2Offset.Y + hc2DeltaY);
+
+            // HcRO 보정: -dLf (Hc1 원점 드리프트)
+            double hcroDeltaX = -dLfX;
+            double hcroDeltaY = -dLfY;
+            d.Hcro = new Point2D(d.Hcro.X + hcroDeltaX, d.Hcro.Y + hcroDeltaY);
+
+            _logger.Information(
+                "피듀셜 트래킹 보정\n" +
+                "  Hc2Offset Δ({Hc2Dx:F5}, {Hc2Dy:F5}) → ({Hc2X:F6}, {Hc2Y:F6})\n" +
+                "  HcRO      Δ({HcroDx:F5}, {HcroDy:F5}) → ({HcroX:F6}, {HcroY:F6})",
+                hc2DeltaX, hc2DeltaY, d.Hc2Offset.X, d.Hc2Offset.Y,
+                hcroDeltaX, hcroDeltaY, d.Hcro.X, d.Hcro.Y);
         }
-
-        // ═══════════════════════════════════════════════════
-        //  private: Top 오프셋 계산
-        //   Corrected 읽기만 (수정 없음)
-        // ═══════════════════════════════════════════════════
-
-        private static void ComputeTopOffsets(AlignContext ctx)
-        {
-            var tRF = ctx.TopRightFidCorrected;
-            var tRA = ctx.TopRightAlignCorrected;
-            var tLF = ctx.TopLeftFidCorrected;
-            var tLA = ctx.TopLeftAlignCorrected;
-
-            double rXFA = tRF.CenterX - tRA.CenterX;
-            double rYFA = tRF.CenterY - tRA.CenterY;
-            double lXFA = tLF.CenterX - tLA.CenterX;
-            double lYFA = tLF.CenterY - tLA.CenterY;
-
-            ctx.TopOffsetX = (tRF.CenterX + tLF.CenterX) / 2.0
-                           - (tRA.CenterX + tLA.CenterX) / 2.0;
-            ctx.TopOffsetY = (tRF.CenterY + tLF.CenterY) / 2.0
-                           - (tRA.CenterY + tLA.CenterY) / 2.0;
-            ctx.TopOffsetT = CalcTheta(tLF, tRF) - CalcTheta(tLA, tRA);
-
-            ctx.TopAlignRelOffsetX = -((rXFA + lXFA) / 2.0);
-            ctx.TopAlignRelOffsetY = -((rYFA + lYFA) / 2.0);
-            ctx.TopAlignRelOffsetT = ctx.TopOffsetT;
-        }
-
-        // ═══════════════════════════════════════════════════
-        //  private: HcRO 좌표 변환
-        //   Corrected 읽기만 (수정 없음)
-        //
-        //  변환 순서:
-        //   ① Btm(Hc) → HcRO 좌표 (평행 이동)
-        //   ② T-Die Fid = B-Die Fid (deep copy)
-        //   ③ Pc Fid/Align 오프셋 X·Y 미러링
-        //   ④ 비등방 배율 Sx·Sy 산출
-        //   ⑤ 배율 먼저 → 회전 보정 (commutative 아님)
-        //   ⑥ HcRO Fid 좌표에 더해 HcroTopLA·RA 산출
-        // ═══════════════════════════════════════════════════
-
-        private static void ComputeHcroCoords(AlignContext ctx)
-        {
-            // Corrected 결과 참조 (Raw 접근 금지)
-            var bRF = ctx.BtmRightFidCorrected;
-            var bRA = ctx.BtmRightAlignCorrected;
-            var bLF = ctx.BtmLeftFidCorrected;
-            var bLA = ctx.BtmLeftAlignCorrected;
-
-            var tRF = ctx.TopRightFidCorrected;
-            var tRA = ctx.TopRightAlignCorrected;
-            var tLF = ctx.TopLeftFidCorrected;
-            var tLA = ctx.TopLeftAlignCorrected;
-
-            if (ctx.HasHcRO)
-            {
-                // ── ① B-Die (Hc) -> HcRO 좌표 변환 ──────────────
-                ctx.HcroLF = Point2D.of(bLF.CenterX - ctx.Hcro.X, bLF.CenterY - ctx.Hcro.Y);
-                ctx.HcroLA = Point2D.of(bLA.CenterX - ctx.Hcro.X, bLA.CenterY - ctx.Hcro.Y);
-                ctx.HcroRF = Point2D.of(bRF.CenterX - ctx.Hcro.X, bRF.CenterY - ctx.Hcro.Y);
-                ctx.HcroRA = Point2D.of(bRA.CenterX - ctx.Hcro.X, bRA.CenterY - ctx.Hcro.Y);
-
-                // ── ② T-Die Fid = B-Die Fid (기준점 설정) ─────────
-                ctx.HcroTopLF = Point2D.of(ctx.HcroLF.X, ctx.HcroLF.Y);
-                ctx.HcroTopRF = Point2D.of(ctx.HcroRF.X, ctx.HcroRF.Y);
-
-                // ── ③ Pc 공간 벡터 (미러링 핵심 수정) ─────────────────
-                // P-Camera가 위를 보고 T-Die의 '하단'을 보므로, 
-                // 설계상의 Right(오른쪽)가 비전상에서는 Left(왼쪽)로 보일 수 있습니다.
-
-                double pcFidDx = (tRF.CenterX - tLF.CenterX) ; 
-                double pcFidDy = (tRF.CenterY - tLF.CenterY) * 1.0;  // Y 유지 (혹은 장비 특성에 따라 -1)
-
-                double hcroFidDx = ctx.HcroRF.X - ctx.HcroLF.X;
-                double hcroFidDy = ctx.HcroRF.Y - ctx.HcroLF.Y;
-
-                // ── ④ 스케일 및 변환 각도(Theta Plus) 계산 ─────────────
-                double pcFidDist = Math.Sqrt(pcFidDx * pcFidDx + pcFidDy * pcFidDy);
-                double hcroFidDist = Math.Sqrt(hcroFidDx * hcroFidDx + hcroFidDy * hcroFidDy);
-                double scale = (pcFidDist > 1e-6) ? hcroFidDist / pcFidDist : 1.0;
-                //double scale = 1;
-                // ThetaPlus: Pc 벡터를 HcRO 벡터 방향으로 일치시키기 위한 회전량
-                double thetaPlus = Math.Atan2(hcroFidDy, hcroFidDx) - Math.Atan2(pcFidDy, pcFidDx);
-
-                // ── ⑤ T-Die Align -> HcRO 좌표 변환 ─────────────
-                // Fid에서 Align Mark로 가는 '상대 벡터'를 구한 뒤, 
-                // 미러링 -> 스케일 -> 회전(ThetaPlus) 순으로 적용합니다.
-
-                // [Left Align 변환]
-                double lVecX = (tLA.CenterX - tLF.CenterX) * 1.0; 
-                double lVecY = (tLA.CenterY - tLF.CenterY) * 1.0;  // Y 유지
-                var rotL = CalibrationMath.ApplyRotation(Point2D.of(lVecX * scale, lVecY * scale), thetaPlus);
-                ctx.HcroTopLA = Point2D.of(ctx.HcroLF.X + rotL.X, ctx.HcroLF.Y + rotL.Y);
-
-                // [Right Align 변환]
-                double rVecX = (tRA.CenterX - tRF.CenterX) * 1.0; 
-                double rVecY = (tRA.CenterY - tRF.CenterY) * 1.0;  // Y 유지
-                var rotR = CalibrationMath.ApplyRotation(Point2D.of(rVecX * scale, rVecY * scale), thetaPlus);
-                ctx.HcroTopRA = Point2D.of(ctx.HcroRF.X + rotR.X, ctx.HcroRF.Y + rotR.Y);
-
-                // 진단값 기록
-                ctx.PcHcroScaleX = scale;
-                ctx.PcHcroScaleY = scale;
-                ctx.PcHcroThetaPlus = thetaPlus;
-            }
-            else
-            {
-                // HcRO 캘리브레이션 없음 → 절대좌표 그대로
-                ctx.HcroLF = Point2D.of(bLF.CenterX, bLF.CenterY);
-                ctx.HcroLA = Point2D.of(bLA.CenterX, bLA.CenterY);
-                ctx.HcroRF = Point2D.of(bRF.CenterX, bRF.CenterY);
-                ctx.HcroRA = Point2D.of(bRA.CenterX, bRA.CenterY);
-
-                ctx.HcroTopLF = Point2D.of(bLF.CenterX, bLF.CenterY);
-                ctx.HcroTopRF = Point2D.of(bRF.CenterX, bRF.CenterY);
-                ctx.HcroTopLA = Point2D.of(bLA.CenterX, bLA.CenterY);
-                ctx.HcroTopRA = Point2D.of(bRA.CenterX, bRA.CenterY);
-
-                ctx.PcHcroScaleX = 1.0;
-                ctx.PcHcroScaleY = 1.0;
-                ctx.PcHcroThetaPlus = 0.0;
-                ctx.ScaleFallbackApplied = false;
-            }
-        }
-        // ═══════════════════════════════════════════════════
-        //  private: Btm 오프셋 계산
-        //   Corrected 읽기만 (수정 없음)
-        // ═══════════════════════════════════════════════════
-
-        private static void ComputeBtmOffsets(AlignContext ctx)
-        {
-            var bRF = ctx.BtmRightFidCorrected;
-            var bRA = ctx.BtmRightAlignCorrected;
-            var bLF = ctx.BtmLeftFidCorrected;
-            var bLA = ctx.BtmLeftAlignCorrected;
-
-            double btmRXFA = bRF.CenterX - bRA.CenterX;
-            double btmRYFA = bRF.CenterY - bRA.CenterY;
-            double btmLXFA = bLF.CenterX - bLA.CenterX;
-            double btmLYFA = bLF.CenterY - bLA.CenterY;
-
-            double topInBtmX = -ctx.TopAlignRelOffsetX;
-            double topInBtmY = ctx.TopAlignRelOffsetY;
-            double topInBtmT = -ctx.TopAlignRelOffsetT;
-
-            ctx.BtmOffsetX = topInBtmX - (btmRXFA + btmLXFA) / 2.0;
-            ctx.BtmOffsetY = topInBtmY - (btmRYFA + btmLYFA) / 2.0;
-            ctx.BtmOffsetT = topInBtmT - (CalcTheta(bLF, bRF) - CalcTheta(bLA, bRA));
-        }
-
-        
-
-        // ═══════════════════════════════════════════════════
-        //  핵심 유틸: Non-destructive 회전 보정
-        //   ★ 기존 Rotate4Points 를 완전 대체
-        //   ★ 원본 Clone → DxCamToMark/DyCamToMark 회전 → 새 인스턴스 반환
-        //   ★ 원본 객체는 절대 수정하지 않음
-        // ═══════════════════════════════════════════════════
-
-        private static VisionMarkResult ApplyRotationToCopy(VisionMarkResult m, double rad)
-        {
-            var copy = m.Clone();
-            var p = CalibrationMath.ApplyRotation(
-                Point2D.of(m.DxCamToMark, m.DyCamToMark), rad);
-            copy.DxCamToMark = p.X;
-            copy.DyCamToMark = p.Y;
-            return copy;
-        }
-
-        // ★ 기존 Rotate4Points 삭제됨 — in-place 수정으로 누적 오차 원인이었음
-        // private static void Rotate4Points(...) { ... }
 
         // ═══════════════════════════════════════════════════
         //  기타 유틸
