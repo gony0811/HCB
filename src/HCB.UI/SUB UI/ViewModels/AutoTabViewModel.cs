@@ -42,6 +42,8 @@ namespace HCB.UI
         [ObservableProperty]
         private bool isInitialize;
 
+        private bool _isSettingUseRecipe;
+
         public SequenceServiceVM SequenceServiceVM => _sequenceServiceVM;
 
         public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, OperationService operationService, SequenceService sequenceService, AlarmService alarmService, RecipeService recipeService, SequenceServiceVM sequenceServiceVM)
@@ -177,6 +179,31 @@ namespace HCB.UI
         public void ShowAccuracyData()
         {
             // TODO: 실시간 Accuracy Data 팝업 or 네비게이션
+        }
+
+        partial void OnSelectedRecipeChanged(RecipeDto value)
+        {
+            if (value == null) return;
+            _ = SetUseRecipeAsync(value);
+        }
+
+        private async Task SetUseRecipeAsync(RecipeDto recipe)
+        {
+            if (_isSettingUseRecipe) return;
+
+            _isSettingUseRecipe = true;
+            try
+            {
+                await RecipeService.SetUseRecipeAsync(recipe);
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => RadWindow.Alert(ex.Message));
+            }
+            finally
+            {
+                _isSettingUseRecipe = false;
+            }
         }
 
     }

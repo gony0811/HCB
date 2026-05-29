@@ -18,18 +18,44 @@ namespace HCB.UI
     [Service(Lifetime.Singleton)]   
     public partial class RecipeService : ObservableObject
     {
+        // 사용 레시피 변경 시 비전에 통보할 파라미터 이름
+        public const string VisionRecipeParamName = "Vision Recipe";
+
         private readonly RecipeRepository _recipeRepo;
         private readonly ParameterRepository _parameterRepo;
         private readonly StepRecipeRepository _stepRecipeRepo;
+        private readonly EqpCommunicationService _eqpComm;
 
         [ObservableProperty] private ObservableCollection<RecipeDto> recipeList = new ObservableCollection<RecipeDto>();
         [ObservableProperty] private RecipeDto useRecipe;
 
-        public RecipeService(RecipeRepository recipeRepo, ParameterRepository parameterRepo, StepRecipeRepository stepRecipeRepo)
+        public RecipeService(RecipeRepository recipeRepo, ParameterRepository parameterRepo, StepRecipeRepository stepRecipeRepo, EqpCommunicationService eqpComm)
         {
             _recipeRepo = recipeRepo;
             _parameterRepo = parameterRepo;
             _stepRecipeRepo = stepRecipeRepo;
+            _eqpComm = eqpComm;
+        }
+
+        /// <summary>
+        /// 레시피를 사용(활성) 레시피로 지정하고, Vision Recipe 파라미터가 있으면 비전에 변경을 통보한다.
+        /// </summary>
+        /// <returns>비전에 통보했으면 true, Vision Recipe 파라미터가 없어 통보하지 못했으면 false</returns>
+        public async Task<bool> SetUseRecipeAsync(RecipeDto recipe)
+        {
+            recipe.IsActive = true;
+            await UpdateRecipe(recipe);
+
+            var visionParam = recipe.ParamList
+                .FirstOrDefault(p => string.Equals(p.Name?.Trim(), VisionRecipeParamName, StringComparison.OrdinalIgnoreCase));
+
+            if (visionParam != null && !string.IsNullOrWhiteSpace(visionParam.Value))
+            {
+                await _eqpComm.RequestRecipeChange(visionParam.Value);
+                return true;
+            }
+
+            return false;
         }
 
         public async Task Initialize(CancellationToken ct = default)

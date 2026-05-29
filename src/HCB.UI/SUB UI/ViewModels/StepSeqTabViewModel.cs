@@ -876,6 +876,47 @@ namespace HCB.UI
             _logger.Information("본딩 데이터 저장: {Path}", path);
         }
 
+        // 사용 레시피 변경 중 재진입 방지
+        private bool _isSettingUseRecipe;
+
+        // SelectedRecipe가 바뀌면 자동 호출됨 (콤보박스 선택 포함)
+        partial void OnSelectedRecipeChanged(RecipeDto value)
+        {
+            if (value == null)
+            {
+                RecipeSelectState = StepState.Idle;
+                return;
+            }
+            _ = SetUseRecipeAsync(value);
+        }
+
+        private async Task SetUseRecipeAsync(RecipeDto recipe)
+        {
+            if (_isSettingUseRecipe) return;
+
+            _isSettingUseRecipe = true;
+            try
+            {
+                RecipeSelectState = StepState.InProgress;
+
+                bool visionNotified = await _recipeService.SetUseRecipeAsync(recipe);
+                if (!visionNotified)
+                    _logger.Warning("Vision Recipe 파라미터가 없어 비전에 통보하지 못했습니다 — {Name}", recipe.Name);
+
+                RecipeSelectState = StepState.Completed;
+                _logger.Information("사용 레시피 변경: {Name}", recipe.Name);
+            }
+            catch (Exception e)
+            {
+                RecipeSelectState = StepState.Failed;
+                _logger.Warning("사용 레시피 변경 실패: {Msg}", e.Message);
+            }
+            finally
+            {
+                _isSettingUseRecipe = false;
+            }
+        }
+
         private static string Pt(Point2D p) => p == null ? "," : $"{F(p.X)},{F(p.Y)}";
         private static string MarkFields(VisionMarkResult m) =>
             m == null ? ",,,,," : string.Join(",", F(m.StageX), F(m.StageY), F(m.DxCamToMark), F(m.DyCamToMark), F(m.CenterX), F(m.CenterY));

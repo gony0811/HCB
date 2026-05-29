@@ -160,7 +160,7 @@ namespace HCB.UI
         public async Task RequestRecipeChange(string recipeId, CancellationToken ct = default)
         {
             var request = MessageFactory.Create(
-                messageName: "REQUEST-RECIPE-CHANGE",
+                messageName: "REQUEST_RECIPE_CHANGE",
                 unitName: "EQP",
                 content: $"<RECIPE_ID>{recipeId}</RECIPE_ID>"
             );

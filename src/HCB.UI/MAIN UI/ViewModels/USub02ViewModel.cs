@@ -148,15 +148,14 @@ namespace HCB.UI
             if (SelectedRecipe == null) return;
 
             bool result = _dialogService.ShowConfirm("사용 레시피 변경", "사용할 레시피를 변경하시겠습니까?");
-            if (!result)
-            {
-                return;
-            }
+            if (!result) return;
 
             try
             {
-                SelectedRecipe.IsActive = true;
-                await _recipeService.UpdateRecipe(SelectedRecipe);
+                bool visionNotified = await _recipeService.SetUseRecipeAsync(SelectedRecipe);
+                if (!visionNotified)
+                    _dialogService.ShowMessage("알림", "Vision Recipe 파라미터가 없어 비전에 통보하지 못했습니다");
+
                 _dialogService.ShowMessage("변경", "사용 레시피가 변경되었습니다");
             }
             catch (Exception ex)
