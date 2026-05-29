@@ -652,7 +652,6 @@ namespace HCB.UI
             ResetCts();
             try
             {
-                await _sequenceService.TopDiePlace(_cts.Token);
                 var result = await _sequenceService.GetVernier(_cts.Token);
                 VernierResult = result;
 

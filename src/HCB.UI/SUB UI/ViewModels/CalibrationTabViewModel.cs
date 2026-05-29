@@ -357,8 +357,10 @@ namespace HCB.UI
                 double offsetY = hc1StageY - hc2StageY;
                 await UpdateCameraOffsets(hc1X: 0, hc1Y: 0, hc2X: offsetX, hc2Y: offsetY);
 
+                
                 // ── 피듀셜 기준값 저장 (트래킹 영점) ──
                 CalibStatus = "피듀셜 기준값 측정 중...";
+                await _sequenceService.Init_Head(ct);
                 await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.FIDUCIAL, ct);
                 var fid1 = await _communication.RequestVisionMarkPosition(
                     MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
