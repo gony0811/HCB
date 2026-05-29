@@ -28,7 +28,7 @@ namespace HCB.UI
         [ObservableProperty]
         private ObservableCollection<LogModel> logs = new();
 
-        private const int MaxLogCount = 1000;
+        private const int MaxLogCount = 5000;
         // =========================================================
 
         // ================ 페이징 및 검색 =========================

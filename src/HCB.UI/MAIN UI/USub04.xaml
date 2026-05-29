@@ -88,153 +88,164 @@
     </Page.Resources>
 
     <Grid Margin="6">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0.85*"/>
-            <ColumnDefinition Width="0.15*"/>
-        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="200"/>
         </Grid.RowDefinitions>
 
         <!-- 타이틀 -->
-        <TextBlock Text="에러 로그"
+        <TextBlock Text="로그"
                    FontSize="24" FontWeight="SemiBold" Foreground="#ECF0F1"
-                   Grid.Column="0" Grid.Row="0"
+                   Grid.Row="0"
                    Margin="6,10,6,10" VerticalAlignment="Center"/>
 
-        <!-- ── 메인 알람 히스토리 그리드 ── -->
-        <Border Grid.Column="0" Grid.Row="1"
-                Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
-                CornerRadius="8" Margin="6">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- ── 로그 탭 ── -->
+        <TabControl Grid.Row="1" Margin="6,0,6,6" Background="Transparent">
 
-                <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="알람 히스토리"/>
-                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
-                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+            <!-- ════════ 탭 1 : 알람 히스토리 ════════ -->
+            <TabItem Header="알람 히스토리">
+                <Grid Margin="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.85*"/>
+                        <ColumnDefinition Width="0.15*"/>
+                    </Grid.ColumnDefinitions>
 
-                <DataGrid Grid.Row="1"
-                          Style="{StaticResource LogDataGrid}"
-                          ColumnHeaderStyle="{StaticResource LogColumnHeader}"
-                          CellStyle="{StaticResource LogCell}"
-                          ItemsSource="{Binding AlarmHistoryList}"
-                          SelectedItem="{Binding SelectedHistory, Mode=TwoWay}"
-                          Margin="8,6,8,4">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="에러 번호" Binding="{Binding Code}"                                      Width="*"/>
-                        <DataGridTextColumn Header="에러 내용" Binding="{Binding Name}"                                      Width="4*"/>
-                        <DataGridTextColumn Header="레벨"     Binding="{Binding Level}"                                     Width="*"/>
-                        <DataGridTextColumn Header="상태"     Binding="{Binding Status}"                                    Width="*"/>
-                        <DataGridTextColumn Header="발생 날짜" Binding="{Binding CreateDate, StringFormat='{}{0:yyyy-MM-dd}'}" Width="*"/>
-                        <DataGridTextColumn Header="발생 시각" Binding="{Binding CreateTime}"                                 Width="*"/>
-                        <DataGridTextColumn Header="해제 시각" Binding="{Binding ResetTime}"                                  Width="*"/>
-                        <DataGridTextColumn Header="조치 시간" Binding="{Binding AcknowledgeTime}"                            Width="*"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                    <!-- ── 메인 알람 히스토리 그리드 ── -->
+                    <Border Grid.Column="0"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8" Margin="0,0,6,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                <!-- 페이저 -->
-                <telerik:RadDataPager Grid.Row="2"
-                                      Margin="8,0,8,8"
-                                      DisplayMode="FirstLastPreviousNextNumeric"
-                                      IsTotalItemCountFixed="False"
-                                      PageSize="{Binding PageSize}"
-                                      ItemCount="{Binding TotalCount}"
-                                      PageIndex="{Binding CurrentPageIndex, Mode=TwoWay}"/>
-            </Grid>
-        </Border>
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="알람 히스토리"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
 
-        <!-- ── 우측 검색 패널 ── -->
-        <Border Grid.Column="1" Grid.Row="1"
-                Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
-                CornerRadius="8" Margin="0,6,6,6">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+                            <DataGrid Grid.Row="1"
+                                      Style="{StaticResource LogDataGrid}"
+                                      ColumnHeaderStyle="{StaticResource LogColumnHeader}"
+                                      CellStyle="{StaticResource LogCell}"
+                                      ItemsSource="{Binding AlarmHistoryList}"
+                                      SelectedItem="{Binding SelectedHistory, Mode=TwoWay}"
+                                      Margin="8,6,8,4">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="에러 번호" Binding="{Binding Code}"                                      Width="*"/>
+                                    <DataGridTextColumn Header="에러 내용" Binding="{Binding Name}"                                      Width="4*"/>
+                                    <DataGridTextColumn Header="레벨"     Binding="{Binding Level}"                                     Width="*"/>
+                                    <DataGridTextColumn Header="상태"     Binding="{Binding Status}"                                    Width="*"/>
+                                    <DataGridTextColumn Header="발생 날짜" Binding="{Binding CreateDate, StringFormat='{}{0:yyyy-MM-dd}'}" Width="*"/>
+                                    <DataGridTextColumn Header="발생 시각" Binding="{Binding CreateTime}"                                 Width="*"/>
+                                    <DataGridTextColumn Header="해제 시각" Binding="{Binding ResetTime}"                                  Width="*"/>
+                                    <DataGridTextColumn Header="조치 시간" Binding="{Binding AcknowledgeTime}"                            Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
 
-                <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="검색"/>
-                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
-                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+                            <!-- 페이저 -->
+                            <telerik:RadDataPager Grid.Row="2"
+                                                  Margin="8,0,8,8"
+                                                  DisplayMode="FirstLastPreviousNextNumeric"
+                                                  IsTotalItemCountFixed="False"
+                                                  PageSize="{Binding PageSize}"
+                                                  ItemCount="{Binding TotalCount}"
+                                                  PageIndex="{Binding CurrentPageIndex, Mode=TwoWay}"/>
+                        </Grid>
+                    </Border>
 
-                <StackPanel Grid.Row="1" Margin="12,10,12,12">
-                    <TextBlock Text="Begin" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                    <telerik:RadDatePicker
-                        SelectedValue="{Binding StartSearchDate, Mode=TwoWay}"
-                        InputMode="DatePicker"
-                        Margin="0,0,0,8"/>
+                    <!-- ── 우측 검색 패널 ── -->
+                    <Border Grid.Column="1"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                    <TextBlock Text="End" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                    <telerik:RadDatePicker
-                        SelectedDate="{Binding EndSearchDate, Mode=TwoWay}"
-                        InputMode="DatePicker"
-                        Margin="0,0,0,12"/>
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="검색"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
 
-                    <Button Content="검색"
-                            Style="{StaticResource SearchButton}"
-                            Command="{Binding SearchCommand}"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+                            <StackPanel Grid.Row="1" Margin="12,10,12,12">
+                                <TextBlock Text="Begin" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker
+                                    SelectedValue="{Binding StartSearchDate, Mode=TwoWay}"
+                                    InputMode="DatePicker"
+                                    Margin="0,0,0,8"/>
 
-        <!-- ── 하단 시스템 로그 ── -->
-        <Border Grid.Row="2" Grid.ColumnSpan="2"
-                Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
-                CornerRadius="8" Margin="6,0,6,6">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+                                <TextBlock Text="End" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker
+                                    SelectedDate="{Binding EndSearchDate, Mode=TwoWay}"
+                                    InputMode="DatePicker"
+                                    Margin="0,0,0,12"/>
 
-                <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="시스템 로그"/>
-                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
-                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+                                <Button Content="검색"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding SearchCommand}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
 
-                <DataGrid Grid.Row="1"
-                          Style="{StaticResource LogDataGrid}"
-                          ColumnHeaderStyle="{StaticResource LogColumnHeader}"
-                          CellStyle="{StaticResource LogCell}"
-                          ItemsSource="{Binding Logs}"
-                          Margin="8,6,8,8">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Time"       Binding="{Binding Timestamp}"     Width="200"/>
-                        <DataGridTextColumn Header="ThreadId"   Binding="{Binding ThreadId}"      Width="150"/>
-                        <DataGridTextColumn Header="LogSource"  Binding="{Binding SourceContext}"  Width="250"/>
-                        <DataGridTemplateColumn Header="Level" Width="100">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Level}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#ECF0F1"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Level}" Value="Error">
-                                                        <Setter Property="Foreground" Value="#E74C3C"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Level}" Value="Warning">
-                                                        <Setter Property="Foreground" Value="#E67E22"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Level}" Value="Information">
-                                                        <Setter Property="Foreground" Value="#2ECC71"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Grid>
-        </Border>
+            <!-- ════════ 탭 2 : 시스템 로그 ════════ -->
+            <TabItem Header="시스템 로그">
+                <Border Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                        CornerRadius="8" Margin="6">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="시스템 로그"/>
+                        <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                   VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                        <DataGrid Grid.Row="1"
+                                  Style="{StaticResource LogDataGrid}"
+                                  ColumnHeaderStyle="{StaticResource LogColumnHeader}"
+                                  CellStyle="{StaticResource LogCell}"
+                                  ItemsSource="{Binding Logs}"
+                                  Margin="8,6,8,8">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Time"       Binding="{Binding Timestamp}"     Width="200"/>
+                                <DataGridTextColumn Header="ThreadId"   Binding="{Binding ThreadId}"      Width="150"/>
+                                <DataGridTextColumn Header="LogSource"  Binding="{Binding SourceContext}"  Width="250"/>
+                                <DataGridTemplateColumn Header="Level" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Level}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#ECF0F1"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                                <Setter Property="Foreground" Value="#E74C3C"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                                                <Setter Property="Foreground" Value="#E67E22"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Level}" Value="Information">
+                                                                <Setter Property="Foreground" Value="#2ECC71"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+        </TabControl>
     </Grid>
 </Page>
