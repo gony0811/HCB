@@ -231,7 +231,7 @@ namespace HCB.UI
 
                 CalibStatus = $"Hc1 완료  Θ = {Theta1Deg:F4}°, 보정 = {correction:F6} Rad";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨";}
             catch (Exception e)
             {
                 _logger.Error(e, "Hc1 Angle calibration failed");
@@ -298,7 +298,6 @@ namespace HCB.UI
             const double MeasureOffsetY = 7.0;
             const double Tolerance = 0.001;
             const int MaxRetry = 10;
-
             bool standalone = IsNotBusy;
             if (standalone) { IsNotBusy = false; ct = GetToken(); }
             try
@@ -312,7 +311,8 @@ namespace HCB.UI
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z,
+                    shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
                 // Hc1 센터링
                 CalibStatus = "Hc1 센터링 중...";
@@ -320,18 +320,14 @@ namespace HCB.UI
                 {
                     var v1 = await _sequenceService.VisionResult(
                         CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
-
                     if (Math.Abs(v1.DxCamToMark) <= Tolerance && Math.Abs(v1.DyCamToMark) <= Tolerance)
                         break;
-
                     await Task.WhenAll(
                         _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, -v1.DxCamToMark, ct),
                         _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, -v1.DyCamToMark, ct));
-
                     if (i == MaxRetry - 1)
                         throw new Exception($"Hc1 센터링 실패: DxCam={v1.DxCamToMark:F4}, DyCam={v1.DyCamToMark:F4}");
                 }
-
                 double hc1StageX = _hxAxis!.CurrentPosition;
                 double hc1StageY = _wyAxis!.CurrentPosition;
 
@@ -346,29 +342,47 @@ namespace HCB.UI
                 {
                     var v2 = await _sequenceService.VisionResult(
                         CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, ct);
-
                     if (Math.Abs(v2.DxCamToMark) <= Tolerance && Math.Abs(v2.DyCamToMark) <= Tolerance)
                         break;
-
                     await Task.WhenAll(
                         _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, -v2.DxCamToMark, ct),
                         _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, -v2.DyCamToMark, ct));
-
                     if (i == MaxRetry - 1)
                         throw new Exception($"Hc2 센터링 실패: DxCam={v2.DxCamToMark:F4}, DyCam={v2.DyCamToMark:F4}");
                 }
-
                 double hc2StageX = _hxAxis!.CurrentPosition;
                 double hc2StageY = _wyAxis!.CurrentPosition;
 
                 double offsetX = hc1StageX - hc2StageX;
                 double offsetY = hc1StageY - hc2StageY;
-
                 await UpdateCameraOffsets(hc1X: 0, hc1Y: 0, hc2X: offsetX, hc2Y: offsetY);
 
-                CalibStatus = $"카메라 거리측정 완료  ΔX={offsetX:F4}, ΔY={offsetY:F4}";
+                // ── 피듀셜 기준값 저장 (트래킹 영점) ──
+                CalibStatus = "피듀셜 기준값 측정 중...";
+                await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.FIDUCIAL, ct);
+                var fid1 = await _communication.RequestVisionMarkPosition(
+                    MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
+                if (fid1 == null || fid1.Result == Result.NG)
+                    throw new Exception("Hc1 피듀셜 측정 실패");
+
+                await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
+                var fid2 = await _communication.RequestVisionMarkPosition(
+                    MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
+                if (fid2 == null || fid2.Result == Result.NG)
+                    throw new Exception("Hc2 피듀셜 측정 실패");
+
+                await _ecParamService.SetOrUpdate("Hc1FidRefDx", fid1.X, "Hc1 피듀셜 기준 DxCam");
+                await _ecParamService.SetOrUpdate("Hc1FidRefDy", fid1.Y, "Hc1 피듀셜 기준 DyCam");
+                await _ecParamService.SetOrUpdate("Hc2FidRefDx", fid2.X, "Hc2 피듀셜 기준 DxCam");
+                await _ecParamService.SetOrUpdate("Hc2FidRefDy", fid2.Y, "Hc2 피듀셜 기준 DyCam");
+
+                _logger.Information(
+                    "피듀셜 기준값 저장 — Hc1({Hc1Dx:F6}, {Hc1Dy:F6}), Hc2({Hc2Dx:F6}, {Hc2Dy:F6})",
+                    fid1.X, fid1.Y, fid2.X, fid2.Y);
+
+                CalibStatus = $"완료  ΔX={offsetX:F4}, ΔY={offsetY:F4} | 피듀셜 기준 저장됨";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
             catch (Exception e)
             {
                 _logger.Error(e, "카메라 거리 측정 Fail");
