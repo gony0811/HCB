@@ -603,9 +603,9 @@ namespace HCB.UI
 
             if (HasHcRO)
             {
-                data.Hc1Rad = CalibrationMath.ToRadian(ParseDouble(hc1T.Value));
-                data.Hc2Rad = CalibrationMath.ToRadian(ParseDouble(hc2T.Value));
-                data.PcTRad = CalibrationMath.ToRadian(ParseDouble(pcT.Value));
+                data.Hc1Rad = ParseDouble(hc1T.Value);
+                data.Hc2Rad = ParseDouble(hc2T.Value);
+                data.PcTRad = ParseDouble(pcT.Value);
                 data.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
                 data.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
             }
