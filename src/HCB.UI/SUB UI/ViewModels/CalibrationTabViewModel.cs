@@ -24,6 +24,7 @@ namespace HCB.UI
         private IAxis? _wyAxis;
         private IAxis? _pyAxis;
         private IAxis? _htAxis;
+        private IAxis? _dyAxis;
 
         private CancellationTokenSource? _cts;
 
@@ -57,6 +58,9 @@ namespace HCB.UI
         // 전체 캘리브레이션
         [ObservableProperty] private int calibRepeatCount = 1;
 
+        // WarmUp
+        [ObservableProperty] private int warmUpCycle = 0;
+
         public CalibrationTabViewModel(
             DeviceManager deviceManager,
             EqpCommunicationService communication,
@@ -73,6 +77,7 @@ namespace HCB.UI
             _wyAxis = device.FindMotionByName(MotionExtensions.W_Y);
             _pyAxis = device.FindMotionByName(MotionExtensions.P_Y);
             _htAxis = device.FindMotionByName(MotionExtensions.H_T);
+            _dyAxis = device.FindMotionByName(MotionExtensions.D_Y);
         }
 
         private CancellationToken GetToken()
@@ -110,27 +115,48 @@ namespace HCB.UI
                     ct.ThrowIfCancellationRequested();
                     string prefix = CalibRepeatCount > 1 ? $"[{i + 1}/{CalibRepeatCount}] " : "";
 
-                    CalibProgress = $"{prefix}HC1 각도 캘리브레이션";
-                    await Hc1Angle(ct);
-                    ct.ThrowIfCancellationRequested();
+                    // ── 에러 발생 시 현재 사이클을 처음부터 재시도 ──
+                    int attempt = 0;
+                    while (true)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        attempt++;
+                        string retryTag = attempt > 1 ? $"(재시도 {attempt}) " : "";
 
-                    CalibProgress = $"{prefix}HC2 각도 캘리브레이션";
-                    await Hc2Angle(ct);
-                    ct.ThrowIfCancellationRequested();
+                        try
+                        {
+                            CalibProgress = $"{prefix}{retryTag}HC1 각도 캘리브레이션";
+                            await Hc1Angle(ct);
+                            ct.ThrowIfCancellationRequested();
 
-                    CalibProgress = $"{prefix}카메라 거리 계산";
-                    await CameraDistance(ct);
-                    ct.ThrowIfCancellationRequested();
+                            CalibProgress = $"{prefix}{retryTag}HC2 각도 캘리브레이션";
+                            await Hc2Angle(ct);
+                            ct.ThrowIfCancellationRequested();
 
-                    CalibProgress = $"{prefix}PC 각도 캘리브레이션";
-                    await PcAngle(ct);
-                    ct.ThrowIfCancellationRequested();
+                            CalibProgress = $"{prefix}{retryTag}카메라 거리 계산";
+                            await CameraDistance(ct);
+                            ct.ThrowIfCancellationRequested();
 
-                    CalibProgress = $"{prefix}HcRO 회전 중심 계산";
-                    await CreateHcRo(ct);
+                            CalibProgress = $"{prefix}{retryTag}PC 각도 캘리브레이션";
+                            await PcAngle(ct);
+                            ct.ThrowIfCancellationRequested();
 
-                    // ── 1사이클 완료 → CSV 저장 ──
-                    await SaveCalibrationResult(i + 1, ct);
+                            CalibProgress = $"{prefix}{retryTag}HcRO 회전 중심 계산";
+                            await CreateHcRo(ct);
+
+                            // ── 1사이클 완료 → CSV 저장 ──
+                            await SaveCalibrationResult(i + 1, ct);
+
+                            break; // 성공 → 다음 사이클
+                        }
+                        catch (OperationCanceledException) { throw; }
+                        catch (Exception e)
+                        {
+                            _logger.Warning(e, "캘리브레이션 사이클 오류 — 처음부터 재시작 (Cycle {Cycle}, Attempt {Attempt})", i + 1, attempt);
+                            CalibStatus = $"오류 발생, 처음부터 재시작: {e.Message}";
+                            CalibProgress = $"{prefix}오류 — 처음부터 재시도";
+                        }
+                    }
                 }
 
                 CalibProgress = $"전체 캘리브레이션 완료 ({CalibRepeatCount}회)";
@@ -145,6 +171,62 @@ namespace HCB.UI
             {
                 _logger.Error(e, "RunFullCalibration failed");
                 CalibProgress = $"오류: {e.Message}";
+                CalibStatus = $"오류: {e.Message}";
+            }
+            finally { IsNotBusy = true; }
+        }
+
+        // ══════════════════════════════════════════════
+        //  WarmUp — 중지할 때까지 각 축을 Min ↔ Max 범위로 왕복
+        //           (Z축은 먼저 0(안전 높이)으로 올린 뒤 제외)
+        // ══════════════════════════════════════════════
+
+        [RelayCommand]
+        public async Task WarmUp()
+        {
+            if (!IsNotBusy) return;
+            IsNotBusy = false;
+            WarmUpCycle = 0;
+            var ct = GetToken();
+            try
+            {
+                CalibStatus = "WarmUp — Z축 상승 중...";
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, 0, ct);
+
+                var axes = new (string Name, IAxis Axis)[]
+                {
+                    (MotionExtensions.H_X, _hxAxis!),
+                    (MotionExtensions.W_Y, _wyAxis!),
+                    (MotionExtensions.P_Y, _pyAxis!),
+                    (MotionExtensions.D_Y, _dyAxis!),
+                };
+
+                while (true)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    WarmUpCycle++;
+
+                    await _sequenceService.MotionsMove(MotionExtensions.H_Z, 90.0, 100, ct);
+                    await _sequenceService.MotionsMove(MotionExtensions.H_Z, 0, 100, ct);
+
+                    CalibStatus = $"WarmUp #{WarmUpCycle} — Max 이동";
+                    await Task.WhenAll(Array.ConvertAll(axes,
+                        a => _sequenceService.MotionsMove(a.Name, a.Axis.LimitMaxPosition, ct)));
+
+                    ct.ThrowIfCancellationRequested();
+
+                    CalibStatus = $"WarmUp #{WarmUpCycle} — Min 이동";
+                    await Task.WhenAll(Array.ConvertAll(axes,
+                        a => _sequenceService.MotionsMove(a.Name, a.Axis.LimitMinPosition, ct)));
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                CalibStatus = $"WarmUp 중지 ({WarmUpCycle}회 완료)";
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "WarmUp failed");
                 CalibStatus = $"오류: {e.Message}";
             }
             finally { IsNotBusy = true; }
@@ -231,11 +313,12 @@ namespace HCB.UI
 
                 CalibStatus = $"Hc1 완료  Θ = {Theta1Deg:F4}°, 보정 = {correction:F6} Rad";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨";}
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; if (!standalone) throw; }
             catch (Exception e)
             {
                 _logger.Error(e, "Hc1 Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
+                if (!standalone) throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }
@@ -278,11 +361,12 @@ namespace HCB.UI
 
                 CalibStatus = $"Hc2 완료  Θ = {Theta2Deg:F4}°, 보정 = {correction:F6} Rad";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨";}
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; if (!standalone) throw; }
             catch (Exception e)
             {
                 _logger.Error(e, "Hc2 Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
+                if (!standalone) throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }
@@ -384,11 +468,12 @@ namespace HCB.UI
 
                 CalibStatus = $"완료  ΔX={offsetX:F4}, ΔY={offsetY:F4} | 피듀셜 기준 저장됨";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; if (!standalone) throw; }
             catch (Exception e)
             {
                 _logger.Error(e, "카메라 거리 측정 Fail");
                 CalibStatus = $"오류: {e.Message}";
+                if (!standalone) throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }
@@ -428,11 +513,12 @@ namespace HCB.UI
 
                 CalibStatus = $"Pc 완료  Θ = {ThetaPDeg:F4}°, 보정 = {correction:F6} Rad";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨";}
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; if (!standalone) throw; }
             catch (Exception e)
             {
                 _logger.Error(e, "Pc Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
+                if (!standalone) throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }
@@ -505,11 +591,12 @@ namespace HCB.UI
 
                 CalibStatus = $"HcRO 완료  X = {HcROX:F4}  Y = {HcROY:F4}";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; if (!standalone) throw; }
             catch (Exception e)
             {
                 _logger.Error(e, "CreateHcRo failed");
                 CalibStatus = $"오류: {e.Message}";
+                if (!standalone) throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }

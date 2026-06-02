@@ -585,10 +585,12 @@ namespace HCB.UI
                 _logger.Information("BondingPress Start");
 
                 int accTime = await GetRecipeInt("ACC_TIME");
+                int accTime2 = await GetRecipeInt("ACC_TIME2");
                 int contTime = await GetRecipeInt("CONT_TIME");
                 int decTime = await GetRecipeInt("DEC_TIME");
                 double loadCell = await GetRecipe("LOADCELL");
                 double current = await GetRecipe("CURRENT");
+                double current2 = await GetRecipe("CURRENT2");
                 int vacOffMs = await GetRecipeInt("VAC_OFF_TIME");
 
                 await Task.Delay(200, ct);
@@ -608,17 +610,19 @@ namespace HCB.UI
 
                 // 파라미터 설정 + 시작
                 await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME2 + $"={accTime2}");
                 await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
                 await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
                 await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
                 await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT2 + $"={current2}");
                 await device.SendCommand(MotionExtensions.BONDING_START + "=1");
 
-                _logger.Information("BONDING 파라미터: ACC={Acc}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}",
-                    accTime, contTime, decTime, loadCell, current);
+                _logger.Information("BONDING 파라미터: ACC={Acc}, ACC={Acc2}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}",
+                    accTime, accTime2, contTime, decTime, loadCell, current);
 
                 const int pollingIntervalMs = 100;
-                int timeoutMs = accTime + contTime + decTime + 2000;
+                int timeoutMs = accTime + accTime2 + contTime + decTime + 2000;
                 var sw = Stopwatch.StartNew();
                 bool bondingComplete = false;
                 bool vacuumOff = false;

@@ -41,11 +41,14 @@ namespace HCB.UI
                 string thicknessKey = dieType == DieType.TOP ? "TopDieThickness" : "BtmDieThickness";
 
                 double dieThickness = await GetRecipe(thicknessKey);
-                int accTime = await GetRecipeInt("PICKUP_ACC_TIME");
-                int contTime = await GetRecipeInt("PICKUP_CONT_TIME");
-                int decTime = await GetRecipeInt("PICKUP_DEC_TIME");
+                int accTime = await GetRecipeInt("PICKUP_ACC_TIME");    // 픽업 기울기 시간 1단계
+                int accTime2 = await GetRecipeInt("PICKUP_ACC_TIME2");  // 픽업 기울기 시간 2단계
+                int contTime = await GetRecipeInt("PICKUP_CONT_TIME");  // 픽업 유지 시간
+                int decTime = await GetRecipeInt("PICKUP_DEC_TIME");    // 픽업 종료 시간
                 double loadCell = await GetRecipe("PICKUP_LOADCELL");
-                double current = await GetRecipe("PICKUP_CURRENT");
+                double current = await GetRecipe("PICKUP_CURRENT");     // 전류 1단계
+                double current2 = await GetRecipe("PICKUP_CURRENT");     // 전류 2단계
+
                 int headVacOnMs = await GetRecipeInt("PICKUP_HEAD_VAC_ON_TIME");
                 int dtableVacOffMs = await GetRecipeInt("PICKUP_DTABLE_VAC_OFF_TIME");
                 double readyPosition = await GetRecipe("PICKUP_READY_POSITION");
@@ -90,20 +93,22 @@ namespace HCB.UI
 
                 // 파라미터 설정 + 시작
                 await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME2 + $"={accTime2}");
                 await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
                 await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
                 await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
-                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT+ $"={current}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT2+ $"={current2}");
                 await device.SendCommand(MotionExtensions.BONDING_START + "=1");
 
                 const int pollingIntervalMs = 100;
-                int timeoutMs = accTime + contTime + decTime + 2000;
+                int timeoutMs = accTime + accTime2 + contTime + decTime + 2000;
                 var sw = Stopwatch.StartNew();
                 bool pressComplete = false;
                 bool headVacOn = false;
                 bool dtableVacOff = false;
-                _logger.Information("{Label} PICKUP 파라미터: ACC={Acc}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}",
-                    label, accTime, contTime, decTime, loadCell, current);
+                _logger.Information("{Label} PICKUP 파라미터: ACC={Acc}, ACC2={Acc2} CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}",
+                    label, accTime, accTime2, contTime, decTime, loadCell, current);
                 while (!pressComplete)
                 {
                     ct.ThrowIfCancellationRequested();

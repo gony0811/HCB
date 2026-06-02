@@ -116,12 +116,14 @@ namespace HCB.UI
         public const string ANALOG_INPUT = "Slave_1007_Plat_00920002_1007_2205_1_SubIndex001";
         public const string BONDING_START = "Slave_1007_Plat_00920002_1007_22F3_1_SubIndex001"; //0: DEFAULT, 1: 시작 
         public const string BONDING_INIT = "Slave_1007_Plat_00920002_1007_22F3_2_SubIndex002";  //0: DEFAULT로 만들어줘야함,  1: INPUT 정보 초기화 
-        public const string BONDING_ACC_TIME = "Slave_1007_Plat_00920002_1007_22F3_3_SubIndex003";  // 가압시간
+        public const string BONDING_ACC_TIME = "Slave_1007_Plat_00920002_1007_22F3_3_SubIndex003";  // 1단계 가압시간
+        public const string BONDING_ACC_TIME2 = "Slave_1007_Plat_00920002_1007_22F3_12_SubIndex012";  // 2단계 가압시간
         public const string BONDING_CONT_TIME= "Slave_1007_Plat_00920002_1007_22F3_4_SubIndex004";  // 유지시간
         public const string BONDING_DEC_TIME = "Slave_1007_Plat_00920002_1007_22F3_5_SubIndex005";      // 감압시간
         public const string BONDING_LOADCELL = "Slave_1007_Plat_00920002_1007_22F3_6_SubIndex006";      // LOADCELL VALUE
         public const string BONDING_SPARE = "Slave_1007_Plat_00920002_1007_22F3_7_SubIndex007";      // BONDING SPARE
-        public const string BONDING_CURRENT = "Slave_1007_Plat_00920002_1007_22F3_8_SubIndex008";      // CURRENT? x 1000
+        public const string BONDING_CURRENT = "Slave_1007_Plat_00920002_1007_22F3_13_SubIndex013"; // 1단 기울기 전류 
+        public const string BONDING_CURRENT2 = "Slave_1007_Plat_00920002_1007_22F3_8_SubIndex008";      // 최종 전류 CURRENT? x 1000
         public const string BONDING_PGAIN = "Slave_1007_Plat_00920002_1007_22F3_9_SubIndex009";      // P GAIN x 1000
 
         // INPUT 
