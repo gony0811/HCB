@@ -13,6 +13,8 @@ namespace HCB.UI
     public partial class MotionMoveVM : ObservableObject
     {
         private readonly ILogger _logger;
+        private readonly Dictionary<IAxis, double> _pitchPerAxis = new();
+
         [ObservableProperty] private double pitch;
         private double _speed;
         public double Speed
@@ -30,7 +32,7 @@ namespace HCB.UI
                 }
                 else
                 {
-                    // 범위를 벗어난 값을 입력했을 때, UI의 글자를 다시 정상 범위 숫자로 
+                    // 범위를 벗어난 값을 입력했을 때, UI의 글자를 다시 정상 범위 숫자로
                     // 되돌리기 위해 강제로 알림을 한 번 더 보냅니다.
                     OnPropertyChanged(nameof(Speed));
                 }
@@ -39,8 +41,16 @@ namespace HCB.UI
 
         [ObservableProperty] public IAxis axis;
 
+        partial void OnAxisChanged(IAxis oldValue, IAxis newValue)
+        {
+            if (oldValue != null)
+                _pitchPerAxis[oldValue] = Pitch;
+
+            Pitch = newValue != null && _pitchPerAxis.TryGetValue(newValue, out var saved) ? saved : 0;
+        }
+
         public MotionMoveVM(ILogger logger)
-        {      
+        {
             this._logger = logger.ForContext<MotionMoveVM>();
         }
 
@@ -54,6 +64,25 @@ namespace HCB.UI
         public async Task RelativeMove()
         {
             if (Axis == null || Pitch == 0) return;
+            await DoRelativeMove(Pitch);
+        }
+
+        [RelayCommand]
+        public async Task RelativeMovePlus()
+        {
+            if (Axis == null || Pitch == 0) return;
+            await DoRelativeMove(Math.Abs(Pitch));
+        }
+
+        [RelayCommand]
+        public async Task RelativeMoveMinus()
+        {
+            if (Axis == null || Pitch == 0) return;
+            await DoRelativeMove(-Math.Abs(Pitch));
+        }
+
+        private async Task DoRelativeMove(double distance)
+        {
             try
             {
                 if (!Axis.IsEnabled)
@@ -62,19 +91,18 @@ namespace HCB.UI
                     return;
                 }
 
-                if ( Axis.CurrentPosition + Pitch >= Axis.LimitMinPosition 
-                    && Axis.CurrentPosition + Pitch <= Axis.LimitMaxPosition)
+                if (Axis.CurrentPosition + distance >= Axis.LimitMinPosition
+                    && Axis.CurrentPosition + distance <= Axis.LimitMaxPosition)
                 {
-                    await Axis.Move(MoveType.Relative, Axis.SetSpeed, Pitch);
+                    await Axis.Move(MoveType.Relative, Axis.SetSpeed, distance);
                 }
                 else
                 {
-                    this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, Axis.SetSpeed, Axis.LimitMinPosition, Axis.LimitMaxPosition);
+                    this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, Axis.CurrentPosition + distance, Axis.LimitMinPosition, Axis.LimitMaxPosition);
                 }
             }
             catch (Exception e)
             {
-
             }
         }
 
@@ -82,6 +110,25 @@ namespace HCB.UI
         public async Task AbsoluteMove()
         {
             if (Axis == null) return;
+            await DoAbsoluteMove(Pitch);
+        }
+
+        [RelayCommand]
+        public async Task AbsoluteMovePlus()
+        {
+            if (Axis == null) return;
+            await DoAbsoluteMove(Math.Abs(Pitch));
+        }
+
+        [RelayCommand]
+        public async Task AbsoluteMoveMinus()
+        {
+            if (Axis == null) return;
+            await DoAbsoluteMove(-Math.Abs(Pitch));
+        }
+
+        private async Task DoAbsoluteMove(double position)
+        {
             try
             {
                 if (!Axis.IsEnabled)
@@ -90,19 +137,18 @@ namespace HCB.UI
                     return;
                 }
 
-                if (Pitch >= Axis.LimitMinPosition
-                    && Pitch <= Axis.LimitMaxPosition)
+                if (position >= Axis.LimitMinPosition
+                    && position <= Axis.LimitMaxPosition)
                 {
-                    await Axis.Move(MoveType.Absolute, Axis.SetSpeed, Pitch);
+                    await Axis.Move(MoveType.Absolute, Axis.SetSpeed, position);
                 }
                 else
                 {
-                    this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, Axis.SetSpeed, Axis.LimitMinPosition, Axis.LimitMaxPosition);
+                    this._logger.Warning("{axis} position {position} is out of range [{min},{max}]", Axis.Name, position, Axis.LimitMinPosition, Axis.LimitMaxPosition);
                 }
             }
             catch (Exception e)
             {
-
             }
         }
 

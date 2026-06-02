@@ -288,6 +288,36 @@ namespace HCB.UI
             await Task.Delay(200, ct);
         }
 
+        public async Task MotionsMove(string motionName, double position, double speed, CancellationToken ct)
+        {
+            var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var motion = motionDevice?.FindMotionByName(motionName);
+
+            if (motion == null)
+                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+
+
+            // 이동 명령
+            await motion.Move(MoveType.Absolute, 100, speed, position);
+
+            // InPosition 안정화 대기 (이동 시작 직후 InPosition이 false로 전환될 때까지 대기)
+            int retry = 0;
+            while (motion.InPosition && retry < 5)
+            {
+                await Task.Delay(20, ct);
+                retry++;
+            }
+
+            // 이동 완료 대기
+            await _sequenceHelper.WaitUntilAsync(
+                () => motion.InPosition,
+                60000, ct,
+                $"[Motion Timeout] '{motionName}' 이동 시간 초과"
+            );
+
+            await Task.Delay(200, ct);
+        }
+
         public async Task MotionsMove(string[] motions, string positionName, CancellationToken ct)
         {
             var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
@@ -302,7 +332,7 @@ namespace HCB.UI
                 if (position == null) throw new Exception($"[Position Error] '{item}' 위치 정보 없음");
 
                 targetMotions.Add(motion);
-                await motion.Move(MoveType.Absolute, 100, position.Speed, position.Position);
+                await motion.Move(MoveType.Absolute, 100d, position.Speed, position.Position);
             }
 
             // [보강 1] 이동 시작 보장: 모든 축이 '이동 중(InPosition == false)' 상태로 진입할 때까지 대기
@@ -334,7 +364,7 @@ namespace HCB.UI
                 throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
 
             // 이동 명령
-            await motion.Move(MoveType.Relative, 100, motion.LimitMaxSpeed / 2, position);
+            await motion.Move(MoveType.Relative, 100, motion.LimitMaxSpeed / 2, Math.Min(position, motion.LimitMaxPosition - motion.CurrentPosition));
 
             // InPosition 안정화 대기 (이동 시작 직후 InPosition이 false로 전환될 때까지 대기)
             int retry = 0;
@@ -353,6 +383,7 @@ namespace HCB.UI
 
             await Task.Delay(200, ct);
         }
+
 
         public async Task<VernierResponse> MeasureVeriner(CameraType cameraType, DirectType directType)
         {

@@ -274,6 +274,32 @@
                         </Border>
 
                         <!-- ══════════════════════════════════════════════
+             WarmUp — 각 축 Min ↔ Max 왕복 (중지할 때까지)
+        ══════════════════════════════════════════════ -->
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
+
+                        <TextBlock Text="WarmUp (왕복)" Foreground="#5E8BAA"
+                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="0,0,0,12">
+                            Z축을 먼저 0(안전 높이)으로 올린 뒤, H_X/W_Y/P_Y/D_Y를
+                            각 축의 Min ↔ Max 범위로 중지할 때까지 왕복합니다.
+                        </TextBlock>
+
+                        <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="WarmUp 실행"
+                                Command="{Binding WarmUpCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Margin="0,0,0,8"/>
+
+                        <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+                                CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                            <TextBlock Foreground="#E67E22" FontSize="14">
+                                <Run Text="왕복 횟수: "/><Run Text="{Binding WarmUpCycle, Mode=OneWay}"/>
+                            </TextBlock>
+                        </Border>
+
+                        <!-- ══════════════════════════════════════════════
      ⑤ 2D Mapping — 좌측 StackPanel 맨 아래에 추가
      (전체 캘리브레이션 중지 버튼 + CalibProgress Border 아래)
 ══════════════════════════════════════════════ -->

@@ -24,6 +24,7 @@ namespace HCB.UI
         private IAxis? _wyAxis;
         private IAxis? _pyAxis;
         private IAxis? _htAxis;
+        private IAxis? _dyAxis;
 
         private CancellationTokenSource? _cts;
 
@@ -57,6 +58,9 @@ namespace HCB.UI
         // 전체 캘리브레이션
         [ObservableProperty] private int calibRepeatCount = 1;
 
+        // WarmUp
+        [ObservableProperty] private int warmUpCycle = 0;
+
         public CalibrationTabViewModel(
             DeviceManager deviceManager,
             EqpCommunicationService communication,
@@ -73,6 +77,7 @@ namespace HCB.UI
             _wyAxis = device.FindMotionByName(MotionExtensions.W_Y);
             _pyAxis = device.FindMotionByName(MotionExtensions.P_Y);
             _htAxis = device.FindMotionByName(MotionExtensions.H_T);
+            _dyAxis = device.FindMotionByName(MotionExtensions.D_Y);
         }
 
         private CancellationToken GetToken()
@@ -166,6 +171,62 @@ namespace HCB.UI
             {
                 _logger.Error(e, "RunFullCalibration failed");
                 CalibProgress = $"오류: {e.Message}";
+                CalibStatus = $"오류: {e.Message}";
+            }
+            finally { IsNotBusy = true; }
+        }
+
+        // ══════════════════════════════════════════════
+        //  WarmUp — 중지할 때까지 각 축을 Min ↔ Max 범위로 왕복
+        //           (Z축은 먼저 0(안전 높이)으로 올린 뒤 제외)
+        // ══════════════════════════════════════════════
+
+        [RelayCommand]
+        public async Task WarmUp()
+        {
+            if (!IsNotBusy) return;
+            IsNotBusy = false;
+            WarmUpCycle = 0;
+            var ct = GetToken();
+            try
+            {
+                CalibStatus = "WarmUp — Z축 상승 중...";
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, 0, ct);
+
+                var axes = new (string Name, IAxis Axis)[]
+                {
+                    (MotionExtensions.H_X, _hxAxis!),
+                    (MotionExtensions.W_Y, _wyAxis!),
+                    (MotionExtensions.P_Y, _pyAxis!),
+                    (MotionExtensions.D_Y, _dyAxis!),
+                };
+
+                while (true)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    WarmUpCycle++;
+
+                    await _sequenceService.MotionsMove(MotionExtensions.H_Z, 90.0, 100, ct);
+                    await _sequenceService.MotionsMove(MotionExtensions.H_Z, 0, 100, ct);
+
+                    CalibStatus = $"WarmUp #{WarmUpCycle} — Max 이동";
+                    await Task.WhenAll(Array.ConvertAll(axes,
+                        a => _sequenceService.MotionsMove(a.Name, a.Axis.LimitMaxPosition, ct)));
+
+                    ct.ThrowIfCancellationRequested();
+
+                    CalibStatus = $"WarmUp #{WarmUpCycle} — Min 이동";
+                    await Task.WhenAll(Array.ConvertAll(axes,
+                        a => _sequenceService.MotionsMove(a.Name, a.Axis.LimitMinPosition, ct)));
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                CalibStatus = $"WarmUp 중지 ({WarmUpCycle}회 완료)";
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "WarmUp failed");
                 CalibStatus = $"오류: {e.Message}";
             }
             finally { IsNotBusy = true; }
