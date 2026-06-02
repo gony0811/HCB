@@ -47,7 +47,7 @@ namespace HCB.UI
                 int decTime = await GetRecipeInt("PICKUP_DEC_TIME");    // 픽업 종료 시간
                 double loadCell = await GetRecipe("PICKUP_LOADCELL");
                 double current = await GetRecipe("PICKUP_CURRENT");     // 전류 1단계
-                double current2 = await GetRecipe("PICKUP_CURRENT");     // 전류 2단계
+                double current2 = await GetRecipe("PICKUP_CURRENT2");     // 전류 2단계
 
                 int headVacOnMs = await GetRecipeInt("PICKUP_HEAD_VAC_ON_TIME");
                 int dtableVacOffMs = await GetRecipeInt("PICKUP_DTABLE_VAC_OFF_TIME");
