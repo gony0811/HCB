@@ -59,10 +59,18 @@ namespace HCB.UI
                 _logger.Warning($"{stepName} Canceled");
                 throw;
             }
+            catch (ErrorException ex)
+            {
+                setState(StepState.Failed);
+                _logger.Error(ex, "{StepName} Failed — AlarmCode: {Code}", stepName, ex.ErrorCode);
+                await _alarmService.SetAlarm(ex.ErrorCode);
+                throw;
+            }
             catch (Exception ex)
             {
                 setState(StepState.Failed);
-                _logger.Error(ex, $"{stepName} Failed");
+                _logger.Error(ex, "{StepName} Failed", stepName);
+                await _alarmService.SetAlarm("S001");
                 throw;
             }
             finally

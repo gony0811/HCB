@@ -222,7 +222,7 @@ namespace HCB.UI
                 InitState = StepState.Completed;
             }
             catch (OperationCanceledException) { InitState = StepState.Idle; }
-            catch (Exception e) { InitState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (Exception e) { InitState = StepState.Failed; _logger.Error(e, "Init Failed"); }
         }
 
         // ═════════════════════════════════════════════════════
@@ -255,7 +255,7 @@ namespace HCB.UI
                 _logger.Information("Die Load 선택 완료 — TOP: [{Top}]  BOT: [{Bot}]",
                     string.Join(", ", topList), string.Join(", ", botList));
             }
-            catch (Exception e) { _logger.Error(e.Message); }
+            catch (Exception e) { _logger.Error(e, "DieLoad Failed"); }
         }
 
         [RelayCommand]
@@ -308,7 +308,7 @@ namespace HCB.UI
         // ═════════════════════════════════════════════════════
 
         [RelayCommand]
-        public async Task BtmLowAlign()
+        public async Task BtmAlignPickup()
         {
             ResetCts();
             try
@@ -317,26 +317,11 @@ namespace HCB.UI
                 BtmLowAlignState = StepState.InProgress;
                 VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(
                     BottomDie, MarkType.DIE_CENTER_BOTTOM, _cts.Token);
+                await RunNoStop(() => _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, _cts.Token));
                 BtmLowAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmLowAlignState = StepState.Idle; }
-            catch (Exception e) { BtmLowAlignState = StepState.Failed; _logger.Warning(e.Message); }
-        }
-
-        [RelayCommand]
-        public async Task BtmPickup()
-        {
-            ResetCts();
-            try
-            {
-                if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); return; }
-                if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 해주세요"); return; }
-                BtmPickupState = StepState.InProgress;
-                await RunNoStop(() => _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, _cts.Token));
-                BtmPickupState = StepState.Completed;
-            }
-            catch (OperationCanceledException) { BtmPickupState = StepState.Idle; }
-            catch (Exception e) { BtmPickupState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (Exception e) { BtmLowAlignState = StepState.Failed; _logger.Error(e, "BtmAlignPickup Failed"); }
         }
 
 
@@ -351,7 +336,7 @@ namespace HCB.UI
                 BtmPlaceState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmPlaceState = StepState.Idle; }
-            catch (Exception e) { BtmPlaceState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (Exception e) { BtmPlaceState = StepState.Failed; _logger.Error(e, "BtmPlace Failed"); }
         }
 
         [RelayCommand]
@@ -365,12 +350,9 @@ namespace HCB.UI
 
                 BtmLowAlignState = StepState.InProgress;
                 VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(BottomDie, MarkType.DIE_CENTER_BOTTOM, ct);
-                BtmLowAlignState = StepState.Completed;
                 if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 실패"); return; }
-
-                BtmPickupState = StepState.InProgress;
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, ct));
-                BtmPickupState = StepState.Completed;
+                BtmLowAlignState = StepState.Completed;
 
                 BtmPlaceState = StepState.InProgress;
                 await _sequenceService.BtmDieDrop(1, ct);
@@ -379,15 +361,13 @@ namespace HCB.UI
             catch (OperationCanceledException)
             {
                 BtmLowAlignState = IfInProgress(BtmLowAlignState, StepState.Idle);
-                BtmPickupState = IfInProgress(BtmPickupState, StepState.Idle);
                 BtmPlaceState = IfInProgress(BtmPlaceState, StepState.Idle);
             }
             catch (Exception e)
             {
                 BtmLowAlignState = IfInProgress(BtmLowAlignState, StepState.Failed);
-                BtmPickupState = IfInProgress(BtmPickupState, StepState.Failed);
                 BtmPlaceState = IfInProgress(BtmPlaceState, StepState.Failed);
-                _logger.Warning(e.Message);
+                _logger.Error(e, "BtmFullSequence Failed");
             }
         }
 
@@ -398,7 +378,7 @@ namespace HCB.UI
         // ═════════════════════════════════════════════════════
 
         [RelayCommand]
-        public async Task TopLowAlign()
+        public async Task TopAlignPickup()
         {
             ResetCts();
             try
@@ -406,26 +386,11 @@ namespace HCB.UI
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
                 TopLowAlignState = StepState.InProgress;
                 VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, _cts.Token);
+                await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, _cts.Token));
                 TopLowAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopLowAlignState = StepState.Idle; }
-            catch (Exception e) { TopLowAlignState = StepState.Failed; _logger.Warning(e.Message); }
-        }
-
-        [RelayCommand]
-        public async Task TopPickup()
-        {
-            ResetCts();
-            try
-            {
-                if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
-                if (VisionTopLowAlign == null) { _logger.Information("Top Die Align 해주세요"); return; }
-                TopPickupState = StepState.InProgress;
-                await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, _cts.Token));
-                TopPickupState = StepState.Completed;
-            }
-            catch (OperationCanceledException) { TopPickupState = StepState.Idle; }
-            catch (Exception e) { TopPickupState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (Exception e) { TopLowAlignState = StepState.Failed; _logger.Error(e, "TopAlignPickup Failed"); }
         }
 
 
@@ -446,7 +411,7 @@ namespace HCB.UI
                 TopHighAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopHighAlignState = StepState.Idle; }
-            catch (Exception e) { TopHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (Exception e) { TopHighAlignState = StepState.Failed; _logger.Error(e, "TopHighAlign Failed"); }
         }
 
         [RelayCommand]
@@ -465,7 +430,7 @@ namespace HCB.UI
                 BtmHighAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmHighAlignState = StepState.Idle; }
-            catch (Exception e) { BtmHighAlignState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (Exception e) { BtmHighAlignState = StepState.Failed; _logger.Error(e, "BtmHighAlign Failed"); }
         }
 
         [RelayCommand]
@@ -481,7 +446,7 @@ namespace HCB.UI
                 TopCorrState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopCorrState = StepState.Idle; }
-            catch (Exception e) { TopCorrState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (Exception e) { TopCorrState = StepState.Failed; _logger.Error(e, "TopCorr Failed"); }
         }
 
         [RelayCommand]
@@ -497,7 +462,7 @@ namespace HCB.UI
                 ExportHcbData();
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
-            catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (Exception e) { TopBondingState = StepState.Failed; _logger.Error(e, "TopBonding Failed"); }
         }
 
         // ═════════════════════════════════════════════════════
@@ -511,16 +476,13 @@ namespace HCB.UI
             var ct = _cts.Token;
             try
             {
-                // 1. 저배율 + 2. Pickup
+                // 1. 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
                 VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, ct);
+                await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
                 TopLowAlignState = StepState.Completed;
 
-                TopPickupState = StepState.InProgress;
-                await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
-                TopPickupState = StepState.Completed;
-
-                // 3~5 반복
+                // 2~4 반복
                 for (int i = 0; i < 3000; i++)
                 {
                     ct.ThrowIfCancellationRequested();
@@ -561,7 +523,7 @@ namespace HCB.UI
                 TopBondingState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
-            catch (Exception e) { TopBondingState = StepState.Failed; _logger.Warning(e.Message); }
+            catch (Exception e) { TopBondingState = StepState.Failed; _logger.Error(e, "AlignTest Failed"); }
         }
 
         // ═════════════════════════════════════════════════════
@@ -577,17 +539,13 @@ namespace HCB.UI
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
 
-                // 1. 저배율 보정
+                // 1. 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
                 VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, ct);
+                await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
                 TopLowAlignState = StepState.Completed;
 
-                // 2. Pickup
-                TopPickupState = StepState.InProgress;
-                await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
-                TopPickupState = StepState.Completed;
-
-                // 3. 고배율 측정 (Top)
+                // 2. 고배율 측정 (Top)
                 TopHighAlignState = StepState.InProgress;
                 var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping };
                 hcbData = await _sequenceService.TopHighAlign(data, ct);
@@ -624,7 +582,6 @@ namespace HCB.UI
             catch (OperationCanceledException)
             {
                 TopLowAlignState = IfInProgress(TopLowAlignState, StepState.Idle);
-                TopPickupState = IfInProgress(TopPickupState, StepState.Idle);
                 TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Idle);
                 BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Idle);
                 TopCorrState = IfInProgress(TopCorrState, StepState.Idle);
@@ -633,12 +590,11 @@ namespace HCB.UI
             catch (Exception e)
             {
                 TopLowAlignState = IfInProgress(TopLowAlignState, StepState.Failed);
-                TopPickupState = IfInProgress(TopPickupState, StepState.Failed);
                 TopHighAlignState = IfInProgress(TopHighAlignState, StepState.Failed);
                 BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Failed);
                 TopCorrState = IfInProgress(TopCorrState, StepState.Failed);
                 TopBondingState = IfInProgress(TopBondingState, StepState.Failed);
-                _logger.Warning(e.Message);
+                _logger.Error(e, "TopRunFullSequence Failed");
             }
         }
 
@@ -671,7 +627,7 @@ namespace HCB.UI
                 ExportHighResult();
                 _logger.Information("Vernier 측정 완료 — {Count}포인트", result.v1.Count);
             }
-            catch (Exception e) { _logger.Warning("Vernier 측정 실패: {Msg}", e.Message); }
+            catch (Exception e) { _logger.Error(e, "Vernier 측정 실패"); }
         }
 
         [RelayCommand]
@@ -909,7 +865,7 @@ namespace HCB.UI
             catch (Exception e)
             {
                 RecipeSelectState = StepState.Failed;
-                _logger.Warning("사용 레시피 변경 실패: {Msg}", e.Message);
+                _logger.Error(e, "사용 레시피 변경 실패");
             }
             finally
             {

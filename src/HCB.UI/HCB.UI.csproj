@@ -403,6 +403,8 @@
   <Compile Include="SUB UI\ViewModels\MotionDeviceDetailViewModel.cs" />
   <Compile Include="SUB UI\USub08Tab\MotionDeviceView.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\MotionParameterCreateVM.cs" />
+  <Compile Include="SYSTEM\Interceptor\ExceptionAlarmInterceptor.cs" />
+  <Compile Include="SYSTEM\Logging\AlarmLogSink.cs" />
   <Compile Include="SYSTEM\Logging\GridLogSink.cs" />
   <Compile Include="SYSTEM\Logging\LogMessage.cs" />
   <Compile Include="SYSTEM\Logging\TextBoxSink.cs" />

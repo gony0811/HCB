@@ -31,7 +31,8 @@ namespace HCB.UI
                 {
                     config.ReadFrom.Configuration(context.Configuration)
                           .Enrich.FromLogContext()
-                          .WriteTo.Sink(new GridLogSink());
+                          .WriteTo.Sink(new GridLogSink())
+                          .WriteTo.Sink(new AlarmLogSink());
                 })
 
                 // Autofac Provider 적용

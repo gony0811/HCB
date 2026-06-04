@@ -8,9 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Telerik.Windows.Documents.Fixed.Model.Actions;
-using Telerik.Windows.Documents.Flow.FormatProviders.Html;
-using static System.Net.WebRequestMethods;
 
 namespace HCB.UI
 {

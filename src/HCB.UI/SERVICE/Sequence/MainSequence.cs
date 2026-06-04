@@ -47,7 +47,7 @@ namespace HCB.UI
                 int decTime = await GetRecipeInt("PICKUP_DEC_TIME");    // 픽업 종료 시간
                 double loadCell = await GetRecipe("PICKUP_LOADCELL");
                 double current = await GetRecipe("PICKUP_CURRENT");     // 전류 1단계
-                double current2 = await GetRecipe("PICKUP_CURRENT");     // 전류 2단계
+                double current2 = await GetRecipe("PICKUP_CURRENT2");     // 전류 2단계
 
                 int headVacOnMs = await GetRecipeInt("PICKUP_HEAD_VAC_ON_TIME");
                 int dtableVacOffMs = await GetRecipeInt("PICKUP_DTABLE_VAC_OFF_TIME");
@@ -179,12 +179,8 @@ namespace HCB.UI
                 sw.Stop();
                 _logger.Information("{Label} Pickup press 완료 (총 소요: {Elapsed}ms)", label, sw.ElapsedMilliseconds);
 
-                // ── 5. 복귀 ──
                 await Task.Delay(300);
-                await Task.WhenAll(
-                    Init_Head(ct),
-                    MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct)
-                );
+                await Init_Head(ct);
             }
             catch (OperationCanceledException)
             {
@@ -194,6 +190,10 @@ namespace HCB.UI
             catch (TimeoutException ex)
             {
                 _logger.Error(ex, "{Label} Pickup press 타임아웃", label);
+                throw;
+            }
+            catch (ErrorException ex)
+            {
                 throw;
             }
             catch (Exception e)
@@ -440,7 +440,6 @@ namespace HCB.UI
             data ??= new AlignData();
             try
             {
-                await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
                 data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
                 if (data.Use2DMapping) await PTable2DMappingOn();
                 data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove, ct);

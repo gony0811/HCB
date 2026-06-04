@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Telerik.Windows.Controls;
 using Telerik.Windows.Controls.ConversationalUI;
 using Telerik.Windows.Controls.Navigation;
@@ -25,6 +26,10 @@ namespace HCB.UI
         public App()
         {
             this.InitializeComponent();
+
+            DispatcherUnhandledException += OnDispatcherUnhandledException;
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+            AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
         }
 
         protected void SplashScreenUpdate(string content, double progressValue)
@@ -65,6 +70,9 @@ namespace HCB.UI
             SplashScreenUpdate("호스트 빌드 완료.", 10);
 
             SplashScreenUpdate("어플리케이션 초기화 및 구동 시작", 15);
+
+            var alarmService = _host.Services.GetRequiredService<AlarmService>();
+            AlarmLogSink.Bind(alarmService);
 
             SplashScreenUpdate("데이터베이스 연결 및 초기화...", 20);
             await StartUp.InitDatabaseAsync(_host);
@@ -139,6 +147,46 @@ namespace HCB.UI
             SplashScreenUpdate("장치 연결 시도 중...", 50);
         }
            
+
+        private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            HandleGlobalException(e.Exception);
+            e.Handled = true;
+        }
+
+        private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            HandleGlobalException(e.Exception.GetBaseException());
+            e.SetObserved();
+        }
+
+        private void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            if (e.ExceptionObject is Exception ex)
+                HandleGlobalException(ex);
+        }
+
+        private void HandleGlobalException(Exception ex)
+        {
+            try
+            {
+                Log.Error(ex, "Unhandled exception");
+
+                if (_host == null) return;
+
+                var alarmService = _host.Services.GetService<AlarmService>();
+                if (alarmService == null) return;
+
+                if (ex is ErrorException errorEx)
+                    _ = alarmService.SetAlarm(errorEx.ErrorCode);
+                else
+                    _ = alarmService.SetAlarm("S001");
+            }
+            catch
+            {
+                // 알람 처리 중 2차 예외 방지
+            }
+        }
 
         protected override void OnExit(ExitEventArgs e)
         {

@@ -131,11 +131,11 @@ namespace HCB.UI
                 var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // Head Z(L)축 (예시)
                 var h_z = motionDevice?.FindMotionByName(MotionExtensions.h_z); // Head Z(S)축 (예시)
 
-                if (H_Z is null || !H_Z.IsEnabled) throw new Exception("H_Z축이 준비되지 않았습니다. H_Z축 Servo On, Home 실행여부를 확인하십시요.");
-                if (h_z is null || !h_z.IsEnabled) throw new Exception("h_z축이 준비되지 않았습니다. h_z축 Servo On, Home 실행여부를 확인하십시요.");
+                if (H_Z is null || !H_Z.IsEnabled) throw new PmacException(PmacErrorCode.SERVO_OFF, "H_Z축이 준비되지 않았습니다. H_Z축 SERVO ON, Home 실행여부를 확인하십시요.");
+                if (h_z is null || !h_z.IsEnabled) throw new PmacException(PmacErrorCode.SERVO_OFF, "h_z축이 준비되지 않았습니다. h_z축 Servo On, Home 실행여부를 확인하십시요.");
 
-                if (H_Z.IsBusy ) throw new Exception("Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
-                if (h_z.IsBusy ) throw new Exception("Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
+                if (H_Z.IsBusy ) throw new PmacException(PmacErrorCode.RUNNING, "Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
+                if (h_z.IsBusy ) throw new PmacException(PmacErrorCode.RUNNING, "Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
 
                 // Head Z축 안전 위치로 이동
                 await MotionsMove([MotionExtensions.H_Z, MotionExtensions.h_z], MotionExtensions.HEAD_SAFETY, ct);
@@ -164,7 +164,7 @@ namespace HCB.UI
             var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
             var motion = motionDevice?.FindMotionByName(motionName);
             if (motion == null)
-                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+                throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
             double a = motion.CurrentPosition;
             await Task.Delay(300);
             double b = motion.CurrentPosition;
@@ -177,7 +177,7 @@ namespace HCB.UI
             var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
             var motion = motionDevice?.FindMotionByName(motionName);
             if (motion == null)
-                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+                throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
             var position = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
             if (position == null)
                 throw new Exception($"[Position Error] '{positionName}' 위치 정보 없음");
@@ -191,11 +191,11 @@ namespace HCB.UI
             var motion = motionDevice?.FindMotionByName(motionName);
 
             if (motion == null)
-                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+                throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
 
             var position = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
             if (position == null)
-                throw new Exception($"[Position Error] '{positionName}' 위치 정보 없음");
+                throw new DBException(DBErrorCode.NOT_FOUND, $"[Position Error] '{positionName}' 위치 정보 없음");
             await Task.Delay(3000, ct);
             // 이동 명령
             await motion.Move(MoveType.Absolute, 100, position.Speed, position.Position);
@@ -232,11 +232,11 @@ namespace HCB.UI
             var motion = motionDevice?.FindMotionByName(motionName);
 
             if (motion == null)
-                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+                throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
 
             var position = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
             if (position == null)
-                throw new Exception($"[Position Error] '{positionName}' 위치 정보 없음");
+                throw new DBException(DBErrorCode.NOT_FOUND, $"[Position Error] '{positionName}' 위치 정보 없음");
 
             // 이동 명령
             await motion.Move(MoveType.Absolute, 100, position.Speed, position.Position + offset);
@@ -264,7 +264,7 @@ namespace HCB.UI
             var motion = motionDevice?.FindMotionByName(motionName);
 
             if (motion == null)
-                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+                throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
 
             
             // 이동 명령
@@ -294,7 +294,7 @@ namespace HCB.UI
             var motion = motionDevice?.FindMotionByName(motionName);
 
             if (motion == null)
-                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+                throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
 
 
             // 이동 명령
@@ -326,10 +326,10 @@ namespace HCB.UI
             foreach (var item in motions)
             {
                 var motion = motionDevice?.FindMotionByName(item);
-                if (motion == null) throw new KeyNotFoundException($"[Motion Error] '{item}' 축을 찾을 수 없습니다.");
+                if (motion == null) throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{item}' 축을 찾을 수 없습니다.");
 
                 var position = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
-                if (position == null) throw new Exception($"[Position Error] '{item}' 위치 정보 없음");
+                if (position == null) throw new DBException(DBErrorCode.NOT_FOUND, $"[Position Error] '{item}' 위치 정보 없음");
 
                 targetMotions.Add(motion);
                 await motion.Move(MoveType.Absolute, 100d, position.Speed, position.Position);
@@ -361,7 +361,7 @@ namespace HCB.UI
             var motion = motionDevice?.FindMotionByName(motionName);
 
             if (motion == null)
-                throw new KeyNotFoundException($"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
+                throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
 
             // 이동 명령
             await motion.Move(MoveType.Relative, 100, motion.LimitMaxSpeed / 2, Math.Min(position, motion.LimitMaxPosition - motion.CurrentPosition));
@@ -708,7 +708,7 @@ namespace HCB.UI
             );
 
             var ready = silindarOut.All(n => n);
-            if (!ready) throw new Exception("실린더 IO 에러");
+            if (!ready) throw new PmacException(PmacErrorCode.IO_EXCEPTION);
 
             await MotionsMove(MotionExtensions.H_Z, 0, ct);
             var hz = _deviceManager.GetDevice<PowerPmacDevice>("PMAC").FindMotionByName(MotionExtensions.h_z);
@@ -724,7 +724,7 @@ namespace HCB.UI
             }
             else
             {
-                throw new Exception("피에조 통신 에러");
+                throw new VisionException(VisionErrorCode.COMMUNICATION_ERROR);
             }
         }
     }

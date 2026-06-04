@@ -528,7 +528,7 @@
                     <!-- Steps -->
                     <StackPanel Grid.Row="1" Margin="0,8,0,8">
 
-                        <!-- Step 1 : 저배율 보정 -->
+                        <!-- Step 1 : 저배율 보정 + PICK UP -->
                         <Border Background="#0A1628" CornerRadius="6" Margin="16,6,16,6">
                             <Grid Margin="14,10,14,10">
                                 <Grid.ColumnDefinitions>
@@ -545,11 +545,11 @@
                                 <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding BtmLowAlignState}" Margin="0,0,10,0"/>
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBlock Text="저배율 보정" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Low Magnification Calibration" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                    <TextBlock Text="저배율 보정 + PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Low Calibration &amp; Die Pick Up" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                 </StackPanel>
                                 <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
-                                        Command="{Binding BtmLowAlignCommand}">
+                                        Command="{Binding BtmAlignPickupCommand}">
                                     <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
                                 </Button>
                             </Grid>
@@ -557,7 +557,7 @@
 
                         <Rectangle Width="2" Height="14" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
 
-                        <!-- Step 2 : PICK UP -->
+                        <!-- Step 2 : PLACE -->
                         <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
                             <Grid Margin="14,10,14,10">
                                 <Grid.ColumnDefinitions>
@@ -569,35 +569,6 @@
                                 <Border Grid.Column="0" Background="#1A3A5C" CornerRadius="14"
                                         Width="28" Height="28" Margin="0,0,10,0">
                                     <TextBlock Text="2" Foreground="#3498DB" FontSize="13" FontWeight="Bold"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
-                                                State="{Binding BtmPickupState}" Margin="0,0,10,0"/>
-                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBlock Text="PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Die Pick Up" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
-                                </StackPanel>
-                                <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
-                                        Command="{Binding BtmPickupCommand}">
-                                    <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
-                                </Button>
-                            </Grid>
-                        </Border>
-
-                        <Rectangle Width="2" Height="14" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
-
-                        <!-- Step 3 : PLACE -->
-                        <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
-                            <Grid Margin="14,10,14,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Background="#1A3A5C" CornerRadius="14"
-                                        Width="28" Height="28" Margin="0,0,10,0">
-                                    <TextBlock Text="3" Foreground="#3498DB" FontSize="13" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
@@ -739,7 +710,7 @@
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,8,0,8">
                         <StackPanel  Margin="0,8,0,8">
 
-                            <!-- Step 1 : 저배율 보정 -->
+                            <!-- Step 1 : 저배율 보정 + PICK UP -->
                             <Border Background="#0A1628" CornerRadius="6" Margin="16,6,16,6">
                                 <Grid Margin="14,10,14,10">
                                     <Grid.ColumnDefinitions>
@@ -756,11 +727,11 @@
                                     <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding TopLowAlignState}" Margin="0,0,10,0"/>
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBlock Text="저배율 보정" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                        <TextBlock Text="Low Magnification Calibration" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                        <TextBlock Text="저배율 보정 + PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Low Calibration &amp; Die Pick Up" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                     </StackPanel>
                                     <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
-                                        Command="{Binding TopLowAlignCommand}">
+                                        Command="{Binding TopAlignPickupCommand}">
                                         <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
                                     </Button>
                                 </Grid>
@@ -768,7 +739,7 @@
 
                             <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
 
-                            <!-- Step 2 : PICK UP -->
+                            <!-- Step 2 : 고배율 보정 (Top die) -->
                             <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
                                 <Grid Margin="14,10,14,10">
                                     <Grid.ColumnDefinitions>
@@ -776,51 +747,14 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
+
                                     <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
                                         Width="28" Height="28" Margin="0,0,10,0">
                                         <TextBlock Text="2" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
-                                                State="{Binding TopPickupState}" Margin="0,0,10,0"/>
-                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBlock Text="PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                        <TextBlock Text="Die Pick Up" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
-                                    </StackPanel>
-                                    <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
-                                        Command="{Binding TopPickupCommand}">
-                                        <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
-                                    </Button>
-                                </Grid>
-                            </Border>
-
-                            <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
-
-                            <!-- Step 3 : 고배율 보정 (Top die) -->
-                            <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
-                                <Grid Margin="14,10,14,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <!-- 번호 뱃지 -->
-                                        <ColumnDefinition Width="Auto"/>
-                                        <!-- 램프 -->
-                                        <ColumnDefinition Width="*"/>
-                                        <!-- 타이틀 -->
-                                        <ColumnDefinition Width="Auto"/>
-                                        <!-- 진행 표시 -->
-                                        <ColumnDefinition Width="Auto"/>
-                                        <!-- 반복 측정 버튼 -->
-                                        <ColumnDefinition Width="Auto"/>
-                                        <!-- INFO 버튼 -->
-                                        <ColumnDefinition Width="Auto"/>
-                                        <!-- START 버튼 -->
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- 번호 뱃지 -->
-                                    <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
-                                        Width="28" Height="28" Margin="0,0,10,0">
-                                        <TextBlock Text="3" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
@@ -858,7 +792,7 @@
 
                             <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
 
-                            <!-- Step 4 : 고배율 보정 (Bottom die) -->
+                            <!-- Step 3 : 고배율 보정 (Bottom die) -->
                             <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
                                 <Grid Margin="14,10,14,10">
                                     <Grid.ColumnDefinitions>
@@ -870,7 +804,7 @@
                                     </Grid.ColumnDefinitions>
                                     <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
                                         Width="28" Height="28" Margin="0,0,10,0">
-                                        <TextBlock Text="4" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
+                                        <TextBlock Text="3" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
@@ -888,7 +822,7 @@
 
                             <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
 
-                            <!-- Step 5 : 보정 (Correction) -->
+                            <!-- Step 4 : 보정 (Correction) -->
                             <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
                                 <Grid Margin="14,10,14,10">
                                     <Grid.ColumnDefinitions>
@@ -900,7 +834,7 @@
                                     </Grid.ColumnDefinitions>
                                     <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
                                             Width="28" Height="28" Margin="0,0,10,0">
-                                        <TextBlock Text="5" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
+                                        <TextBlock Text="4" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
@@ -922,7 +856,7 @@
 
                             <Rectangle Width="2" Height="12" Fill="#1C3A52" HorizontalAlignment="Left" Margin="42,0,0,0"/>
 
-                            <!-- Step 6 : BONDING -->
+                            <!-- Step 5 : BONDING -->
                             <Border Background="#0A1628" CornerRadius="6" Margin="16,0,16,6">
                                 <Grid Margin="14,10,14,10">
                                     <Grid.ColumnDefinitions>
@@ -934,7 +868,7 @@
                                     </Grid.ColumnDefinitions>
                                     <Border Grid.Column="0" Background="#14452A" CornerRadius="14"
                                         Width="28" Height="28" Margin="0,0,10,0">
-                                        <TextBlock Text="6" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
+                                        <TextBlock Text="5" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
