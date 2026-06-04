@@ -20,11 +20,14 @@ namespace HCB.UI
             double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
 
             await Init_Head(ct);
-            await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+            await Task.WhenAll(
+                MotionsMove(MotionExtensions.H_T, 0, ct),
+                MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct)
+            );
             await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - btmDieThickness, ct);
             await _sequenceHelper.WTableVacuum(vacNum, eOnOff.On, ct);
             bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
-            if (!result) throw new Exception("HeadPicker를 확인해주세요");
+            if (!result) throw new PmacException(PmacErrorCode.HEAD_VAC);
         }
 
 
@@ -46,12 +49,16 @@ namespace HCB.UI
                 };
 
                 result = await communicationService.RequestAFStart(CameraType.HC2_HIGH, markType: MarkType.FIDUCIAL, ct);
-                if (result == false) throw new Exception("AF 실패");
+                if (result == false) throw new VisionException(VisionErrorCode.AF_FAIL);
                 var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC2_HIGH, "RIGHT", AvgMode);
                 VisionResult(rFidXY);
                 fid.DxCamToMark = rFidXY.X;
                 fid.DyCamToMark = rFidXY.Y;
                 return fid;
+            }
+            catch (VisionException ex)
+            {
+                throw;
             }
             catch (Exception e)
             {
@@ -274,7 +281,10 @@ namespace HCB.UI
                 string[] z = { MotionExtensions.H_Z };
 
                 await Init_Head(ct);
-                await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
+                await Task.WhenAll(
+                    MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct),
+                    MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct)
+                    );
                 await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
                 VisionMarkResult rightFid = new VisionMarkResult
                 {
@@ -851,7 +861,7 @@ namespace HCB.UI
 
         public void VisionResult(VisionMarkPositionResponse response)
         {
-            if (response.Result == Result.NG) throw new Exception("비전 통신 에러");
+            if (response.Result == Result.NG) throw new VisionException(VisionErrorCode.MEASUREMENT_FAIL);
         }
     }
 }
