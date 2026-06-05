@@ -20,7 +20,41 @@ namespace HCB.UI
         // ═══════════════════════════════════════════════════
         //  Public Sequence Entry Points
         // ═══════════════════════════════════════════════════
+        public async Task WTableLoading(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("Wafer Loading Start");
+                //EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
+                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
+                string[] motions = { MotionExtensions.W_Y };
+                await MotionsMove(motions, MotionExtensions.WAFER_LOADING, ct);
+                await Task.Delay(3000, ct);
+
+                // Vacuum Off
+                await _sequenceHelper.WTableVacuumAll(eOnOff.Off, ct);
+
+                // Wafer Pin UP
+                await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("Wafer Loading Canceled");
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, ex.Message);
+                return;
+            }
+            finally
+            {
+                _logger.Information("Wafer Loading End");
+            }
+        }
 
         public async Task DTablePickup(DieType dieType, int vacNum, VisionMarkPositionResponse? correction, CancellationToken ct)
         {
@@ -562,6 +596,57 @@ namespace HCB.UI
         }
 
         #endregion
+
+
+        public async Task DTableReady(CancellationToken ct)
+        {
+            string DtReady = "D_READY";
+            try
+            {
+                var status = _operationService.Status;
+                if (status.Availability == Availability.Down || status.Run == RunStop.Run || status.Operation == OperationMode.Auto || status.Alarm == AlarmState.HEAVY)
+                {
+                    _logger.Warning("Cannot execute DTableLoading: Sequence Service is not in Manual Standby Status.");
+                    return;
+                }
+
+                _logger.Information("Die Ready Start");
+
+                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+                var d_y = motionDevice?.FindMotionByName(MotionExtensions.D_Y); // D Table Y축 (예시)
+                var H_X = motionDevice?.FindMotionByName(MotionExtensions.H_X); // H Table X축 (예시)
+                var H_Z = motionDevice?.FindMotionByName(MotionExtensions.H_Z); // H Table Z축 (예시)
+
+                if (d_y == null || H_X == null || H_Z == null)
+                {
+                    string errorMsg = "";
+                    if (d_y == null) errorMsg += "[D_Y] ";
+                    if (H_X == null) errorMsg += "[H_X] ";
+                    if (H_Z == null) errorMsg += "[H_Z] ";
+                    throw new Exception(errorMsg + "축을 찾을 수 없습니다");
+                }
+
+                await _sequenceHelper.MoveAsync(d_y.MotorNo, DtReady, ct);
+                await _sequenceHelper.MoveAsync(H_X.MotorNo, DtReady, ct);
+                await _sequenceHelper.MoveAsync(H_Z.MotorNo, DtReady, ct);
+
+                await Task.Delay(3000, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Information("Die Ready Canceled");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, ex.Message);
+                return;
+            }
+            finally
+            {
+                _logger.Information("Die Ready End");
+            }
+        }
 
         public async Task PTable2DMappingOn()
         {

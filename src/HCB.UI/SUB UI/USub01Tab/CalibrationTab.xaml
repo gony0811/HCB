@@ -172,7 +172,7 @@
                                    Margin="0,0,0,12">
                             HC1 / HC2 카메라 FoV 안에 Fiducial Mark가 보이는 위치로
                             Stage를 이동한 뒤 실행하세요.
-                        </TextBlock>ㅇ
+                        </TextBlock>
 
                         <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="Hc1 각도 캘리브레이션"

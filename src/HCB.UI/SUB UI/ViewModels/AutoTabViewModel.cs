@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
+using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace HCB.UI
     {
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
+        private readonly ILogger _logger;
         private readonly SequenceService _sequenceService;
         private readonly OperationService _operationService;
         public readonly SequenceServiceVM _sequenceServiceVM;
@@ -46,7 +48,7 @@ namespace HCB.UI
 
         public SequenceServiceVM SequenceServiceVM => _sequenceServiceVM;
 
-        public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, OperationService operationService, SequenceService sequenceService, AlarmService alarmService, RecipeService recipeService, SequenceServiceVM sequenceServiceVM)
+        public AutoTabViewModel(RunInformation runInformation, RunningStatus runningStatus, OperationService operationService, SequenceService sequenceService, AlarmService alarmService, RecipeService recipeService, SequenceServiceVM sequenceServiceVM, ILogger logger)
         {
             RunInformation = runInformation;
             RunningStatus = runningStatus;
@@ -56,6 +58,7 @@ namespace HCB.UI
             AlarmService = alarmService;
             RecipeService = recipeService;
             _sequenceServiceVM = sequenceServiceVM;
+            _logger = logger.ForContext<AutoTabViewModel>();
 
             RunInfo = new ObservableCollection<LabelValue>
             {
@@ -68,53 +71,29 @@ namespace HCB.UI
         }       
 
         [RelayCommand]
-        public void MachineInit()
+        public async Task MachineInit()
         {
-            Task.Run(async () =>
+            if (IsInitializing) return;
+            IsInitializing = true;
+            try
             {
-                IsInitializing = true;
-                try
-                {
-                    await this._sequenceService.MachineInitAsync(_cancellationTokenSource.Token);
-                    await this._sequenceService.Init_Load(_cancellationTokenSource.Token);
-                    await this._sequenceService.WaferAndDieLoading(eOnOff.Off, _cancellationTokenSource.Token);
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        RadWindow.Confirm(new DialogParameters
-                        {
-                            Header = "로딩중",
-                            Content = "로딩 완료 후 확인을 눌러주세요",
-                            Closed = async (s, e) =>
-                            {
-                                if (e.DialogResult == true)
-                                {
-                                    await _sequenceService.WaferAndDieLoading(eOnOff.On, _cancellationTokenSource.Token);
-                                    Application.Current.Dispatcher.Invoke(() =>
-                                    {
-                                        RadWindow.Alert("로딩이 완료되었습니다");
-                                    });
-                                }
-                                else
-                                {
-                                    Application.Current.Dispatcher.Invoke(() =>
-                                    {
-                                        RadWindow.Alert("로딩이 취소되었습니다");
-                                    });
-                                }
-                            }
-                        });
-                    });
-                }
-                catch(Exception e)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        RadWindow.Alert(e.Message);
-                    });
-                }
-
+                SequenceServiceVM.ResetInitProgress();
+                await _sequenceService.MachineInitAsync(_cancellationTokenSource.Token);
+                IsInitialize = true;
+                _logger.Information("Machine Init 완료");
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Warning("Machine Init 취소됨");
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Machine Init Failed");
+            }
+            finally
+            {
                 IsInitializing = false;
-            });
+            }
         }
 
         [RelayCommand]
@@ -122,7 +101,7 @@ namespace HCB.UI
         {
             var tcs = new TaskCompletionSource<bool>();
             var dialog = new VacuumSelector();
-            dialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
             dialog.Closed += (s, e) => tcs.SetResult(dialog.DialogResult == true);
             dialog.ShowDialog();
@@ -130,17 +109,55 @@ namespace HCB.UI
             bool confirmed = await tcs.Task;
             if (!confirmed) return;
 
-            var topList = dialog.TopDieVacuums;  // List
-            var botList = dialog.BotDieVacuums;  // List
+            var topList = dialog.TopDieVacuums;
+            var botList = dialog.BotDieVacuums;
+
+            if (topList.Count == 0 || botList.Count == 0)
+            {
+                _logger.Warning("Die 선택이 없습니다");
+                return;
+            }
 
             IsRunning = true;
+            var ct = _cancellationTokenSource.Token;
             try
             {
-                foreach (var (top, bot) in topList.Zip(botList))
-                    await _sequenceService.MachineStartAsync(top, bot, _cancellationTokenSource.Token);
+                foreach (var (topDie, btmDie) in topList.Zip(botList))
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    // Bottom: 저배율 보정 + Pickup + Place
+                    var btmAlign = await _sequenceService.BtmCarrierAlign(btmDie, MarkType.DIE_CENTER_BOTTOM, ct);
+                    await _sequenceService.DTablePickup(DieType.BOTTOM, btmDie, btmAlign, ct);
+                    await _sequenceService.BtmDieDrop(1, ct);
+
+                    // Top: 저배율 보정 + Pickup
+                    var topAlign = await _sequenceService.TopLowAlign(topDie, ct);
+                    await _sequenceService.DTablePickup(DieType.TOP, topDie, topAlign, ct);
+
+                    // Top: 고배율 측정 (Top → Btm)
+                    var data = new AlignData { AvgMove = true, Use2DMapping = true };
+                    data = await _sequenceService.TopHighAlign(data, ct);
+                    data = await _sequenceService.BtmHighAlign(data, ct);
+
+                    // 보정 + 본딩
+                    await _sequenceService.TopPlace(data, ct);
+                    await _sequenceService.BondingCorr(data, ct);
+                    var bondingData = new ObservableCollection<BondingDataPoint>();
+                    await _sequenceService.BondingPress(bondingData, ct);
+
+                    await _sequenceService.Init_Head(ct);
+                    _logger.Information("Auto Run 완료 — Top:{Top} Btm:{Btm}", topDie, btmDie);
+                }
             }
-            catch (OperationCanceledException) { }
-            catch (Exception ex) { }
+            catch (OperationCanceledException)
+            {
+                _logger.Warning("Auto Run 취소됨");
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Auto Run Failed");
+            }
             finally
             {
                 IsRunning = false;
