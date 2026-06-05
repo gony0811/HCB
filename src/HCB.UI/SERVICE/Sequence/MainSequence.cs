@@ -446,9 +446,9 @@ namespace HCB.UI
                 data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, ct);
                 data.TopLeftAlignRaw = await TopDieVisionLeftAlign(data.AvgMove, ct);
             }
-            catch (Exception e)
+            catch (ErrorException e)
             {
-                throw new Exception(e.Message);
+                throw;
             }
             finally
             {

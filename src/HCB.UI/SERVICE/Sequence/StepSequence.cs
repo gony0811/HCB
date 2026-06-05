@@ -284,7 +284,7 @@ namespace HCB.UI
                 await Task.WhenAll(
                     MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct),
                     MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct)
-                    );
+                );
                 await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
                 VisionMarkResult rightFid = new VisionMarkResult
                 {
@@ -294,8 +294,6 @@ namespace HCB.UI
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
                     StageY = await GetCurrentPosition(MotionExtensions.P_Y, ct)
                 };
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
-                if (result == false) throw new Exception("AF 실패");
                 var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "RIGHT", AvgMode);
                 VisionResult(rFidXY);
                 rightFid.DxCamToMark = rFidXY.X;
@@ -316,8 +314,6 @@ namespace HCB.UI
                 _logger.Information("Top Die Vision (Right Align) Start");
                 EQStatusCheck();
 
-                var result = false;
-
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
 
@@ -333,8 +329,6 @@ namespace HCB.UI
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
                     StageY = await GetCurrentPosition(MotionExtensions.P_Y, ct)
                 };
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
-                if (result == false) throw new Exception("AF 실패");
                 var rAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "RIGHT",AvgMode);
                 VisionResult(rAlignXY);
                 rightAlign.DxCamToMark = rAlignXY.X;
@@ -427,7 +421,7 @@ namespace HCB.UI
                 _logger.Information("Top Die Vision (Left Fid) Start");
                 EQStatusCheck();
 
-                var result = false;
+                //var result = false;
 
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
@@ -443,8 +437,8 @@ namespace HCB.UI
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
                     StageY = await GetCurrentPosition(MotionExtensions.P_Y, ct)
                 };
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
-                if (result == false) throw new Exception("AF 실패");
+                //result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
+                //if (result == false) throw new Exception("AF 실패");
                 var lFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "LEFT" ,AvgMode);
                 VisionResult(lFidXY);
                 leftFid.DxCamToMark = lFidXY.X;
@@ -463,7 +457,7 @@ namespace HCB.UI
                 _logger.Information("Top Die Vision (Left Align) Start");
                 EQStatusCheck();
 
-                var result = false;
+                //var result = false;
 
                 string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
                 string[] z = { MotionExtensions.H_Z };
@@ -480,8 +474,8 @@ namespace HCB.UI
                     StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
                     StageY = await GetCurrentPosition(MotionExtensions.P_Y, ct)
                 };
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
-                if (result == false) throw new Exception("AF 실패");
+                //result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
+                //if (result == false) throw new Exception("AF 실패");
                 var lAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "LEFT", AvgMode);
                 VisionResult(lAlignXY);
                 leftAlign.DxCamToMark = lAlignXY.X;

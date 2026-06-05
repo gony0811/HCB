@@ -1,11 +1,13 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Entity.Type;
+using HCB.Data.Repository;
 using HCB.IoC;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ValueType = HCB.Data.Entity.Type.ValueType;
@@ -17,10 +19,13 @@ namespace HCB.UI
     {
         private readonly EqpCommunicationService _communication;
         private readonly ECParamService _ecParamService;
+        private readonly RecipeService _recipeService;
+        private readonly MotionPositionRepository _positionRepository;
         private readonly SequenceService _sequenceService;
         private readonly ILogger _logger;
 
         private IAxis? _hxAxis;
+        private IAxis? _hzAxis;
         private IAxis? _wyAxis;
         private IAxis? _pyAxis;
         private IAxis? _htAxis;
@@ -66,14 +71,19 @@ namespace HCB.UI
             EqpCommunicationService communication,
             SequenceService sequenceService,
             ECParamService ecParamService,
+            RecipeService recipeService,
+            MotionPositionRepository positionRepository,
             ILogger logger)
         {
             _communication = communication;
             _sequenceService = sequenceService;
             _ecParamService = ecParamService;
+            _recipeService = recipeService;
+            _positionRepository = positionRepository;
             _logger = logger.ForContext<CalibrationTabViewModel>();
             var device = deviceManager.GetDevice<PowerPmacDevice>("PMAC");
             _hxAxis = device.FindMotionByName(MotionExtensions.H_X);
+            _hzAxis = device.FindMotionByName(MotionExtensions.H_Z);
             _wyAxis = device.FindMotionByName(MotionExtensions.W_Y);
             _pyAxis = device.FindMotionByName(MotionExtensions.P_Y);
             _htAxis = device.FindMotionByName(MotionExtensions.H_T);
@@ -694,6 +704,101 @@ namespace HCB.UI
         }
 
 
+        // PC AF 측정 결과
+        [ObservableProperty] private double rightFidHeight;
+        [ObservableProperty] private double rightAlignHeight;
+        [ObservableProperty] private double leftFidHeight;
+        [ObservableProperty] private double leftAlignHeight;
+
+        [RelayCommand]
+        public async Task PcAF(CancellationToken ct = default)
+        {
+            if (!IsNotBusy) return;
+            IsNotBusy = false;
+            ct = GetToken();
+            try
+            {
+                await _sequenceService.Init_Head(ct);
+
+                // 1. Right Fiducial
+                CalibStatus = "PC AF — Right Fiducial...";
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_HIGH, ct));
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
+                await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
+                RightFidHeight = _hzAxis!.CurrentPosition;
+
+                // 2. Right Align
+                CalibStatus = "PC AF — Right Align...";
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_ALIGN_HIGH, ct);
+                await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.ALIGN_MARK, ct);
+                RightAlignHeight = _hzAxis!.CurrentPosition;
+
+                // 3. Left Fiducial
+                CalibStatus = "PC AF — Left Fiducial...";
+                await _sequenceService.Init_Head(ct);
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_HIGH, ct));
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
+                await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
+                LeftFidHeight = _hzAxis!.CurrentPosition;
+
+                // 4. Left Align
+                CalibStatus = "PC AF — Left Align...";
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_ALIGN_HIGH, ct);
+                await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.ALIGN_MARK, ct);
+                LeftAlignHeight = _hzAxis!.CurrentPosition;
+
+                CalibStatus = $"PC AF 완료 — RF:{RightFidHeight:F4} RA:{RightAlignHeight:F4} LF:{LeftFidHeight:F4} LA:{LeftAlignHeight:F4}";
+                _logger.Information("PC AF 완료 — RightFid:{RF:F4} RightAlign:{RA:F4} LeftFid:{LF:F4} LeftAlign:{LA:F4}",
+                    RightFidHeight, RightAlignHeight, LeftFidHeight, LeftAlignHeight);
+
+
+                // Fid → H_Z PositionList에 저장
+                await SavePositionHeight(MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, RightFidHeight);
+                await SavePositionHeight(MotionExtensions.P_LEFT_FIDUCIAL_HIGH, LeftFidHeight);
+
+                // Align → 레시피 파라미터에 저장
+                await SaveRecipeParam("RightAlignHeight", RightAlignHeight);
+                await SaveRecipeParam("LeftAlignHeight", LeftAlignHeight);
+
+                CalibStatus = "PC AF 높이 저장 완료";
+                _logger.Information("PC AF 높이 저장 — RF:{RF:F4} RA:{RA:F4} LF:{LF:F4} LA:{LA:F4} (Recipe: {Recipe})",
+                RightFidHeight, RightAlignHeight, LeftFidHeight, LeftAlignHeight, _recipeService.UseRecipe?.Name);
+                
+            }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "PcAF failed");
+                CalibStatus = $"오류: {e.Message}";
+            }
+            finally { IsNotBusy = true; }
+        }
+
+        private async Task SavePositionHeight(string positionName, double height)
+        {
+            var pos = _hzAxis!.PositionList.FirstOrDefault(p => p.Name == positionName);
+            if (pos == null)
+                throw new DBException(DBErrorCode.NOT_FOUND, $"H_Z PositionList에 '{positionName}' 위치가 없습니다");
+
+            pos.Position = height;
+            await _positionRepository.Update(pos.ToEntity());
+        }
+
+        private async Task SaveRecipeParam(string paramName, double value)
+        {
+            var param = _recipeService.UseRecipe?.ParamList
+                .FirstOrDefault(p => p.Name == paramName);
+
+            if (param == null)
+                throw new DBException(DBErrorCode.NOT_FOUND, $"사용하는 레시피에 {paramName} 이 없습니다.");
+
+            param.Value = value.ToString("F6");
+            await _recipeService.UpdateRecipeParam(param);
+        }
         // CalibrationTabViewModel 에 추가
 
         #region ── 2D Mapping ──

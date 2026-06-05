@@ -172,7 +172,7 @@
                                    Margin="0,0,0,12">
                             HC1 / HC2 카메라 FoV 안에 Fiducial Mark가 보이는 위치로
                             Stage를 이동한 뒤 실행하세요.
-                        </TextBlock>
+                        </TextBlock>ㄴ
 
                         <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="Hc1 각도 캘리브레이션"
@@ -297,6 +297,54 @@
                             <TextBlock Foreground="#E67E22" FontSize="14">
                                 <Run Text="왕복 횟수: "/><Run Text="{Binding WarmUpCycle, Mode=OneWay}"/>
                             </TextBlock>
+                        </Border>
+
+                        <!-- ══════════════════════════════════════════════
+             PC AF — Right/Left Fid·Align 4포인트 높이 측정
+        ══════════════════════════════════════════════ -->
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
+
+                        <TextBlock Text="PC AF (높이 측정)" Foreground="#5E8BAA"
+                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="0,0,0,12">
+                            Right/Left × Fiducial/Align 4포인트 AF를 실행하여 Z축 높이를 측정합니다.
+                            Fid는 Position에, Align은 사용중인 레시피에 저장됩니다.
+                        </TextBlock>
+
+                        <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="PC AF 실행 (4포인트)"
+                                Command="{Binding PcAFCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Margin="0,0,0,10"/>
+
+                        <!-- 측정 결과 표시 -->
+                        <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+                                CornerRadius="6" Padding="12,8" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="Right Fid" Foreground="#5E8BAA" FontSize="14" VerticalAlignment="Center" Margin="0,2"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding RightFidHeight, StringFormat=F4}" Foreground="#2ECC71" FontSize="14" FontWeight="SemiBold" Margin="0,2"/>
+
+                                <TextBlock Grid.Row="1" Text="Right Align" Foreground="#5E8BAA" FontSize="14" VerticalAlignment="Center" Margin="0,2"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding RightAlignHeight, StringFormat=F4}" Foreground="#E67E22" FontSize="14" FontWeight="SemiBold" Margin="0,2"/>
+
+                                <TextBlock Grid.Row="2" Text="Left Fid" Foreground="#5E8BAA" FontSize="14" VerticalAlignment="Center" Margin="0,2"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LeftFidHeight, StringFormat=F4}" Foreground="#2ECC71" FontSize="14" FontWeight="SemiBold" Margin="0,2"/>
+
+                                <TextBlock Grid.Row="3" Text="Left Align" Foreground="#5E8BAA" FontSize="14" VerticalAlignment="Center" Margin="0,2"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LeftAlignHeight, StringFormat=F4}" Foreground="#E67E22" FontSize="14" FontWeight="SemiBold" Margin="0,2"/>
+                            </Grid>
                         </Border>
 
                         <!-- ══════════════════════════════════════════════
