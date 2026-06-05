@@ -221,13 +221,13 @@ namespace HCB.UI
 
                     CalibStatus = $"WarmUp #{WarmUpCycle} — Max 이동";
                     await Task.WhenAll(Array.ConvertAll(axes,
-                        a => _sequenceService.MotionsMove(a.Name, a.Axis.LimitMaxPosition, ct)));
+                        a => _sequenceService.MotionsMove(a.Name, a.Axis.LimitMaxPosition - 5, ct)));
 
                     ct.ThrowIfCancellationRequested();
 
                     CalibStatus = $"WarmUp #{WarmUpCycle} — Min 이동";
                     await Task.WhenAll(Array.ConvertAll(axes,
-                        a => _sequenceService.MotionsMove(a.Name, a.Axis.LimitMinPosition, ct)));
+                        a => _sequenceService.MotionsMove(a.Name, 0, ct)));
                 }
             }
             catch (OperationCanceledException)
