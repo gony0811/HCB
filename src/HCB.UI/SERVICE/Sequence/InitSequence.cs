@@ -408,9 +408,6 @@ namespace HCB.UI
             {
                 new("1", 0.0, 0.0,  DirectType.Vertical,   DirectType.Horizontal),
                 new("3", 9.6, 0.0,  DirectType.Horizontal, DirectType.Vertical),
-                new("5", -4.8, 4.8, DirectType.Vertical,   DirectType.Horizontal),
-                new("7", -4.8, 4.8, DirectType.Horizontal,   DirectType.Vertical),
-                new("9", 9.6, 0.0,  DirectType.Vertical,   DirectType.Horizontal),
             };
 
             var result = new VernierResult();
