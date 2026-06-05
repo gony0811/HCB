@@ -611,7 +611,7 @@ namespace HCB.UI
                 var result = await _sequenceService.GetVernier(_cts.Token);
                 VernierResult = result;
 
-                var names = new[] { "1", "3", "5", "7", "9" };
+                var names = new[] { "1", "3" };
                 VernierRows.Clear();
                 for (int i = 0; i < result.v1.Count; i++)
                 {
