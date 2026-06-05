@@ -265,7 +265,6 @@
   <Compile Include="SERVICE\Sequence\MainSequence.cs" />
   <Compile Include="SERVICE\Sequence\ManualSequence.cs" />
   <Compile Include="SERVICE\Sequence\StepSequence.cs" />
-  <Compile Include="SERVICE\Sequence\WaferSequence.cs" />
   <Compile Include="SERVICE\SystemMainService.cs" />
   <Compile Include="SERVICE\Tcp\EqpCommunicationService.cs" />
   <Compile Include="SERVICE\Tcp\EqpTcpServer.cs" />
