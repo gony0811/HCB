@@ -641,7 +641,7 @@
 
                 <!-- H-VAC -->
                 <Button Content="H-VAC"
-                        Command="{Binding HVacOnOffCommand}"
+                        Command="{Binding HVacAllOnOffCommand}"
                         Style="{StaticResource BottomActionButton}"
                         Background="{Binding IsHVacOn, Converter={StaticResource BoolToColor}}"
                         BorderBrush="#2A5A8C"/>

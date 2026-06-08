@@ -311,7 +311,8 @@ namespace HCB.UI
             _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
             IsWVacOn = !IsWVacOn;
 
-            await _sequenceService.WVacAllOnOff(IsWVacOn, _cts.Token);
+            //await _sequenceService.WVacAllOnOff(IsWVacOn, _cts.Token);
+            await _sequenceService.WVAcOnOff(1, IsWVacOn, 5000, _cts.Token);
         }
 
         [RelayCommand]

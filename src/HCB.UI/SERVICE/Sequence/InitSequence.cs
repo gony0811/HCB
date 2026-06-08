@@ -668,6 +668,11 @@ namespace HCB.UI
             await _sequenceHelper.WTableVacuumAll(onOff ? eOnOff.On : eOnOff.Off, ct);
         }
 
+        public async Task WVAcOnOff(int channel, bool onOff, int delayMs, CancellationToken ct = default)
+        {
+            await _sequenceHelper.WTableVacuum(channel, onOff ? eOnOff.On : eOnOff.Off, ct, delayMs);
+        }
+
         public async Task HVacOnOff(bool onOff, CancellationToken ct =default)
         {
             await _sequenceHelper.HeadPickerVacuum(onOff ? eOnOff.On: eOnOff.Off, ct);

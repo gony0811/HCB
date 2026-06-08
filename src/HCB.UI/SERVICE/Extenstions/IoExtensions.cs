@@ -381,6 +381,7 @@ namespace HCB.UI
             //).ConfigureAwait(false);
         }
 
+
         public static async Task WTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
         {
 
@@ -393,7 +394,7 @@ namespace HCB.UI
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
-        public static async Task WTableVacuum(this ISequenceHelper helper, int channel, eOnOff onOff, CancellationToken ct)
+        public static async Task WTableVacuum(this ISequenceHelper helper, int channel, eOnOff onOff, CancellationToken ct, int delayMs = 100)
         {
             var bOnOff = onOff == eOnOff.On ? true : false;
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
@@ -416,7 +417,7 @@ namespace HCB.UI
                 {
                     device.SetDigital(doOn, false, helper.IsSimulation);
                     device.SetDigital(doRelease, true, helper.IsSimulation);
-                    await Task.Delay(100);
+                    await Task.Delay(delayMs);
                     device.SetDigital(doRelease, false, helper.IsSimulation);
                 }
                     
