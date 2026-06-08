@@ -72,13 +72,58 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="EC 파라미터 목록"/>
+                <DockPanel Grid.Row="0" Margin="12,10,12,0">
+                    <local:HeaderBar DockPanel.Dock="Left" Title="EC 파라미터 목록"/>
+                    <Border DockPanel.Dock="Right" Background="#152233" BorderBrush="#2E6B8A"
+                            BorderThickness="1.5" CornerRadius="6" Padding="10,4" Width="220"
+                            VerticalAlignment="Center" HorizontalAlignment="Right">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Path Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0"
+                                  Fill="#6A9BB5" Width="12" Height="12" Stretch="Uniform"
+                                  Data="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                            <TextBlock Grid.Column="1" Text="Name 검색"
+                                       Foreground="#6A9BB5" FontSize="13" VerticalAlignment="Center"
+                                       IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SearchText}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Foreground="#4FC3F7" FontSize="14" FontWeight="Medium"
+                                     BorderThickness="0" VerticalAlignment="Center" CaretBrush="#4FC3F7">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="TextBox">
+                                                    <ScrollViewer x:Name="PART_ContentHost" Background="Transparent"/>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                        </Grid>
+                    </Border>
+                </DockPanel>
                 <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
                            VerticalAlignment="Bottom" Margin="12,32,12,0"/>
 
                 <DataGrid x:Name="ParamGrid"
                           Grid.Row="1"
-                          ItemsSource="{Binding ParamList}"
+                          ItemsSource="{Binding ParamListView}"
                           SelectedItem="{Binding SelectedParam, Mode=TwoWay}"
                           Background="Transparent"
                           BorderThickness="0"

@@ -3,7 +3,9 @@ using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Threading.Tasks;
+using System.Windows.Data;
 
 namespace HCB.UI
 {
@@ -15,12 +17,29 @@ namespace HCB.UI
 
         [ObservableProperty] private ObservableCollection<ECParamDto> paramList;
         [ObservableProperty] private ECParamDto selectedParam;
+        [ObservableProperty] private string searchText = string.Empty;
+
+        public ICollectionView ParamListView { get; private set; }
 
         public USub09ViewModel(DialogService dialogService, ECParamService ecParamService)
         {
             _dialogService = dialogService;
             _ecParamService = ecParamService;
             ParamList = _ecParamService.ParamList;
+            ParamListView = CollectionViewSource.GetDefaultView(ParamList);
+            ParamListView.Filter = ParamFilter;
+        }
+
+        partial void OnSearchTextChanged(string value)
+        {
+            ParamListView.Refresh();
+        }
+
+        private bool ParamFilter(object obj)
+        {
+            if (string.IsNullOrWhiteSpace(SearchText)) return true;
+            if (obj is not ECParamDto item) return false;
+            return item.Name?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false;
         }
 
         [RelayCommand]

@@ -84,6 +84,7 @@ namespace HCB.UI
             if (recipe == null) throw new Exception($"{name} 파라미터가 없습니다");
             return recipe;
         }
+        
 
 
         public async Task AddRecipe(RecipeDto recipeDto)
@@ -224,6 +225,40 @@ namespace HCB.UI
             {
                 recipe.StepList.Remove(target);
             }
+        }
+
+        public StepRecipeDto FindStep(int recipeId, int stepNumber)
+        {
+            var recipe = RecipeList.FirstOrDefault(r => r.Id == recipeId)
+                ?? throw new Exception($"레시피(Id={recipeId})를 찾을 수 없습니다");
+            return recipe.StepList.FirstOrDefault(s => s.StepNumber == stepNumber)
+                ?? throw new Exception($"Step {stepNumber}을 찾을 수 없습니다");
+        }
+
+        public StepRecipeDto FindStep(int stepNumber)
+        {
+            if (UseRecipe == null) throw new Exception("사용중인 레시피가 없습니다");
+            return FindStep(UseRecipe.Id, stepNumber);
+        }
+
+        public List<StepRecipeDto> SearchSteps(int recipeId, string keyword)
+        {
+            var recipe = RecipeList.FirstOrDefault(r => r.Id == recipeId)
+                ?? throw new Exception($"레시피(Id={recipeId})를 찾을 수 없습니다");
+
+            if (string.IsNullOrWhiteSpace(keyword))
+                return recipe.StepList.ToList();
+
+            return recipe.StepList
+                .Where(s => (s.Description?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false)
+                         || s.StepNumber.ToString().Contains(keyword))
+                .ToList();
+        }
+
+        public List<StepRecipeDto> SearchSteps(string keyword)
+        {
+            if (UseRecipe == null) throw new Exception("사용중인 레시피가 없습니다");
+            return SearchSteps(UseRecipe.Id, keyword);
         }
 
     }

@@ -2,9 +2,12 @@
 using HCB.Data.Entity.Type;
 using HCB.Data.Repository;
 using HCB.IoC;
+using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Data;
 
 namespace HCB.UI
 {
@@ -27,13 +30,39 @@ namespace HCB.UI
         [ObservableProperty]
         private ObservableCollection<SensorIoItemViewModel> digitalOutput = new ObservableCollection<SensorIoItemViewModel>();
 
+        [ObservableProperty]
+        private string searchText = string.Empty;
+
+        public ICollectionView DigitalInputView { get; private set; }
+        public ICollectionView DigitalOutputView { get; private set; }
+
         public USub07ViewModel(IoDataRepository ioDataRepository, DeviceManager deviceManager, IOManager iOManager)
         {
             this.ioRepository = ioDataRepository;
             this.deviceManager = deviceManager;
             this.ioManager = iOManager;
+
+            DigitalInputView = CollectionViewSource.GetDefaultView(DigitalInput);
+            DigitalOutputView = CollectionViewSource.GetDefaultView(DigitalOutput);
+            DigitalInputView.Filter = IoFilter;
+            DigitalOutputView.Filter = IoFilter;
+
             _ = LoadIoData();
-                      
+        }
+
+        partial void OnSearchTextChanged(string value)
+        {
+            DigitalInputView.Refresh();
+            DigitalOutputView.Refresh();
+        }
+
+        private bool IoFilter(object obj)
+        {
+            if (string.IsNullOrWhiteSpace(SearchText)) return true;
+            if (obj is not SensorIoItemViewModel item) return false;
+            return (item.Name?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (item.Description?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (item.IoName?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
         }
 
         public async Task LoadIoData()

@@ -71,6 +71,7 @@ namespace HCB.UI
                 double yOffset = await GetRecipe("ShankLowOffsetY");
                 double shankToDieOffset = await GetRecipe("ShankToDieOffset");
 
+
                 // ── Die 타입별 레시피 ──
                 string thicknessKey = dieType == DieType.TOP ? "TopDieThickness" : "BtmDieThickness";
 
@@ -274,6 +275,8 @@ namespace HCB.UI
 
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
+
+
                 double readyPosition = await GetRecipe("DROP_READY_POSITION");
                 int accTime = await GetRecipeInt("DROP_ACC_TIME");
                 int contTime = await GetRecipeInt("DROP_CONT_TIME");

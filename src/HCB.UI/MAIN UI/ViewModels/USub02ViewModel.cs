@@ -8,11 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 using ValueType = HCB.Data.Entity.Type.ValueType;
 
 namespace HCB.UI
@@ -34,6 +36,9 @@ namespace HCB.UI
         [ObservableProperty] private StepRecipeDto selectedStep;
         [ObservableProperty] private bool isBusy;
 
+        [ObservableProperty] private string paramSearchText = string.Empty;
+        [ObservableProperty] private ICollectionView paramListView;
+
         // (필요 시) 기타 UI 상태
         [ObservableProperty] private string currentDevice;
         [ObservableProperty] private bool parameterType = true; // False: 공용, True: 기본
@@ -51,6 +56,33 @@ namespace HCB.UI
             this._dialogService = dialogService;
             this._recipeService = recipeService;
             Recipes = _recipeService.RecipeList;
+        }
+
+        partial void OnSelectedRecipeChanged(RecipeDto value)
+        {
+            if (value?.ParamList != null)
+            {
+                ParamListView = CollectionViewSource.GetDefaultView(value.ParamList);
+                ParamListView.Filter = ParamFilter;
+            }
+            else
+            {
+                ParamListView = null;
+            }
+            ParamSearchText = string.Empty;
+
+        }
+
+        partial void OnParamSearchTextChanged(string value)
+        {
+            ParamListView?.Refresh();
+        }
+
+        private bool ParamFilter(object obj)
+        {
+            if (string.IsNullOrWhiteSpace(ParamSearchText)) return true;
+            if (obj is not RecipeParamDto item) return false;
+            return item.Name?.Contains(ParamSearchText, StringComparison.OrdinalIgnoreCase) ?? false;
         }
 
         [RelayCommand]
