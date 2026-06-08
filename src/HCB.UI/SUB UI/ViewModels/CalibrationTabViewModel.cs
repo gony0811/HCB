@@ -147,12 +147,13 @@ namespace HCB.UI
                             await CameraDistance(ct);
                             ct.ThrowIfCancellationRequested();
 
+                            CalibProgress = $"{prefix}{retryTag}HcRO 회전 중심 계산";
+                            await CreateHcRo(ct);
+                            ct.ThrowIfCancellationRequested();
+
                             CalibProgress = $"{prefix}{retryTag}PC 각도 캘리브레이션";
                             await PcAngle(ct);
                             ct.ThrowIfCancellationRequested();
-
-                            CalibProgress = $"{prefix}{retryTag}HcRO 회전 중심 계산";
-                            await CreateHcRo(ct);
 
                             // ── 1사이클 완료 → CSV 저장 ──
                             await SaveCalibrationResult(i + 1, ct);
@@ -544,6 +545,16 @@ namespace HCB.UI
             if (standalone) { IsNotBusy = false; ct = GetToken(); }
             try
             {
+                await _sequenceService.Init_Head(ct);
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, ct));
+
+                double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
+                double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
+                double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
+
                 var hc2XParam = _ecParamService.FindByName(MotionExtensions.HC2_X).Value;
                 var hc2YParam = _ecParamService.FindByName(MotionExtensions.HC2_Y).Value;
                 var hc2XOffset = double.TryParse(hc2XParam, out double xOffset) ? xOffset : 0.0;
