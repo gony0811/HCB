@@ -355,7 +355,7 @@ namespace HCB.UI
                 BtmLowAlignState = StepState.Completed;
 
                 BtmPlaceState = StepState.InProgress;
-                await _sequenceService.BtmDieDrop(1, ct);
+                await _sequenceService.DieDrop(1, _cts.Token);
                 BtmPlaceState = StepState.Completed;
             }
             catch (OperationCanceledException)
@@ -460,6 +460,22 @@ namespace HCB.UI
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, _cts.Token));
                 TopBondingState = StepState.Completed;
                 ExportHcbData();
+            }
+            catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
+            catch (Exception e) { TopBondingState = StepState.Failed; _logger.Error(e, "TopBonding Failed"); }
+        }
+
+        [RelayCommand]
+        public async Task NoVacOffBonding()
+        {
+            ResetCts();
+            try
+            {
+                TopBondingState = StepState.InProgress;
+                BondingHistory = new ObservableCollection<BondingDataPoint>();
+                
+                await RunNoStop(() => _sequenceService.BondingTest(BondingHistory, _cts.Token));
+                TopBondingState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
             catch (Exception e) { TopBondingState = StepState.Failed; _logger.Error(e, "TopBonding Failed"); }

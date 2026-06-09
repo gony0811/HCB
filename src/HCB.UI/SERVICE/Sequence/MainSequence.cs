@@ -325,11 +325,11 @@ namespace HCB.UI
                     string strResponse = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
                     var values = strResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    if (values.Length > 0 && bool.TryParse(values[0], out bool result))
+                    if (values.Length > 0 && int.TryParse(values[0].Trim(), out int statusCode))
                     {
-                        _logger.Information("Drop press 상태: {Result} | Force: {Force:F3}N (경과: {Elapsed}ms)",
-                            result, forceValue * 0.00373, sw.ElapsedMilliseconds);
-                        pressComplete = result;
+                        pressComplete = statusCode == 6;
+                        _logger.Information("{Label} Drop press 상태: {Code} (complete={Complete}) | Force: {Force:F3}N (경과: {Elapsed}ms)",
+                             statusCode, pressComplete, forceValue * 0.00373, sw.ElapsedMilliseconds);
                     }
                     else
                     {

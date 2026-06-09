@@ -646,77 +646,95 @@ namespace HCB.UI
             }
         }
 
-        public async Task BondingTest(CancellationToken ct)
+        public async Task BondingTest(ObservableCollection<BondingDataPoint> bondingDataPoints, CancellationToken ct)
         {
             var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
             try
             {
+                _logger.Information("BondingPress Start (No Vacuum Off)");
+
+                var step = _recipeService.FindStepByName("TOP PRESS");
                 double topDieThickness = await GetRecipe("TopDieThickness");
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
                 double readyPosition = await GetRecipe("READY_POSITION");
-                int accTime = await GetRecipeInt("ACC_TIME");
-                int contTime = await GetRecipeInt("CONT_TIME");
-                int decTime = await GetRecipeInt("DEC_TIME");
-                double loadCell = await GetRecipe("LOADCELL");
-                double current = await GetRecipe("CURRENT");
 
-                await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
+                await Task.WhenAll(
+                    MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", ct),
+                    MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", ct)
+                    );
+
+                await MotionsMove(MotionExtensions.H_Z,
+                    shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
+
                 await Task.Delay(200, ct);
-                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
-                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
-                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
-                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
-                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
-                await device.SendCommand(MotionExtensions.BONDING_START + $"=1");
 
-                // Polling으로 본딩 완료 상태 + LoadCell 데이터 추적
+                // 이전 상태 클리어
+                await device.SendCommand(MotionExtensions.BONDING_START + "=0");
+                await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
+                await Task.Delay(100);
+                await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
+                await Task.Delay(50);
+
+                string preCheck = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
+                int preStatus = int.TryParse(preCheck.Trim(), out int ps) ? ps : -1;
+                _logger.Information("BondingPress 시작 전 상태: {Status}", preStatus);
+                if (preStatus != 0)
+                    _logger.Warning("STATUS_COMPLETE가 0으로 초기화되지 않음: {Status}", preStatus);
+
+                // 파라미터 설정 + 시작
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={step.AccTime}");
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME2 + $"={step.AccTime2}");
+                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={step.ContTime}");
+                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={step.DecTime}");
+                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={step.LoadCell}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={step.Current}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT2 + $"={step.Current2}");
+                await device.SendCommand(MotionExtensions.BONDING_START + "=1");
+
+                _logger.Information("BONDING Step={StepName}: ACC={Acc}, ACC2={Acc2}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}, CURRENT2={Cur2}",
+                    step.Name, step.AccTime, step.AccTime2, step.ContTime, step.DecTime, step.LoadCell, step.Current, step.Current2);
+
                 const int pollingIntervalMs = 100;
-                int timeoutMs = accTime + contTime + decTime + 2000; // 폴링 오버헤드 마진
+                int timeoutMs = step.AccTime + step.AccTime2 + step.ContTime + step.DecTime + 2000;
                 var sw = Stopwatch.StartNew();
                 bool bondingComplete = false;
-                bool vacuumOff = false;
+
+                bondingDataPoints.Clear();
 
                 while (!bondingComplete)
                 {
                     ct.ThrowIfCancellationRequested();
 
-                    // AccTime 중간 시점에 Vacuum OFF
-                    if (!vacuumOff && sw.ElapsedMilliseconds >= accTime / 2)
-                    {
-                        await HVacOnOff(true, ct);
-                        vacuumOff = true;
-                        _logger.Information("AccTime 중간 → Vacuum OFF ({Elapsed}ms)", sw.ElapsedMilliseconds);
-                    }
-
-                    // LoadCell 아날로그 값 읽기
                     double forceValue = 0;
                     string analog = await device.SendCommand<string>(MotionExtensions.ANALOG_INPUT);
                     if (double.TryParse(analog.Trim(), out forceValue))
                     {
-                        
+                        bondingDataPoints.Add(new BondingDataPoint
+                        {
+                            TimeS = sw.Elapsed.TotalSeconds,
+                            ForceN = forceValue * 0.00373
+                        });
                     }
                     else
                     {
                         _logger.Warning("AnalogInput 파싱 실패: {Response}", analog);
                     }
 
-                    // 본딩 완료 상태 확인
                     string strResponse = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
                     var values = strResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    if (values.Length > 0 && bool.TryParse(values[0], out bool result))
+                    if (values.Length > 0 && int.TryParse(values[0].Trim(), out int statusCode))
                     {
-                        _logger.Information("Bonding 상태: {Result} | Force: {Force:F3}N (경과: {Elapsed}ms)",
-                            result, forceValue, sw.ElapsedMilliseconds);
-                        bondingComplete = result;
+                        bondingComplete = statusCode == 6;
+                        _logger.Information("Bonding 상태: {Code} (complete={Complete}) | Force: {Force:F3}N (경과: {Elapsed}ms)",
+                            statusCode, bondingComplete, forceValue * 0.00373, sw.ElapsedMilliseconds);
                     }
                     else
                     {
                         _logger.Warning("Bonding 상태 응답 파싱 실패: {Response}", strResponse);
                     }
 
-                    // 완료되지 않았을 때만 타임아웃 체크 + 대기
                     if (!bondingComplete)
                     {
                         if (sw.ElapsedMilliseconds > timeoutMs)
@@ -727,33 +745,37 @@ namespace HCB.UI
                 }
 
                 sw.Stop();
+                _logger.Information("BondingPress 완료 (총 소요: {Elapsed}ms, 수집 포인트: {Count}개)",
+                    sw.ElapsedMilliseconds, bondingDataPoints.Count);
             }
             catch (OperationCanceledException)
             {
-                _logger.Warning("Bonding 작업이 취소되었습니다.");
+                _logger.Warning("BondingPress 취소됨");
                 throw;
             }
             catch (TimeoutException ex)
             {
-                _logger.Error(ex, "Bonding 타임아웃");
+                _logger.Error(ex, "BondingPress 타임아웃");
+                throw;
             }
             catch (Exception e)
             {
-                _logger.Error(e, "Bonding 실패");
+                _logger.Error(e, "BondingPress 실패");
                 throw;
             }
             finally
             {
                 try
                 {
-                    await device.SendCommand(MotionExtensions.BONDING_START + $"=0");
-                    await device.SendCommand(MotionExtensions.BONDING_INIT + $"=1");
+                    await device.SendCommand(MotionExtensions.BONDING_START + "=0");
+                    await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
                     await Task.Delay(100);
-                    await device.SendCommand(MotionExtensions.BONDING_INIT + $"=0");
+                    await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
+                    _logger.Information("BondingPress 초기화 완료");
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "Bonding 초기화 실패");
+                    _logger.Error(ex, "BondingPress 초기화 실패");
                 }
             }
         }
