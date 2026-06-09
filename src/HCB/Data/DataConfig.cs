@@ -500,16 +500,45 @@ namespace HCB.Data
                 .ValueGeneratedOnAdd()
                 .HasAnnotation("Sqlite:Autoincrement", true);
 
+            e.Property(x => x.Name)
+                .HasMaxLength(100)
+                .IsRequired()
+                .HasDefaultValue("");
+
             e.Property(x => x.StepNumber)
                 .IsRequired();
 
-            e.Property(x => x.Force)
+            e.Property(x => x.AccTime)
+                .IsRequired()
+                .HasDefaultValue(0);
+
+            e.Property(x => x.AccTime2)
+                .IsRequired()
+                .HasDefaultValue(0);
+
+            e.Property(x => x.ContTime)
+                .IsRequired()
+                .HasDefaultValue(0);
+
+            e.Property(x => x.DecTime)
+                .IsRequired()
+                .HasDefaultValue(0);
+
+            e.Property(x => x.LoadCell)
                 .IsRequired()
                 .HasDefaultValue(0.0);
 
-            e.Property(x => x.DurationTime)
+            e.Property(x => x.Current)
                 .IsRequired()
                 .HasDefaultValue(0.0);
+
+            e.Property(x => x.Current2)
+                .IsRequired()
+                .HasDefaultValue(0.0);
+
+            e.Property(x => x.VacOffTime)
+                .IsRequired()
+                .HasDefaultValue(0);
 
             e.Property(x => x.Description)
                 .HasMaxLength(200)

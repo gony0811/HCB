@@ -9,11 +9,26 @@ namespace HCB.Data.Entity
     {
         public int RecipeId { get; set; }
 
+        [MaxLength(100)]
+        public string Name { get; set; } = "";
+
         public int StepNumber { get; set; }
 
-        public double Force { get; set; }
+        public int AccTime { get; set; }
 
-        public double DurationTime { get; set; }
+        public int AccTime2 { get; set; }
+
+        public int ContTime { get; set; }
+
+        public int DecTime { get; set; }
+
+        public double LoadCell { get; set; }
+
+        public double Current { get; set; }
+
+        public double Current2 { get; set; }
+
+        public int VacOffTime { get; set; }
 
         [MaxLength(200)]
         public string Description { get; set; } = "";

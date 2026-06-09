@@ -153,9 +153,16 @@ namespace HCB.UI
             {
                 newRecipe.StepList.Add(new StepRecipe
                 {
+                    Name = s.Name,
                     StepNumber = s.StepNumber,
-                    Force = s.Force,
-                    DurationTime = s.DurationTime,
+                    AccTime = s.AccTime,
+                    AccTime2 = s.AccTime2,
+                    ContTime = s.ContTime,
+                    DecTime = s.DecTime,
+                    LoadCell = s.LoadCell,
+                    Current = s.Current,
+                    Current2 = s.Current2,
+                    VacOffTime = s.VacOffTime,
                     Description = s.Description
                 });
             }
@@ -250,9 +257,18 @@ namespace HCB.UI
                 return recipe.StepList.ToList();
 
             return recipe.StepList
-                .Where(s => (s.Description?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false)
+                .Where(s => (s.Name?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false)
+                         || (s.Description?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false)
                          || s.StepNumber.ToString().Contains(keyword))
                 .ToList();
+        }
+
+        public StepRecipeDto FindStepByName(string name)
+        {
+            if (UseRecipe == null) throw new Exception("사용중인 레시피가 없습니다");
+            return UseRecipe.StepList.FirstOrDefault(s =>
+                string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
+                ?? throw new Exception($"Step '{name}'을 찾을 수 없습니다");
         }
 
         public List<StepRecipeDto> SearchSteps(string keyword)

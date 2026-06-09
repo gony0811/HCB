@@ -1,17 +1,10 @@
-﻿using HCB.Data.Entity.Type;
-using Microsoft.Extensions.Hosting;
-using SharpDX.Direct2D1.Effects;
-using SharpDX.Direct3D9;
+﻿using Microsoft.Extensions.Hosting;
 using System;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.InteropServices.Marshalling;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
 {
@@ -66,27 +59,19 @@ namespace HCB.UI
 
                 var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
-                // ── 공통 레시피 ──
-                double xOffset = await GetRecipe("ShankLowOffsetX");
-                double yOffset = await GetRecipe("ShankLowOffsetY");
-                double shankToDieOffset = await GetRecipe("ShankToDieOffset");
-
+                // ── 공통 EC 파라미터 ──
+                double xOffset = _paramService.GetDouble("ShankLowOffsetX");
+                double yOffset = _paramService.GetDouble("ShankLowOffsetY");
+                double shankToDieOffset = _paramService.GetDouble("ShankToDieOffset");
 
                 // ── Die 타입별 레시피 ──
                 string thicknessKey = dieType == DieType.TOP ? "TopDieThickness" : "BtmDieThickness";
-
                 double dieThickness = await GetRecipe(thicknessKey);
-                int accTime = await GetRecipeInt("PICKUP_ACC_TIME");    // 픽업 기울기 시간 1단계
-                int accTime2 = await GetRecipeInt("PICKUP_ACC_TIME2");  // 픽업 기울기 시간 2단계
-                int contTime = await GetRecipeInt("PICKUP_CONT_TIME");  // 픽업 유지 시간
-                int decTime = await GetRecipeInt("PICKUP_DEC_TIME");    // 픽업 종료 시간
-                double loadCell = await GetRecipe("PICKUP_LOADCELL");
-                double current = await GetRecipe("PICKUP_CURRENT");     // 전류 1단계
-                double current2 = await GetRecipe("PICKUP_CURRENT2");     // 전류 2단계
 
-                int headVacOnMs = await GetRecipeInt("PICKUP_HEAD_VAC_ON_TIME");
-                int dtableVacOffMs = await GetRecipeInt("PICKUP_DTABLE_VAC_OFF_TIME");
-                double readyPosition = await GetRecipe("PICKUP_READY_POSITION");
+                // ── Bonding Step ──
+                var step = _recipeService.FindStepByName("PICK UP");
+
+                double readyPosition = await GetRecipe("READY_POSITION");
 
                 // ── 1. Head 안전 위치 이동 ──
                 await Init_Head(ct);
@@ -96,16 +81,11 @@ namespace HCB.UI
                 double corrY = correction?.Y ?? 0;
                 double corrT = correction?.Theta ?? 0;
 
-                var xyTask = Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, xOffset - corrX, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, yOffset - corrY, ct)
+                await Task.WhenAll(
+                    RelativeMotionsMove(MotionExtensions.H_X, xOffset - corrX, ct),
+                    RelativeMotionsMove(MotionExtensions.D_Y,  yOffset - corrY, ct),
+                    MotionsMove(MotionExtensions.H_T, -corrT, ct)
                 );
-                var tTask = MotionsMove(MotionExtensions.H_T, -corrT, ct);
-
-                var goPickup = await xyTask;
-                await tTask;
-
-                if (!goPickup.All(r => r)) throw new Exception("픽업 위치로 이동 실패");
 
                 // ── 3. Z축 하강 ──
                 await MotionsMove(MotionExtensions.H_Z, shankToDieOffset - dieThickness - readyPosition, ct);
@@ -127,23 +107,23 @@ namespace HCB.UI
                     _logger.Warning("{Label} STATUS_COMPLETE가 0으로 초기화되지 않음: {Status}", label, preStatus);
 
                 // 파라미터 설정 + 시작
-                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
-                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME2 + $"={accTime2}");
-                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
-                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
-                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
-                await device.SendCommand(MotionExtensions.BONDING_CURRENT+ $"={current}");
-                await device.SendCommand(MotionExtensions.BONDING_CURRENT2+ $"={current2}");
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={step.AccTime}");
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME2 + $"={step.AccTime2}");
+                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={step.ContTime}");
+                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={step.DecTime}");
+                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={step.LoadCell}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={step.Current}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT2 + $"={step.Current2}");
                 await device.SendCommand(MotionExtensions.BONDING_START + "=1");
-
+                
                 const int pollingIntervalMs = 100;
-                int timeoutMs = accTime + accTime2 + contTime + decTime + 2000;
+                int timeoutMs = step.AccTime + step.AccTime2 + step.ContTime + step.DecTime + 2000;
                 var sw = Stopwatch.StartNew();
                 bool pressComplete = false;
                 bool headVacOn = false;
                 bool dtableVacOff = false;
-                _logger.Information("{Label} PICKUP 파라미터: ACC={Acc}, ACC2={Acc2} CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}",
-                    label, accTime, accTime2, contTime, decTime, loadCell, current);
+                _logger.Information("{Label} PICKUP Step={StepName}: ACC={Acc}, ACC2={Acc2}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}, CURRENT2={Cur2}",
+                    label, step.Name, step.AccTime, step.AccTime2, step.ContTime, step.DecTime, step.LoadCell, step.Current, step.Current2);
                 while (!pressComplete)
                 {
                     ct.ThrowIfCancellationRequested();
@@ -152,22 +132,22 @@ namespace HCB.UI
                     var loopSw = Stopwatch.StartNew();
 
                     // Head 진공 ON 시점 + 픽업 센서 확인
-                    if (!headVacOn && elapsed >= headVacOnMs)
+                    if (!headVacOn && elapsed >= step.VacOffTime)
                     {
                         var picked = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
                         headVacOn = true;
                         _logger.Information("{Label} Head Vacuum ON ({Elapsed}ms, 설정={SetMs}ms)",
-                            label, elapsed, headVacOnMs);
+                            label, elapsed, step.VacOffTime);
                         if (!picked) throw new Exception("Head에 Pick된 Die가 없습니다");
                     }
 
                     // DTable 진공 OFF 시점
-                    if (!dtableVacOff && elapsed >= dtableVacOffMs)
+                    if (!dtableVacOff && elapsed >= step.VacOffTime)
                     {
                         await SwitchDTableVacuum(dieType, vacNum, eOnOff.Off, ct);
                         dtableVacOff = true;
                         _logger.Information("{Label} DTable Vacuum OFF ({Elapsed}ms, 설정={SetMs}ms)",
-                            label, elapsed, dtableVacOffMs);
+                            label, elapsed, step.VacOffTime);
                     }
 
                     double forceValue = 0;
@@ -274,36 +254,36 @@ namespace HCB.UI
                 var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
+                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
 
-
-                double readyPosition = await GetRecipe("DROP_READY_POSITION");
-                int accTime = await GetRecipeInt("DROP_ACC_TIME");
-                int contTime = await GetRecipeInt("DROP_CONT_TIME");
-                int decTime = await GetRecipeInt("DROP_DEC_TIME");
-                double loadCell = await GetRecipe("DROP_LOADCELL");
-                double current = await GetRecipe("DROP_CURRENT");
-                int wtableVacOnMs = await GetRecipeInt("DROP_WTABLE_VAC_ON_TIME");   // WTable 진공 ON 시점
-                int headVacOffMs = await GetRecipeInt("DROP_HEAD_VAC_OFF_TIME");     // Head 진공 OFF 시점
+                // ── Bonding Step ──
+                var step = _recipeService.FindStepByName("BTM PRESS");
+                double readyPosition = await GetRecipe("READY_POSITION");
 
                 // ── 1. 이동 ──
                 await Init_Head(ct);
-                await MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct);
+                await Task.WhenAll(
+                    MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", ct),
+                    MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", ct),
+                    MotionsMove(MotionExtensions.H_T, 0, ct)
+                );
 
                 // ── 2. Z축 하강 ──
                 await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - btmDieThickness - readyPosition, ct);
                 await Task.Delay(200, ct);
 
                 // ── 3. 가압 시퀀스 ──
-                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
-                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
-                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
-                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
-                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={step.AccTime}");
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME2 + $"={step.AccTime2}");
+                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={step.ContTime}");
+                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={step.DecTime}");
+                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={step.LoadCell}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={step.Current}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT2 + $"={step.Current2}");
                 await device.SendCommand(MotionExtensions.BONDING_START + $"=1");
 
                 const int pollingIntervalMs = 100;
-                int timeoutMs = accTime + contTime + decTime + 2000;
+                int timeoutMs = step.AccTime + step.AccTime2 + step.ContTime + step.DecTime + 2000;
                 var sw = Stopwatch.StartNew();
                 bool pressComplete = false;
                 bool wtableVacOn = false;
@@ -316,21 +296,21 @@ namespace HCB.UI
                     long elapsed = sw.ElapsedMilliseconds;
 
                     // WTable 진공 ON 시점 (받는 쪽 먼저 흡착)
-                    if (!wtableVacOn && elapsed >= wtableVacOnMs)
+                    if (!wtableVacOn && elapsed >= step.VacOffTime)
                     {
                         await _sequenceHelper.WTableVacuum(vacNum, eOnOff.On, ct);
                         wtableVacOn = true;
                         _logger.Information("WTable Vacuum ON ({Elapsed}ms, 설정={SetMs}ms)",
-                            elapsed, wtableVacOnMs);
+                            elapsed, step.VacOffTime);
                     }
 
                     // Head 진공 OFF 시점 (놓는 쪽 해제)
-                    if (!headVacOff && elapsed >= headVacOffMs)
+                    if (!headVacOff && elapsed >= step.VacOffTime)
                     {
                         var released = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
                         headVacOff = true;
                         _logger.Information("Head Vacuum OFF ({Elapsed}ms, 설정={SetMs}ms)",
-                            elapsed, headVacOffMs);
+                            elapsed, step.VacOffTime);
                         if (!released) throw new Exception("HeadPicker를 확인해주세요");
                     }
 

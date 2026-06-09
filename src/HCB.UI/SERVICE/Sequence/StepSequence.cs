@@ -18,7 +18,7 @@ namespace HCB.UI
         public async Task BtmDieDrop(int vacNum, CancellationToken ct)
         {
             double btmDieThickness = await GetRecipe("BtmDieThickness");
-            double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
+            double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
 
             await Init_Head(ct);
             await Task.WhenAll(
@@ -425,7 +425,7 @@ namespace HCB.UI
             {
                 double topDieThickness = await GetRecipe("TopDieThickness");
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
+                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
                 double HcCenterErrorX = await GetRecipe("HcCenterErrorX");
                 double HcCenterErrorY = await GetRecipe("HcCenterErrorY");
 
@@ -483,7 +483,7 @@ namespace HCB.UI
 
                 double topDieThickness = await GetRecipe("TopDieThickness");
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
+                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
                 double readyPosition = await GetRecipe("READY_POSITION");
 
                 await Task.WhenAll(
@@ -519,14 +519,7 @@ namespace HCB.UI
             {
                 _logger.Information("BondingPress Start");
 
-                int accTime = await GetRecipeInt("ACC_TIME");
-                int accTime2 = await GetRecipeInt("ACC_TIME2");
-                int contTime = await GetRecipeInt("CONT_TIME");
-                int decTime = await GetRecipeInt("DEC_TIME");
-                double loadCell = await GetRecipe("LOADCELL");
-                double current = await GetRecipe("CURRENT");
-                double current2 = await GetRecipe("CURRENT2");
-                int vacOffMs = await GetRecipeInt("VAC_OFF_TIME");
+                var step = _recipeService.FindStepByName("TOP PRESS");
 
                 await Task.Delay(200, ct);
 
@@ -544,20 +537,20 @@ namespace HCB.UI
                     _logger.Warning("STATUS_COMPLETE가 0으로 초기화되지 않음: {Status}", preStatus);
 
                 // 파라미터 설정 + 시작
-                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
-                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME2 + $"={accTime2}");
-                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
-                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
-                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
-                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
-                await device.SendCommand(MotionExtensions.BONDING_CURRENT2 + $"={current2}");
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={step.AccTime}");
+                await device.SendCommand(MotionExtensions.BONDING_ACC_TIME2 + $"={step.AccTime2}");
+                await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={step.ContTime}");
+                await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={step.DecTime}");
+                await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={step.LoadCell}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={step.Current}");
+                await device.SendCommand(MotionExtensions.BONDING_CURRENT2 + $"={step.Current2}");
                 await device.SendCommand(MotionExtensions.BONDING_START + "=1");
 
-                _logger.Information("BONDING 파라미터: ACC={Acc}, ACC={Acc2}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}",
-                    accTime, accTime2, contTime, decTime, loadCell, current);
+                _logger.Information("BONDING Step={StepName}: ACC={Acc}, ACC2={Acc2}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}, CURRENT2={Cur2}",
+                    step.Name, step.AccTime, step.AccTime2, step.ContTime, step.DecTime, step.LoadCell, step.Current, step.Current2);
 
                 const int pollingIntervalMs = 100;
-                int timeoutMs = accTime + accTime2 + contTime + decTime + 2000;
+                int timeoutMs = step.AccTime + step.AccTime2 + step.ContTime + step.DecTime + 2000;
                 var sw = Stopwatch.StartNew();
                 bool bondingComplete = false;
                 bool vacuumOff = false;
@@ -571,12 +564,12 @@ namespace HCB.UI
                     long elapsed = sw.ElapsedMilliseconds;
 
                     // 설정 시점에 Vacuum OFF
-                    if (!vacuumOff && elapsed >= vacOffMs)
+                    if (!vacuumOff && elapsed >= step.VacOffTime)
                     {
                         await HVacOnOff(false, ct);
                         vacuumOff = true;
                         _logger.Information("Vacuum OFF ({Elapsed}ms, 설정={VacOffMs}ms)",
-                            elapsed, vacOffMs);
+                            elapsed, step.VacOffTime);
                     }
 
                     double forceValue = 0;
@@ -660,7 +653,7 @@ namespace HCB.UI
             {
                 double topDieThickness = await GetRecipe("TopDieThickness");
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = await GetRecipe("ShankToWaferOffset");
+                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
                 double readyPosition = await GetRecipe("READY_POSITION");
                 int accTime = await GetRecipeInt("ACC_TIME");
                 int contTime = await GetRecipeInt("CONT_TIME");

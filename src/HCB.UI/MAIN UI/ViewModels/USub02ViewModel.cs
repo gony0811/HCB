@@ -301,8 +301,7 @@ namespace HCB.UI
                 {
                     RecipeId = SelectedRecipe.Id,
                     StepNumber = nextStep,
-                    Force = 0,
-                    DurationTime = 0,
+                    Name = "",
                     Description = ""
                 };
 
@@ -322,16 +321,30 @@ namespace HCB.UI
             {
                 var stepEdit = new StepRecipeCreateDto
                 {
+                    Name = SelectedStep.Name,
                     StepNumber = SelectedStep.StepNumber,
-                    Force = SelectedStep.Force,
-                    DurationTime = SelectedStep.DurationTime,
+                    AccTime = SelectedStep.AccTime,
+                    AccTime2 = SelectedStep.AccTime2,
+                    ContTime = SelectedStep.ContTime,
+                    DecTime = SelectedStep.DecTime,
+                    LoadCell = SelectedStep.LoadCell,
+                    Current = SelectedStep.Current,
+                    Current2 = SelectedStep.Current2,
+                    VacOffTime = SelectedStep.VacOffTime,
                     Description = SelectedStep.Description
                 };
                 bool? result = await _dialogService.ShowEditDialog(stepEdit);
                 if (result != true) return;
 
-                SelectedStep.Force = stepEdit.Force;
-                SelectedStep.DurationTime = stepEdit.DurationTime;
+                SelectedStep.Name = stepEdit.Name;
+                SelectedStep.AccTime = stepEdit.AccTime;
+                SelectedStep.AccTime2 = stepEdit.AccTime2;
+                SelectedStep.ContTime = stepEdit.ContTime;
+                SelectedStep.DecTime = stepEdit.DecTime;
+                SelectedStep.LoadCell = stepEdit.LoadCell;
+                SelectedStep.Current = stepEdit.Current;
+                SelectedStep.Current2 = stepEdit.Current2;
+                SelectedStep.VacOffTime = stepEdit.VacOffTime;
                 SelectedStep.Description = stepEdit.Description;
 
                 await _recipeService.UpdateStep(SelectedStep);

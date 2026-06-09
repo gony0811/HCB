@@ -332,7 +332,7 @@ namespace HCB.UI
             try
             {
                 BtmPlaceState = StepState.InProgress;
-                await _sequenceService.BtmDieDrop(1, _cts.Token);
+                await _sequenceService.DieDrop(1, _cts.Token);
                 BtmPlaceState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmPlaceState = StepState.Idle; }

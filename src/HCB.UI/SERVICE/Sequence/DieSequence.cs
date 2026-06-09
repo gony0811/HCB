@@ -161,33 +161,11 @@ namespace HCB.UI
                 _logger.Information("Die pickup Start");
                 EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);;
-                string[] xy = { MotionExtensions.H_X, MotionExtensions.D_Y };
-                if (double.TryParse(_recipeService.FindByParam("ShankLowOffsetX").Value, out double xOffset))
-                { }
-                else
-                {
-                    throw new Exception("레시피 ShankLowOffsetX값이 Double타입이 아닙니다");
-                }
-
-                if (double.TryParse(_recipeService.FindByParam("ShankLowOffsetY").Value, out double yOffset))
-                { }
-                else
-                {
-                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
-                }
-                if (double.TryParse(_recipeService.FindByParam("BtmDieThickness").Value, out double btmDieThickness))
-                { }
-                else
-                {
-                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
-                }
-                if (double.TryParse(_recipeService.FindByParam("ShankToDieOffset").Value, out double ShankToDieOffset))
-                { }
-                else
-                {
-                    throw new Exception("레시피 ShankLowOffsetY값이 Double타입이 아닙니다");
-                }
+                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                double xOffset = _paramService.GetDouble("ShankLowOffsetX");
+                double yOffset = _paramService.GetDouble("ShankLowOffsetY");
+                double btmDieThickness = await GetRecipe("BtmDieThickness");
+                double ShankToDieOffset = _paramService.GetDouble("ShankToDieOffset");
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
                 var goPickup = await Task.WhenAll(
@@ -237,10 +215,10 @@ namespace HCB.UI
                 double loadCell = await GetRecipe("LOADCELL");
                 double current = await GetRecipe("CURRENT");
                 int vacOffMs = await GetRecipeInt("VAC_OFF_TIME");
-                double xOffset = await GetRecipe("ShankLowOffsetX");
-                double yOffset = await GetRecipe("ShankLowOffsetY");
+                double xOffset = _paramService.GetDouble("ShankLowOffsetX");
+                double yOffset = _paramService.GetDouble("ShankLowOffsetY");
                 double topDieThickness = await GetRecipe("TopDieThickness");
-                double ShankToDieOffset = await GetRecipe("ShankToDieOffset");
+                double ShankToDieOffset = _paramService.GetDouble("ShankToDieOffset");
 
 
                 await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동

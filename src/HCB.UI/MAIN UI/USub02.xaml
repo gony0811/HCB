@@ -380,10 +380,16 @@
                               SelectedItem="{Binding SelectedStep, Mode=TwoWay}"
                               Margin="8,6,8,4">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Step #"      Binding="{Binding StepNumber}"   Width="80"/>
-                            <DataGridTextColumn Header="Force (N)"   Binding="{Binding Force}"        Width="*"/>
-                            <DataGridTextColumn Header="Time (sec)"  Binding="{Binding DurationTime}" Width="*"/>
-                            <DataGridTextColumn Header="Description" Binding="{Binding Description}"  Width="2*"/>
+                            <DataGridTextColumn Header="#"           Binding="{Binding StepNumber}" Width="50"/>
+                            <DataGridTextColumn Header="Name"        Binding="{Binding Name}"       Width="120"/>
+                            <DataGridTextColumn Header="AccTime"     Binding="{Binding AccTime}"    Width="*"/>
+                            <DataGridTextColumn Header="AccTime2"    Binding="{Binding AccTime2}"   Width="*"/>
+                            <DataGridTextColumn Header="ContTime"    Binding="{Binding ContTime}"   Width="*"/>
+                            <DataGridTextColumn Header="DecTime"     Binding="{Binding DecTime}"    Width="*"/>
+                            <DataGridTextColumn Header="LoadCell"    Binding="{Binding LoadCell}"   Width="*"/>
+                            <DataGridTextColumn Header="Current"     Binding="{Binding Current}"    Width="*"/>
+                            <DataGridTextColumn Header="Current2"    Binding="{Binding Current2}"   Width="*"/>
+                            <DataGridTextColumn Header="VacOff"      Binding="{Binding VacOffTime}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
