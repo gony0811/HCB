@@ -74,66 +74,78 @@ namespace HCB.UI
         {
             if (!IsConnected)
             {
-                // 재연결 중이면 폴링 스킵
                 if (!_isReconnecting)
                     OnCommunicationLost("RefreshStatus 호출 시 미연결 상태");
                 return;
             }
 
-            foreach (var motion in MotionList)
-            {
-                // 루프 도중 연결이 끊기면 나머지 축 스킵
-                if (!IsConnected) break;
+            if (MotionList.Count == 0) return;
 
-                try
+            try
+            {
+                const int fieldsPerAxis = 5;
+                var sb = new StringBuilder();
+                foreach (var motion in MotionList)
                 {
-                    var sb = new StringBuilder();
                     sb.Append($"Motor[{motion.MotorNo}].Status[0] ");
                     sb.Append($"Motor[{motion.MotorNo}].HomePos ");
                     sb.Append($"Motor[{motion.MotorNo}].ActPos ");
                     sb.Append($"Motor[{motion.MotorNo}].DesPos ");
-                    sb.Append($"Motor[{motion.MotorNo}].InPos");
+                    sb.Append($"Motor[{motion.MotorNo}].InPos ");
+                }
 
-                    string strResponse = await SendCommand<string>(sb.ToString());
-                    var values = strResponse.Split(
-                        new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                string strResponse = await SendCommand<string>(sb.ToString().TrimEnd());
+                var values = strResponse.Split(
+                    new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    if (values.Length < 5)
+                int expected = MotionList.Count * fieldsPerAxis;
+                if (values.Length < expected)
+                {
+                    _logger.Warning("배치 상태 응답 부족: 기대 {Expected}개, 수신 {Actual}개",
+                        expected, values.Length);
+                    return;
+                }
+
+                for (int i = 0; i < MotionList.Count; i++)
+                {
+                    var motion = MotionList[i];
+                    int offset = i * fieldsPerAxis;
+
+                    try
                     {
-                        _logger.Warning("Motion[{No}] 데이터 응답 부족: {Cnt}개",
-                            motion.MotorNo, values.Length);
-                        continue;
+                        uint status0 = Convert.ToUInt32(values[offset].Replace("$", ""), 16);
+                        double homePosVal = Convert.ToDouble(values[offset + 1]);
+                        double actPosVal = Convert.ToDouble(values[offset + 2]);
+                        double desPosVal = Convert.ToDouble(values[offset + 3]);
+                        int inPosRaw = Convert.ToInt32(values[offset + 4]);
+
+                        double scale = motion.EncoderCountPerUnit;
+                        motion.CurrentPosition = (actPosVal - homePosVal) / scale;
+                        motion.CommandPosition = (desPosVal - homePosVal) / scale;
+
+                        motion.IsEnabled = (status0 & 0x00002000) != 0;
+                        motion.IsHomeDone = (status0 & 0x00008000) != 0;
+                        motion.IsError = (status0 & 0x01000000) != 0;
+                        motion.IsPlusLimit = (status0 & 0x10000000) != 0;
+                        motion.IsMinusLimit = (status0 & 0x20000000) != 0;
+
+                        motion.InPosition = (inPosRaw == 1);
+                        motion.IsBusy = !motion.InPosition;
                     }
-
-                    uint status0 = Convert.ToUInt32(values[0].Replace("$", ""), 16);
-                    double homePosVal = Convert.ToDouble(values[1]);
-                    double actPosVal = Convert.ToDouble(values[2]);
-                    double desPosVal = Convert.ToDouble(values[3]);
-                    int inPosRaw = Convert.ToInt32(values[4]);
-
-                    double scale = motion.EncoderCountPerUnit;
-                    motion.CurrentPosition = (actPosVal - homePosVal) / scale;
-                    motion.CommandPosition = (desPosVal - homePosVal) / scale;
-
-                    motion.IsEnabled = (status0 & 0x00002000) != 0;
-                    motion.IsHomeDone = (status0 & 0x00008000) != 0;
-                    motion.IsError = (status0 & 0x01000000) != 0;
-                    motion.IsPlusLimit = (status0 & 0x10000000) != 0;
-                    motion.IsMinusLimit = (status0 & 0x20000000) != 0;
-
-                    motion.InPosition = (inPosRaw == 1);
-                    motion.IsBusy = !motion.InPosition;
+                    catch (Exception ex)
+                    {
+                        _logger.Warning("Motion[{No}] Parse Error: {Msg}",
+                            motion.MotorNo, ex.Message);
+                    }
                 }
-                catch (InvalidOperationException)
-                {
-                    // SendCommand에서 통신 실패로 이미 재연결 트리거됨 → 루프 중단
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.Warning("Motion[{No}] Update Error: {Msg}",
-                        motion.MotorNo, ex.Message);
-                }
+            }
+            catch (InvalidOperationException)
+            {
+                // SendCommand에서 통신 실패 → 재연결 트리거됨
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "RefreshStatus 배치 쿼리 실패");
             }
         }
 
@@ -325,7 +337,7 @@ namespace HCB.UI
 
         public Task<TResult> SendCommand<TResult>(string command)
         {
-            const int MAX = 1024;
+            const int MAX = 4096;
             byte[] byCommand = Encoding.ASCII.GetBytes(command);
             byte[] byResponse = new byte[MAX];
 

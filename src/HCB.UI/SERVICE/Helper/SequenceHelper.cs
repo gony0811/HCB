@@ -94,7 +94,7 @@ namespace HCB.UI
                 throw new ArgumentNullException(nameof(condition));
 
             var stopwatch = Stopwatch.StartNew();
-            const int checkIntervalMs = 50; // 50ms마다 조건 확인
+            const int checkIntervalMs = 10;
 
             while (!condition())
             {

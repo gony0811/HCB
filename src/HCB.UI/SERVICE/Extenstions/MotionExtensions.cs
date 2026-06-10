@@ -194,7 +194,8 @@ namespace HCB.UI
             }
             await axis.Move(MoveType.Absolute, jerk: 100, position.Speed, position.Position);
 
-            await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
+            for (int r = 0; r < 10 && axis.InPosition; r++)
+                await Task.Delay(10, ct);
 
             bool result = await helper.WaitUntilAsync( () => axis.InPosition, 60000, ct, $"Axis {axis.Name} Move to {positionName} Timeout" );
             if (!result) throw new Exception("Timeout");
@@ -218,7 +219,8 @@ namespace HCB.UI
 
             await axis.Move(MoveType.Absolute, jerk: 100, velocity, position);
 
-            await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
+            for (int r = 0; r < 10 && axis.InPosition; r++)
+                await Task.Delay(10, ct);
 
             await helper.WaitUntilAsync(
                 () => axis.InPosition,
@@ -246,7 +248,8 @@ namespace HCB.UI
 
             await axis.Move(MoveType.Relative, jerk: 100, velocity, distance);
 
-            await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
+            for (int r = 0; r < 10 && axis.InPosition; r++)
+                await Task.Delay(10, ct);
 
             await helper.WaitUntilAsync(
                 () => axis.InPosition,
@@ -281,7 +284,8 @@ namespace HCB.UI
 
             await axis.Move(MoveType.Relative, jerk: 100, velocity, distance);
 
-            await helper.DelayAsync(100, ct); // Small delay to ensure the move command is processed
+            for (int r = 0; r < 10 && axis.InPosition; r++)
+                await Task.Delay(10, ct);
 
             return await helper.WaitUntilAsync(
                 () => axis.InPosition,
