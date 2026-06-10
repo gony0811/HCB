@@ -98,9 +98,10 @@ namespace HCB.UI
 
         // ── Step Elapsed Time ────────────────────────────────
         [ObservableProperty] private string initElapsed = "";
-        [ObservableProperty] private string recipeSelectElapsed = "";
+        [ObservableProperty] private string btmFullElapsed = "";
         [ObservableProperty] private string btmLowAlignElapsed = "";
         [ObservableProperty] private string btmPlaceElapsed = "";
+        [ObservableProperty] private string topFullElapsed = "";
         [ObservableProperty] private string topLowAlignElapsed = "";
         [ObservableProperty] private string topHighAlignElapsed = "";
         [ObservableProperty] private string btmHighAlignElapsed = "";
@@ -363,29 +364,35 @@ namespace HCB.UI
         {
             ResetCts();
             var ct = _cts.Token;
+            var total = Stopwatch.StartNew();
+            TrackStep("BtmFull", StepState.InProgress);
             try
             {
-                if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); return; }
+                if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); total.Stop(); TrackStep("BtmFull", StepState.Idle); return; }
 
                 BtmLowAlignState = StepState.InProgress;
                 VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(BottomDie, MarkType.DIE_CENTER_BOTTOM, ct);
-                if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 실패"); return; }
+                if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 실패"); total.Stop(); TrackStep("BtmFull", StepState.Idle); return; }
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, ct));
                 BtmLowAlignState = StepState.Completed;
 
                 BtmPlaceState = StepState.InProgress;
                 await _sequenceService.DieDrop(1, _cts.Token);
                 BtmPlaceState = StepState.Completed;
+
+                TrackStep("BtmFull", StepState.Completed);
             }
             catch (OperationCanceledException)
             {
                 BtmLowAlignState = IfInProgress(BtmLowAlignState, StepState.Idle);
                 BtmPlaceState = IfInProgress(BtmPlaceState, StepState.Idle);
+                TrackStep("BtmFull", StepState.Idle);
             }
             catch (Exception e)
             {
                 BtmLowAlignState = IfInProgress(BtmLowAlignState, StepState.Failed);
                 BtmPlaceState = IfInProgress(BtmPlaceState, StepState.Failed);
+                TrackStep("BtmFull", StepState.Failed);
                 _logger.Error(e, "BtmFullSequence Failed");
             }
         }
@@ -570,9 +577,10 @@ namespace HCB.UI
         {
             ResetCts();
             var ct = _cts.Token;
+            TrackStep("TopFull", StepState.InProgress);
             try
             {
-                if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
+                if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); TrackStep("TopFull", StepState.Idle); return; }
 
                 // 1. 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
@@ -613,6 +621,7 @@ namespace HCB.UI
                 TopBondingState = StepState.Completed;
 
                 ExportHcbData();
+                TrackStep("TopFull", StepState.Completed);
             }
             catch (OperationCanceledException)
             {
@@ -621,6 +630,7 @@ namespace HCB.UI
                 BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Idle);
                 TopCorrState = IfInProgress(TopCorrState, StepState.Idle);
                 TopBondingState = IfInProgress(TopBondingState, StepState.Idle);
+                TrackStep("TopFull", StepState.Idle);
             }
             catch (Exception e)
             {
@@ -629,6 +639,7 @@ namespace HCB.UI
                 BtmHighAlignState = IfInProgress(BtmHighAlignState, StepState.Failed);
                 TopCorrState = IfInProgress(TopCorrState, StepState.Failed);
                 TopBondingState = IfInProgress(TopBondingState, StepState.Failed);
+                TrackStep("TopFull", StepState.Failed);
                 _logger.Error(e, "TopRunFullSequence Failed");
             }
         }
@@ -726,9 +737,10 @@ namespace HCB.UI
         private void RefreshElapsed()
         {
             InitElapsed = FmtSw(_sw.GetValueOrDefault("Init"));
-            RecipeSelectElapsed = FmtSw(_sw.GetValueOrDefault("RecipeSelect"));
+            BtmFullElapsed = FmtSw(_sw.GetValueOrDefault("BtmFull"));
             BtmLowAlignElapsed = FmtSw(_sw.GetValueOrDefault("BtmLowAlign"));
             BtmPlaceElapsed = FmtSw(_sw.GetValueOrDefault("BtmPlace"));
+            TopFullElapsed = FmtSw(_sw.GetValueOrDefault("TopFull"));
             TopLowAlignElapsed = FmtSw(_sw.GetValueOrDefault("TopLowAlign"));
             TopHighAlignElapsed = FmtSw(_sw.GetValueOrDefault("TopHighAlign"));
             BtmHighAlignElapsed = FmtSw(_sw.GetValueOrDefault("BtmHighAlign"));
@@ -740,7 +752,6 @@ namespace HCB.UI
             sw != null && sw.ElapsedMilliseconds > 0 ? sw.Elapsed.ToString(@"mm\:ss\.f") : "";
 
         partial void OnInitStateChanged(StepState value) => TrackStep("Init", value);
-        partial void OnRecipeSelectStateChanged(StepState value) => TrackStep("RecipeSelect", value);
         partial void OnBtmLowAlignStateChanged(StepState value) => TrackStep("BtmLowAlign", value);
         partial void OnBtmPlaceStateChanged(StepState value) => TrackStep("BtmPlace", value);
         partial void OnTopLowAlignStateChanged(StepState value) => TrackStep("TopLowAlign", value);

@@ -361,11 +361,7 @@
                             <local:StepLamp Grid.Row="0" Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                             State="{Binding RecipeSelectState}" Margin="0,0,10,0"/>
                             <StackPanel Grid.Row="0" Grid.Column="2" VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="RECIPE SELECT" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding RecipeSelectElapsed}" Foreground="#F39C12" FontSize="13"
-                                               FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
-                                </StackPanel>
+                                <TextBlock Text="RECIPE SELECT" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
                                 <TextBlock Text="Recipe Selection" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                             </StackPanel>
 
@@ -605,18 +601,23 @@
                     <!-- Footer -->
                     <Border Grid.Row="2" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
                             Margin="16,0,16,0" Padding="0,10,0,14">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Style="{StaticResource StartButtonStyle}" Width="90"
-                                    Margin="2"
-                                    Command="{Binding BtmFullSequenceCommand}">
-                                <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
-                            </Button>
-                            <Button Style="{StaticResource StopButtonStyle}" Width="90"
-                                    Margin="2"
-                                    Command="{Binding StopCommand}">
-                                <TextBlock Text="STOP" FontSize="13" FontWeight="Bold"/>
-                            </Button>
-                        </StackPanel>
+                        <Grid>
+                            <TextBlock Text="{Binding BtmFullElapsed}" Foreground="#F39C12" FontSize="15"
+                                       FontFamily="Consolas" FontWeight="Bold"
+                                       VerticalAlignment="Center" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Style="{StaticResource StartButtonStyle}" Width="90"
+                                        Margin="2"
+                                        Command="{Binding BtmFullSequenceCommand}">
+                                    <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                                <Button Style="{StaticResource StopButtonStyle}" Width="90"
+                                        Margin="2"
+                                        Command="{Binding StopCommand}">
+                                    <TextBlock Text="STOP" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
                     </Border>
                 </Grid>
             </Border>
@@ -935,6 +936,10 @@
                     <!-- Footer -->
                     <Border Grid.Row="2" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
                             Margin="16,0,16,0" Padding="0,10,0,14">
+                        <Grid>
+                        <TextBlock Text="{Binding TopFullElapsed}" Foreground="#F39C12" FontSize="15"
+                                   FontFamily="Consolas" FontWeight="Bold"
+                                   VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
                             <!-- Vernier 결과 DataGrid -->
                             <Border Background="#060F1A" CornerRadius="6" Margin="0,0,8,0"
@@ -999,6 +1004,7 @@
                                 <TextBlock Text="STOP" FontSize="13" FontWeight="Bold"/>
                             </Button>
                         </StackPanel>
+                        </Grid>
                     </Border>
 
                 </Grid>
