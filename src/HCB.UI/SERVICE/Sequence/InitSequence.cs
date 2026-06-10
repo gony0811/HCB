@@ -396,12 +396,13 @@ namespace HCB.UI
         public async Task<VernierResult> GetVernier(CancellationToken ct = default)
         {
             await Init_Head(ct);
-
+            double x_offset = double.Parse(_recipeService.FindByParam("버니어_OFFSET_X").Value);
+            double y_offset = double.Parse(_recipeService.FindByParam("버니어_OFFSET_Y").Value);
+            
             await Task.WhenAll(
-                MotionsMove(MotionExtensions.H_X, "1번 버니어", ct),
-                MotionsMove(MotionExtensions.W_Y, "1번 버니어", ct)
+                MotionsMove(MotionExtensions.H_X, "1번 버니어", x_offset, ct),
+                MotionsMove(MotionExtensions.W_Y, "1번 버니어", y_offset, ct)
             );
-            //await _sequenceHelper.Silindar_R(true, ct);
             await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", ct);
 
             var points = new VernierPoint[]

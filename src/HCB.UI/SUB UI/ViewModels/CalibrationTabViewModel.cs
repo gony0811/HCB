@@ -131,8 +131,16 @@ namespace HCB.UI
                     {
                         ct.ThrowIfCancellationRequested();
                         attempt++;
+
+                        if (attempt > 3)
+                        {
+                            CalibProgress = $"캘리브레이션 실패";
+                            break;
+                        }
+
                         string retryTag = attempt > 1 ? $"(재시도 {attempt}) " : "";
 
+                        
                         try
                         {
                             CalibProgress = $"{prefix}{retryTag}HC1 각도 캘리브레이션";
@@ -308,7 +316,8 @@ namespace HCB.UI
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC1_T_OFFSET", ct);
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
+                double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
+
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
                 double theta = await GetAngle(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, ct);
@@ -356,7 +365,7 @@ namespace HCB.UI
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC2_T_OFFSET", ct);
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
+                double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
                 double theta = await GetAngle(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, ct);
@@ -405,7 +414,8 @@ namespace HCB.UI
 
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
+                double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
+
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z,
                     shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
@@ -552,7 +562,7 @@ namespace HCB.UI
 
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = await _sequenceService.GetRecipe("ShankToWaferOffset");
+                double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
                 var hc2XParam = _ecParamService.FindByName(MotionExtensions.HC2_X).Value;

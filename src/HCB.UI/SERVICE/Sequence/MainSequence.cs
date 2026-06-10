@@ -347,9 +347,7 @@ namespace HCB.UI
 
                 sw.Stop();
                 _logger.Information("BtmDieDrop press 완료 (총 소요: {Elapsed}ms)", sw.ElapsedMilliseconds);
-
-                // ── 4. 복귀 ──
-                await Init_Head(ct);
+                
             }
             catch (OperationCanceledException)
             {
@@ -375,6 +373,8 @@ namespace HCB.UI
                     await device.SendCommand(MotionExtensions.BONDING_INIT + $"=1");
                     await Task.Delay(100);
                     await device.SendCommand(MotionExtensions.BONDING_INIT + $"=0");
+                    // ── 4. 복귀 ──
+                    await Init_Head(ct);
                 }
                 catch (Exception ex)
                 {
