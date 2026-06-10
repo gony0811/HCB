@@ -137,9 +137,23 @@ namespace HCB.UI
                 if (H_Z.IsBusy ) throw new PmacException(PmacErrorCode.RUNNING, "Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
                 if (h_z.IsBusy ) throw new PmacException(PmacErrorCode.RUNNING, "Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
 
-                // Head Z축 안전 위치로 이동
-                await MotionsMove([MotionExtensions.H_Z, MotionExtensions.h_z], MotionExtensions.HEAD_SAFETY, ct);
-                await Task.Delay(50);
+                // 현재 위치가 안전 위치보다 아래인 축만 이동
+                const double tolerance = 0.01;
+                var needsMove = new List<string>();
+
+                var hzSafety = H_Z.PositionList.FirstOrDefault(p => p.Name == MotionExtensions.HEAD_SAFETY);
+                var hzSmallSafety = h_z.PositionList.FirstOrDefault(p => p.Name == MotionExtensions.HEAD_SAFETY);
+
+                if (hzSafety != null && H_Z.CurrentPosition > hzSafety.Position + tolerance)
+                    needsMove.Add(MotionExtensions.H_Z);
+                if (hzSmallSafety != null && h_z.CurrentPosition > hzSmallSafety.Position + tolerance)
+                    needsMove.Add(MotionExtensions.h_z);
+
+                if (needsMove.Count > 0)
+                {
+                    await MotionsMove(needsMove.ToArray(), MotionExtensions.HEAD_SAFETY, ct);
+                    await Task.Delay(50);
+                }
 
             }
             catch (OperationCanceledException)
