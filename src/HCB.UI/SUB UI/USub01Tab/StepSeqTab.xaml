@@ -265,7 +265,11 @@
                             <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                             State="{Binding InitState}" Margin="0,0,10,0"/>
                             <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                <TextBlock Text="INIT" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="INIT" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding InitElapsed}" Foreground="#F39C12" FontSize="13"
+                                               FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
                                 <TextBlock Text="System Initialize" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                             </StackPanel>
                             <Button Grid.Column="3" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
@@ -357,7 +361,11 @@
                             <local:StepLamp Grid.Row="0" Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                             State="{Binding RecipeSelectState}" Margin="0,0,10,0"/>
                             <StackPanel Grid.Row="0" Grid.Column="2" VerticalAlignment="Center">
-                                <TextBlock Text="RECIPE SELECT" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="RECIPE SELECT" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding RecipeSelectElapsed}" Foreground="#F39C12" FontSize="13"
+                                               FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
                                 <TextBlock Text="Recipe Selection" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                             </StackPanel>
 
@@ -545,7 +553,11 @@
                                 <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding BtmLowAlignState}" Margin="0,0,10,0"/>
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBlock Text="저배율 보정 + PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="저배율 보정 + PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding BtmLowAlignElapsed}" Foreground="#F39C12" FontSize="13"
+                                                   FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
                                     <TextBlock Text="Low Calibration &amp; Die Pick Up" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                 </StackPanel>
                                 <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
@@ -574,7 +586,11 @@
                                 <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding BtmPlaceState}" Margin="0,0,10,0"/>
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBlock Text="PLACE" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="PLACE" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding BtmPlaceElapsed}" Foreground="#F39C12" FontSize="13"
+                                                   FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
                                     <TextBlock Text="Die Place on Wafer" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                 </StackPanel>
                                 <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
@@ -727,7 +743,11 @@
                                     <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding TopLowAlignState}" Margin="0,0,10,0"/>
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBlock Text="저배율 보정 + PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="저배율 보정 + PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding TopLowAlignElapsed}" Foreground="#F39C12" FontSize="13"
+                                                       FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <TextBlock Text="Low Calibration &amp; Die Pick Up" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                     </StackPanel>
                                     <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
@@ -764,7 +784,11 @@
 
                                     <!-- 타이틀 -->
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBlock Text="고배율 측정 (Top die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="고배율 측정 (Top die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding TopHighAlignElapsed}" Foreground="#F39C12" FontSize="13"
+                                                       FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <TextBlock Text="High Magnification Calibration - Top" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                     </StackPanel>
 
@@ -810,7 +834,11 @@
                                     <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding BtmHighAlignState}" Margin="0,0,10,0"/>
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBlock Text="고배율 측정 (Bottom die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="고배율 측정 (Bottom die)" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding BtmHighAlignElapsed}" Foreground="#F39C12" FontSize="13"
+                                                       FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <TextBlock Text="High Magnification Calibration - Bottom" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                     </StackPanel>
                                     <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
@@ -840,7 +868,11 @@
                                     <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                     State="{Binding TopCorrState}" Margin="0,0,10,0"/>
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBlock Text="보정" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="보정" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding TopCorrElapsed}" Foreground="#F39C12" FontSize="13"
+                                                       FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <TextBlock Text="Alignment Correction" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                     </StackPanel>
                                     <Button Grid.Column="3" Style="{StaticResource InfoButtonStyle}" Margin="0,0,6,0"
@@ -875,7 +907,11 @@
                                     <local:StepLamp Grid.Column="1" Style="{StaticResource StepLampStyle}"
                                                 State="{Binding TopBondingState}" Margin="0,0,10,0"/>
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBlock Text="BONDING" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="BONDING" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding TopBondingElapsed}" Foreground="#F39C12" FontSize="13"
+                                                       FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <TextBlock Text="Hybrid Bonding" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                     </StackPanel>
 

@@ -159,8 +159,6 @@ namespace HCB.UI
                     //CurrentPage = App.Container.Resolve<USub01>();
                     break;
             }
-
-            logger.Information(new UILog(page: key, user: UserService.CurrentAuthority.Name, message: "Navigate").ToString());
         }
 
         [RelayCommand]

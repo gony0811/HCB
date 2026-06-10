@@ -212,7 +212,7 @@
                                   ItemsSource="{Binding Logs}"
                                   Margin="8,6,8,8">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Time"       Binding="{Binding Timestamp}"     Width="200"/>
+                                <DataGridTextColumn Header="Time"       Binding="{Binding Timestamp, StringFormat='{}{0:yyyy/MM/dd HH:mm:ss.fff}'}"     Width="220"/>
                                 <DataGridTextColumn Header="ThreadId"   Binding="{Binding ThreadId}"      Width="150"/>
                                 <DataGridTextColumn Header="LogSource"  Binding="{Binding SourceContext}"  Width="250"/>
                                 <DataGridTemplateColumn Header="Level" Width="100">

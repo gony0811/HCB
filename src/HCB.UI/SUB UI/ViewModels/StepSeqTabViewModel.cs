@@ -10,7 +10,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using System.Windows;
+using System.Windows.Threading;
 using static HCB.UI.SequenceService;
 using static HCB.UI.SERVICE.CalibrationService;
 
@@ -34,6 +36,8 @@ namespace HCB.UI
         private CancellationTokenSource _cts;
 
         private AlignData hcbData;
+        private readonly Dictionary<string, Stopwatch> _sw = new();
+        private readonly DispatcherTimer _elapsedTimer;
 
         // ── Die 번호 ──────────────────────────────────────────
         [ObservableProperty] private int topDie = 1;
@@ -91,6 +95,17 @@ namespace HCB.UI
         [ObservableProperty] private StepState topHighAlignState = StepState.Idle;
         [ObservableProperty] private StepState topCorrState = StepState.Idle;
         [ObservableProperty] private StepState topBondingState = StepState.Idle;
+
+        // ── Step Elapsed Time ────────────────────────────────
+        [ObservableProperty] private string initElapsed = "";
+        [ObservableProperty] private string recipeSelectElapsed = "";
+        [ObservableProperty] private string btmLowAlignElapsed = "";
+        [ObservableProperty] private string btmPlaceElapsed = "";
+        [ObservableProperty] private string topLowAlignElapsed = "";
+        [ObservableProperty] private string topHighAlignElapsed = "";
+        [ObservableProperty] private string btmHighAlignElapsed = "";
+        [ObservableProperty] private string topCorrElapsed = "";
+        [ObservableProperty] private string topBondingElapsed = "";
 
         [ObservableProperty] private double hzPosition;
         [ObservableProperty] private double detailX;
@@ -176,6 +191,10 @@ namespace HCB.UI
                     if (vm != null) DTableList.Add(vm);
                 }
             }
+
+            _elapsedTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            _elapsedTimer.Tick += (_, _) => RefreshElapsed();
+            _elapsedTimer.Start();
         }
 
         // ═════════════════════════════════════════════════════
@@ -685,6 +704,50 @@ namespace HCB.UI
 
         private static StepState IfInProgress(StepState current, StepState next)
             => current == StepState.InProgress ? next : current;
+
+        // ── Elapsed Time Tracking ─────────────────────────────
+
+        private void TrackStep(string key, StepState state)
+        {
+            if (!_sw.TryGetValue(key, out var sw))
+            {
+                sw = new Stopwatch();
+                _sw[key] = sw;
+            }
+            switch (state)
+            {
+                case StepState.InProgress: sw.Restart(); break;
+                case StepState.Idle: sw.Reset(); break;
+                default: sw.Stop(); break;
+            }
+            RefreshElapsed();
+        }
+
+        private void RefreshElapsed()
+        {
+            InitElapsed = FmtSw(_sw.GetValueOrDefault("Init"));
+            RecipeSelectElapsed = FmtSw(_sw.GetValueOrDefault("RecipeSelect"));
+            BtmLowAlignElapsed = FmtSw(_sw.GetValueOrDefault("BtmLowAlign"));
+            BtmPlaceElapsed = FmtSw(_sw.GetValueOrDefault("BtmPlace"));
+            TopLowAlignElapsed = FmtSw(_sw.GetValueOrDefault("TopLowAlign"));
+            TopHighAlignElapsed = FmtSw(_sw.GetValueOrDefault("TopHighAlign"));
+            BtmHighAlignElapsed = FmtSw(_sw.GetValueOrDefault("BtmHighAlign"));
+            TopCorrElapsed = FmtSw(_sw.GetValueOrDefault("TopCorr"));
+            TopBondingElapsed = FmtSw(_sw.GetValueOrDefault("TopBonding"));
+        }
+
+        private static string FmtSw(Stopwatch sw) =>
+            sw != null && sw.ElapsedMilliseconds > 0 ? sw.Elapsed.ToString(@"mm\:ss\.f") : "";
+
+        partial void OnInitStateChanged(StepState value) => TrackStep("Init", value);
+        partial void OnRecipeSelectStateChanged(StepState value) => TrackStep("RecipeSelect", value);
+        partial void OnBtmLowAlignStateChanged(StepState value) => TrackStep("BtmLowAlign", value);
+        partial void OnBtmPlaceStateChanged(StepState value) => TrackStep("BtmPlace", value);
+        partial void OnTopLowAlignStateChanged(StepState value) => TrackStep("TopLowAlign", value);
+        partial void OnTopHighAlignStateChanged(StepState value) => TrackStep("TopHighAlign", value);
+        partial void OnBtmHighAlignStateChanged(StepState value) => TrackStep("BtmHighAlign", value);
+        partial void OnTopCorrStateChanged(StepState value) => TrackStep("TopCorr", value);
+        partial void OnTopBondingStateChanged(StepState value) => TrackStep("TopBonding", value);
 
         private static Task RunDialogOnNewThread(Action dialogAction)
         {
