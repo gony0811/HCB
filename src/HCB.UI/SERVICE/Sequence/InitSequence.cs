@@ -165,10 +165,7 @@ namespace HCB.UI
             var motion = motionDevice?.FindMotionByName(motionName);
             if (motion == null)
                 throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
-            double a = motion.CurrentPosition;
-            await Task.Delay(300);
-            double b = motion.CurrentPosition;
-            await Task.Delay(300);
+            
             return motion.CurrentPosition;
         }
 
@@ -196,7 +193,6 @@ namespace HCB.UI
             var position = motion.PositionList.FirstOrDefault(p => p.Name == positionName);
             if (position == null)
                 throw new DBException(DBErrorCode.NOT_FOUND, $"[Position Error] '{positionName}' 위치 정보 없음");
-            await Task.Delay(3000, ct);
             // 이동 명령
             await motion.Move(MoveType.Absolute, 100, position.Speed, position.Position);
 
