@@ -1255,7 +1255,7 @@
 
                             <!-- Vernier DataGrid -->
                             <TextBlock Text="Measurement Data" Foreground="#5E8BAA"
-                                       FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                       FontSize="12" FontWeight="SemiBold" Margin="0,14,0,6"/>
                             <Border Background="#060F1A" CornerRadius="6"
                                     BorderBrush="#1C3A52" BorderThickness="1">
                                 <DataGrid ItemsSource="{Binding VernierRows}"
@@ -1288,11 +1288,11 @@
                                         </Style>
                                     </DataGrid.CellStyle>
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Pos"  Binding="{Binding Name}"                       Width="40"/>
-                                        <DataGridTextColumn Header="V1-X" Binding="{Binding V1X, StringFormat={}{0:F3}}" Width="*"/>
-                                        <DataGridTextColumn Header="V1-Y" Binding="{Binding V1Y, StringFormat={}{0:F3}}" Width="*"/>
-                                        <DataGridTextColumn Header="V3-X" Binding="{Binding V3X, StringFormat={}{0:F3}}" Width="*"/>
-                                        <DataGridTextColumn Header="V3-Y" Binding="{Binding V3Y, StringFormat={}{0:F3}}" Width="*"/>
+                                        <DataGridTextColumn Header="Pos"  Binding="{Binding Name}"                       Width="36"/>
+                                        <DataGridTextColumn Header="V1-X" Binding="{Binding V1X, StringFormat={}{0:F3}}" Width="78"/>
+                                        <DataGridTextColumn Header="V1-Y" Binding="{Binding V1Y, StringFormat={}{0:F3}}" Width="78"/>
+                                        <DataGridTextColumn Header="V3-X" Binding="{Binding V3X, StringFormat={}{0:F3}}" Width="78"/>
+                                        <DataGridTextColumn Header="V3-Y" Binding="{Binding V3Y, StringFormat={}{0:F3}}" Width="78"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Border>
@@ -1342,7 +1342,7 @@
                                             </Button.Template>
                                         </Button>
                                     </Grid>
-                                    <TextBlock Text="파일명 ({date} = 날짜)" Foreground="#5E8BAA" FontSize="11" Margin="0,0,0,3"/>
+                                    <TextBlock Text="파일명 ({date} = 날짜)" Foreground="#5E8BAA" FontSize="13" Margin="0,4,0,4"/>
                                     <Border Background="#0A1628" BorderBrush="#2A5A8C"
                                             BorderThickness="1" CornerRadius="4">
                                         <TextBox Text="{Binding CsvVernierFileName, UpdateSourceTrigger=PropertyChanged}"
@@ -1384,7 +1384,7 @@
                                             </Button.Template>
                                         </Button>
                                     </Grid>
-                                    <TextBlock Text="파일명 ({date} = 날짜)" Foreground="#5E8BAA" FontSize="11" Margin="0,0,0,3"/>
+                                    <TextBlock Text="파일명 ({date} = 날짜)" Foreground="#5E8BAA" FontSize="13" Margin="0,4,0,4"/>
                                     <Border Background="#0A1628" BorderBrush="#2A5A8C"
                                             BorderThickness="1" CornerRadius="4">
                                         <TextBox Text="{Binding CsvDataFileName, UpdateSourceTrigger=PropertyChanged}"
