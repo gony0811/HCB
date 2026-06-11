@@ -435,9 +435,21 @@ namespace HCB.UI
                 );
 
                 var d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1);
+                for (int retry = 0; retry < 3 && d1.Value_1 == 0 && d1.Value_3 == 0; retry++)
+                {
+                    _logger.Warning($"[Vernier] d1 측정값이 0입니다. 재측정 ({retry + 1}/3)");
+                    d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1);
+                }
+
                 int a = pt.Dir1 == DirectType.Vertical ? 1 : -1;
                 await RelativeMotionsMove(MotionExtensions.W_Y, 0.3 * a, ct);
+
                 var d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2);
+                for (int retry = 0; retry < 3 && d2.Value_1 == 0 && d2.Value_3 == 0; retry++)
+                {
+                    _logger.Warning($"[Vernier] d2 측정값이 0입니다. 재측정 ({retry + 1}/3)");
+                    d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2);
+                }
 
                 // Dir1: Vertical → Y에 저장, Horizontal → X에 저장
                 double v1x = 0, v1y = 0, v3x = 0, v3y = 0;
