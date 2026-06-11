@@ -163,7 +163,7 @@ namespace HCB.UI
             ResetCts();
             try
             {
-                await _sequenceHelper.WTableVacuumAll(eOnOff.Off, _cts.Token);
+                await _sequenceHelper.WTableVacuum(1, eOnOff.Off, _cts.Token, 5000);
                 _logger.Information("Wafer Vacuum OFF 완료");
             }
             catch (Exception ex) { _logger.Error(ex, "Wafer Vacuum OFF 실패"); }

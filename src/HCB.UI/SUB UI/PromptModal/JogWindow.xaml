@@ -344,7 +344,7 @@
                         <Run Text="  Vertical Jog"/>
                     </TextBlock>
 
-                    <UniformGrid Columns="5" HorizontalAlignment="Center">
+                    <Grid local:GridHelper.Columns="*, *, *, 100, *, *" HorizontalAlignment="Center">
 
                         <!-- ── D_Y ── -->
                         <StackPanel Margin="6,0" HorizontalAlignment="Center">
@@ -378,7 +378,7 @@
                         </StackPanel>
 
                         <!-- ── P_Y ── -->
-                        <StackPanel Margin="6,0" HorizontalAlignment="Center">
+                        <StackPanel Margin="6,0" HorizontalAlignment="Center" Grid.Column="1">
                             <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
                                     Tag="PY|Up"
                                     PreviewMouseLeftButtonDown="JogBtn_Down"
@@ -406,10 +406,10 @@
                             <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
                                      Text="{Binding PYPitch, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" ToolTip="피치"/>
                             <TextBlock Text="pitch mm" Style="{StaticResource MiniLabel}"/>
-                        </StackPanel>
+                        </StackPanel >
 
                         <!-- ── W_Y ── -->
-                        <StackPanel Margin="6,0" HorizontalAlignment="Center">
+                        <StackPanel Margin="6,0" HorizontalAlignment="Center"  Grid.Column="2">
                             <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
                                     Tag="WY|Up"
                                     PreviewMouseLeftButtonDown="JogBtn_Down"
@@ -437,10 +437,10 @@
                             <TextBox Style="{StaticResource InputBox}" HorizontalAlignment="Center" Margin="0,5,0,0"
                                      Text="{Binding WYPitch, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" ToolTip="피치"/>
                             <TextBlock Text="pitch mm" Style="{StaticResource MiniLabel}"/>
-                        </StackPanel>
+                        </StackPanel >
 
                         <!-- ── H_Z ── -->
-                        <StackPanel Margin="6,0" HorizontalAlignment="Center">
+                        <StackPanel Margin="6,0" HorizontalAlignment="Center"  Grid.Column="4">
                             <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
                                     Tag="HZ|Down"
                                     PreviewMouseLeftButtonDown="JogBtn_Down"
@@ -471,7 +471,7 @@
                         </StackPanel>
 
                         <!-- ── h_z ── -->
-                        <StackPanel Margin="6,0" HorizontalAlignment="Center">
+                        <StackPanel Margin="6,0" HorizontalAlignment="Center"  Grid.Column="5">
                             <Button Style="{StaticResource JogVBtnBase}" HorizontalAlignment="Center"
                                     Tag="hz|Down"
                                     PreviewMouseLeftButtonDown="JogBtn_Down"
@@ -501,7 +501,7 @@
                             <TextBlock Text="pitch mm" Style="{StaticResource MiniLabel}"/>
                         </StackPanel>
 
-                    </UniformGrid>
+                    </Grid>
                 </StackPanel>
             </Border>
 
