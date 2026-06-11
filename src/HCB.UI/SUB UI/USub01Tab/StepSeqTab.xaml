@@ -936,11 +936,10 @@
                     <!-- Footer -->
                     <Border Grid.Row="2" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
                             Margin="16,0,16,0" Padding="0,10,0,14">
-                        <Grid>
                         
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                        <Grid>
                             <!-- Vernier 결과 DataGrid -->
-                            <Border Background="#060F1A" CornerRadius="6" Margin="0,0,8,0"
+                            <!-- Border Background="#060F1A" CornerRadius="6" Margin="0,0,8,0"
                                     BorderBrush="#1C3A52" BorderThickness="1" VerticalAlignment="Center">
                                 <DataGrid ItemsSource="{Binding VernierRows}"
                                           AutoGenerateColumns="False" IsReadOnly="True"
@@ -979,77 +978,77 @@
                                         <DataGridTextColumn Header="V3-Y" Binding="{Binding V3Y, StringFormat={}{0:F3}}" Width="60"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
-                            </Border>
-                                <StackPanel>
+                            </Border-->
+                                <StackPanel VerticalAlignment="Center" Margin="4">
                                     <TextBlock Text="소요시간" Foreground="#F39C12" FontSize="15"
-                                               FontFamily="Consolas" FontWeight="Bold"
-                                               VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                                            FontFamily="Consolas" FontWeight="Bold"
+                                            VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                                     <TextBlock Text="{Binding TopFullElapsed}" Foreground="#F39C12" FontSize="15"
-                                               FontFamily="Consolas" FontWeight="Bold"
-                                               VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                                            FontFamily="Consolas" FontWeight="Bold"
+                                            VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                                 </StackPanel>
-                                
-                                <StackPanel VerticalAlignment="Center">
-                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
-                                        Command="{Binding HighResultCommand}">
-                                    <TextBlock Text="결과 측정" FontSize="13" FontWeight="Bold"/>
-                                </Button>
-                            </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+        Command="{Binding HighResultCommand}">
+                                        <TextBlock Text="결과 측정" FontSize="13" FontWeight="Bold"/>
+                                    </Button>
 
-                            <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
-                                    Command="{Binding AlignTestCommand}">
-                                <TextBlock Text="3회 반복 측정" FontSize="13" FontWeight="Bold"/>
-                            </Button>
+                                    <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+        Command="{Binding AlignTestCommand}">
+                                        <TextBlock Text="3회 반복 측정" FontSize="13" FontWeight="Bold"/>
+                                    </Button>
 
-                            <Button Margin="2"
-                                    Command="{Binding ChangeMeasureVernierCommand}"
-                                    MinWidth="80" Height="38">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Cursor" Value="Hand"/>
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border x:Name="Bd"
-                                                            Background="#1A2332"
-                                                            BorderBrush="#2A3A4A"
-                                                            BorderThickness="1"
-                                                            CornerRadius="6"
-                                                            Padding="10,4">
-                                                        <TextBlock x:Name="Txt"
-                                                                   Text="결과 측정 OFF"
-                                                                   Foreground="#8899AA"
-                                                                   FontSize="12"
-                                                                   FontWeight="SemiBold"
-                                                                   HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center"/>
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <DataTrigger Binding="{Binding MeasureVernierAfterBonding}" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="#0F6E56"/>
-                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#1D9E75"/>
-                                                            <Setter TargetName="Txt" Property="Text" Value="결과 측정 ON"/>
-                                                            <Setter TargetName="Txt" Property="Foreground" Value="#E1F5EE"/>
-                                                        </DataTrigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
+                                    <Button Margin="2"
+            Command="{Binding ChangeMeasureVernierCommand}"
+            MinWidth="80" Height="38">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Bd"
+                                    Background="#1A2332"
+                                    BorderBrush="#2A3A4A"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="10,4">
+                                                                <TextBlock x:Name="Txt"
+                                           Text="결과 측정 OFF"
+                                           Foreground="#8899AA"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <DataTrigger Binding="{Binding MeasureVernierAfterBonding}" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Background" Value="#0F6E56"/>
+                                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#1D9E75"/>
+                                                                    <Setter TargetName="Txt" Property="Text" Value="결과 측정 ON"/>
+                                                                    <Setter TargetName="Txt" Property="Foreground" Value="#E1F5EE"/>
+                                                                </DataTrigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
 
-                            <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
-                                    Command="{Binding TopRunFullSequenceCommand}">
-                                <TextBlock Text="Start" FontSize="13" FontWeight="Bold"/>
-                            </Button>
+                                    <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
+            Command="{Binding TopRunFullSequenceCommand}">
+                                        <TextBlock Text="Start" FontSize="13" FontWeight="Bold"/>
+                                    </Button>
 
-                            <Button Style="{StaticResource StopButtonStyle}" Width="90"
-                                    Command="{Binding StopCommand}">
-                                <TextBlock Text="STOP" FontSize="13" FontWeight="Bold"/>
-                            </Button>
-                        </StackPanel>
-                        </Grid>
+                                    <Button Style="{StaticResource StopButtonStyle}" Width="90"
+            Command="{Binding StopCommand}">
+                                        <TextBlock Text="STOP" FontSize="13" FontWeight="Bold"/>
+                                    </Button>
+                                </StackPanel>
+                               
+
+                            </Grid>
                     </Border>
 
                 </Grid>

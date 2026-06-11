@@ -652,7 +652,6 @@ namespace HCB.UI
                         vernier.OffsetX, vernier.OffsetY, vernier.OffsetT);
                 }
 
-                ExportHcbData();
                 TrackStep("TopFull", StepState.Completed);
             }
             catch (OperationCanceledException)
@@ -673,6 +672,9 @@ namespace HCB.UI
                 TopBondingState = IfInProgress(TopBondingState, StepState.Failed);
                 TrackStep("TopFull", StepState.Failed);
                 _logger.Error(e, "TopRunFullSequence Failed");
+            }finally
+            {
+                ExportHcbData();
             }
         }
 
