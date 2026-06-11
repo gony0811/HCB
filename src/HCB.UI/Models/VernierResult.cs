@@ -10,9 +10,9 @@ namespace HCB.UI
         public ObservableCollection<Point2D> v1 = new ObservableCollection<Point2D>();
         public ObservableCollection<Point2D> v3 = new ObservableCollection<Point2D>();
 
-        public double OffsetX { get; set; }
-        public double OffsetY { get; set; }
-        public double OffsetT { get; set; }
+        public double? OffsetX { get; set; }
+        public double? OffsetY { get; set; }
+        public double? OffsetT { get; set; }
 
         public void Preprocess(double distX, double distY)
         {

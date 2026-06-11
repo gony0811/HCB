@@ -624,14 +624,12 @@ namespace HCB.UI
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, ct));
                 TopBondingState = StepState.Completed;
 
-                ExportHcbData();
-
                 // 7. 버니어 측정 (옵션)
                 if (MeasureVernierAfterBonding)
                 {
                     var vernier = await _sequenceService.GetVernier(ct);
-                    double distX = _ecParamService.GetDouble("버니어_거리_X");
-                    double distY = _ecParamService.GetDouble("버니어_거리_Y");
+                    double distX = double.Parse(_recipeService.FindByParam("버니어_거리_X").Value);
+                    double distY = double.Parse(_recipeService.FindByParam("버니어_거리_Y").Value);
                     vernier.Preprocess(distX, distY);
 
                     VernierResult = vernier;
@@ -654,6 +652,7 @@ namespace HCB.UI
                         vernier.OffsetX, vernier.OffsetY, vernier.OffsetT);
                 }
 
+                ExportHcbData();
                 TrackStep("TopFull", StepState.Completed);
             }
             catch (OperationCanceledException)
