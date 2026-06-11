@@ -937,9 +937,7 @@
                     <Border Grid.Row="2" BorderBrush="#1C3A52" BorderThickness="0,1,0,0"
                             Margin="16,0,16,0" Padding="0,10,0,14">
                         <Grid>
-                        <TextBlock Text="{Binding TopFullElapsed}" Foreground="#F39C12" FontSize="15"
-                                   FontFamily="Consolas" FontWeight="Bold"
-                                   VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                        
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
                             <!-- Vernier 결과 DataGrid -->
                             <Border Background="#060F1A" CornerRadius="6" Margin="0,0,8,0"
@@ -982,7 +980,16 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Border>
-                            <StackPanel VerticalAlignment="Center">
+                                <StackPanel>
+                                    <TextBlock Text="소요시간" Foreground="#F39C12" FontSize="15"
+                                               FontFamily="Consolas" FontWeight="Bold"
+                                               VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                                    <TextBlock Text="{Binding TopFullElapsed}" Foreground="#F39C12" FontSize="15"
+                                               FontFamily="Consolas" FontWeight="Bold"
+                                               VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                                </StackPanel>
+                                
+                                <StackPanel VerticalAlignment="Center">
                                 <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
                                         Command="{Binding HighResultCommand}">
                                     <TextBlock Text="결과 측정" FontSize="13" FontWeight="Bold"/>
