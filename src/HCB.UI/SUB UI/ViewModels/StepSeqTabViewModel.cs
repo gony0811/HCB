@@ -135,7 +135,7 @@ namespace HCB.UI
 
         // ── CSV 저장 설정 ─────────────────────────────────────
         [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
-        [ObservableProperty] private string csvVernierFileName = "bonding_hcb_{date}.csv";
+        [ObservableProperty] private string csvVernierFileName = "버니어 측정 데이터_{date}.csv";
         [ObservableProperty] private string csvDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "데이터");
         [ObservableProperty] private string csvDataFileName = "bonding_hcb_{date}.csv";
 
