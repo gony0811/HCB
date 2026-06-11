@@ -18,10 +18,10 @@ namespace HCB.UI
         {
             if (v1.Count < 2 || v3.Count < 2) return;
 
-            double p1X = PickSmallestNonZero(v1[0].X, v3[0].X);
-            double p1Y = PickSmallestNonZero(v1[0].Y, v3[0].Y);
-            double p3X = PickSmallestNonZero(v1[1].X, v3[1].X);
-            double p3Y = PickSmallestNonZero(v1[1].Y, v3[1].Y);
+            double p1X = PickSmallestNonZero(v1[0].X / 1000, v3[0].X / 1000);
+            double p1Y = PickSmallestNonZero(v1[0].Y / 1000, v3[0].Y / 1000);
+            double p3X = PickSmallestNonZero(v1[1].X / 1000, v3[1].X / 1000);
+            double p3Y = PickSmallestNonZero(v1[1].Y / 1000, v3[1].Y / 1000);
 
             // 실제 위치
             double a1X = p1X, a1Y = p1Y;
