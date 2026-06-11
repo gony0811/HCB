@@ -1001,6 +1001,44 @@
                                 <TextBlock Text="3회 반복 측정" FontSize="13" FontWeight="Bold"/>
                             </Button>
 
+                            <Button Margin="2"
+                                    Command="{Binding ChangeMeasureVernierCommand}"
+                                    MinWidth="80" Height="38">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="Bd"
+                                                            Background="#1A2332"
+                                                            BorderBrush="#2A3A4A"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="10,4">
+                                                        <TextBlock x:Name="Txt"
+                                                                   Text="결과 측정 OFF"
+                                                                   Foreground="#8899AA"
+                                                                   FontSize="12"
+                                                                   FontWeight="SemiBold"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding MeasureVernierAfterBonding}" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="#0F6E56"/>
+                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#1D9E75"/>
+                                                            <Setter TargetName="Txt" Property="Text" Value="결과 측정 ON"/>
+                                                            <Setter TargetName="Txt" Property="Foreground" Value="#E1F5EE"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+
                             <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
                                     Command="{Binding TopRunFullSequenceCommand}">
                                 <TextBlock Text="Start" FontSize="13" FontWeight="Bold"/>

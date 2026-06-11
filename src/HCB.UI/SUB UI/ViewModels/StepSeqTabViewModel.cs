@@ -130,6 +130,10 @@ namespace HCB.UI
         [ObservableProperty] private ObservableCollection<VernierRow> vernierRows = new();
         [ObservableProperty] private bool avgMode = true;
         [ObservableProperty] private bool use2DMapping = true;
+        [ObservableProperty] private bool measureVernierAfterBonding = false;
+
+        [RelayCommand]
+        public void ChangeMeasureVernier() => MeasureVernierAfterBonding = !MeasureVernierAfterBonding;
 
         [RelayCommand]
         public void Change2DMapping() => Use2DMapping = !Use2DMapping;
@@ -620,6 +624,34 @@ namespace HCB.UI
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, ct));
                 TopBondingState = StepState.Completed;
 
+                // 7. 버니어 측정 (옵션)
+                if (MeasureVernierAfterBonding)
+                {
+                    var vernier = await _sequenceService.GetVernier(ct);
+                    double distX = double.Parse(_recipeService.FindByParam("버니어_거리_X").Value);
+                    double distY = double.Parse(_recipeService.FindByParam("버니어_거리_Y").Value);
+                    vernier.Preprocess(distX, distY);
+
+                    VernierResult = vernier;
+                    VernierRows.Clear();
+                    var names = new[] { "1", "3" };
+                    for (int i = 0; i < vernier.v1.Count; i++)
+                    {
+                        VernierRows.Add(new VernierRow
+                        {
+                            Name = i < names.Length ? names[i] : i.ToString(),
+                            V1X = vernier.v1[i].X,
+                            V1Y = vernier.v1[i].Y,
+                            V3X = vernier.v3.Count > i ? vernier.v3[i].X : null,
+                            V3Y = vernier.v3.Count > i ? vernier.v3[i].Y : null,
+                        });
+                    }
+                    ExportHighResult();
+                    _logger.Information(
+                        "버니어 결과 — OffsetX: {X:F4}, OffsetY: {Y:F4}, OffsetT: {T:F4}",
+                        vernier.OffsetX, vernier.OffsetY, vernier.OffsetT);
+                }
+
                 ExportHcbData();
                 TrackStep("TopFull", StepState.Completed);
             }
@@ -676,6 +708,11 @@ namespace HCB.UI
             catch (Exception e) { _logger.Error(e, "Vernier 측정 실패"); }
         }
 
+
+        public async Task AccuracyMode()
+        {
+            var result = await _sequenceService.GetVernier(_cts.Token);
+        }
         [RelayCommand]
         public void ChangeAvgMode() => AvgMode = !AvgMode;
 
@@ -879,7 +916,8 @@ namespace HCB.UI
                     "SpecTheta", "BTheta", "TTheta", "ThetaF", "ThetaFRad",
                     "TCenter_X", "TCenter_Y", "BCenter_X", "BCenter_Y",
                     "ResultX", "ResultY", "ResultT",
-                    "BtmAlignDist", "TopAlignDist", "BtmFidDist", "TopFidDist"));
+                    "BtmAlignDist", "TopAlignDist", "BtmFidDist", "TopFidDist",
+                    "Vernier_OffsetX", "Vernier_OffsetY", "Vernier_OffsetT"));
             }
 
             sb.AppendLine(string.Join(",",
@@ -907,7 +945,8 @@ namespace HCB.UI
                 hcbData != null ? Pt(hcbData.TCenter) : NullPt(), hcbData != null ? Pt(hcbData.BCenter) : NullPt(),
                 F(hcbData?.ResultX), F(hcbData?.ResultY), F(hcbData?.ResultT),
                 F(hcbData?.BtmAlignDist), F(hcbData?.TopAlignDist),
-                F(hcbData?.BtmFidDist), F(hcbData?.TopFidDist)));
+                F(hcbData?.BtmFidDist), F(hcbData?.TopFidDist),
+                F(VernierResult?.OffsetX), F(VernierResult?.OffsetY), F(VernierResult?.OffsetT)));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
 
