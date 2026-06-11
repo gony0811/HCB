@@ -23,13 +23,29 @@ namespace HCB.UI
             double p3X = PickSmallestNonZero(v1[1].X, v3[1].X);
             double p3Y = PickSmallestNonZero(v1[1].Y, v3[1].Y);
 
-            OffsetX = (p1X + p3X) / 2.0;
-            OffsetY = (p1Y + p3Y) / 2.0;
+            // 실제 위치
+            double a1X = p1X, a1Y = p1Y;
+            double a3X = distX + p3X, a3Y = distY + p3Y;
 
-            double dx = p3X - p1X;
-            double dy = p3Y - p1Y;
-            double dist = Math.Sqrt(distX * distX + distY * distY);
-            OffsetT = dist > 0 ? Math.Atan2(dy, dx) * (180.0 / Math.PI) : 0;
+            // 회전 보정량
+            double idealAngle = Math.Atan2(distY, distX);
+            double actualAngle = Math.Atan2(a3Y - a1Y, a3X - a1X);
+            double offsetT = (actualAngle - idealAngle) * (180.0 / Math.PI);
+
+            // 회전 보정 적용 후 남는 평행이동 오차
+            double rad = -offsetT * Math.PI / 180.0;
+            double cosR = Math.Cos(rad);
+            double sinR = Math.Sin(rad);
+
+            double r1X = a1X * cosR - a1Y * sinR;
+            double r1Y = a1X * sinR + a1Y * cosR;
+
+            double r3X = a3X * cosR - a3Y * sinR;
+            double r3Y = a3X * sinR + a3Y * cosR;
+
+            OffsetX = ((r1X - 0.0) + (r3X - distX)) / 2.0;
+            OffsetY = ((r1Y - 0.0) + (r3Y - distY)) / 2.0;
+            OffsetT = offsetT;
         }
 
         private static double PickSmallestNonZero(double a, double b)
