@@ -56,7 +56,6 @@ namespace HCB.UI
                 return;
             }
 
-            var result = MessageBox.Show("운영모드로 실행하시겠습니까? 아니오를 선택하면 설정 모드로 진입합니다.", "모드선택", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
             // 1. 스플래시 스크린 시작
             RadSplashScreenManager.Show<SplashView>();
@@ -91,12 +90,9 @@ namespace HCB.UI
             var tcpService = _host.Services.GetRequiredService<EqpCommunicationService>();
             tcpService.Start();
 
-            if (result == MessageBoxResult.Yes)
-            {
-                await InitializeApplicationAsync();
+            await InitializeApplicationAsync();
 
-                SplashScreenUpdate("어플리케이션 초기화 완료", 100);
-            }
+            SplashScreenUpdate("어플리케이션 초기화 완료", 100);
             
             RadSplashScreenManager.Close();
 

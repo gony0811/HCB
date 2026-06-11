@@ -511,6 +511,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- Header -->
@@ -617,6 +618,127 @@
                                     <TextBlock Text="STOP" FontSize="13" FontWeight="Bold"/>
                                 </Button>
                             </StackPanel>
+                        </Grid>
+                    </Border>
+
+
+                    <!-- ═══════════════════════════════════════════════════════
+             VERNIER RESULT
+             ═══════════════════════════════════════════════════════ -->
+                    <Border Grid.Row="3" Background="#0D1B2A" CornerRadius="8" Margin="6,3,6,6"
+                BorderBrush="#1C3A52" BorderThickness="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Header -->
+                            <Grid Grid.Row="0" Margin="16,14,16,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#14452A" CornerRadius="4" Padding="10,4"
+                            VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock Text="RESULT" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="Vernier Measurement Result"
+                               Foreground="#ECF0F1" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                           VerticalAlignment="Bottom" Margin="16,44,16,0"/>
+
+                            <!-- Content -->
+                            <Grid Grid.Row="1" Margin="16,12,16,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Vernier DataGrid -->
+                                <Border Grid.Column="0" Background="#060F1A" CornerRadius="6"
+                            BorderBrush="#1C3A52" BorderThickness="1" Margin="0,0,12,0">
+                                    <DataGrid ItemsSource="{Binding VernierRows}"
+                                  AutoGenerateColumns="False" IsReadOnly="True"
+                                  Background="Transparent" BorderThickness="0"
+                                  RowBackground="Transparent"
+                                  AlternatingRowBackground="#0A1628"
+                                  Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
+                                  CanUserResizeRows="False" CanUserAddRows="False"
+                                  GridLinesVisibility="None" RowHeaderWidth="0"
+                                  ColumnHeaderHeight="26" RowHeight="24"
+                                  MaxHeight="140">
+                                        <DataGrid.ColumnHeaderStyle>
+                                            <Style TargetType="DataGridColumnHeader"
+                                       BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                                                <Setter Property="Background" Value="#0A1628"/>
+                                                <Setter Property="Foreground" Value="#2ECC71"/>
+                                                <Setter Property="FontSize" Value="12"/>
+                                                <Setter Property="FontWeight" Value="Bold"/>
+                                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                                <Setter Property="BorderBrush" Value="#1C3A52"/>
+                                                <Setter Property="Padding" Value="8,4"/>
+                                            </Style>
+                                        </DataGrid.ColumnHeaderStyle>
+                                        <DataGrid.CellStyle>
+                                            <Style TargetType="DataGridCell"
+                                       BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                                <Setter Property="BorderThickness" Value="0"/>
+                                                <Setter Property="Padding" Value="8,2"/>
+                                            </Style>
+                                        </DataGrid.CellStyle>
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Pos"  Binding="{Binding Name}"                       Width="50"/>
+                                            <DataGridTextColumn Header="V1-X" Binding="{Binding V1X, StringFormat={}{0:F3}}" Width="80"/>
+                                            <DataGridTextColumn Header="V1-Y" Binding="{Binding V1Y, StringFormat={}{0:F3}}" Width="80"/>
+                                            <DataGridTextColumn Header="V3-X" Binding="{Binding V3X, StringFormat={}{0:F3}}" Width="80"/>
+                                            <DataGridTextColumn Header="V3-Y" Binding="{Binding V3Y, StringFormat={}{0:F3}}" Width="80"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Border>
+
+                                <!-- Offset Summary -->
+                                <Border Grid.Column="1" Background="#060F1A" CornerRadius="6"
+                            BorderBrush="#1C3A52" BorderThickness="1" Padding="20,12" MinWidth="280">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Offset" Foreground="#2ECC71" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Offset X" Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" FontSize="16" FontFamily="Consolas" FontWeight="Bold"
+                                           Foreground="#ECF0F1" VerticalAlignment="Center"
+                                           Text="{Binding VernierResult.OffsetX, StringFormat={}{0:F4}, TargetNullValue='--'}"/>
+                                        </Grid>
+
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Offset Y" Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" FontSize="16" FontFamily="Consolas" FontWeight="Bold"
+                                           Foreground="#ECF0F1" VerticalAlignment="Center"
+                                           Text="{Binding VernierResult.OffsetY, StringFormat={}{0:F4}, TargetNullValue='--'}"/>
+                                        </Grid>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Offset T" Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" FontSize="16" FontFamily="Consolas" FontWeight="Bold"
+                                           Foreground="#ECF0F1" VerticalAlignment="Center"
+                                           Text="{Binding VernierResult.OffsetT, StringFormat={}{0:F4}, TargetNullValue='--'}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
                         </Grid>
                     </Border>
                 </Grid>
