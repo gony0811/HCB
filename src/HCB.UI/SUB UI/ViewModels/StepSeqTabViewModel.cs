@@ -102,6 +102,7 @@ namespace HCB.UI
         [ObservableProperty] private string btmLowAlignElapsed = "";
         [ObservableProperty] private string btmPlaceElapsed = "";
         [ObservableProperty] private string topFullElapsed = "";
+        [ObservableProperty] private string topFullExMeasureElapsed = "";
         [ObservableProperty] private string topLowAlignElapsed = "";
         [ObservableProperty] private string topHighAlignElapsed = "";
         [ObservableProperty] private string btmHighAlignElapsed = "";
@@ -132,11 +133,71 @@ namespace HCB.UI
         [ObservableProperty] private bool use2DMapping = true;
         [ObservableProperty] private bool measureVernierAfterBonding = false;
 
+        // ── CSV 저장 설정 ─────────────────────────────────────
+        [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
+        [ObservableProperty] private string csvVernierFileName = "bonding_hcb_{date}.csv";
+        [ObservableProperty] private string csvDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "데이터");
+        [ObservableProperty] private string csvDataFileName = "bonding_hcb_{date}.csv";
+
         [RelayCommand]
         public void ChangeMeasureVernier() => MeasureVernierAfterBonding = !MeasureVernierAfterBonding;
 
         [RelayCommand]
         public void Change2DMapping() => Use2DMapping = !Use2DMapping;
+
+        [RelayCommand]
+        private async Task HeaderVacOff()
+        {
+            ResetCts();
+            try
+            {
+                await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, _cts.Token);
+                _logger.Information("Header Vacuum OFF 완료");
+            }
+            catch (Exception ex) { _logger.Error(ex, "Header Vacuum OFF 실패"); }
+        }
+
+        [RelayCommand]
+        private async Task WaferVacOff()
+        {
+            ResetCts();
+            try
+            {
+                await _sequenceHelper.WTableVacuumAll(eOnOff.Off, _cts.Token);
+                _logger.Information("Wafer Vacuum OFF 완료");
+            }
+            catch (Exception ex) { _logger.Error(ex, "Wafer Vacuum OFF 실패"); }
+        }
+
+        [RelayCommand]
+        private void BrowseVernierDir()
+        {
+            var dlg = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = "Vernier CSV 저장 폴더 선택",
+                InitialDirectory = Directory.Exists(CsvVernierDir) ? CsvVernierDir : ""
+            };
+            if (dlg.ShowDialog() == true)
+                CsvVernierDir = dlg.FolderName;
+        }
+
+        [RelayCommand]
+        private void BrowseDataDir()
+        {
+            var dlg = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = "본딩 데이터 CSV 저장 폴더 선택",
+                InitialDirectory = Directory.Exists(CsvDataDir) ? CsvDataDir : ""
+            };
+            if (dlg.ShowDialog() == true)
+                CsvDataDir = dlg.FolderName;
+        }
+
+        private string ResolveCsvPath(string dir, string fileNamePattern)
+        {
+            var resolved = fileNamePattern.Replace("{date}", DateTime.Now.ToString("yyyyMMdd"));
+            return Path.Combine(dir, resolved);
+        }
 
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
@@ -582,9 +643,10 @@ namespace HCB.UI
             ResetCts();
             var ct = _cts.Token;
             TrackStep("TopFull", StepState.InProgress);
+            TrackStep("TopFullExMeasure", StepState.InProgress);
             try
             {
-                if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); TrackStep("TopFull", StepState.Idle); return; }
+                if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); TrackStep("TopFull", StepState.Idle); TrackStep("TopFullExMeasure", StepState.Idle); return; }
 
                 // 1. 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
@@ -623,6 +685,7 @@ namespace HCB.UI
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, ct));
                 TopBondingState = StepState.Completed;
+                TrackStep("TopFullExMeasure", StepState.Completed);
 
                 // 7. 버니어 측정 (옵션)
                 if (MeasureVernierAfterBonding)
@@ -662,6 +725,7 @@ namespace HCB.UI
                 TopCorrState = IfInProgress(TopCorrState, StepState.Idle);
                 TopBondingState = IfInProgress(TopBondingState, StepState.Idle);
                 TrackStep("TopFull", StepState.Idle);
+                TrackStep("TopFullExMeasure", StepState.Idle);
             }
             catch (Exception e)
             {
@@ -671,6 +735,7 @@ namespace HCB.UI
                 TopCorrState = IfInProgress(TopCorrState, StepState.Failed);
                 TopBondingState = IfInProgress(TopBondingState, StepState.Failed);
                 TrackStep("TopFull", StepState.Failed);
+                TrackStep("TopFullExMeasure", StepState.Failed);
                 _logger.Error(e, "TopRunFullSequence Failed");
             }finally
             {
@@ -780,6 +845,7 @@ namespace HCB.UI
             BtmLowAlignElapsed = FmtSw(_sw.GetValueOrDefault("BtmLowAlign"));
             BtmPlaceElapsed = FmtSw(_sw.GetValueOrDefault("BtmPlace"));
             TopFullElapsed = FmtSw(_sw.GetValueOrDefault("TopFull"));
+            TopFullExMeasureElapsed = FmtSw(_sw.GetValueOrDefault("TopFullExMeasure"));
             TopLowAlignElapsed = FmtSw(_sw.GetValueOrDefault("TopLowAlign"));
             TopHighAlignElapsed = FmtSw(_sw.GetValueOrDefault("TopHighAlign"));
             BtmHighAlignElapsed = FmtSw(_sw.GetValueOrDefault("BtmHighAlign"));
@@ -869,9 +935,8 @@ namespace HCB.UI
                 _logger.Information("저장할 Vernier 결과가 없습니다.");
                 return;
             }
-            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
-            Directory.CreateDirectory(dir);
-            var path = Path.Combine(dir, $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
+            Directory.CreateDirectory(CsvVernierDir);
+            var path = ResolveCsvPath(CsvVernierDir, CsvVernierFileName);
 
             bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
             var sb = new StringBuilder();
@@ -887,9 +952,8 @@ namespace HCB.UI
 
         private void ExportHcbData()
         {
-            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "데이터");
-            Directory.CreateDirectory(dir);
-            var path = Path.Combine(dir, $"bonding_hcb_{DateTime.Now:yyyyMMdd}.csv");
+            Directory.CreateDirectory(CsvDataDir);
+            var path = ResolveCsvPath(CsvDataDir, CsvDataFileName);
 
             ComputeDistances();
 

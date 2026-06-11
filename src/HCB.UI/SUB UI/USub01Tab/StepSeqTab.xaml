@@ -15,6 +15,32 @@
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
             <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
 
+            <!-- Dark TextBox Style -->
+            <Style x:Key="DarkTextBox" TargetType="TextBox">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="CaretBrush" Value="#ECF0F1"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontFamily" Value="Consolas"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Padding" Value="6,4"/>
+                <Setter Property="Height" Value="26"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ScrollViewer x:Name="PART_ContentHost"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- Dark ComboBoxItem Style -->
             <Style x:Key="DarkComboBoxItem" TargetType="ComboBoxItem">
                 <Setter Property="Foreground" Value="#ECF0F1"/>
@@ -511,7 +537,6 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- Header -->
@@ -618,127 +643,6 @@
                                     <TextBlock Text="STOP" FontSize="13" FontWeight="Bold"/>
                                 </Button>
                             </StackPanel>
-                        </Grid>
-                    </Border>
-
-
-                    <!-- ═══════════════════════════════════════════════════════
-             VERNIER RESULT
-             ═══════════════════════════════════════════════════════ -->
-                    <Border Grid.Row="3" Background="#0D1B2A" CornerRadius="8" Margin="6,3,6,6"
-                BorderBrush="#1C3A52" BorderThickness="1">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-
-                            <!-- Header -->
-                            <Grid Grid.Row="0" Margin="16,14,16,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Background="#14452A" CornerRadius="4" Padding="10,4"
-                            VerticalAlignment="Center" Margin="0,0,12,0">
-                                    <TextBlock Text="RESULT" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"/>
-                                </Border>
-                                <TextBlock Grid.Column="1" Text="Vernier Measurement Result"
-                               Foreground="#ECF0F1" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-                            </Grid>
-                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
-                           VerticalAlignment="Bottom" Margin="16,44,16,0"/>
-
-                            <!-- Content -->
-                            <Grid Grid.Row="1" Margin="16,12,16,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Vernier DataGrid -->
-                                <Border Grid.Column="0" Background="#060F1A" CornerRadius="6"
-                            BorderBrush="#1C3A52" BorderThickness="1" Margin="0,0,12,0">
-                                    <DataGrid ItemsSource="{Binding VernierRows}"
-                                  AutoGenerateColumns="False" IsReadOnly="True"
-                                  Background="Transparent" BorderThickness="0"
-                                  RowBackground="Transparent"
-                                  AlternatingRowBackground="#0A1628"
-                                  Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
-                                  CanUserResizeRows="False" CanUserAddRows="False"
-                                  GridLinesVisibility="None" RowHeaderWidth="0"
-                                  ColumnHeaderHeight="26" RowHeight="24"
-                                  MaxHeight="140">
-                                        <DataGrid.ColumnHeaderStyle>
-                                            <Style TargetType="DataGridColumnHeader"
-                                       BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-                                                <Setter Property="Background" Value="#0A1628"/>
-                                                <Setter Property="Foreground" Value="#2ECC71"/>
-                                                <Setter Property="FontSize" Value="12"/>
-                                                <Setter Property="FontWeight" Value="Bold"/>
-                                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                                <Setter Property="BorderBrush" Value="#1C3A52"/>
-                                                <Setter Property="Padding" Value="8,4"/>
-                                            </Style>
-                                        </DataGrid.ColumnHeaderStyle>
-                                        <DataGrid.CellStyle>
-                                            <Style TargetType="DataGridCell"
-                                       BasedOn="{StaticResource {x:Type DataGridCell}}">
-                                                <Setter Property="BorderThickness" Value="0"/>
-                                                <Setter Property="Padding" Value="8,2"/>
-                                            </Style>
-                                        </DataGrid.CellStyle>
-                                        <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Pos"  Binding="{Binding Name}"                       Width="50"/>
-                                            <DataGridTextColumn Header="V1-X" Binding="{Binding V1X, StringFormat={}{0:F3}}" Width="80"/>
-                                            <DataGridTextColumn Header="V1-Y" Binding="{Binding V1Y, StringFormat={}{0:F3}}" Width="80"/>
-                                            <DataGridTextColumn Header="V3-X" Binding="{Binding V3X, StringFormat={}{0:F3}}" Width="80"/>
-                                            <DataGridTextColumn Header="V3-Y" Binding="{Binding V3Y, StringFormat={}{0:F3}}" Width="80"/>
-                                        </DataGrid.Columns>
-                                    </DataGrid>
-                                </Border>
-
-                                <!-- Offset Summary -->
-                                <Border Grid.Column="1" Background="#060F1A" CornerRadius="6"
-                            BorderBrush="#1C3A52" BorderThickness="1" Padding="20,12" MinWidth="280">
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Offset" Foreground="#2ECC71" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
-
-                                        <Grid Margin="0,0,0,6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Offset X" Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1" FontSize="16" FontFamily="Consolas" FontWeight="Bold"
-                                           Foreground="#ECF0F1" VerticalAlignment="Center"
-                                           Text="{Binding VernierResult.OffsetX, StringFormat={}{0:F4}, TargetNullValue='--'}"/>
-                                        </Grid>
-
-                                        <Grid Margin="0,0,0,6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Offset Y" Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1" FontSize="16" FontFamily="Consolas" FontWeight="Bold"
-                                           Foreground="#ECF0F1" VerticalAlignment="Center"
-                                           Text="{Binding VernierResult.OffsetY, StringFormat={}{0:F4}, TargetNullValue='--'}"/>
-                                        </Grid>
-
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Offset T" Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1" FontSize="16" FontFamily="Consolas" FontWeight="Bold"
-                                           Foreground="#ECF0F1" VerticalAlignment="Center"
-                                           Text="{Binding VernierResult.OffsetT, StringFormat={}{0:F4}, TargetNullValue='--'}"/>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
                         </Grid>
                     </Border>
                 </Grid>
@@ -1102,12 +1006,18 @@
                                 </DataGrid>
                             </Border-->
                                 <StackPanel VerticalAlignment="Center" Margin="4">
-                                    <TextBlock Text="소요시간" Foreground="#F39C12" FontSize="15"
-                                            FontFamily="Consolas" FontWeight="Bold"
-                                            VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
-                                    <TextBlock Text="{Binding TopFullElapsed}" Foreground="#F39C12" FontSize="15"
-                                            FontFamily="Consolas" FontWeight="Bold"
-                                            VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                                    <StackPanel Orientation="Horizontal" Margin="4,0,0,2">
+                                        <TextBlock Text="전체" Foreground="#5E8BAA" FontSize="12"
+                                                   Width="60" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TopFullElapsed}" Foreground="#F39C12" FontSize="15"
+                                                   FontFamily="Consolas" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="4,0,0,0">
+                                        <TextBlock Text="측정 제외" Foreground="#5E8BAA" FontSize="12"
+                                                   Width="60" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TopFullExMeasureElapsed}" Foreground="#2ECC71" FontSize="15"
+                                                   FontFamily="Consolas" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
@@ -1177,6 +1087,317 @@
             </Border>
 
         </Grid>
+
+        <!-- ═══════════════════════════════════════════════════════
+             RIGHT SIDEBAR (hover to reveal)
+             ═══════════════════════════════════════════════════════ -->
+        <Border Grid.RowSpan="2" HorizontalAlignment="Right"
+                Panel.ZIndex="5" ClipToBounds="True" Margin="0,6,0,6">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Width" Value="16"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                         To="420" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                         To="16" Duration="0:0:0.25">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseIn"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <Grid Width="420">
+                <!-- Handle strip -->
+                <Border HorizontalAlignment="Left" Width="16"
+                        Background="#152238" CornerRadius="6,0,0,6" Opacity="0.8">
+                    <Path Data="M 9 6 L 4 12 L 9 18"
+                          Stroke="#3498DB" StrokeThickness="1.5" StrokeLineJoin="Round"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- Content panel -->
+                <Border Margin="16,0,0,0" Background="#0D1B2A"
+                        BorderBrush="#1C3A52" BorderThickness="1,0,0,0">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="16,16,16,16">
+
+                            <!-- Vacuum OFF Buttons -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Height="38" Cursor="Hand"
+                                        Command="{Binding HeaderVacOffCommand}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd" Background="#4A1A1A"
+                                                    BorderBrush="#8C2A2A" BorderThickness="1" CornerRadius="6">
+                                                <TextBlock Text="Header Vac OFF" Foreground="#ECF0F1"
+                                                           FontSize="13" FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#6A2A2A"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#E74C3C"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                                <Button Grid.Column="2" Height="38" Cursor="Hand"
+                                        Command="{Binding WaferVacOffCommand}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd" Background="#4A1A1A"
+                                                    BorderBrush="#8C2A2A" BorderThickness="1" CornerRadius="6">
+                                                <TextBlock Text="Wafer Vac OFF" Foreground="#ECF0F1"
+                                                           FontSize="13" FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#6A2A2A"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#E74C3C"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+                            <!-- Header -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <Border Background="#14452A" CornerRadius="4" Padding="10,4"
+                                        Margin="0,0,10,0">
+                                    <TextBlock Text="RESULT" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"/>
+                                </Border>
+                                <TextBlock Text="Vernier Measurement"
+                                           Foreground="#ECF0F1" FontSize="18" FontWeight="Bold"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Rectangle Height="1" Fill="#1C3A52" Margin="0,0,0,14"/>
+
+
+                            <!-- Offset Summary -->
+                            <Border Background="#060F1A" CornerRadius="6"
+                                    BorderBrush="#1C3A52" BorderThickness="1"
+                                    Padding="16,12" Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="10"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="6"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="6"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                                               Text="Offset" Foreground="#2ECC71"
+                                               FontSize="14" FontWeight="Bold"/>
+
+                                    <TextBlock Grid.Row="2" Text="Offset X"
+                                               Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1"
+                                               FontSize="18" FontFamily="Consolas" FontWeight="Bold"
+                                               Foreground="#ECF0F1" VerticalAlignment="Center"
+                                               Text="{Binding VernierResult.OffsetX, StringFormat={}{0:F4}, TargetNullValue='--'}"/>
+
+                                    <TextBlock Grid.Row="4" Text="Offset Y"
+                                               Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1"
+                                               FontSize="18" FontFamily="Consolas" FontWeight="Bold"
+                                               Foreground="#ECF0F1" VerticalAlignment="Center"
+                                               Text="{Binding VernierResult.OffsetY, StringFormat={}{0:F4}, TargetNullValue='--'}"/>
+
+                                    <TextBlock Grid.Row="6" Text="Offset T"
+                                               Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="6" Grid.Column="1"
+                                               FontSize="18" FontFamily="Consolas" FontWeight="Bold"
+                                               Foreground="#ECF0F1" VerticalAlignment="Center"
+                                               Text="{Binding VernierResult.OffsetT, StringFormat={}{0:F4}, TargetNullValue='--'}"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Vernier DataGrid -->
+                            <TextBlock Text="Measurement Data" Foreground="#5E8BAA"
+                                       FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <Border Background="#060F1A" CornerRadius="6"
+                                    BorderBrush="#1C3A52" BorderThickness="1">
+                                <DataGrid ItemsSource="{Binding VernierRows}"
+                                          AutoGenerateColumns="False" IsReadOnly="True"
+                                          Background="Transparent" BorderThickness="0"
+                                          RowBackground="Transparent"
+                                          AlternatingRowBackground="#0A1628"
+                                          Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
+                                          CanUserResizeRows="False" CanUserAddRows="False"
+                                          GridLinesVisibility="None" RowHeaderWidth="0"
+                                          ColumnHeaderHeight="26" RowHeight="24"
+                                          MaxHeight="200">
+                                    <DataGrid.ColumnHeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader"
+                                               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                                            <Setter Property="Background" Value="#0A1628"/>
+                                            <Setter Property="Foreground" Value="#2ECC71"/>
+                                            <Setter Property="FontSize" Value="12"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                            <Setter Property="BorderBrush" Value="#1C3A52"/>
+                                            <Setter Property="Padding" Value="8,4"/>
+                                        </Style>
+                                    </DataGrid.ColumnHeaderStyle>
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell"
+                                               BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Padding" Value="8,2"/>
+                                        </Style>
+                                    </DataGrid.CellStyle>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Pos"  Binding="{Binding Name}"                       Width="40"/>
+                                        <DataGridTextColumn Header="V1-X" Binding="{Binding V1X, StringFormat={}{0:F3}}" Width="*"/>
+                                        <DataGridTextColumn Header="V1-Y" Binding="{Binding V1Y, StringFormat={}{0:F3}}" Width="*"/>
+                                        <DataGridTextColumn Header="V3-X" Binding="{Binding V3X, StringFormat={}{0:F3}}" Width="*"/>
+                                        <DataGridTextColumn Header="V3-Y" Binding="{Binding V3Y, StringFormat={}{0:F3}}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Border>
+
+                            <!-- CSV Settings -->
+                            <Rectangle Height="1" Fill="#1C3A52" Margin="0,16,0,14"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
+                                        Margin="0,0,10,0">
+                                    <TextBlock Text="CSV" Foreground="#3498DB" FontSize="13" FontWeight="Bold"/>
+                                </Border>
+                                <TextBlock Text="Export Settings"
+                                           Foreground="#ECF0F1" FontSize="16" FontWeight="Bold"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Vernier CSV -->
+                            <Border Background="#060F1A" CornerRadius="6"
+                                    BorderBrush="#1C3A52" BorderThickness="1"
+                                    Padding="12,10" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="Vernier CSV" Foreground="#2ECC71" FontSize="12"
+                                               FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock Text="저장 폴더" Foreground="#5E8BAA" FontSize="11" Margin="0,0,0,3"/>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="#0A1628" BorderBrush="#2A5A8C"
+                                                BorderThickness="1" CornerRadius="4">
+                                            <TextBox Text="{Binding CsvVernierDir, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource DarkTextBox}"/>
+                                        </Border>
+                                        <Button Grid.Column="1" Width="28" Height="26" Margin="4,0,0,0"
+                                                Background="#1A3A5C" BorderBrush="#2A5A8C" BorderThickness="1"
+                                                Cursor="Hand" Command="{Binding BrowseVernierDirCommand}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="1" CornerRadius="4">
+                                                        <TextBlock Text="..." Foreground="#ECF0F1" FontSize="12" FontWeight="Bold"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock Text="파일명 ({date} = 날짜)" Foreground="#5E8BAA" FontSize="11" Margin="0,0,0,3"/>
+                                    <Border Background="#0A1628" BorderBrush="#2A5A8C"
+                                            BorderThickness="1" CornerRadius="4">
+                                        <TextBox Text="{Binding CsvVernierFileName, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource DarkTextBox}"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Bonding Data CSV -->
+                            <Border Background="#060F1A" CornerRadius="6"
+                                    BorderBrush="#1C3A52" BorderThickness="1"
+                                    Padding="12,10">
+                                <StackPanel>
+                                    <TextBlock Text="Bonding Data CSV" Foreground="#3498DB" FontSize="12"
+                                               FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock Text="저장 폴더" Foreground="#5E8BAA" FontSize="11" Margin="0,0,0,3"/>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="#0A1628" BorderBrush="#2A5A8C"
+                                                BorderThickness="1" CornerRadius="4">
+                                            <TextBox Text="{Binding CsvDataDir, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource DarkTextBox}"/>
+                                        </Border>
+                                        <Button Grid.Column="1" Width="28" Height="26" Margin="4,0,0,0"
+                                                Background="#1A3A5C" BorderBrush="#2A5A8C" BorderThickness="1"
+                                                Cursor="Hand" Command="{Binding BrowseDataDirCommand}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="1" CornerRadius="4">
+                                                        <TextBlock Text="..." Foreground="#ECF0F1" FontSize="12" FontWeight="Bold"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock Text="파일명 ({date} = 날짜)" Foreground="#5E8BAA" FontSize="11" Margin="0,0,0,3"/>
+                                    <Border Background="#0A1628" BorderBrush="#2A5A8C"
+                                            BorderThickness="1" CornerRadius="4">
+                                        <TextBox Text="{Binding CsvDataFileName, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource DarkTextBox}"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Border>
 
         <!-- ═══════════════════════════════════════════════════════
              INIT INFO MODAL OVERLAY
@@ -1353,9 +1574,8 @@
                                 <Border Grid.Column="1" Background="#0A1628" BorderBrush="#2A5A8C"
                                         BorderThickness="1" CornerRadius="4">
                                     <TextBox Text="{Binding FidAfRepeatCount, UpdateSourceTrigger=PropertyChanged}"
-                                             Background="Transparent" BorderThickness="0"
-                                             Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
-                                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                             Style="{StaticResource DarkTextBox}"
+                                             FontSize="13" HorizontalContentAlignment="Center"
                                              Height="28"/>
                                 </Border>
 
@@ -1365,9 +1585,8 @@
                                 <Border Grid.Column="3" Background="#0A1628" BorderBrush="#2A5A8C"
                                         BorderThickness="1" CornerRadius="4">
                                     <TextBox Text="{Binding FidAfIntervalSeconds, UpdateSourceTrigger=PropertyChanged}"
-                                             Background="Transparent" BorderThickness="0"
-                                             Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"
-                                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                             Style="{StaticResource DarkTextBox}"
+                                             FontSize="13" HorizontalContentAlignment="Center"
                                              Height="28"/>
                                 </Border>
 
