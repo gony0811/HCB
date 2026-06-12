@@ -21,17 +21,18 @@ namespace HCB.UI
         private readonly OperationService operationService;
         private readonly AlarmRepository alarmRepository;
         private readonly AlarmHistoryRepository alarmHistoryRepository;
-
+        private readonly ISequenceHelper _sequenceHelper;
         private ObservableCollection<Alarm> alarmList = new ObservableCollection<Alarm>();
 
         private ObservableCollection<Alarm> currentAlarms = new ObservableCollection<Alarm>();
         private bool _isModalOpen = false; 
 
-        public AlarmService(AlarmRepository alarmRepository, AlarmHistoryRepository alarmHistoryRepository, OperationService operationService)
+        public AlarmService(AlarmRepository alarmRepository, AlarmHistoryRepository alarmHistoryRepository, OperationService operationService, ISequenceHelper sequenceHelper)
         {
             this.alarmRepository = alarmRepository;
             this.alarmHistoryRepository = alarmHistoryRepository;
             this.operationService = operationService;
+            this._sequenceHelper  = sequenceHelper;
             LoadAlarms();
         }
 
@@ -196,6 +197,7 @@ namespace HCB.UI
 
             operationService.Status.Alarm = AlarmState.NO_ALARM;
             UpdateEQStatus(AlarmLevel.NORMAL);
+            _sequenceHelper.SetTowerLamp(green: true, red: false, yellow: false, buzzer: false);
             this.currentAlarms.Clear();
         }
 
@@ -285,6 +287,13 @@ namespace HCB.UI
                 AlarmLevel.LIGHT => Availability.Up,
                 _ => Availability.Up
             };
+            if(level == AlarmLevel.HEAVY)
+            {
+                _sequenceHelper.SetTowerLamp(green: false, red: true, yellow: false, buzzer: true);
+            }else if(level == AlarmLevel.NORMAL)
+            {
+                _sequenceHelper.SetTowerLamp(green: false, red: false, yellow: true, buzzer: false);
+            }
 
             operationService.SetAlarm(alarm);
             operationService.SetAvailability(availability);

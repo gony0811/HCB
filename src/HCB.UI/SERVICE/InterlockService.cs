@@ -61,7 +61,7 @@ namespace HCB.UI
 
                         //await MonitoringSafety(_cancellationTokenSource.Token);
 
-                        //await InterlockMotion(_cancellationTokenSource.Token);
+                        await InterlockMotion(_cancellationTokenSource.Token);
 
                     }
                     catch (OperationCanceledException)
@@ -315,9 +315,9 @@ namespace HCB.UI
 
         public async Task InterlockMotion(CancellationToken token)
         {
-            var safeHZPosition = 94.0;
+            var safeHZPosition = 96.1;
 
-            if (_HZ.CurrentPosition + _hz.CurrentPosition > safeHZPosition) // HZ 축이 안전 위치 이상으로 내려와 있을때, HX 축 이동 금지
+            if (_HZ.CurrentPosition + _hz.CurrentPosition >= safeHZPosition) // HZ 축이 안전 위치 이상으로 내려와 있을때, HX 축 이동 금지
             {
                 if (_HX.IsBusy || _DY.IsBusy || _WY.IsBusy || _PY.IsBusy)
                 {
@@ -327,6 +327,21 @@ namespace HCB.UI
                 }
             }
 
+            await InterlockLightCurtain(token);
+        }
+
+        public async Task InterlockLightCurtain(CancellationToken token)
+        {
+            if (_powerPmacDevice.GetDigital(IoExtensions.DI_LIGHT_CURTAIN) == true)
+            {
+                if (_HX.IsBusy || _HZ.IsBusy || _HT.IsBusy || _hz.IsBusy || _PY.IsBusy || _WY.IsBusy || _WT.IsBusy || _DY.IsBusy)
+                {
+                   
+                    await _sequenceHelper.StopAllAsync(token);
+                    await _alarmService.SetAlarm("E0030");
+                    _logger.Warning(new SysLog("InterlockService", _operationService.Status.Availability.ToString(), _operationService.Status.Run.ToString(), _operationService.Status.Alarm.ToString(), _operationService.Status.Operation.ToString(), "Interlock: Light curtain activated during motion. Stopping all axes.").ToString());
+                }
+            }
         }
     }
 }
