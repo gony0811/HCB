@@ -84,7 +84,14 @@ namespace HCB.UI
             if (recipe == null) throw new Exception($"{name} 파라미터가 없습니다");
             return recipe;
         }
-        
+
+        public double FindByParamDouble(string name)
+        {
+            if (UseRecipe == null) throw new Exception("사용중인 레시피가 없습니다. 레시피를 선택해주세요");
+            RecipeParamDto? recipe = UseRecipe.ParamList.FirstOrDefault(x => x.Name.Equals(name));
+            if (recipe == null) throw new Exception($"{name} 파라미터가 없습니다");
+            return double.Parse(recipe.Value);
+        }
 
 
         public async Task AddRecipe(RecipeDto recipeDto)

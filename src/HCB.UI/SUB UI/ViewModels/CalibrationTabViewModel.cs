@@ -752,7 +752,8 @@ namespace HCB.UI
 
                 // 2. Right Align
                 CalibStatus = "PC AF — Right Align...";
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_ALIGN_HIGH, ct);
+                double thickness = _recipeService.FindByParamDouble("TopDieThickness");
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, -thickness, ct);
                 await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.ALIGN_MARK, ct);
                 RightAlignHeight = _hzAxis!.CurrentPosition;
 
@@ -768,7 +769,7 @@ namespace HCB.UI
 
                 // 4. Left Align
                 CalibStatus = "PC AF — Left Align...";
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_ALIGN_HIGH, ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_ALIGN_HIGH, -thickness, ct);
                 await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.ALIGN_MARK, ct);
                 LeftAlignHeight = _hzAxis!.CurrentPosition;
 
