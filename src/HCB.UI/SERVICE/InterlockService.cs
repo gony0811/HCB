@@ -317,15 +317,15 @@ namespace HCB.UI
         {
             var safeHZPosition = 96.1;
 
-            if (_HZ.CurrentPosition + _hz.CurrentPosition >= safeHZPosition) // HZ 축이 안전 위치 이상으로 내려와 있을때, HX 축 이동 금지
-            {
-                if (_HX.IsBusy || _DY.IsBusy || _WY.IsBusy || _PY.IsBusy)
-                {
-                    await _sequenceHelper.StopAllAsync(token);
-                    await _alarmService.SetAlarm("E0029");
-                    _logger.Warning(new SysLog("InterlockService", _operationService.Status.Availability.ToString(), _operationService.Status.Run.ToString(), _operationService.Status.Alarm.ToString(), _operationService.Status.Operation.ToString(), "Interlock: HZ axis is not in safe position. Stopping HX axis movement.").ToString());
-                }
-            }
+            //if (_HZ.CurrentPosition + _hz.CurrentPosition >= safeHZPosition) // HZ 축이 안전 위치 이상으로 내려와 있을때, HX 축 이동 금지
+            //{
+            //    if (_HX.IsBusy || _DY.IsBusy || _WY.IsBusy || _PY.IsBusy)
+            //    {
+            //        await _sequenceHelper.StopAllAsync(token);
+            //        await _alarmService.SetAlarm("E0029");
+            //        _logger.Warning(new SysLog("InterlockService", _operationService.Status.Availability.ToString(), _operationService.Status.Run.ToString(), _operationService.Status.Alarm.ToString(), _operationService.Status.Operation.ToString(), "Interlock: HZ axis is not in safe position. Stopping HX axis movement.").ToString());
+            //    }
+            //}
 
             await InterlockLightCurtain(token);
         }
@@ -338,7 +338,7 @@ namespace HCB.UI
                 {
                    
                     await _sequenceHelper.StopAllAsync(token);
-                    await _alarmService.SetAlarm("E0030");
+                    await _alarmService.SetAlarm("E0035");
                     _logger.Warning(new SysLog("InterlockService", _operationService.Status.Availability.ToString(), _operationService.Status.Run.ToString(), _operationService.Status.Alarm.ToString(), _operationService.Status.Operation.ToString(), "Interlock: Light curtain activated during motion. Stopping all axes.").ToString());
                 }
             }
