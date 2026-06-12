@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
 using System;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Threading;
 
 namespace HCB.UI
@@ -69,7 +70,7 @@ namespace HCB.UI
             HZ = motion.FindMotionByName(MotionExtensions.H_Z);
             hz = motion.FindMotionByName(MotionExtensions.h_z);
 
-            _positionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            _positionTimer = new DispatcherTimer(DispatcherPriority.Render, Application.Current.Dispatcher) { Interval = TimeSpan.FromMilliseconds(100) };
             _positionTimer.Tick += UpdatePositions;
             _positionTimer.Start();
         }

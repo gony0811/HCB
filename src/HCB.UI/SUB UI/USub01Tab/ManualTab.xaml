@@ -618,34 +618,6 @@
                         Background="#0F3460"
                         BorderBrush="#2A5A8C"/>
 
-                <!-- SERVO : BoolToColor 바인딩 유지 -->
-                <Button Content="SERVO"
-                        Command="{Binding ServoAllOnOffCommand}"
-                        Style="{StaticResource BottomActionButton}"
-                        Background="{Binding IsServoOn, Converter={StaticResource BoolToColor}}"
-                        BorderBrush="#2A5A8C"/>
-
-                <!-- D-VAC -->
-                <Button Content="D-VAC"
-                        Command="{Binding DVacAllOnOffCommand}"
-                        Style="{StaticResource BottomActionButton}"
-                        Background="{Binding IsDVacOn, Converter={StaticResource BoolToColor}}"
-                        BorderBrush="#2A5A8C"/>
-
-                <!-- W-VAC -->
-                <Button Content="W-VAC"
-                        Command="{Binding WVacAllOnOffCommand}"
-                        Style="{StaticResource BottomActionButton}"
-                        Background="{Binding IsWVacOn, Converter={StaticResource BoolToColor}}"
-                        BorderBrush="#2A5A8C"/>
-
-                <!-- H-VAC -->
-                <Button Content="H-VAC"
-                        Command="{Binding HVacAllOnOffCommand}"
-                        Style="{StaticResource BottomActionButton}"
-                        Background="{Binding IsHVacOn, Converter={StaticResource BoolToColor}}"
-                        BorderBrush="#2A5A8C"/>
-
             </StackPanel>
         </Border>
 

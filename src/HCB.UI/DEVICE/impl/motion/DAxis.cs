@@ -133,31 +133,7 @@ namespace HCB.UI
                 logger.Error($"{Name}: Servo On Failed");
                 return false;
             }
-            //// 2. 현재 상태에 따른 명령 생성 및 사전 처리
-            //string command = IsEnabled
-            //    ? $"#{MotorNo}K"  // Servo On -> Off 시퀀스
-            //    : $"#{MotorNo}J/";   // Servo Off -> On 시퀀스
 
-            //if (IsEnabled)
-            //{
-            //    IsHomeDone = false; 
-            //}
-
-            //try
-            //{
-            //    await Device.SendCommand(command);
-            //    await Task.Delay(1000);
-            //    logger.Information($"{Name}: {(IsEnabled ? "Servo ON" : "Servo Off")}");
-            //    return IsEnabled;
-            //}
-            //catch (Exception ex)
-            //{
-            //    // 로그 기록 및 사용자 알림 (예시)
-            //    logger.Error(ex, "Servo Command 전송 실패");
-            //    // dialogService.ShowMessage("통신 에러", ex.Message);
-            //}
-
-            //return IsEnabled;
         }
 
         [RelayCommand]
