@@ -62,6 +62,10 @@ namespace HCB.UI
                 // ── 공통 EC 파라미터 ──
                 double xOffset = _paramService.GetDouble("ShankLowOffsetX");
                 double yOffset = _paramService.GetDouble("ShankLowOffsetY");
+
+                double xLowErrorOffset = await GetRecipe("xLowErrorOffset");
+                double yLowErrorOffset = await GetRecipe("yLowErrorOffset");
+
                 double shankToDieOffset = _paramService.GetDouble("ShankToDieOffset");
 
                 // ── Die 타입별 레시피 ──
@@ -82,8 +86,8 @@ namespace HCB.UI
                 double corrT = correction?.Theta ?? 0;
 
                 await Task.WhenAll(
-                    RelativeMotionsMove(MotionExtensions.H_X, xOffset - corrX, ct),
-                    RelativeMotionsMove(MotionExtensions.D_Y,  yOffset - corrY, ct),
+                    RelativeMotionsMove(MotionExtensions.H_X, xOffset - corrX + xLowErrorOffset, ct),
+                    RelativeMotionsMove(MotionExtensions.D_Y,  yOffset - corrY + yLowErrorOffset, ct),
                     MotionsMove(MotionExtensions.H_T, -corrT, ct)
                 );
 
