@@ -769,7 +769,7 @@ namespace HCB.UI
 
                 // 4. Left Align
                 CalibStatus = "PC AF — Left Align...";
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_ALIGN_HIGH, -thickness, ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, RightAlignHeight, ct);
                 await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.ALIGN_MARK, ct);
                 LeftAlignHeight = _hzAxis!.CurrentPosition;
 

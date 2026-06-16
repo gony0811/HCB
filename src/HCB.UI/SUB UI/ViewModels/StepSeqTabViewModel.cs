@@ -281,9 +281,8 @@ namespace HCB.UI
             await _sequenceService.StopAsync(_cts.Token);
 
             InitState = StepState.Idle;
-            BtmLowAlignState = BtmPickupState = BtmPlaceState = StepState.Idle;
-            TopLowAlignState = TopPickupState = TopHighAlignState
-                             = TopCorrState = TopBondingState = StepState.Idle;
+            BtmLowAlignState = BtmPickupState = BtmHighAlignState = BtmPlaceState = StepState.Idle;
+            TopLowAlignState = TopPickupState = TopHighAlignState = TopCorrState = TopBondingState = StepState.Idle;
         }
         private async Task RunNoStop(Func<Task> action)
         {

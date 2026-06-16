@@ -804,8 +804,8 @@ namespace HCB.UI
             if (response.Result == Result.NG) throw new VisionException(VisionErrorCode.MEASUREMENT_FAIL);
         }
 
-        private const int VisionRetryMax = 10;
-        private const double VisionRetryStepMm = 0.002;
+        private const int VisionRetryMax = 3;
+        private const double VisionRetryStepMm = 0.01;
 
         private async Task<VisionMarkResult> MeasureWithRetry(
             MarkType markType, CameraType cameraType, DirectType directType,
