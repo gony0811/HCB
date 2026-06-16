@@ -149,5 +149,6 @@ namespace HCB.UI
 
         public bool AvgMove { get; set; } = false;
         public bool Use2DMapping { get; set; } = true;
+        public bool UseAutoTracing { get; set; } = true;
     }
 }

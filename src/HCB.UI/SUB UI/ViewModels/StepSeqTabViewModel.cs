@@ -132,6 +132,7 @@ namespace HCB.UI
         [ObservableProperty] private bool avgMode = true;
         [ObservableProperty] private bool use2DMapping = true;
         [ObservableProperty] private bool measureVernierAfterBonding = false;
+        [ObservableProperty] private bool useAutoTracing = true;
 
         // ── CSV 저장 설정 ─────────────────────────────────────
         [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
@@ -144,6 +145,9 @@ namespace HCB.UI
 
         [RelayCommand]
         public void Change2DMapping() => Use2DMapping = !Use2DMapping;
+
+        [RelayCommand]
+        public void ChangeAutoTracing() => UseAutoTracing = !UseAutoTracing;
 
         [RelayCommand]
         private async Task HeaderVacOff()
@@ -491,7 +495,7 @@ namespace HCB.UI
             try
             {
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping };
+                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing };
                 hcbData = await _sequenceService.TopHighAlign(data, _cts.Token);
                 ComputeDistances();
                 TopRightFid = hcbData.TopRightFidRaw;
@@ -595,7 +599,7 @@ namespace HCB.UI
                     ct.ThrowIfCancellationRequested();
 
                     TopHighAlignState = StepState.InProgress;
-                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping };
+                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing };
                     hcbData = await _sequenceService.TopHighAlign(data, ct);
                     TopRightFid = hcbData.TopRightFidRaw;
                     TopRightAlign = hcbData.TopRightAlignRaw;
@@ -660,7 +664,7 @@ namespace HCB.UI
 
                 // 2. 고배율 측정 (Top)
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping };
+                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing };
                 hcbData = await _sequenceService.TopHighAlign(data, ct);
                 TopRightFid = hcbData.TopRightFidRaw;
                 TopRightAlign = hcbData.TopRightAlignRaw;

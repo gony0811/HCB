@@ -504,7 +504,8 @@ namespace HCB.UI
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             LoadCalibrationInto(data);
-            CompensateHc2Offset(data);
+            if (data.UseAutoTracing)
+                CompensateHc2Offset(data);
 
             // ── STEP 1: Top Die — Fid→Align 이동량 ──
             var lDist = Point2D.of(
