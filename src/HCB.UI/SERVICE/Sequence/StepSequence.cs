@@ -680,7 +680,7 @@ namespace HCB.UI
                 int preStatus = int.TryParse(preCheck.Trim(), out int ps) ? ps : -1;
                 _logger.Information("BondingPress 시작 전 상태: {Status}", preStatus);
                 if (preStatus != 0)
-                    _logger.Warning("STATUS_COMPLETE가 0으로 초기화되지 않음: {Status}", preStatus);
+                    _logger.Warning("STATUS_COMPLETE가 0으로 초기화되지 않음: {Status}", preStatus);  
 
                 // 파라미터 설정 + 시작
                 await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={step.AccTime}");
@@ -804,13 +804,13 @@ namespace HCB.UI
             if (response.Result == Result.NG) throw new VisionException(VisionErrorCode.MEASUREMENT_FAIL);
         }
 
-        private const int VisionRetryMax = 10;
-        private const double VisionRetryStepMm = 0.002;
-
         private async Task<VisionMarkResult> MeasureWithRetry(
             MarkType markType, CameraType cameraType, DirectType directType,
             string yAxisName, bool avgMode, CancellationToken ct)
         {
+            int retryMax = GetEcParamInt("VisionRetryMax", 3);
+            double retryStep = GetEcParamDouble("VisionRetryStepMm", 0.005);
+
             VisionMarkResult mark = new VisionMarkResult
             {
                 CameraType = cameraType,
@@ -820,7 +820,7 @@ namespace HCB.UI
                 StageY = await GetCurrentPosition(yAxisName, ct)
             };
 
-            for (int attempt = 0; attempt <= VisionRetryMax; attempt++)
+            for (int attempt = 0; attempt <= retryMax; attempt++)
             {
                 ct.ThrowIfCancellationRequested();
 
@@ -833,11 +833,11 @@ namespace HCB.UI
                     mark.DyCamToMark = xy.Y;
                     return mark;
                 }
-                catch (VisionException) when (attempt < VisionRetryMax)
+                catch (VisionException) when (attempt < retryMax)
                 {
                     _logger.Warning("비전 측정 실패 ({Camera}/{Mark}/{Direct}) — 재시도 {Attempt}/{Max}, H_Z -{Step}mm",
-                        cameraType, markType, directType, attempt + 1, VisionRetryMax, VisionRetryStepMm);
-                    await RelativeMotionsMove(MotionExtensions.H_Z, -VisionRetryStepMm, ct);
+                        cameraType, markType, directType, attempt + 1, retryMax, retryStep);
+                    await RelativeMotionsMove(MotionExtensions.H_Z, -retryStep, ct);
                     mark.StageX = await GetCurrentPosition(MotionExtensions.H_X, ct);
                     mark.StageY = await GetCurrentPosition(yAxisName, ct);
                 }

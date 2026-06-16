@@ -93,7 +93,7 @@ namespace HCB.UI
                 EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                
+
                 // 안전한 위치 셋업
                 await Init_Head(ct);
                 _logger.Information("Die Align 시작");
@@ -104,10 +104,20 @@ namespace HCB.UI
                 );
                 await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);
 
-                var diePickupAlign = await communicationService.RequestVisionMarkPosition(markType, CameraType.HC_LOW, "");
-
-                _logger.Information("Die Align 종료");
-                return diePickupAlign;
+                int retryMax = GetEcParamInt("LowVisionRetryMax", 3);
+                for (int attempt = 0; attempt <= retryMax; attempt++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var diePickupAlign = await communicationService.RequestVisionMarkPosition(markType, CameraType.HC_LOW, "");
+                    if (diePickupAlign.Result != Result.NG)
+                    {
+                        _logger.Information("Die Align 종료");
+                        return diePickupAlign;
+                    }
+                    if (attempt < retryMax)
+                        _logger.Warning("저배율 비전 측정 실패 (BTM) — 재시도 {Attempt}/{Max}", attempt + 1, retryMax);
+                }
+                throw new VisionException(VisionErrorCode.MEASUREMENT_FAIL);
             }
             catch (ErrorException ex)
             {
@@ -139,10 +149,20 @@ namespace HCB.UI
 
                 await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);
 
-                var diePickupAlign = await communicationService.RequestVisionMarkPosition(markType, CameraType.HC_LOW, "");
-
-                _logger.Information("Die Align 종료");
-                return diePickupAlign;
+                int retryMax = GetEcParamInt("LowVisionRetryMax", 3);
+                for (int attempt = 0; attempt <= retryMax; attempt++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var diePickupAlign = await communicationService.RequestVisionMarkPosition(markType, CameraType.HC_LOW, "");
+                    if (diePickupAlign.Result != Result.NG)
+                    {
+                        _logger.Information("Die Align 종료");
+                        return diePickupAlign;
+                    }
+                    if (attempt < retryMax)
+                        _logger.Warning("저배율 비전 측정 실패 (TOP) — 재시도 {Attempt}/{Max}", attempt + 1, retryMax);
+                }
+                throw new VisionException(VisionErrorCode.MEASUREMENT_FAIL);
             }
             catch (ErrorException ex)
             {

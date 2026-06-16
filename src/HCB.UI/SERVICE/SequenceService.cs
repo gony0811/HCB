@@ -80,6 +80,18 @@ namespace HCB.UI
         }
 
 
+        private int GetEcParamInt(string name, int defaultValue)
+        {
+            var p = _paramService.FindByName(name);
+            return !string.IsNullOrEmpty(p?.Value) && int.TryParse(p.Value, out var v) ? v : defaultValue;
+        }
+
+        private double GetEcParamDouble(string name, double defaultValue)
+        {
+            var p = _paramService.FindByName(name);
+            return !string.IsNullOrEmpty(p?.Value) && double.TryParse(p.Value, out var v) ? v : defaultValue;
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             //await DeviceAttatch();

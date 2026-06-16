@@ -1,4 +1,5 @@
-﻿using HCB.Data.Entity;
+﻿
+using HCB.Data.Entity;
 using HCB.IoC;
 using Serilog;
 using SharpDX;

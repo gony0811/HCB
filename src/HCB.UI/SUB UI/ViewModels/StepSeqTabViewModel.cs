@@ -566,6 +566,7 @@ namespace HCB.UI
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
                 
                 await RunNoStop(() => _sequenceService.BondingTest(BondingHistory, _cts.Token));
+                ExportHcbData();
                 TopBondingState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
@@ -610,6 +611,10 @@ namespace HCB.UI
                     BtmLeftFid = hcbData.BtmLeftFidRaw;
                     BtmLeftAlign = hcbData.BtmLeftAlignRaw;
                     BtmHighAlignState = StepState.Completed;
+
+                    ComputeDistances();
+                    if (!ValidateAlignDistances())
+                        throw new Exception("Top/Btm 선분 길이 오차가 허용 범위를 초과했습니다.");
 
                     TopCorrState = StepState.InProgress;
                     await _sequenceService.TopPlace(hcbData, ct);
@@ -672,6 +677,11 @@ namespace HCB.UI
                 BtmLeftFid = hcbData.BtmLeftFidRaw;
                 BtmLeftAlign = hcbData.BtmLeftAlignRaw;
                 BtmHighAlignState = StepState.Completed;
+
+                // 4-1. 선분 길이 오차 검증
+                ComputeDistances();
+                if (!ValidateAlignDistances())
+                    throw new Exception("Top/Btm 선분 길이 오차가 허용 범위를 초과했습니다.");
 
                 // 5. 보정
                 TopCorrState = StepState.InProgress;
@@ -922,6 +932,34 @@ namespace HCB.UI
                 if (pb != null && double.TryParse(pb.Value, out double b)) refBtm = b;
             }
             return (refTop, refBtm);
+        }
+
+        // ═════════════════════════════════════════════════════
+        //  선분 길이 오차 검증
+        // ═════════════════════════════════════════════════════
+
+        private bool ValidateAlignDistances()
+        {
+            if (hcbData == null) return true;
+            if (hcbData.TopAlignDist == 0 || hcbData.BtmAlignDist == 0) return true;
+
+            var param = _ecParamService.FindByName("AlignDistTolerance");
+            if (string.IsNullOrEmpty(param?.Value) || !double.TryParse(param.Value, out double tolerance) || tolerance <= 0)
+                return true;
+
+            double diff = Math.Abs(hcbData.TopAlignDist - hcbData.BtmAlignDist);
+            if (diff > tolerance)
+            {
+                _logger.Warning(
+                    "선분 길이 오차 초과 — TopAlign: {Top:F4}mm, BtmAlign: {Btm:F4}mm, 차이: {Diff:F4}mm, 허용: {Tol:F4}mm",
+                    hcbData.TopAlignDist, hcbData.BtmAlignDist, diff, tolerance);
+                return false;
+            }
+
+            _logger.Information(
+                "선분 길이 검증 통과 — TopAlign: {Top:F4}mm, BtmAlign: {Btm:F4}mm, 차이: {Diff:F4}mm, 허용: {Tol:F4}mm",
+                hcbData.TopAlignDist, hcbData.BtmAlignDist, diff, tolerance);
+            return true;
         }
 
         // ═════════════════════════════════════════════════════
