@@ -314,6 +314,8 @@ namespace HCB.UI
                 CalibStatus = "Hc1 캘리브레이션 중...";
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC1_T_OFFSET", ct);
+
+                await _sequenceService.WTable2DMappingOn();
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
@@ -333,14 +335,16 @@ namespace HCB.UI
 
                 CalibStatus = $"Hc1 완료  Θ = {Theta1Deg:F4}°, 보정 = {correction:F6} Rad";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; if (!standalone) throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
             catch (Exception e)
             {
                 _logger.Error(e, "Hc1 Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
-                if (!standalone) throw;
             }
-            finally { if (standalone) IsNotBusy = true; }
+            finally { 
+                if (standalone) IsNotBusy = true;
+                await _sequenceService.MappingOff();
+            }
         }
 
         // ══════════════════════════════════════════════
@@ -363,6 +367,7 @@ namespace HCB.UI
                 CalibStatus = "Hc2 캘리브레이션 중...";
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC2_T_OFFSET", ct);
+                await _sequenceService.WTable2DMappingOn();
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
@@ -381,14 +386,17 @@ namespace HCB.UI
 
                 CalibStatus = $"Hc2 완료  Θ = {Theta2Deg:F4}°, 보정 = {correction:F6} Rad";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; if (!standalone) throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
             catch (Exception e)
             {
                 _logger.Error(e, "Hc2 Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
-                if (!standalone) throw;
+
             }
-            finally { if (standalone) IsNotBusy = true; }
+            finally { 
+                if (standalone) IsNotBusy = true;
+                await _sequenceService.MappingOff();
+            }
         }
 
         // ══════════════════════════════════════════════
@@ -411,7 +419,7 @@ namespace HCB.UI
                 await Task.WhenAll(
                     _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION, ct),
                     _sequenceService.MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, ct));
-
+                await _sequenceService.WTable2DMappingOn();
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
@@ -489,14 +497,16 @@ namespace HCB.UI
 
                 CalibStatus = $"완료  ΔX={offsetX:F4}, ΔY={offsetY:F4} | 피듀셜 기준 저장됨";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; if (!standalone) throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
             catch (Exception e)
             {
                 _logger.Error(e, "카메라 거리 측정 Fail");
                 CalibStatus = $"오류: {e.Message}";
-                if (!standalone) throw;
             }
-            finally { if (standalone) IsNotBusy = true; }
+            finally {
+                if (standalone) IsNotBusy = true;
+                await _sequenceService.MappingOff();
+            }
         }
 
         // ══════════════════════════════════════════════
@@ -520,7 +530,7 @@ namespace HCB.UI
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.P_Y], "T축 보정", ct);
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, "P_LEFT_FIDUCIAL_HIGH", ct);
-
+                await _sequenceService.PTable2DMappingOn();
                 double theta = await GetAnglePc(CameraType.PC_HIGH, MarkType.FIDUCIAL, DirectType.LEFT, ct);
                 ThetaPRad = theta;
                 ThetaPDeg = theta * (180.0 / Math.PI);
@@ -534,14 +544,16 @@ namespace HCB.UI
 
                 CalibStatus = $"Pc 완료  Θ = {ThetaPDeg:F4}°, 보정 = {correction:F6} Rad";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; if (!standalone) throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
             catch (Exception e)
             {
                 _logger.Error(e, "Pc Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
-                if (!standalone) throw;
             }
-            finally { if (standalone) IsNotBusy = true; }
+            finally { 
+                if (standalone) IsNotBusy = true;
+                await _sequenceService.MappingOff();
+            }
         }
 
         // ══════════════════════════════════════════════

@@ -61,7 +61,7 @@ namespace HCB.UI
         {
             try
             {
-                _logger.Information("Die Align 요청 Start");
+                _logger.Information("Die 저배율 측정 시작");
                 EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
 
                 var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
@@ -72,7 +72,8 @@ namespace HCB.UI
 
                 await Task.WhenAll(
                     MotionsMove(MotionExtensions.H_X, $"DIE_BTM", ct),
-                    MotionsMove(MotionExtensions.D_Y, $"DIE_ROW_{vacNum}", ct)
+                    MotionsMove(MotionExtensions.D_Y, $"DIE_ROW_{vacNum}", ct),
+                    MotionsMove(MotionExtensions.HC1_T, 0, ct)
                 );
                 await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);
 
@@ -117,7 +118,8 @@ namespace HCB.UI
 
                 await Task.WhenAll(
                     MotionsMove(MotionExtensions.H_X, $"DIE_TOP", ct),
-                    MotionsMove(MotionExtensions.D_Y, $"DIE_ROW_{vacNum}", ct)
+                    MotionsMove(MotionExtensions.D_Y, $"DIE_ROW_{vacNum}", ct),
+                    MotionsMove(MotionExtensions.HC1_T, 0, ct)
                 );
 
                 await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);
@@ -181,7 +183,7 @@ namespace HCB.UI
             }
             finally
             {
-                if (data.Use2DMapping) await PTable2DMappingOff();
+                if (data.Use2DMapping) await MappingOff();
                 _logger.Information("TopHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
             }
             return data;
@@ -195,29 +197,44 @@ namespace HCB.UI
             AlignData data, CancellationToken ct)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
+
             var total = Stopwatch.StartNew();
+            try
+            {
+                var sw = Stopwatch.StartNew();
+                await TopDieSet(ct);
+                await WTable2DMappingOn();
 
-            var sw = Stopwatch.StartNew();
-            await TopDieSet(ct);
-            _logger.Information("BtmHighAlign — TopDieSet: {Elapsed}ms", sw.ElapsedMilliseconds);
+                _logger.Information("BtmHighAlign — TopDieSet: {Elapsed}ms", sw.ElapsedMilliseconds);
+                sw.Restart();
+                data.BtmRightFidRaw = await BtmDieVisionRightFid(data.AvgMove, ct);
+                _logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-            sw.Restart();
-            data.BtmRightFidRaw = await BtmDieVisionRightFid(data.AvgMove, ct);
-            _logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
+                sw.Restart();
+                data.BtmRightAlignRaw = await BtmDieVisionRightAlign(data.AvgMove, ct);
+                _logger.Information("BtmHighAlign — RightAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-            sw.Restart();
-            data.BtmRightAlignRaw = await BtmDieVisionRightAlign(data.AvgMove, ct);
-            _logger.Information("BtmHighAlign — RightAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
+                sw.Restart();
+                data.BtmLeftFidRaw = await BtmDieVisionLeftFid(data.AvgMove, ct);
+                _logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-            sw.Restart();
-            data.BtmLeftFidRaw = await BtmDieVisionLeftFid(data.AvgMove, ct);
-            _logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
+                sw.Restart();
+                data.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(data.AvgMove, ct);
+                _logger.Information("BtmHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-            sw.Restart();
-            data.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(data.AvgMove, ct);
-            _logger.Information("BtmHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
+                _logger.Information("BtmHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
 
-            _logger.Information("BtmHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
+            }
+            catch(Exception e)
+            {
+                throw;
+            }
+            finally
+            {
+                if (data.Use2DMapping) await MappingOff();
+                _logger.Information("BtmHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
+            }
+            
             return data;
         }
 
