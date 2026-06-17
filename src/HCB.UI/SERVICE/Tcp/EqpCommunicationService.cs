@@ -127,10 +127,9 @@ namespace HCB.UI
         public async Task<bool> RequestAFStart(CameraType cameraType, MarkType markType , CancellationToken ct = default)
         {
             var request = MessageFactory.Create("REQUEST_AF_START", "EQP", $"<CAMERATYPE>{cameraType}</CAMERATYPE><MARKTYPE>{markType}</MARKTYPE>");
-            var result = await _server.RequestAsync(request, "REQUEST_AF_END", TimeSpan.FromSeconds(30), ct: ct);
+            var result = await _server.RequestAsync(request, "REQUEST_AF_END", TimeSpan.FromSeconds(60), ct: ct);
 
             var afResult = ParseResult(result);
-            //await NotifyAFEnd(afResult, ct);
             return afResult == Result.OK;
         }
 

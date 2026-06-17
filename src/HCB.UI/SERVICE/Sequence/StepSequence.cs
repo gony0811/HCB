@@ -143,7 +143,6 @@ namespace HCB.UI
             }
         }
 
-
         public async Task<VisionMarkResult> TopDieVisionRightFid(bool AvgMode, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Right Fid) Start");
@@ -175,10 +174,6 @@ namespace HCB.UI
                 throw new DBException(DBErrorCode.NOT_FOUND, $"사용하는 레시피에 {name} 이 없습니다.");
             double zPosition = double.Parse(param.Value);
 
-            string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
-
-            await Init_Head(ct);
-            await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
             await MotionsMove(MotionExtensions.H_Z, zPosition, ct);
 
             return await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.PC_HIGH, DirectType.RIGHT,
@@ -193,7 +188,6 @@ namespace HCB.UI
             string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
             string[] z = { MotionExtensions.H_Z };
 
-            await Init_Head(ct);
             await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
             await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
 
@@ -213,9 +207,6 @@ namespace HCB.UI
                 throw new DBException(DBErrorCode.NOT_FOUND, $"사용하는 레시피에 {name} 이 없습니다.");
 
             double zPosition = double.Parse(param.Value);
-            string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
-            await Init_Head(ct);
-            await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
             await MotionsMove(MotionExtensions.H_Z, zPosition, ct);
             return await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.PC_HIGH, DirectType.LEFT,
                 MotionExtensions.P_Y, AvgMode, ct);

@@ -154,13 +154,26 @@ namespace HCB.UI
                 AlignData data, CancellationToken ct)
         {
             data ??= new AlignData();
+            var total = Stopwatch.StartNew();
             try
             {
+                var sw = Stopwatch.StartNew();
                 data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
+                _logger.Information("TopHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
+
                 if (data.Use2DMapping) await PTable2DMappingOn();
+
+                sw.Restart();
                 data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove, ct);
+                _logger.Information("TopHighAlign — RightAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
+
+                sw.Restart();
                 data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, ct);
+                _logger.Information("TopHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
+
+                sw.Restart();
                 data.TopLeftAlignRaw = await TopDieVisionLeftAlign(data.AvgMove, ct);
+                _logger.Information("TopHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
             }
             catch (ErrorException e)
             {
@@ -169,6 +182,7 @@ namespace HCB.UI
             finally
             {
                 if (data.Use2DMapping) await PTable2DMappingOff();
+                _logger.Information("TopHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
             }
             return data;
         }
@@ -181,13 +195,29 @@ namespace HCB.UI
             AlignData data, CancellationToken ct)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
+            var total = Stopwatch.StartNew();
 
+            var sw = Stopwatch.StartNew();
             await TopDieSet(ct);
+            _logger.Information("BtmHighAlign — TopDieSet: {Elapsed}ms", sw.ElapsedMilliseconds);
 
+            sw.Restart();
             data.BtmRightFidRaw = await BtmDieVisionRightFid(data.AvgMove, ct);
+            _logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
+
+            sw.Restart();
             data.BtmRightAlignRaw = await BtmDieVisionRightAlign(data.AvgMove, ct);
+            _logger.Information("BtmHighAlign — RightAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
+
+            sw.Restart();
             data.BtmLeftFidRaw = await BtmDieVisionLeftFid(data.AvgMove, ct);
+            _logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
+
+            sw.Restart();
             data.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(data.AvgMove, ct);
+            _logger.Information("BtmHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
+
+            _logger.Information("BtmHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
             return data;
         }
 

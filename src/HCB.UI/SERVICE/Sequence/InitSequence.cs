@@ -210,15 +210,6 @@ namespace HCB.UI
             // 이동 명령
             await motion.Move(MoveType.Absolute, 100, position.Speed, position.Position);
 
-            await Task.Delay(100, ct);
-
-            //int retry = 0;
-            //while (motion.InPosition && retry < 25)  // 25 * 20ms = 500ms
-            //{
-            //    await Task.Delay(20, ct);
-            //    retry++;
-            //}
-
             if (motion.InPosition)
                 throw new Exception($"[Motion Error] '{motionName}' 이동 명령 후 InPosition 미전환");
 
@@ -232,8 +223,6 @@ namespace HCB.UI
             {
                 throw new Exception($"[Motion Error] {motionName}이 제한 시간 내에 목표 위치에 도달하지 못했습니다.");
             }
-
-            await Task.Delay(200, ct);
         }
 
         public async Task MotionsMove(string motionName, string positionName, double offset, CancellationToken ct)
@@ -265,7 +254,6 @@ namespace HCB.UI
                 60000, ct,
                 $"[Motion Timeout] '{motionName}' 이동 시간 초과"
             );
-            await Task.Delay(200, ct);
         }
 
         public async Task MotionsMove(string motionName, double position, CancellationToken ct)
@@ -294,8 +282,6 @@ namespace HCB.UI
                 60000, ct,
                 $"[Motion Timeout] '{motionName}' 이동 시간 초과"
             );
-
-            await Task.Delay(200, ct);
         }
 
         public async Task MotionsMove(string motionName, double position, double speed, CancellationToken ct)
@@ -324,8 +310,6 @@ namespace HCB.UI
                 60000, ct,
                 $"[Motion Timeout] '{motionName}' 이동 시간 초과"
             );
-
-            await Task.Delay(200, ct);
         }
 
         public async Task MotionsMove(string[] motions, string positionName, CancellationToken ct)
@@ -362,7 +346,6 @@ namespace HCB.UI
                 $"[Motion Timeout] {string.Join(", ", motions)} 이동 시간 초과"
             );
 
-            await Task.Delay(200);
         }
 
         public async Task RelativeMotionsMove( string motionName, double position, CancellationToken ct)
@@ -374,7 +357,7 @@ namespace HCB.UI
                 throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
 
             // 이동 명령
-            await motion.Move(MoveType.Relative, 100, motion.LimitMaxSpeed / 2, Math.Min(position, motion.LimitMaxPosition - motion.CurrentPosition));
+            await motion.Move(MoveType.Relative, 100, motion.LimitMaxSpeed, Math.Min(position, motion.LimitMaxPosition - motion.CurrentPosition));
 
             // InPosition 안정화 대기 (이동 시작 직후 InPosition이 false로 전환될 때까지 대기)
             int retry = 0;
@@ -391,7 +374,6 @@ namespace HCB.UI
                 $"[Motion Timeout] '{motionName}' 이동 시간 초과"
             );
 
-            await Task.Delay(200, ct);
         }
 
 
