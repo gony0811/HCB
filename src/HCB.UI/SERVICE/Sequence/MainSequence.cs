@@ -615,10 +615,21 @@ namespace HCB.UI
             await pmac.SendCommand("CompTable[2].sf[0]=0");
             await pmac.SendCommand("CompTable[3].sf[0]=0");
             await pmac.SendCommand("sys.Compenable=4");
+        }
+
+        public async Task WTable2DMappingOn()
+        {
+            var pmac = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+            await pmac.SendCommand("CompTable[0].sf[0]=0");
+            await pmac.SendCommand("CompTable[1].sf[0]=0");
+            await pmac.SendCommand("CompTable[2].sf[0]=1");
+            await pmac.SendCommand("CompTable[3].sf[0]=1");
+            await pmac.SendCommand("sys.Compenable=4");
 
         }
 
-        public async Task PTable2DMappingOff()
+        public async Task MappingOff()
         {
             var pmac = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
             await pmac.SendCommand("sys.Compenable=0");
