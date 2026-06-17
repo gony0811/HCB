@@ -5,7 +5,7 @@ using static HCB.UI.SERVICE.CalibrationService;
 namespace HCB.UI
 {
     /// <summary>
-    /// TopHighAlign ~ BtmHighAlign ~ TopPlace 전 구간에서
+    /// TopHighAlign ~ BtmHighAlign ~ CoordinateSystemIntegration 전 구간에서
     /// 공유되는 중간 계산 결과를 하나로 묶은 DTO.
     /// </summary>
     public class AlignContext
@@ -116,7 +116,7 @@ namespace HCB.UI
         public Point2D OffsetXY { get; set; }
         public double OffsetT { get; set; }
 
-        // ── TopPlace 중간 계산값 ──
+        // ── CoordinateSystemIntegration 중간 계산값 ──
         public Point2D LDist { get; set; }       // Top Left: Align - Fid (cam)
         public Point2D RDist { get; set; }       // Top Right: Align - Fid (cam)
 

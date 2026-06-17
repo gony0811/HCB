@@ -92,7 +92,7 @@ namespace HCB.UI
                 var motionList = motionDevice.MotionList;
                 var tasks = motionList.Select(item => item.ServoOn());
                 var results = await Task.WhenAll(tasks);
-                await Task.Delay(1000);
+                await Task.Delay(100);
                 return results.All(r => r == true);
             }
             catch(Exception e)
@@ -625,70 +625,9 @@ namespace HCB.UI
             }
         }
 
-       public async Task Init_Load(CancellationToken ct = default)
-        {
-            try
-            {
-                string[] xy = { MotionExtensions.D_Y, MotionExtensions.H_X, MotionExtensions.W_Y, MotionExtensions.W_T, MotionExtensions.H_T };
-                string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
-
-                await MotionsMove(z, MotionExtensions.LOAD_POSITION, ct);
-                await MotionsMove(xy, MotionExtensions.LOAD_POSITION, ct);
-            }
-            catch (OperationCanceledException)
-            {
-
-                _logger.Information("Initialize가 취소되었습니다.");
-                throw;
-            }
-            catch (ErrorException ex)
-            {
-                await _alarmService.SetAlarm(ex.ErrorCode);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Initialize 중 오류 발생");
-                throw;
-            }
-        }
-
-
-        public async Task WaferAndDieLoading(eOnOff onOff, CancellationToken ct = default)
-        {
-            try
-            {
-                if (onOff == eOnOff.Off)
-                {
-                    await _sequenceHelper.DTableVacuumAll(eOnOff.Off, ct);
-                    await _sequenceHelper.WTableVacuumAll(eOnOff.Off, ct);
-                    await _sequenceHelper.WTableLiftPin(eUpDown.Up, ct);
-                }else
-                {
-                    await _sequenceHelper.DTableVacuumAll(eOnOff.On, ct);
-                    await _sequenceHelper.WTableVacuumAll(eOnOff.On, ct);
-                    await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct);
-                }
-
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.Information("작업이 취소되었습니다");
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Initialize 중 오류 발생");
-                throw;
-            }
-        }
-
         public async Task DVacAllOnOff(bool onOff, CancellationToken ct = default )
         {
             await _sequenceHelper.DTableVacuumAll(onOff? eOnOff.On : eOnOff.Off, ct);
-        }
-
-        public async Task WVacAllOnOff(bool onOff, CancellationToken ct = default)
-        {
-            await _sequenceHelper.WTableVacuumAll(onOff ? eOnOff.On : eOnOff.Off, ct);
         }
 
         public async Task WVAcOnOff(int channel, bool onOff, int delayMs, CancellationToken ct = default)

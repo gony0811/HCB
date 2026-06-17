@@ -56,36 +56,8 @@ namespace HCB.UI
             }
         }
 
-        public async Task<VisionMarkPositionResponse> DTableCarrierAlign(int vacNum, MarkType markType, CancellationToken ct)
-        {
-            try
-            {
-                _logger.Information("Die Align 요청 Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
-
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-
-                string[] xy = { MotionExtensions.D_Y, MotionExtensions.H_X };
-                //string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
-
-                // 안전한 위치 셋업
-                await Init_Head(ct);
-                _logger.Information("Die Align 시작");
-                await MotionsMove(xy, $"DIE_ALIGN_{vacNum}", ct);
-                await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);
-                
-                var diePickupAlign = await communicationService.RequestVisionMarkPosition(markType, CameraType.HC_LOW, "");
-                
-                _logger.Information("Die Align 종료");
-                return diePickupAlign;
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
-        }
-
-        public async Task<VisionMarkPositionResponse> BtmCarrierAlign(int vacNum, MarkType markType, CancellationToken ct)
+        // Btm Die 저배율 측정
+        public async Task<VisionMarkPositionResponse> BtmLowMeasure(int vacNum, MarkType markType, CancellationToken ct)
         {
             try
             {
@@ -129,7 +101,8 @@ namespace HCB.UI
             }
         }
 
-        public async Task<VisionMarkPositionResponse> TopCarrierAlign(int vacNum, MarkType markType, CancellationToken ct)
+        // Top Die 저배율 측정
+        public async Task<VisionMarkPositionResponse> TopLowMeasure(int vacNum, MarkType markType, CancellationToken ct)
         {
             try
             {
@@ -174,199 +147,51 @@ namespace HCB.UI
             }
         }
 
-        public async Task DTableBTMPickup(int vacNum, VisionMarkPositionResponse? correction, CancellationToken ct)
+
+        #region Top Die 고배율 측정
+
+        public async Task<AlignData> TopHighAlign(
+                AlignData data, CancellationToken ct)
         {
+            data ??= new AlignData();
             try
             {
-                _logger.Information("Die pickup Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
-
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                double xOffset = _paramService.GetDouble("ShankLowOffsetX");
-                double yOffset = _paramService.GetDouble("ShankLowOffsetY");
-                double btmDieThickness = await GetRecipe("BtmDieThickness");
-                double ShankToDieOffset = _paramService.GetDouble("ShankToDieOffset");
-
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                var goPickup = await Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, xOffset, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, yOffset, ct)
-                );
-                await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
-                if (!goPickup.All(r => r)) throw new Exception("픽업 위치로 이동 실패");
-
-                // 보정값만큼 상대 이동
-                var results = await Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, -correction?.Theta ?? 0, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, -correction?.X ?? 0, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, -correction?.Y ?? 0, ct)
-                );
-
-                if (!results.All(r => r)) throw new Exception("보정 실패");
-
-                await MotionsMove(MotionExtensions.H_Z, ShankToDieOffset-btmDieThickness, ct);
-
-                var headPicker = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
-                await Task.Delay(1000);
-                await _sequenceHelper.BTMVac(vacNum, eOnOff.Off, ct);
-                await Task.Delay(2000);
-                if (!headPicker) throw new Exception("Head에 Pick된 Die가 없습니다");
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
+                data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
+                if (data.Use2DMapping) await PTable2DMappingOn();
+                data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove, ct);
+                data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, ct);
+                data.TopLeftAlignRaw = await TopDieVisionLeftAlign(data.AvgMove, ct);
             }
-            catch (Exception e)
+            catch (ErrorException e)
             {
-                throw new Exception(e.Message);
+                throw;
             }
+            finally
+            {
+                if (data.Use2DMapping) await PTable2DMappingOff();
+            }
+            return data;
         }
 
-        public async Task DTableTOPPickup(int vacNum, VisionMarkPositionResponse? correction, CancellationToken ct)
+        #endregion
+
+        #region Btm Die 고배율 측정
+
+        public async Task<AlignData> BtmHighAlign(
+            AlignData data, CancellationToken ct)
         {
-            try
-            {
-                _logger.Information("Die pickup Start");
-                EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
+            if (data == null) throw new ArgumentNullException(nameof(data));
 
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                string[] xy = { MotionExtensions.H_X, MotionExtensions.D_Y };
-                int accTime = await GetRecipeInt("ACC_TIME");
-                int contTime = await GetRecipeInt("CONT_TIME");
-                int decTime = await GetRecipeInt("DEC_TIME");
-                double loadCell = await GetRecipe("LOADCELL");
-                double current = await GetRecipe("CURRENT");
-                int vacOffMs = await GetRecipeInt("VAC_OFF_TIME");
-                double xOffset = _paramService.GetDouble("ShankLowOffsetX");
-                double yOffset = _paramService.GetDouble("ShankLowOffsetY");
-                double topDieThickness = await GetRecipe("TopDieThickness");
-                double ShankToDieOffset = _paramService.GetDouble("ShankToDieOffset");
+            await TopDieSet(ct);
 
-
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                var goPickup = await Task.WhenAll(
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_X, 200, xOffset - correction.X, ct),
-                    _sequenceHelper.RelativeMoveAsync(MotionExtensions.D_Y, 200, yOffset - correction.Y, ct)
-                );
-
-                await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
-                if (!goPickup.All(r => r)) throw new Exception("픽업 위치로 이동 실패");
-                await _sequenceHelper.RelativeMoveAsync(MotionExtensions.H_T, 0, -correction?.Theta ?? 0, ct);
-
-                // pick up
-                //await Task.Delay(200, ct);
-                //var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                //await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={accTime}");
-                //await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={contTime}");
-                //await device.SendCommand(MotionExtensions.BONDING_DEC_TIME + $"={decTime}");
-                //await device.SendCommand(MotionExtensions.BONDING_LOADCELL + $"={loadCell}");
-                //await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={current}");
-                //await device.SendCommand(MotionExtensions.BONDING_START + $"=1");
-                //// Polling으로 본딩 완료 상태 + LoadCell 데이터 추적
-                //const int pollingIntervalMs = 100;
-                //int timeoutMs = accTime + contTime + decTime + 2000; // 폴링 오버헤드 마진
-                //var sw = Stopwatch.StartNew();
-                //bool bondingComplete = false;
-                //bool vacuumOff = false;
-
-                //while (!bondingComplete)
-                //{
-                //    ct.ThrowIfCancellationRequested();
-
-                //    // 설정 시점에 Vacuum OFF
-                //    if (!vacuumOff && sw.ElapsedMilliseconds >= vacOffMs)
-                //    {
-                //        await HVacOnOff(false, ct);
-                //        vacuumOff = true;
-                //        _logger.Information("Vacuum OFF ({Elapsed}ms, 설정={VacOffMs}ms)",
-                //            sw.ElapsedMilliseconds, vacOffMs);
-                //    }
-
-                //    double forceValue = 0;
-                //    string analog = await device.SendCommand<string>(MotionExtensions.ANALOG_INPUT);
-
-
-                //    string strResponse = await device.SendCommand<string>(MotionExtensions.BONDING_STATUS_COMPLETE);
-                //    var values = strResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-                //    if (values.Length > 0 && bool.TryParse(values[0], out bool result))
-                //    {
-                //        _logger.Information("Bonding 상태: {Result} | Force: {Force:F3}N (경과: {Elapsed}ms)",
-                //            result, forceValue, sw.ElapsedMilliseconds);
-                //        bondingComplete = result;
-                //    }
-                //    else
-                //    {
-                //        _logger.Warning("Bonding 상태 응답 파싱 실패: {Response}", strResponse);
-                //    }
-
-                //    if (!bondingComplete)
-                //    {
-                //        if (sw.ElapsedMilliseconds > timeoutMs)
-                //            throw new TimeoutException($"Bonding 완료 대기 시간 초과 ({timeoutMs}ms)");
-
-                //        await Task.Delay(pollingIntervalMs, ct);
-                //    }
-                //}
-
-                await MotionsMove(MotionExtensions.H_Z, ShankToDieOffset-topDieThickness, ct);
-
-                var headPicker = await _sequenceHelper.HeadPickerVacuum(eOnOff.On, ct);
-                await _sequenceHelper.TopVac(vacNum, eOnOff.Off, ct);
-                await Task.Delay(2000);
-                if (!headPicker) throw new Exception("Head에 Pick된 Die가 없습니다");
-
-                await Init_Head(ct);        // Head Z 축을 안전한 위치로 이동
-                await MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct);
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
-
+            data.BtmRightFidRaw = await BtmDieVisionRightFid(data.AvgMove, ct);
+            data.BtmRightAlignRaw = await BtmDieVisionRightAlign(data.AvgMove, ct);
+            data.BtmLeftFidRaw = await BtmDieVisionLeftFid(data.AvgMove, ct);
+            data.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(data.AvgMove, ct);
+            return data;
         }
 
-        //public async Task DTableCarrierAlign(CancellationToken ct)
-        //{
-        //    try
-        //    {
-        //        _logger.Information("Die Carrier Align Start");
-        //        //EQStatusCheck();    // 장비 상태 체크 => 실패시 error 발생
-
-        //        var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-
-        //        string[] xy = { MotionExtensions.D_Y, MotionExtensions.H_X };
-        //        string[] z = { MotionExtensions.H_Z, MotionExtensions.h_z };
-        //        //string[] z = { MotionExtensions.H_Z};
-
-        //        // DIE CARRIER ALIGN 1  위치로 이동 
-
-        //        await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_1, ct);
-        //        await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
-
-        //        // TODO: 비전 측정
-
-        //        // DIE CARRIER ALIGN 2  위치로 이동 
-        //        await Init_Head(ct);
-        //        await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_2, ct);
-        //        await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
-
-        //        // TODO: 비전 측정
-
-        //        // DIE CARRIER ALIGN 2  위치로 이동 
-        //        await Init_Head(ct);
-        //        await MotionsMove(xy, MotionExtensions.DIE_CARRIER_ALIGN_3, ct);
-        //        await MotionsMove(z, MotionExtensions.DIE_CARRIER_ALIGN_LOW, ct);
-        //        // TODO: 비전 측정
-        //        await Init_Head(ct);
-
-        //        // TODO: 오차 보정
-
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        throw new Exception(e.Message);
-        //    }
-
-        //}
+        #endregion
 
     }
 }

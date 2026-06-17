@@ -403,7 +403,7 @@ namespace HCB.UI
             {
                 if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); return; }
                 BtmLowAlignState = StepState.InProgress;
-                VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(
+                VisionBtmLowAlign = await _sequenceService.BtmLowMeasure(
                     BottomDie, MarkType.DIE_CENTER_BOTTOM, _cts.Token);
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, _cts.Token));
                 BtmLowAlignState = StepState.Completed;
@@ -439,7 +439,7 @@ namespace HCB.UI
                 if (BottomDie == 0) { _logger.Information("Bottom Die를 Load해주세요"); total.Stop(); TrackStep("BtmFull", StepState.Idle); return; }
 
                 BtmLowAlignState = StepState.InProgress;
-                VisionBtmLowAlign = await _sequenceService.BtmCarrierAlign(BottomDie, MarkType.DIE_CENTER_BOTTOM, ct);
+                VisionBtmLowAlign = await _sequenceService.BtmLowMeasure(BottomDie, MarkType.DIE_CENTER_BOTTOM, ct);
                 if (VisionBtmLowAlign == null) { _logger.Information("Bottom Die Align 실패"); total.Stop(); TrackStep("BtmFull", StepState.Idle); return; }
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.BOTTOM, BottomDie, VisionBtmLowAlign, ct));
                 BtmLowAlignState = StepState.Completed;
@@ -479,7 +479,7 @@ namespace HCB.UI
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
                 TopLowAlignState = StepState.InProgress;
-                VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, _cts.Token);
+                VisionTopLowAlign = await _sequenceService.TopLowMeasure(TopDie, MarkType.DIE_CENTER_TOP, _cts.Token);
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, _cts.Token));
                 TopLowAlignState = StepState.Completed;
             }
@@ -534,7 +534,7 @@ namespace HCB.UI
             try
             {
                 TopCorrState = StepState.InProgress;
-                await _sequenceService.TopPlace(hcbData, _cts.Token);
+                await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
                 ComputeDistances();
                 await _sequenceService.BondingCorr(hcbData, _cts.Token);
                 TopCorrState = StepState.Completed;
@@ -589,7 +589,7 @@ namespace HCB.UI
             {
                 // 1. 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
-                VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, ct);
+                VisionTopLowAlign = await _sequenceService.TopLowMeasure(TopDie, MarkType.DIE_CENTER_TOP, ct);
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
                 TopLowAlignState = StepState.Completed;
 
@@ -620,7 +620,7 @@ namespace HCB.UI
                         throw new Exception("Top/Btm 선분 길이 오차가 허용 범위를 초과했습니다.");
 
                     TopCorrState = StepState.InProgress;
-                    await _sequenceService.TopPlace(hcbData, ct);
+                    await _sequenceService.CoordinateSystemIntegration(hcbData, ct);
                     ComputeDistances();
                     TopCorrState = StepState.Completed;
 
@@ -658,7 +658,7 @@ namespace HCB.UI
 
                 // 1. 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
-                VisionTopLowAlign = await _sequenceService.TopLowAlign(TopDie, ct);
+                VisionTopLowAlign = await _sequenceService.TopLowMeasure(TopDie, MarkType.DIE_CENTER_TOP, ct);
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
                 TopLowAlignState = StepState.Completed;
 
@@ -688,7 +688,7 @@ namespace HCB.UI
 
                 // 5. 보정
                 TopCorrState = StepState.InProgress;
-                await _sequenceService.TopPlace(hcbData, ct);
+                await _sequenceService.CoordinateSystemIntegration(hcbData, ct);
                 ComputeDistances();
                 await _sequenceService.BondingCorr(hcbData, ct);
                 TopCorrState = StepState.Completed;

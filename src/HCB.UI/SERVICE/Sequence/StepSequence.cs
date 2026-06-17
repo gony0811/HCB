@@ -15,23 +15,6 @@ namespace HCB.UI
 {
     public partial class SequenceService : BackgroundService
     {
-        public async Task BtmDieDrop(int vacNum, CancellationToken ct)
-        {
-            double btmDieThickness = await GetRecipe("BtmDieThickness");
-            double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
-
-            await Init_Head(ct);
-            await Task.WhenAll(
-                MotionsMove(MotionExtensions.H_T, 0, ct),
-                MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "PLACE_CENTER", ct)
-            );
-            await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - btmDieThickness, ct);
-            await _sequenceHelper.WTableVacuum(vacNum, eOnOff.On, ct);
-            bool result = await _sequenceHelper.HeadPickerVacuum(eOnOff.Off, ct);
-            if (!result) throw new PmacException(PmacErrorCode.HEAD_VAC);
-        }
-
-
         public async Task<VisionMarkResult> BtmDieVisionRightFid(bool AvgMode, CancellationToken ct)
         {
             try
@@ -161,115 +144,6 @@ namespace HCB.UI
         }
 
 
-
-        public async Task<Dictionary<string, VisionMarkResult>> TopDieVision(CancellationToken ct)
-        {
-            try
-            {
-                _logger.Information("Top Die Vision Start");
-
-                EQStatusCheck();
-                var motionDevice = this._deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-
-                var result = false;
-
-                string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
-                string[] z = { MotionExtensions.H_Z };
-
-                VisionMarkResult rightFid = new VisionMarkResult
-                {
-                    CameraType = CameraType.PC_HIGH,    // ★ P-Table
-                    MarkType = MarkType.FIDUCIAL,
-                    DirectType = DirectType.RIGHT,
-                    StageX = await GetPosition(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
-                    StageY = await GetPosition(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_HIGH, ct),
-                };
-
-                VisionMarkResult rightAlign = new VisionMarkResult
-                {
-                    CameraType = CameraType.PC_HIGH,    // ★ P-Table
-                    MarkType = MarkType.ALIGN_MARK,
-                    DirectType = DirectType.RIGHT,
-                    StageX = rightFid.StageX,
-                    StageY = rightFid.StageY,
-                };
-
-                VisionMarkResult leftFid = new VisionMarkResult
-                {
-                    CameraType = CameraType.PC_HIGH,    // ★ P-Table
-                    MarkType = MarkType.FIDUCIAL,
-                    DirectType = DirectType.LEFT,
-                    StageX = await GetPosition(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
-                    StageY = await GetPosition(MotionExtensions.P_Y, MotionExtensions.P_LEFT_HIGH, ct),
-                };
-
-                VisionMarkResult leftAlign = new VisionMarkResult
-                {
-                    CameraType = CameraType.PC_HIGH,    // ★ P-Table
-                    MarkType = MarkType.ALIGN_MARK,
-                    DirectType = DirectType.LEFT,
-                    StageX = leftFid.StageX,
-                    StageY = leftFid.StageY,
-                };
-
-                Dictionary<string, VisionMarkResult> visionResults = new Dictionary<string, VisionMarkResult>
-                {
-                    { "RIGHT_FID", rightFid },
-                    { "RIGHT_ALIGN", rightAlign },
-                    { "LEFT_FID", leftFid },
-                    { "LEFT_ALIGN", leftAlign }
-                };
-
-                await Init_Head(ct);
-
-                // 우측 피듀셜마크 이동
-                await MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct);
-                await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
-
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
-                if (result == false) throw new Exception("AF 실패");
-
-                var rFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "RIGHT");
-                VisionResult(rFidXY);
-                rightFid.DxCamToMark = rFidXY.X;
-                rightFid.DyCamToMark = rFidXY.Y;
-
-                // 우측 얼라인마크 이동
-                await MotionsMove(z, MotionExtensions.P_RIGHT_ALIGN_HIGH, ct);
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
-                if (result == false) throw new Exception("AF 실패");
-                var rAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "RIGHT");
-                VisionResult(rAlignXY);
-                rightAlign.DxCamToMark = rAlignXY.X;
-                rightAlign.DyCamToMark = rAlignXY.Y;
-
-                // 좌측 피듀셜마크 이동
-                await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
-                await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.FIDUCIAL, ct);
-                if (result == false) throw new Exception("AF 실패");
-                var lFidXY = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, "LEFT");
-                VisionResult(lFidXY);
-                leftFid.DxCamToMark = lFidXY.X;
-                leftFid.DyCamToMark = lFidXY.Y;
-
-                // 좌측 얼라인마크 이동
-                await MotionsMove(z, MotionExtensions.P_LEFT_ALIGN_HIGH, ct);
-                result = await communicationService.RequestAFStart(CameraType.PC_HIGH, markType: MarkType.ALIGN_MARK, ct);
-                if (result == false) throw new Exception("AF 실패");
-                var lAlignXY = await communicationService.RequestVisionMarkPosition(MarkType.ALIGN_MARK, CameraType.PC_HIGH, "LEFT");
-                VisionResult(lAlignXY);
-                leftAlign.DxCamToMark = lAlignXY.X;
-                leftAlign.DyCamToMark = lAlignXY.Y;
-
-                return visionResults;
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
-        }
-
         public async Task<VisionMarkResult> TopDieVisionRightFid(bool AvgMode, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Right Fid) Start");
@@ -311,78 +185,6 @@ namespace HCB.UI
                 MotionExtensions.P_Y, AvgMode, ct);
         }
 
-        public async Task<VisionMarkResult> VisionResult(
-            CameraType cameraType, MarkType markType, DirectType directType,
-            string yName, CancellationToken ct)
-        {
-            try
-            {
-                _logger.Information($"Vision ({cameraType} / {markType} / {directType}) Start");
-                EQStatusCheck();
-
-                var result = false;
-
-                VisionMarkResult visionResult = new VisionMarkResult
-                {
-                    CameraType = cameraType,           
-                    MarkType = markType,
-                    DirectType = directType,
-                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
-                    StageY = await GetCurrentPosition(yName, ct)
-                };
-
-                result = await communicationService.RequestAFStart(cameraType, markType, ct);
-                if (result == false) throw new Exception("AF 실패");
-
-                var xy = await communicationService.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
-                VisionResult(xy);
-                visionResult.DxCamToMark = xy.X;
-                visionResult.DyCamToMark = xy.Y;
-
-                return visionResult;
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
-        }
-
-        public async Task<(double x, double y)> VisionAFNoResult(
-            CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct)
-        {
-            try
-            {
-                _logger.Information("Vision AF-No Start");
-
-                var xy = await communicationService.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
-                return (xy.X, xy.Y);
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
-        }
-
-        public async Task<(double x, double y)> VisionAFResult(
-            CameraType cameraType, MarkType markType, DirectType directType, CancellationToken ct)
-        {
-            try
-            {
-                _logger.Information("Vision AF Start");
-                var result = false;
-                result = await communicationService.RequestAFStart(cameraType, markType, ct);
-                if (result == false) throw new Exception("AF 실패");
-
-                var xy = await communicationService.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
-
-                return (xy.X, xy.Y);
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
-        }
-
         public async Task<VisionMarkResult> TopDieVisionLeftFid(bool AvgMode, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Left Fid) Start");
@@ -419,7 +221,45 @@ namespace HCB.UI
                 MotionExtensions.P_Y, AvgMode, ct);
         }
 
-        public async Task TopDiePlace(CancellationToken ct)
+
+        public async Task<VisionMarkResult> VisionResult(
+            CameraType cameraType, MarkType markType, DirectType directType,
+            string yName, CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information($"Vision ({cameraType} / {markType} / {directType}) Start");
+                EQStatusCheck();
+
+                var result = false;
+
+                VisionMarkResult visionResult = new VisionMarkResult
+                {
+                    CameraType = cameraType,
+                    MarkType = markType,
+                    DirectType = directType,
+                    StageX = await GetCurrentPosition(MotionExtensions.H_X, ct),
+                    StageY = await GetCurrentPosition(yName, ct)
+                };
+
+                result = await communicationService.RequestAFStart(cameraType, markType, ct);
+                if (result == false) throw new Exception("AF 실패");
+
+                var xy = await communicationService.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
+                VisionResult(xy);
+                visionResult.DxCamToMark = xy.X;
+                visionResult.DyCamToMark = xy.Y;
+
+                return visionResult;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+
+        public async Task TopDieSet(CancellationToken ct)
         {
             try
             {
@@ -440,37 +280,6 @@ namespace HCB.UI
             {
                 throw new Exception(e.Message);
             }
-        }
-
-        public async Task TCheck(CancellationToken ct)
-        {
-            var results = new List<(double angle, double hc1X, double hc1Y, double hc2X, double hc2Y)>();
-
-            for (double angle = -1.5; angle <= 1.5; angle += 0.5)
-            {
-                await MotionsMove(MotionExtensions.H_T, angle, ct);
-
-                var hc1 = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC1_HIGH, "");
-                var hc2 = await communicationService.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.HC2_HIGH, "");
-
-                results.Add((angle, hc1.X, hc1.Y, hc2.X, hc2.Y));
-            }
-
-            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "TCheck_Result.csv");
-            var sb = new StringBuilder();
-
-            if (!File.Exists(path))
-            {
-                sb.AppendLine("Timestamp,Angle,HC1_X,HC1_Y,HC2_X,HC2_Y");
-            }
-
-            var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            foreach (var r in results)
-            {
-                sb.AppendLine($"{timestamp},{r.angle:F1},{r.hc1X},{r.hc1Y},{r.hc2X},{r.hc2Y}");
-            }
-
-            await File.AppendAllTextAsync(path, sb.ToString(), ct);
         }
        
 

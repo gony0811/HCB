@@ -73,117 +73,18 @@ namespace HCB.UI
         [RelayCommand]
         public async Task MachineInit()
         {
-            if (IsInitializing) return;
-            IsInitializing = true;
-            try
-            {
-                SequenceServiceVM.ResetInitProgress();
-                await _sequenceService.MachineInitAsync(_cancellationTokenSource.Token);
-                IsInitialize = true;
-                _logger.Information("Machine Init 완료");
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.Warning("Machine Init 취소됨");
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e, "Machine Init Failed");
-            }
-            finally
-            {
-                IsInitializing = false;
-            }
+            
         }
 
         [RelayCommand]
         public async Task MachineRun()
         {
-            var tcs = new TaskCompletionSource<bool>();
-            var dialog = new VacuumSelector();
-            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-
-            dialog.Closed += (s, e) => tcs.SetResult(dialog.DialogResult == true);
-            dialog.ShowDialog();
-
-            bool confirmed = await tcs.Task;
-            if (!confirmed) return;
-
-            var topList = dialog.TopDieVacuums;
-            var botList = dialog.BotDieVacuums;
-
-            if (topList.Count == 0 || botList.Count == 0)
-            {
-                _logger.Warning("Die 선택이 없습니다");
-                return;
-            }
-
-            IsRunning = true;
-            var ct = _cancellationTokenSource.Token;
-            try
-            {
-                foreach (var (topDie, btmDie) in topList.Zip(botList))
-                {
-                    ct.ThrowIfCancellationRequested();
-
-                    // Bottom: 저배율 보정 + Pickup + Place
-                    var btmAlign = await _sequenceService.BtmCarrierAlign(btmDie, MarkType.DIE_CENTER_BOTTOM, ct);
-                    await _sequenceService.DTablePickup(DieType.BOTTOM, btmDie, btmAlign, ct);
-                    await _sequenceService.BtmDieDrop(1, ct);
-
-                    // Top: 저배율 보정 + Pickup
-                    var topAlign = await _sequenceService.TopLowAlign(topDie, ct);
-                    await _sequenceService.DTablePickup(DieType.TOP, topDie, topAlign, ct);
-
-                    // Top: 고배율 측정 (Top → Btm)
-                    var data = new AlignData { AvgMove = true, Use2DMapping = true };
-                    data = await _sequenceService.TopHighAlign(data, ct);
-                    data = await _sequenceService.BtmHighAlign(data, ct);
-
-                    // 보정 + 본딩
-                    await _sequenceService.TopPlace(data, ct);
-                    await _sequenceService.BondingCorr(data, ct);
-                    var bondingData = new ObservableCollection<BondingDataPoint>();
-                    await _sequenceService.BondingPress(bondingData, ct);
-
-                    await _sequenceService.Init_Head(ct);
-                    _logger.Information("Auto Run 완료 — Top:{Top} Btm:{Btm}", topDie, btmDie);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.Warning("Auto Run 취소됨");
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e, "Auto Run Failed");
-            }
-            finally
-            {
-                IsRunning = false;
-            }
         }
 
         [RelayCommand]
         public async Task MachineStop()
         {
-            if (IsStopping) return; // 중복 호출 방어
-
-            IsStopping = true;
-
-            var oldCts = _cancellationTokenSource;
-            _cancellationTokenSource = new CancellationTokenSource();
-
-            try
-            {
-                oldCts.Cancel();
-                await _sequenceService.StopAsync(oldCts.Token);
-            }
-            finally
-            {
-                oldCts.Dispose();
-                IsStopping = false;
-            }
+           
         }
 
         [RelayCommand]

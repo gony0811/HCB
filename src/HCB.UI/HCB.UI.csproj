@@ -259,11 +259,9 @@
   <Compile Include="SERVICE\InterlockService.cs" />
   <Compile Include="SERVICE\OperationService.cs" />
   <Compile Include="SERVICE\SequenceService.cs" />
-  <Compile Include="SERVICE\Sequence\BondingSequence.cs" />
   <Compile Include="SERVICE\Sequence\DieSequence.cs" />
   <Compile Include="SERVICE\Sequence\InitSequence.cs" />
   <Compile Include="SERVICE\Sequence\MainSequence.cs" />
-  <Compile Include="SERVICE\Sequence\ManualSequence.cs" />
   <Compile Include="SERVICE\Sequence\StepSequence.cs" />
   <Compile Include="SERVICE\SystemMainService.cs" />
   <Compile Include="SERVICE\Tcp\EqpCommunicationService.cs" />
