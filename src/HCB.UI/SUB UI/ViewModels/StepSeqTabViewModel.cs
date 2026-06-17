@@ -149,6 +149,53 @@ namespace HCB.UI
         [RelayCommand]
         public void ChangeAutoTracing() => UseAutoTracing = !UseAutoTracing;
 
+        [ObservableProperty] private bool isWTableMappingOn;
+        [ObservableProperty] private bool isPTableMappingOn;
+
+        [RelayCommand]
+        private async Task ToggleWTableMapping()
+        {
+            try
+            {
+                if (IsWTableMappingOn)
+                {
+                    await _sequenceService.MappingOff();
+                    IsWTableMappingOn = false;
+                    _logger.Information("W Table 2D Mapping OFF");
+                }
+                else
+                {
+                    await _sequenceService.WTable2DMappingOn();
+                    IsWTableMappingOn = true;
+                    IsPTableMappingOn = false;
+                    _logger.Information("W Table 2D Mapping ON");
+                }
+            }
+            catch (Exception ex) { _logger.Error(ex, "W Table 2D Mapping 전환 실패"); }
+        }
+
+        [RelayCommand]
+        private async Task TogglePTableMapping()
+        {
+            try
+            {
+                if (IsPTableMappingOn)
+                {
+                    await _sequenceService.MappingOff();
+                    IsPTableMappingOn = false;
+                    _logger.Information("P Table 2D Mapping OFF");
+                }
+                else
+                {
+                    await _sequenceService.PTable2DMappingOn();
+                    IsPTableMappingOn = true;
+                    IsWTableMappingOn = false;
+                    _logger.Information("P Table 2D Mapping ON");
+                }
+            }
+            catch (Exception ex) { _logger.Error(ex, "P Table 2D Mapping 전환 실패"); }
+        }
+
         [RelayCommand]
         private async Task HeaderVacOff()
         {

@@ -1241,6 +1241,105 @@
                                 </Button.Style>
                             </Button>
 
+                            <!-- W Table 2D Mapping Toggle -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Height="38" Cursor="Hand"
+                                        Command="{Binding ToggleWTableMappingCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="Bd"
+                                                                Background="#1A2332"
+                                                                BorderBrush="#2A3A4A"
+                                                                BorderThickness="1"
+                                                                CornerRadius="6"
+                                                                Padding="14,4">
+                                                            <StackPanel Orientation="Horizontal"
+                                                                        HorizontalAlignment="Center"
+                                                                        VerticalAlignment="Center">
+                                                                <TextBlock x:Name="Ico" Text="○ "
+                                                                           Foreground="#8899AA" FontSize="14"
+                                                                           VerticalAlignment="Center"/>
+                                                                <TextBlock x:Name="Txt"
+                                                                           Text="W Table Map OFF"
+                                                                           Foreground="#8899AA"
+                                                                           FontSize="13" FontWeight="SemiBold"
+                                                                           VerticalAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding IsWTableMappingOn}" Value="True">
+                                                                <Setter TargetName="Bd" Property="Background" Value="#0F6E56"/>
+                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#1D9E75"/>
+                                                                <Setter TargetName="Ico" Property="Text" Value="● "/>
+                                                                <Setter TargetName="Ico" Property="Foreground" Value="#2ECC71"/>
+                                                                <Setter TargetName="Txt" Property="Text" Value="W Table Map ON"/>
+                                                                <Setter TargetName="Txt" Property="Foreground" Value="#E1F5EE"/>
+                                                            </DataTrigger>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Grid.Column="2" Height="38" Cursor="Hand"
+                                        Command="{Binding TogglePTableMappingCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="Bd"
+                                                                Background="#1A2332"
+                                                                BorderBrush="#2A3A4A"
+                                                                BorderThickness="1"
+                                                                CornerRadius="6"
+                                                                Padding="14,4">
+                                                            <StackPanel Orientation="Horizontal"
+                                                                        HorizontalAlignment="Center"
+                                                                        VerticalAlignment="Center">
+                                                                <TextBlock x:Name="Ico" Text="○ "
+                                                                           Foreground="#8899AA" FontSize="14"
+                                                                           VerticalAlignment="Center"/>
+                                                                <TextBlock x:Name="Txt"
+                                                                           Text="P Table Map OFF"
+                                                                           Foreground="#8899AA"
+                                                                           FontSize="13" FontWeight="SemiBold"
+                                                                           VerticalAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding IsPTableMappingOn}" Value="True">
+                                                                <Setter TargetName="Bd" Property="Background" Value="#0F6E56"/>
+                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#1D9E75"/>
+                                                                <Setter TargetName="Ico" Property="Text" Value="● "/>
+                                                                <Setter TargetName="Ico" Property="Foreground" Value="#2ECC71"/>
+                                                                <Setter TargetName="Txt" Property="Text" Value="P Table Map ON"/>
+                                                                <Setter TargetName="Txt" Property="Foreground" Value="#E1F5EE"/>
+                                                            </DataTrigger>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+
                             <!-- Header -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                 <Border Background="#14452A" CornerRadius="4" Padding="10,4"
