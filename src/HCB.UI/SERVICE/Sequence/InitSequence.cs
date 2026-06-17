@@ -210,8 +210,12 @@ namespace HCB.UI
             // 이동 명령
             await motion.Move(MoveType.Absolute, 100, position.Speed, position.Position);
 
-            if (motion.InPosition)
-                throw new Exception($"[Motion Error] '{motionName}' 이동 명령 후 InPosition 미전환");
+            int retry = 0;
+            while (motion.InPosition && retry < 5)
+            {
+                await Task.Delay(20, ct);
+                retry++;
+            }
 
             bool success = await _sequenceHelper.WaitUntilAsync(
                 () => motion.InPosition,
@@ -223,6 +227,7 @@ namespace HCB.UI
             {
                 throw new Exception($"[Motion Error] {motionName}이 제한 시간 내에 목표 위치에 도달하지 못했습니다.");
             }
+            await Task.Delay(200);
         }
 
         public async Task MotionsMove(string motionName, string positionName, double offset, CancellationToken ct)

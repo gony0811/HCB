@@ -93,7 +93,6 @@ namespace HCB.UI
 
                 // ── 3. Z축 하강 ──
                 await MotionsMove(MotionExtensions.H_Z, shankToDieOffset - dieThickness - readyPosition, ct);
-                await Task.Delay(200, ct);
 
                 // ── 4. 가압 시퀀스 ──
                 // 이전 상태 클리어
