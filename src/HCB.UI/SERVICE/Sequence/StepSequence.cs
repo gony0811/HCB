@@ -187,10 +187,9 @@ namespace HCB.UI
 
             string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
             string[] z = { MotionExtensions.H_Z };
-            await Task.WhenAll(
-                MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct),
-                MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct)
-            );
+
+            await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
+            await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
 
             return await MeasureWithRetry(MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.LEFT,
                 MotionExtensions.P_Y, AvgMode, ct);
@@ -212,7 +211,6 @@ namespace HCB.UI
             return await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.PC_HIGH, DirectType.LEFT,
                 MotionExtensions.P_Y, AvgMode, ct);
         }
-
 
         public async Task<VisionMarkResult> VisionResult(
             CameraType cameraType, MarkType markType, DirectType directType,
