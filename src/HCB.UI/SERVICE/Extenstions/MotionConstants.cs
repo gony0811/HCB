@@ -101,6 +101,9 @@ namespace HCB.UI
 
         public const string HCRO_X = "HCRO_X";
         public const string HCRO_Y = "HCRO_Y";
+
+        public const string HCRO_PC_X = "HCRO_PC_X";
+        public const string HCRO_PC_Y = "HCRO_PC_Y";
         public const string BOND_DELAY = "BOND_DELAY";
 
         public const string HC1_X= "HC1_X";

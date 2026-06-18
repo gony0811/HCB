@@ -111,6 +111,7 @@ namespace HCB.UI
         public double Hc1Rad { get; set; }
         public double Hc2Rad { get; set; }
         public Point2D Hcro { get; set; }
+        public Point2D PcHcro { get; set; }
         public Point2D Hc2Offset { get; set; }
 
         public Point2D OffsetXY { get; set; }

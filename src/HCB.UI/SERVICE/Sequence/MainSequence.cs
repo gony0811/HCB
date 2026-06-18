@@ -479,7 +479,7 @@ namespace HCB.UI
 
 
         // Pc 좌표계 
-        public async Task TopPlace2(AlignData data, CancellationToken ct)
+        public async Task PcCoordinateSystemIntegration(AlignData data, CancellationToken ct)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             LoadCalibrationInto(data);;
@@ -494,30 +494,14 @@ namespace HCB.UI
             data.LDist = lDist;
             data.RDist = rDist;
 
-            // ── STEP 2: Top Die 좌표 통합 + Btm 위치 생성 ──
-            // Btm: Stage 기준 X:-, Y:- → DxCam 부호 반전
-            Point2D camOffset = data.Hc2Offset;
+            Point2D tl = Point2D.of(data.TopLeftAlignRaw.CenterX, data.TopLeftAlignRaw.CenterY);
+            Point2D tr = Point2D.of(data.TopRightAlignRaw.CenterX, data.TopLeftAlignRaw.CenterY);
 
-            Point2D tl = Point2D.of(data.BtmLeftAlignRaw.CenterX, data.BtmLeftAlignRaw.CenterY);
-            Point2D tr = Point2D.of(data.BtmRightAlignRaw.CenterX, data.BtmLeftAlignRaw.CenterY);
-
-            Point2D tfl = Point2D.of(data.BtmLeftFidRaw.CenterX, data.BtmLeftFidRaw.CenterY);
-            Point2D tfr = Point2D.of(data.BtmRightFidRaw.CenterX, data.BtmRightFidRaw.CenterY);
-
-            Point2D bl = Point2D.of(tfl.X + lDist.X, tfl.Y - lDist.Y);
-            Point2D br = Point2D.of(tfr.X + rDist.X, tfr.Y - rDist.Y);
-
-            //Point2D bfl = Point2D.of(
-            //    -data.BtmLeftFidRaw.DxCamToMark,
-            //    -data.BtmLeftFidRaw.DyCamToMark);
-            //Point2D bfr = Point2D.of(
-            //    camOffset.X - data.BtmRightFidRaw.DxCamToMark,
-            //    camOffset.Y - data.BtmRightFidRaw.DyCamToMark);
-            //data.BFL = bfl;
-            //data.BFR = bfr;
+            Point2D bl = Point2D.of(data.TopLeftFidRaw.CenterX - lDist.X, data.TopLeftFidRaw.CenterY - lDist.Y);
+            Point2D br = Point2D.of(data.TopRightFidRaw.CenterX - rDist.X, data.TopRightFidRaw.CenterY - rDist.Y);
 
             // ── STEP 3: 회전중심(HCRO) 기준으로 좌표 이동 ──
-            Point2D hcro = data.Hcro;
+            Point2D hcro = data.PcHcro;
             bl = Point2D.of(bl.X - hcro.X, bl.Y - hcro.Y);
             br = Point2D.of(br.X - hcro.X, br.Y - hcro.Y);
             tl = Point2D.of(tl.X - hcro.X, tl.Y - hcro.Y);
@@ -652,6 +636,9 @@ namespace HCB.UI
             var hc2T= _paramService.FindByName(MotionExtensions.HC2_T);
             var hcroXParam = _paramService.FindByName(MotionExtensions.HCRO_X);
             var hcroYParam = _paramService.FindByName(MotionExtensions.HCRO_Y);
+
+            var pcHcroXParam = _paramService.FindByName(MotionExtensions.HCRO_PC_X);
+            var pcHcroYParam = _paramService.FindByName(MotionExtensions.HCRO_PC_Y);
             var hc2XParam = _paramService.FindByName(MotionExtensions.HC2_X);
             var hc2YParam = _paramService.FindByName(MotionExtensions.HC2_Y);
 
@@ -670,6 +657,7 @@ namespace HCB.UI
                 data.Hc2Rad = ParseDouble(hc2T.Value);
                 data.PcTRad = ParseDouble(pcT.Value);
                 data.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
+                data.PcHcro = Point2D.of(ParseDouble(pcHcroXParam.Value), ParseDouble(pcHcroYParam.Value));
                 data.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
             }
             else
