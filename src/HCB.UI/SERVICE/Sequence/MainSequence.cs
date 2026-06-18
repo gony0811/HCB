@@ -393,8 +393,12 @@ namespace HCB.UI
             if (data == null) throw new ArgumentNullException(nameof(data));
             LoadCalibrationInto(data);
             if (data.UseAutoTracing)
+            {
                 CompensateHc2Offset(data);
-
+            }else
+            {
+                await CamDistAndHcro(data, ct);
+            }
             // ── STEP 1: Top Die — Fid→Align 이동량 ──
             var lDist = Point2D.of(
                 data.TopLeftAlignRaw.CenterX - data.TopLeftFidRaw.CenterX,
@@ -729,6 +733,78 @@ namespace HCB.UI
                 "  HcRO      Δ({HcroDx:F5}, {HcroDy:F5}) → ({HcroX:F6}, {HcroY:F6})",
                 hc2DeltaX, hc2DeltaY, d.Hc2Offset.X, d.Hc2Offset.Y,
                 hcroDeltaX, hcroDeltaY, d.Hcro.X, d.Hcro.Y);
+        }
+
+        private async Task CamDistAndHcro(AlignData d, CancellationToken ct)
+        {
+            try
+            {
+                // ── 1. 카메라 거리 구하기 ──
+                await Task.WhenAll(
+                    RelativeMotionsMove(MotionExtensions.H_X, 12.5, ct),
+                    RelativeMotionsMove(MotionExtensions.W_Y, -7, ct));
+
+                var hc1 = await VisionResult(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
+                d.Hc2Offset = Point2D.of(hc1.CenterX - d.BtmRightAlignRaw.CenterX, hc1.CenterY - d.BtmRightAlignRaw.CenterY);
+
+                await Task.WhenAll(
+                    RelativeMotionsMove(MotionExtensions.H_X, -12.5, ct),
+                    RelativeMotionsMove(MotionExtensions.W_Y, 7, ct));
+
+                // ── 2. HcRO 회전 중심 계산 ──
+                var hc2XOffset = d.Hc2Offset.X;
+                var hc2YOffset = d.Hc2Offset.Y;
+
+                var hc1Points = new System.Collections.Generic.List<Point2D>();
+                var hc2Points = new System.Collections.Generic.List<Point2D>();
+
+                // 0도: 이미 측정된 BtmLeftFidRaw(HC1), BtmRightFidRaw(HC2) 사용
+                hc1Points.Add(Point2D.of(-d.BtmLeftFidRaw.DxCamToMark, -d.BtmLeftFidRaw.DyCamToMark));
+                hc2Points.Add(Point2D.of(hc2XOffset - d.BtmRightFidRaw.DxCamToMark, hc2YOffset - d.BtmRightFidRaw.DyCamToMark));
+
+                // -1.5도, +1.5도: 회전 후 측정
+                double[] angles = { -1.5, 1.5 };
+                for (int i = 0; i < angles.Length; i++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    await MotionsMove(MotionExtensions.H_T, angles[i], ct);
+
+                    await communicationService.RequestAFStart(CameraType.HC1_HIGH, MarkType.FIDUCIAL, ct);
+                    var v1 = await communicationService.RequestVisionMarkPosition(
+                        MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
+                    if (v1.Result == Result.NG)
+                        throw new Exception($"Hc1 {angles[i]}° 피듀셜 측정 실패");
+
+                    await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
+                    var v2 = await communicationService.RequestVisionMarkPosition(
+                        MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
+                    if (v2.Result == Result.NG)
+                        throw new Exception($"Hc2 {angles[i]}° 피듀셜 측정 실패");
+
+                    hc1Points.Add(Point2D.of(-v1.X, -v1.Y));
+                    hc2Points.Add(Point2D.of(hc2XOffset - v2.X, hc2YOffset - v2.Y));
+                }
+
+                // H_T 복귀
+                await MotionsMove(MotionExtensions.H_T, 0, ct);
+
+                // 원 피팅으로 회전 중심 계산
+                var allPoints = new System.Collections.Generic.List<Point2D>();
+                allPoints.AddRange(hc1Points);
+                allPoints.AddRange(hc2Points);
+
+                var hcRO = CalibrationMath.FitCircleCenter(allPoints);
+                d.Hcro = Point2D.of(hcRO.X, hcRO.Y);
+
+                _logger.Information("CamDistAndHcro — Hc2Offset=({Hc2X:F4}, {Hc2Y:F4}), HcRO=({RoX:F4}, {RoY:F4}), Points={Count}",
+                    d.Hc2Offset.X, d.Hc2Offset.Y, hcRO.X, hcRO.Y, allPoints.Count);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "CamDistAndHcro 실패");
+                throw;
+            }
         }
 
         // ═══════════════════════════════════════════════════
