@@ -634,16 +634,121 @@ namespace HCB.UI
 
                 CalibStatus = $"HcRO 완료  X = {HcROX:F4}  Y = {HcROY:F4}";
             }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; if (!standalone) throw; }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
             catch (Exception e)
             {
                 _logger.Error(e, "CreateHcRo failed");
                 CalibStatus = $"오류: {e.Message}";
-                if (!standalone) throw;
             }
             finally { if (standalone) IsNotBusy = true; }
         }
 
+
+        [RelayCommand]
+        public async Task CreateHcroPc(CancellationToken ct = default)
+        {
+            bool standalone = IsNotBusy;
+            if (standalone) { IsNotBusy = false; ct = GetToken(); }
+            try
+            {
+                await _sequenceService.Init_Head(ct);
+
+                // Left 위치로 이동 → 스테이지 좌표 기록
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_HIGH, ct));
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
+                await _sequenceService.PTable2DMappingOn();
+
+                double leftHX = _hxAxis!.CurrentPosition;
+                double leftPY = _pyAxis!.CurrentPosition;
+
+                // Right 위치로 이동 → 스테이지 좌표 기록 → Offset 계산
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_HIGH, ct));
+
+                double rightHX = _hxAxis!.CurrentPosition;
+                double rightPY = _pyAxis!.CurrentPosition;
+
+                double pcOffsetX = leftHX - rightHX;
+                double pcOffsetY = rightPY - leftPY;
+
+                double[] angles = { -1.5, 0, 1.5 };
+                var leftPoints = new List<Point2D>();
+                var rightPoints = new List<Point2D>();
+
+                for (int i = 0; i < angles.Length; i++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    CalibStatus = $"H_T → {angles[i]:F2}° 측정 중... ({i + 1}/{angles.Length})";
+                    await _sequenceService.MotionsMove(MotionExtensions.H_T, angles[i], ct);
+
+                    // Left 피듀셜 측정
+                    await Task.WhenAll(
+                        _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
+                        _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_HIGH, ct));
+                    await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
+
+                    await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
+                    var vL = await _communication.RequestVisionMarkPosition(
+                        MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.LEFT.ToString());
+                    if (vL.Result == Result.NG) throw new Exception($"PC Left {angles[i]}° 비전 측정 실패");
+                    leftPoints.Add(Point2D.of(-vL.X, -vL.Y));
+
+                    // Right 피듀셜 측정 (PC 카메라 1개 → 이동 후 측정)
+                    await Task.WhenAll(
+                        _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
+                        _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_HIGH, ct));
+                    await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
+
+                    await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
+                    var vR = await _communication.RequestVisionMarkPosition(
+                        MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.RIGHT.ToString());
+                    if (vR.Result == Result.NG) throw new Exception($"PC Right {angles[i]}° 비전 측정 실패");
+                    rightPoints.Add(Point2D.of(pcOffsetX - vR.X, pcOffsetY - vR.Y));
+                }
+
+                CalibStatus = "H_T 복귀...";
+                await _sequenceService.MotionsMove(MotionExtensions.H_T, 0, ct);
+
+                var allPoints = new List<Point2D>();
+                allPoints.AddRange(leftPoints);
+                allPoints.AddRange(rightPoints);
+
+                var hcRO = CalibrationMath.FitCircleCenter(allPoints);
+                HcROX = hcRO.X;
+                HcROY = hcRO.Y;
+
+                _logger.Information("HcRO(PC) FitCircle | Points={Count}, Center=({X:F4},{Y:F4}), Offset=({OX:F4},{OY:F4})",
+                    allPoints.Count, HcROX, HcROY, pcOffsetX, pcOffsetY);
+
+                ECParamDto dto = _ecParamService.FindByName(MotionExtensions.HCRO_X);
+                dto.Value = HcROX.ToString();
+                dto.ValueType = ValueType.Double;
+                if (dto.Id == 0) await _ecParamService.AddParam(dto);
+                else await _ecParamService.UpdateParam(dto);
+
+                ECParamDto dto2 = _ecParamService.FindByName(MotionExtensions.HCRO_Y);
+                dto2.Value = HcROY.ToString();
+                dto2.ValueType = ValueType.Double;
+                if (dto2.Id == 0) await _ecParamService.AddParam(dto2);
+                else await _ecParamService.UpdateParam(dto2);
+
+                CalibStatus = $"HcRO(PC) 완료  X = {HcROX:F4}  Y = {HcROY:F4}";
+            }
+            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "CreateHcroPc failed");
+                CalibStatus = $"오류: {e.Message}";
+            }
+            finally
+            {
+                await _sequenceService.MappingOff();
+                if (standalone) IsNotBusy = true;
+            }
+        }
         // ══════════════════════════════════════════════
         //  정밀도 검증
         // ══════════════════════════════════════════════

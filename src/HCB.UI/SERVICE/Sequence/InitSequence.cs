@@ -134,9 +134,6 @@ namespace HCB.UI
                 if (H_Z is null || !H_Z.IsEnabled) throw new PmacException(PmacErrorCode.SERVO_OFF, "H_Z축이 준비되지 않았습니다. H_Z축 SERVO ON, Home 실행여부를 확인하십시요.");
                 if (h_z is null || !h_z.IsEnabled) throw new PmacException(PmacErrorCode.SERVO_OFF, "h_z축이 준비되지 않았습니다. h_z축 Servo On, Home 실행여부를 확인하십시요.");
 
-                if (H_Z.IsBusy ) throw new PmacException(PmacErrorCode.RUNNING, "Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
-                if (h_z.IsBusy ) throw new PmacException(PmacErrorCode.RUNNING, "Head 초기화 실패: HEAD 모션이 움직이고 있습니다.");
-
                 // 현재 위치가 안전 위치보다 아래인 축만 이동
                 const double tolerance = 0.01;
                 var needsMove = new List<string>();
