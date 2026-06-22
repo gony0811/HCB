@@ -614,6 +614,7 @@ namespace HCB.UI
             await pmac.SendCommand("sys.Compenable=4");
         }
 
+
         public async Task WTable2DMappingOn()
         {
             var pmac = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);

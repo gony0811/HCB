@@ -231,7 +231,6 @@ namespace HCB.UI
         }
 
 
-
         public async Task<bool> SetDigitalAsync(string name, bool bOnOff, int retry = 5, int delayMs = 300)
         {
             var ioData = (DigitalOutput)FindIoDataByName(name);

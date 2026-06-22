@@ -140,6 +140,8 @@ namespace HCB.UI
         [ObservableProperty] private string csvDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "데이터");
         [ObservableProperty] private string csvDataFileName = "bonding_hcb_{date}.csv";
 
+        public ObservableCollection<IAxis> JitterAxes { get; } = new();
+
         [RelayCommand]
         public void ChangeMeasureVernier() => MeasureVernierAfterBonding = !MeasureVernierAfterBonding;
 
@@ -307,6 +309,13 @@ namespace HCB.UI
                     var vm = _ioManager.CreateIoVM(_dTableNameList[i], _dIoNameList[i], _dTableNameList[i]);
                     if (vm != null) DTableList.Add(vm);
                 }
+            }
+
+            var pmac = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            if (pmac != null)
+            {
+                foreach (var axis in pmac.MotionList)
+                    JitterAxes.Add(axis);
             }
 
             _elapsedTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
