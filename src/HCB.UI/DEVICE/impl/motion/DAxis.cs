@@ -45,6 +45,9 @@ namespace HCB.UI
         [ObservableProperty] private double setSpeed = 0;
         [ObservableProperty] private double commandPosition;
         [ObservableProperty] private double currentPosition;
+        [ObservableProperty] private double jitter;
+        [ObservableProperty] private double jitterTolerance = 0.00005;
+        [ObservableProperty] private bool isJitterWarning;
 
         public DAxis(ILogger logger)
         {
@@ -61,6 +64,15 @@ namespace HCB.UI
                 InpositionRange = 1;
             }
 
+        }
+
+        partial void OnNameChanged(string value)
+        {
+            JitterTolerance = value switch
+            {
+                MotionExtensions.h_z or MotionExtensions.D_Y => 0.0001,
+                _ => 0.00005,
+            };
         }
 
         [RelayCommand]
