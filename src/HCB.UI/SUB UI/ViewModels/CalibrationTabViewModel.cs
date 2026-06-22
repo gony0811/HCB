@@ -408,7 +408,7 @@ namespace HCB.UI
         {
             const double MeasureOffsetX = -12.5;
             const double MeasureOffsetY = 7.0;
-            const double Tolerance = 0.001;
+            const double Tolerance = 0.0003;
             const int MaxRetry = 10;
             bool standalone = IsNotBusy;
             if (standalone) { IsNotBusy = false; ct = GetToken(); }

@@ -216,7 +216,7 @@ namespace HCB.UI
 
             bool success = await _sequenceHelper.WaitUntilAsync(
                 () => motion.InPosition,
-                60000, ct,
+                600000, ct,
                 $"[Motion Timeout] '{motionName}' 이동 완료 실패"
             );
 
@@ -253,7 +253,7 @@ namespace HCB.UI
             // 이동 완료 대기
             await _sequenceHelper.WaitUntilAsync(
                 () => motion.InPosition,
-                60000, ct,
+                600000, ct,
                 $"[Motion Timeout] '{motionName}' 이동 시간 초과"
             );
         }
@@ -281,7 +281,7 @@ namespace HCB.UI
             // 이동 완료 대기
             await _sequenceHelper.WaitUntilAsync(
                 () => motion.InPosition,
-                60000, ct,
+                600000, ct,
                 $"[Motion Timeout] '{motionName}' 이동 시간 초과"
             );
         }
@@ -309,7 +309,7 @@ namespace HCB.UI
             // 이동 완료 대기
             await _sequenceHelper.WaitUntilAsync(
                 () => motion.InPosition,
-                60000, ct,
+                600000, ct,
                 $"[Motion Timeout] '{motionName}' 이동 시간 초과"
             );
         }
@@ -344,7 +344,7 @@ namespace HCB.UI
             // [보강 2] 모든 축의 이동 완료 대기
             await _sequenceHelper.WaitUntilAsync(() =>
                 targetMotions.All(m => m.InPosition),
-                60000, ct,
+                600000, ct,
                 $"[Motion Timeout] {string.Join(", ", motions)} 이동 시간 초과"
             );
 
@@ -372,7 +372,7 @@ namespace HCB.UI
             // 이동 완료 대기
             await _sequenceHelper.WaitUntilAsync(
                 () => motion.InPosition,
-                60000, ct,
+                600000, ct,
                 $"[Motion Timeout] '{motionName}' 이동 시간 초과"
             );
 
