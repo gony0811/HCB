@@ -74,14 +74,6 @@ namespace HCB.UI
             };
         }
 
-        partial void OnNameChanged(string value)
-        {
-            JitterTolerance = value switch
-            {
-                MotionExtensions.h_z or MotionExtensions.D_Y => 0.0001,
-                _ => 0.00005,
-            };
-        }
 
         [RelayCommand]
         public async Task Home()
