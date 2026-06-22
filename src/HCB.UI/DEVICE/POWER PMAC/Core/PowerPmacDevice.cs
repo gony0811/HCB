@@ -131,7 +131,7 @@ namespace HCB.UI
                         double scale = motion.EncoderCountPerUnit;
                         motion.CurrentPosition = (actPosVal - homePosVal) / scale;
                         motion.CommandPosition = (desPosVal - homePosVal) / scale;
-                        motion.Jitter = (desPosVal - actPosVal) / scale;
+                        motion.Jitter = (desPosVal - actPosVal) * 1000;
                         motion.IsJitterWarning = Math.Abs(motion.Jitter) > motion.JitterTolerance;
 
                         motion.IsEnabled = (status0 & 0x00002000) != 0;
