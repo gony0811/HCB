@@ -319,13 +319,6 @@ namespace HCB.UI
                 }
             }
 
-            var pmac = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-            if (pmac != null)
-            {
-                foreach (var axis in pmac.MotionList)
-                    JitterAxes.Add(axis);
-            }
-
             _elapsedTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _elapsedTimer.Tick += (_, _) => RefreshElapsed();
             _elapsedTimer.Start();
