@@ -53,10 +53,10 @@ namespace HCB.UI
         [ObservableProperty] private VisionMarkResult topLeftAlign;
         [ObservableProperty] private VisionMarkResult topLeftFid;
 
-        [ObservableProperty] private VisionMarkResult btmRightAlign;
-        [ObservableProperty] private VisionMarkResult btmRightFid;
-        [ObservableProperty] private VisionMarkResult btmLeftAlign;
-        [ObservableProperty] private VisionMarkResult btmLeftFid;
+        [ObservableProperty] private Point2D btmRightAlign;
+        [ObservableProperty] private Point2D btmRightFid;
+        [ObservableProperty] private Point2D btmLeftAlign;
+        [ObservableProperty] private Point2D btmLeftFid;
 
         // ── Offset 표시용 ─────────────────────────────────────
         [ObservableProperty] private double topAlignRelOffsetX;
@@ -562,6 +562,7 @@ namespace HCB.UI
             try
             {
                 BtmHighAlignState = StepState.InProgress;
+                //hcbData = await _sequenceService.BtmHighAlign(hcbData, _cts.Token);
                 hcbData = await _sequenceService.BtmHighAlign(hcbData, _cts.Token);
                 ComputeDistances();
                 BtmRightFid = hcbData.BtmRightFidRaw;
@@ -736,7 +737,6 @@ namespace HCB.UI
                 // 5. 보정
                 TopCorrState = StepState.InProgress;
                 await _sequenceService.CoordinateSystemIntegration(hcbData, ct);
-                ComputeDistances();
                 await _sequenceService.BondingCorr(hcbData, ct);
                 TopCorrState = StepState.Completed;
 
@@ -1081,10 +1081,10 @@ namespace HCB.UI
                 hcbData != null ? MarkFields(hcbData.TopRightAlignRaw) : NullMark(),
                 hcbData != null ? MarkFields(hcbData.TopLeftFidRaw) : NullMark(),
                 hcbData != null ? MarkFields(hcbData.TopLeftAlignRaw) : NullMark(),
-                hcbData != null ? MarkFields(hcbData.BtmRightFidRaw) : NullMark(),
-                hcbData != null ? MarkFields(hcbData.BtmRightAlignRaw) : NullMark(),
-                hcbData != null ? MarkFields(hcbData.BtmLeftFidRaw) : NullMark(),
-                hcbData != null ? MarkFields(hcbData.BtmLeftAlignRaw) : NullMark(),
+                hcbData != null ? PointAsMark(hcbData.BtmRightFidRaw) : NullMark(),
+                hcbData != null ? PointAsMark(hcbData.BtmRightAlignRaw) : NullMark(),
+                hcbData != null ? PointAsMark(hcbData.BtmLeftFidRaw) : NullMark(),
+                hcbData != null ? PointAsMark(hcbData.BtmLeftAlignRaw) : NullMark(),
                 F(hcbData?.PcTRad), F(hcbData?.Hc1Rad), F(hcbData?.Hc2Rad),
                 hcbData?.Hcro != null ? F(hcbData.Hcro.X) : "", hcbData?.Hcro != null ? F(hcbData.Hcro.Y) : "",
                 hcbData?.Hc2Offset != null ? F(hcbData.Hc2Offset.X) : "", hcbData?.Hc2Offset != null ? F(hcbData.Hc2Offset.Y) : "",
@@ -1159,6 +1159,8 @@ namespace HCB.UI
         private static string Pt(Point2D p) => p == null ? "," : $"{F(p.X)},{F(p.Y)}";
         private static string MarkFields(VisionMarkResult m) =>
             m == null ? ",,,,," : string.Join(",", F(m.StageX), F(m.StageY), F(m.DxCamToMark), F(m.DyCamToMark), F(m.CenterX), F(m.CenterY));
+        private static string PointAsMark(Point2D p) =>
+            p == null ? ",,,,," : string.Join(",", "", "", F(p.X), F(p.Y), "", "");
         private static string NullMark() => ",,,,,";
         private static string NullPt() => ",";
         private static string F(double? v) => v?.ToString("F6") ?? "";

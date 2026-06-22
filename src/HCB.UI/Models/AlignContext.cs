@@ -102,31 +102,31 @@ namespace HCB.UI
         public VisionMarkResult TopLeftFidRaw { get; set; }
         public VisionMarkResult TopLeftAlignRaw { get; set; }
 
-        public VisionMarkResult BtmRightFidRaw { get; set; }
-        public VisionMarkResult BtmRightAlignRaw { get; set; }
-        public VisionMarkResult BtmLeftFidRaw { get; set; }
-        public VisionMarkResult BtmLeftAlignRaw { get; set; }
+        public Point2D BtmRightFidRaw { get; set; } = Point2D.Zero;
+        public Point2D BtmRightAlignRaw { get; set; } = Point2D.Zero;
+        public Point2D BtmLeftFidRaw { get; set; } = Point2D.Zero;
+        public Point2D BtmLeftAlignRaw { get; set; } = Point2D.Zero;
 
         public double PcTRad { get; set; }
         public double Hc1Rad { get; set; }
         public double Hc2Rad { get; set; }
-        public Point2D Hcro { get; set; }
+        public Point2D Hcro { get; set; }= Point2D.Zero;
         public Point2D PcHcro { get; set; }
-        public Point2D Hc2Offset { get; set; }
+        public Point2D Hc2Offset { get; set; } = Point2D.Zero;
 
-        public Point2D OffsetXY { get; set; }
+        public Point2D OffsetXY { get; set; } = Point2D.Zero;
         public double OffsetT { get; set; }
 
         // ── CoordinateSystemIntegration 중간 계산값 ──
-        public Point2D LDist { get; set; }       // Top Left: Align - Fid (cam)
-        public Point2D RDist { get; set; }       // Top Right: Align - Fid (cam)
+        public Point2D LDist { get; set; } = Point2D.Zero;      // Top Left: Align - Fid (cam)
+        public Point2D RDist { get; set; } = Point2D.Zero;      // Top Right: Align - Fid (cam)
 
-        public Point2D BL { get; set; }          // Btm Left Align (HcRO 기준)
-        public Point2D BR { get; set; }          // Btm Right Align (HcRO 기준)
-        public Point2D TL { get; set; }          // Top Left (회전 후, HcRO 기준)
-        public Point2D TR { get; set; }          // Top Right (회전 후, HcRO 기준)
-        public Point2D BFL { get; set; }         // Btm Left Fid (raw)
-        public Point2D BFR { get; set; }         // Btm Right Fid (raw)
+        public Point2D BL { get; set; } = Point2D.Zero;         // Btm Left Align (HcRO 기준)
+        public Point2D BR { get; set; } = Point2D.Zero;        // Btm Right Align (HcRO 기준)
+        public Point2D TL { get; set; } = Point2D.Zero;        // Top Left (회전 후, HcRO 기준)
+        public Point2D TR { get; set; } = Point2D.Zero;        // Top Right (회전 후, HcRO 기준)
+        public Point2D BFL { get; set; } = Point2D.Zero;       // Btm Left Fid (raw)
+        public Point2D BFR { get; set; } = Point2D.Zero;       // Btm Right Fid (raw)
 
         public double BTheta { get; set; }       // atan2(br-bl) rad
         public double TTheta { get; set; }       // atan2(tr-tl) rad

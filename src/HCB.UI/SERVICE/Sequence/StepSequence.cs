@@ -143,6 +143,14 @@ namespace HCB.UI
             }
         }
 
+        public async Task<BtmMarkResponse> BtmDieVisionAlign(DirectType directType = DirectType.BOTH, bool avgMode = true)
+        {
+            var result = await communicationService.RequestHeadAlign(directType, avgMode);
+
+            return result;  
+        }
+
+
         public async Task<VisionMarkResult> TopDieVisionRightFid(bool AvgMode, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Right Fid) Start");

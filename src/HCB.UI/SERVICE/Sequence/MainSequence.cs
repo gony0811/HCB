@@ -414,18 +414,18 @@ namespace HCB.UI
             Point2D camOffset = data.Hc2Offset;
 
             Point2D bl = Point2D.of(
-                -data.BtmLeftAlignRaw.DxCamToMark,
-                -data.BtmLeftAlignRaw.DyCamToMark);
+                -data.BtmLeftAlignRaw.X,
+                -data.BtmLeftAlignRaw.Y);
             Point2D br = Point2D.of(
-                camOffset.X - data.BtmRightAlignRaw.DxCamToMark,
-                camOffset.Y - data.BtmRightAlignRaw.DyCamToMark);
+                camOffset.X - data.BtmRightAlignRaw.X,
+                camOffset.Y - data.BtmRightAlignRaw.Y);
 
             Point2D bfl = Point2D.of(
-                -data.BtmLeftFidRaw.DxCamToMark,
-                -data.BtmLeftFidRaw.DyCamToMark);
+                -data.BtmLeftFidRaw.X,
+                -data.BtmLeftFidRaw.Y);
             Point2D bfr = Point2D.of(
-                camOffset.X - data.BtmRightFidRaw.DxCamToMark,
-                camOffset.Y - data.BtmRightFidRaw.DyCamToMark);
+                camOffset.X - data.BtmRightFidRaw.X,
+                camOffset.Y - data.BtmRightFidRaw.Y);
             data.BFL = bfl;
             data.BFR = bfr;
 
@@ -484,12 +484,21 @@ namespace HCB.UI
             LoadCalibrationInto(data);;
 
             // ── STEP 1: Btm Die — Fid→Align 이동량 ──
+            //var lDist = Point2D.of(
+            //    data.BtmLeftAlignRaw.CenterX - data.BtmLeftFidRaw.CenterX,
+            //    data.BtmLeftAlignRaw.CenterY - data.BtmLeftFidRaw.CenterY);
+            //var rDist = Point2D.of(
+            //    data.BtmRightAlignRaw.CenterX - data.BtmRightFidRaw.CenterX,
+            //    data.BtmRightAlignRaw.CenterY - data.BtmRightFidRaw.CenterY);
             var lDist = Point2D.of(
-                data.BtmLeftAlignRaw.CenterX - data.BtmLeftFidRaw.CenterX,
-                data.BtmLeftAlignRaw.CenterY - data.BtmLeftFidRaw.CenterY);
+                data.BtmLeftFidRaw.X - data.BtmLeftAlignRaw.X,
+                data.BtmLeftFidRaw.Y - data.BtmLeftAlignRaw.Y
+                );
             var rDist = Point2D.of(
-                data.BtmRightAlignRaw.CenterX - data.BtmRightFidRaw.CenterX,
-                data.BtmRightAlignRaw.CenterY - data.BtmRightFidRaw.CenterY);
+                data.BtmRightFidRaw.X - data.BtmRightAlignRaw.X,
+                data.BtmRightFidRaw.Y - data.BtmRightAlignRaw.Y
+                );
+
             data.LDist = lDist;
             data.RDist = rDist;
 
@@ -700,10 +709,10 @@ namespace HCB.UI
                 return;
             }
 
-            double dLfX = d.BtmLeftFidRaw.DxCamToMark - refLfDx;
-            double dLfY = d.BtmLeftFidRaw.DyCamToMark - refLfDy;
-            double dRfX = d.BtmRightFidRaw.DxCamToMark - refRfDx;
-            double dRfY = d.BtmRightFidRaw.DyCamToMark - refRfDy;
+            double dLfX = d.BtmLeftFidRaw.X - refLfDx;
+            double dLfY = d.BtmLeftFidRaw.Y - refLfDy;
+            double dRfX = d.BtmRightFidRaw.X - refRfDx;
+            double dRfY = d.BtmRightFidRaw.Y - refRfDy;
 
             // Hc2Offset 보정: -(dLf - dRf)
             double hc2DeltaX = -(dLfX - dRfX);
@@ -733,7 +742,7 @@ namespace HCB.UI
                     RelativeMotionsMove(MotionExtensions.W_Y, -7, ct));
 
                 var hc1 = await VisionResult(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
-                d.Hc2Offset = Point2D.of(hc1.CenterX - d.BtmRightAlignRaw.CenterX, hc1.CenterY - d.BtmRightAlignRaw.CenterY);
+                d.Hc2Offset = Point2D.of(hc1.CenterX - hc1.StageX - d.BtmRightAlignRaw.X, hc1.CenterY - hc1.StageY - d.BtmRightAlignRaw.Y);
 
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, -12.5, ct),
@@ -747,8 +756,8 @@ namespace HCB.UI
                 var hc2Points = new System.Collections.Generic.List<Point2D>();
 
                 // 0도: 이미 측정된 BtmLeftFidRaw(HC1), BtmRightFidRaw(HC2) 사용
-                hc1Points.Add(Point2D.of(-d.BtmLeftFidRaw.DxCamToMark, -d.BtmLeftFidRaw.DyCamToMark));
-                hc2Points.Add(Point2D.of(hc2XOffset - d.BtmRightFidRaw.DxCamToMark, hc2YOffset - d.BtmRightFidRaw.DyCamToMark));
+                hc1Points.Add(Point2D.of(-d.BtmLeftFidRaw.X, -d.BtmLeftFidRaw.Y));
+                hc2Points.Add(Point2D.of(hc2XOffset - d.BtmRightFidRaw.X, hc2YOffset - d.BtmRightFidRaw.Y));
 
                 // -1.5도, +1.5도: 회전 후 측정
                 double[] angles = { -1.5, 1.5 };

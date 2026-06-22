@@ -234,6 +234,43 @@ namespace HCB.UI
             };
         }
 
+
+        // BtmDie의 모든 마크들을 측정
+        public async Task<BtmMarkResponse> RequestHeadAlign(DirectType directType = DirectType.BOTH, bool avgMode = true)
+        {
+            var request = MessageFactory.Create(
+                messageName: "REQUEST_HEAD_ALIGN_SEQUENCE",
+                unitName: "EQP",
+                content: $"<SIDES>{directType}</SIDES><AVGMODE>{avgMode}</AVGMODE>"
+            );
+
+            double pcWT = Double.Parse(ecParamService.FindByName(MotionExtensions.PC_W_T).Value);
+            double hc1T = Double.Parse(ecParamService.FindByName(MotionExtensions.HC1_T).Value) + pcWT;
+            double hc2T = Double.Parse(ecParamService.FindByName(MotionExtensions.HC2_T).Value) + pcWT;
+            double fov = 7.2;
+
+            var result = await _server.RequestAsync(request, timeout: TimeSpan.FromMinutes(5));
+
+            if (!result.Success)
+            {
+                _logger.Warning($"[MarkPosition] 요청 실패: {result.ErrorMessage}");
+                return new BtmMarkResponse { Result = Result.NG };
+            }
+
+            var response = BtmMarkResponse.Parse(result.Response!.Data?.Content);
+
+            if (response.Result != Result.OK)
+                return new BtmMarkResponse { Result = Result.NG };
+
+            response.LeftFid = CalibrationMath.ApplyRotation(response.LeftFid, hc1T);
+            response.LeftAlign = CalibrationMath.ApplyRotation(response.LeftAlign, hc1T);
+            response.RightFid = CalibrationMath.ApplyRotation(response.RightFid, hc2T);
+            response.RightAlign = CalibrationMath.ApplyRotation(response.RightAlign, hc2T);
+
+            return response;
+        }
+
+
         public async Task<VernierResponse> RequestVernier(CameraType cameraType, DirectType direct)
         {
             var request = MessageFactory.Create(

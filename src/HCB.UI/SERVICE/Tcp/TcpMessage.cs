@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing.Text;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -156,6 +157,81 @@ namespace HCB.UI
         }
     }
 
+
+    public class BtmMarkResponse
+    {
+        public Result Result { get; set; } = Result.NG;
+
+        // ── LEFT ──
+        public Result LeftFidAf { get; set; } = Result.NG;
+        public Result LeftFidResult { get; set; } = Result.NG;
+        public Point2D LeftFid { get; set; } = new Point2D(0, 0);
+        public Result LeftAlignMove { get; set; } = Result.NG;
+        public Result LeftAlignAf { get; set; } = Result.NG;
+        public Result LeftAlignResult { get; set; } = Result.NG;
+        public Point2D LeftAlign { get; set; } = new Point2D(0, 0);
+
+        // ── RIGHT ──
+        public Result RightFidAf { get; set; } = Result.NG;
+        public Result RightFidResult { get; set; } = Result.NG;
+        public Point2D RightFid { get; set; } = new Point2D(0, 0);
+        public Result RightAlignMove { get; set; } = Result.NG;
+        public Result RightAlignAf { get; set; } = Result.NG;
+        public Result RightAlignResult { get; set; } = Result.NG;
+        public Point2D RightAlign { get; set; } = new Point2D(0, 0);
+
+        public static BtmMarkResponse Parse(string? content)
+        {
+            var response = new BtmMarkResponse();
+            if (string.IsNullOrWhiteSpace(content))
+                return response; // 빈 응답 → Result.NG, 좌표 (0,0)
+
+            var root = XElement.Parse($"<DATA>{content}</DATA>");
+
+            response.Result = ParseResult(root.Element("RESULT")?.Value);
+
+            // SIDES=LEFT/RIGHT 요청 시 미요청 측 블록은 생략됨 → null이면 기본값 유지
+            var left = root.Element("LEFT");
+            if (left != null)
+            {
+                response.LeftFidAf = ParseResult(left.Element("FID_AF")?.Value);
+                response.LeftFidResult = ParseResult(left.Element("FID_RESULT")?.Value);
+                response.LeftFid = ParsePoint(left, "FID_X", "FID_Y");
+                response.LeftAlignMove = ParseResult(left.Element("ALIGN_MOVE")?.Value);
+                response.LeftAlignAf = ParseResult(left.Element("ALIGN_AF")?.Value);
+                response.LeftAlignResult = ParseResult(left.Element("ALIGN_RESULT")?.Value);
+                response.LeftAlign = ParsePoint(left, "ALIGN_X", "ALIGN_Y");
+            }
+
+            var right = root.Element("RIGHT");
+            if (right != null)
+            {
+                response.RightFidAf = ParseResult(right.Element("FID_AF")?.Value);
+                response.RightFidResult = ParseResult(right.Element("FID_RESULT")?.Value);
+                response.RightFid = ParsePoint(right, "FID_X", "FID_Y");
+                response.RightAlignMove = ParseResult(right.Element("ALIGN_MOVE")?.Value);
+                response.RightAlignAf = ParseResult(right.Element("ALIGN_AF")?.Value);
+                response.RightAlignResult = ParseResult(right.Element("ALIGN_RESULT")?.Value);
+                response.RightAlign = ParsePoint(right, "ALIGN_X", "ALIGN_Y");
+            }
+
+            return response;
+        }
+
+        private static Result ParseResult(string? value)
+            => string.Equals(value?.Trim(), "OK", StringComparison.OrdinalIgnoreCase)
+                ? Result.OK
+                : Result.NG;
+
+        private static Point2D ParsePoint(XElement side, string xTag, string yTag)
+        {
+            double x = double.TryParse(side.Element(xTag)?.Value, NumberStyles.Any,
+                CultureInfo.InvariantCulture, out var xv) ? xv : 0;
+            double y = double.TryParse(side.Element(yTag)?.Value, NumberStyles.Any,
+                CultureInfo.InvariantCulture, out var yv) ? yv : 0;
+            return new Point2D(x, y);
+        }
+    }
     public class VernierResponse
     {
         //public MarkType MarkType { get; set; }
@@ -195,6 +271,7 @@ namespace HCB.UI
     {
         LEFT,
         RIGHT,
+        BOTH,
         Vertical,
         Horizontal
     }
@@ -209,7 +286,7 @@ namespace HCB.UI
         ALIGN_MARK_TOP,
         VERNIER
     }
-    
+
     public enum CameraType
     {
         HC_LOW,
