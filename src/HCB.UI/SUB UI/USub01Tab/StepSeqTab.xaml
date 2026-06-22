@@ -1539,23 +1539,122 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- ── STATUS : Axis Jitter ── -->
+                            <!-- ── STATUS ── -->
                             <Rectangle Height="1" Fill="#1C3A52" Margin="0,16,0,14"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                 <Border Background="#4A1A1A" CornerRadius="4" Padding="10,4"
                                         Margin="0,0,10,0">
                                     <TextBlock Text="STATUS" Foreground="#E74C3C" FontSize="13" FontWeight="Bold"/>
                                 </Border>
-                                <TextBlock Text="Axis Jitter"
+                                <TextBlock Text="System Status"
                                            Foreground="#ECF0F1" FontSize="18" FontWeight="Bold"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
 
+                            <!-- Mapping Status -->
+                            <TextBlock Text="Mapping" Foreground="#F39C12" FontSize="13"
+                                       FontWeight="Bold" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- P-Table Status -->
+                                <Border Grid.Column="0" Padding="10,8" CornerRadius="4">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#060F1A"/>
+                                            <Setter Property="BorderBrush" Value="#1C3A52"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Pmac.IsPTableMappingActive}" Value="True">
+                                                    <Setter Property="Background" Value="#0A2A1A"/>
+                                                    <Setter Property="BorderBrush" Value="#2ECC71"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Fill" Value="#5E8BAA"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Pmac.IsPTableMappingActive}" Value="True">
+                                                            <Setter Property="Fill" Value="#2ECC71"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="P-Table" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#5E8BAA"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Pmac.IsPTableMappingActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="#2ECC71"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- W-Table Status -->
+                                <Border Grid.Column="2" Padding="10,8" CornerRadius="4">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#060F1A"/>
+                                            <Setter Property="BorderBrush" Value="#1C3A52"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Pmac.IsWTableMappingActive}" Value="True">
+                                                    <Setter Property="Background" Value="#0A2A1A"/>
+                                                    <Setter Property="BorderBrush" Value="#2ECC71"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Fill" Value="#5E8BAA"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Pmac.IsWTableMappingActive}" Value="True">
+                                                            <Setter Property="Fill" Value="#2ECC71"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="W-Table" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#5E8BAA"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Pmac.IsWTableMappingActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="#2ECC71"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Axis Jitter -->
+                            <TextBlock Text="Axis Jitter" Foreground="#F39C12" FontSize="13"
+                                       FontWeight="Bold" Margin="0,0,0,6"/>
                             <ItemsControl ItemsSource="{Binding JitterAxes}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Margin="0,0,0,4" Padding="10,6"
-                                                CornerRadius="4">
+                                        <Border Margin="0,0,0,4" Padding="10,6" CornerRadius="4">
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Setter Property="Background" Value="#060F1A"/>
@@ -1576,10 +1675,7 @@
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-
-                                                <!-- Warning Indicator -->
-                                                <Ellipse Grid.Column="0" Width="8" Height="8"
-                                                         VerticalAlignment="Center">
+                                                <Ellipse Grid.Column="0" Width="8" Height="8" VerticalAlignment="Center">
                                                     <Ellipse.Style>
                                                         <Style TargetType="Ellipse">
                                                             <Setter Property="Fill" Value="#2ECC71"/>
@@ -1591,13 +1687,9 @@
                                                         </Style>
                                                     </Ellipse.Style>
                                                 </Ellipse>
-
-                                                <!-- Axis Name -->
                                                 <TextBlock Grid.Column="1" Text="{Binding Name}"
                                                            Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"
                                                            VerticalAlignment="Center" Margin="8,0,0,0"/>
-
-                                                <!-- Jitter Value (nm) -->
                                                 <TextBlock Grid.Column="2"
                                                            FontSize="14" FontFamily="Consolas" FontWeight="Bold"
                                                            VerticalAlignment="Center" HorizontalAlignment="Right"
@@ -1614,8 +1706,6 @@
                                                     </TextBlock.Style>
                                                     <Run Text="{Binding Jitter, StringFormat={}{0:F5}, Mode=OneWay}"/>
                                                 </TextBlock>
-
-                                                <!-- Unit -->
                                                 <TextBlock Grid.Column="3" Text="mm"
                                                            Foreground="#5E8BAA" FontSize="11"
                                                            VerticalAlignment="Center"/>

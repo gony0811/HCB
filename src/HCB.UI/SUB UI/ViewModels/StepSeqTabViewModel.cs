@@ -141,6 +141,7 @@ namespace HCB.UI
         [ObservableProperty] private string csvDataFileName = "bonding_hcb_{date}.csv";
 
         public ObservableCollection<IAxis> JitterAxes { get; } = new();
+        public PowerPmacDevice Pmac { get; private set; }
 
         [RelayCommand]
         public void ChangeMeasureVernier() => MeasureVernierAfterBonding = !MeasureVernierAfterBonding;
@@ -300,6 +301,13 @@ namespace HCB.UI
             _recipeService = recipeService;
             _ioManager = ioManager;
             _ecParamService = eCParamService;
+
+            Pmac = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            if (Pmac != null)
+            {
+                foreach (var axis in Pmac.MotionList)
+                    JitterAxes.Add(axis);
+            }
 
             var ioDevice = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
             if (ioDevice != null)

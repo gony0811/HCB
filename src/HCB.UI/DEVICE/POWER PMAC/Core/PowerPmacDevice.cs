@@ -31,6 +31,8 @@ namespace HCB.UI
         [ObservableProperty] private MotionDeviceType motionDeviceType;
         [ObservableProperty] public ObservableCollection<IAxis> motionList = new();
 
+        [ObservableProperty] private bool isPTableMappingActive;
+        [ObservableProperty] private bool isWTableMappingActive;
 
         private readonly ILogger _logger;
         private readonly IInterlockService _interlock;
@@ -84,6 +86,7 @@ namespace HCB.UI
             try
             {
                 const int fieldsPerAxis = 5;
+                const int mappingFields = 5;
                 var sb = new StringBuilder();
                 foreach (var motion in MotionList)
                 {
@@ -94,15 +97,21 @@ namespace HCB.UI
                     sb.Append($"Motor[{motion.MotorNo}].InPos ");
                 }
 
+                sb.Append("CompTable[0].sf[0] ");
+                sb.Append("CompTable[1].sf[0] ");
+                sb.Append("CompTable[2].sf[0] ");
+                sb.Append("CompTable[3].sf[0] ");
+                sb.Append("sys.CompEnable ");
+
                 string strResponse = await SendCommand<string>(sb.ToString().TrimEnd());
                 var values = strResponse.Split(
                     new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-                int expected = MotionList.Count * fieldsPerAxis;
-                if (values.Length < expected)
+                int expectedMotor = MotionList.Count * fieldsPerAxis;
+                if (values.Length < expectedMotor)
                 {
                     _logger.Warning("배치 상태 응답 부족: 기대 {Expected}개, 수신 {Actual}개",
-                        expected, values.Length);
+                        expectedMotor, values.Length);
                     return;
                 }
 
@@ -138,6 +147,31 @@ namespace HCB.UI
                     {
                         _logger.Warning("Motion[{No}] Parse Error: {Msg}",
                             motion.MotorNo, ex.Message);
+                    }
+                }
+
+                int mapOffset = expectedMotor;
+                if (values.Length >= mapOffset + mappingFields)
+                {
+                    try
+                    {
+                        double ct0 = Convert.ToDouble(values[mapOffset]);
+                        double ct1 = Convert.ToDouble(values[mapOffset + 1]);
+                        double ct2 = Convert.ToDouble(values[mapOffset + 2]);
+                        double ct3 = Convert.ToDouble(values[mapOffset + 3]);
+                        int compEnable = (int)Convert.ToDouble(values[mapOffset + 4]);
+
+                        bool ct01On = Math.Abs(ct0) > 0.5 && Math.Abs(ct1) > 0.5;
+                        bool ct23On = Math.Abs(ct2) > 0.5 && Math.Abs(ct3) > 0.5;
+                        bool ct01Off = Math.Abs(ct0) < 0.5 && Math.Abs(ct1) < 0.5;
+                        bool ct23Off = Math.Abs(ct2) < 0.5 && Math.Abs(ct3) < 0.5;
+
+                        IsPTableMappingActive = compEnable == 4 && ct01On && ct23Off;
+                        IsWTableMappingActive = compEnable == 4 && ct01Off && ct23On;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning("Mapping status parse error: {Msg}", ex.Message);
                     }
                 }
             }
