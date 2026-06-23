@@ -12,6 +12,137 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+            <!-- 버튼 스타일 -->
+            <Style x:Key="VisionBtnStyle" TargetType="Button">
+                <Setter Property="Background" Value="#1A3A5C"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="FontSize" Value="16"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="BorderBrush" Value="#2A5A8C"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Height" Value="48"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#234E7A"/>
+                                    <Setter Property="BorderBrush" Value="#3498DB"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#0F2A45"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.4"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- 콤보박스 스타일 -->
+            <Style x:Key="VisionComboStyle" TargetType="ComboBox">
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="FontSize" Value="16"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBox">
+                            <Grid>
+                                <ToggleButton x:Name="ToggleButton"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                    Focusable="False" ClickMode="Press">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border Background="#0A1628" BorderBrush="#2A5A8C"
+                                                    BorderThickness="1" CornerRadius="4">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="32"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Path Grid.Column="1" Data="M 0 0 L 4 4 L 8 0 Z"
+                                                          Fill="#5E8BAA" HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+                                <ContentPresenter Margin="10,0,32,0"
+                                    Content="{TemplateBinding SelectionBoxItem}"
+                                    ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                    VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
+                                       Focusable="False" AllowsTransparency="True">
+                                    <Border Background="#0A1628" BorderBrush="#2A5A8C"
+                                            BorderThickness="1" CornerRadius="4"
+                                            MaxHeight="300" MinWidth="{TemplateBinding ActualWidth}">
+                                        <ScrollViewer>
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="ItemContainerStyle">
+                    <Setter.Value>
+                        <Style TargetType="ComboBoxItem">
+                            <Setter Property="Foreground" Value="#ECF0F1"/>
+                            <Setter Property="Background" Value="#0A1628"/>
+                            <Setter Property="Padding" Value="10,6"/>
+                            <Setter Property="FontSize" Value="16"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ComboBoxItem">
+                                        <Border Background="{TemplateBinding Background}"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsHighlighted" Value="True">
+                                                <Setter Property="Background" Value="#1A3A5C"/>
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="#234E7A"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- 값 표시 스타일 -->
+            <Style x:Key="ValueLabelStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="#5E8BAA"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+            </Style>
+            <Style x:Key="ValueTextStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="FontSize" Value="16"/>
+                <Setter Property="FontFamily" Value="Consolas"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="HorizontalAlignment" Value="Right"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -22,15 +153,225 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <local:HeaderBar Margin="12,10,12,0" Title="VISION"/>
                 <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
                            VerticalAlignment="Bottom" Margin="12,32,12,0"/>
 
-                <TextBlock Grid.Row="1" Text="Vision Tab"
-                           Foreground="#5E8BAA" FontSize="18"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                              Margin="0,8,0,0">
+                    <StackPanel Margin="0,0,0,12">
+
+                        <!-- ═══ 설정 ═══ -->
+                        <TextBlock Text="카메라 / 마크 선택" Foreground="#5E8BAA"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Margin="16,8,16,6"/>
+
+                        <ComboBox Style="{StaticResource VisionComboStyle}" Margin="16,0,16,6"
+                                  ItemsSource="{Binding Source={local:EnumValues {x:Type local:CameraType}}}"
+                                  SelectedItem="{Binding SelectedCamera}"/>
+                        <ComboBox Style="{StaticResource VisionComboStyle}" Margin="16,0,16,6"
+                                  ItemsSource="{Binding Source={local:EnumValues {x:Type local:MarkType}}}"
+                                  SelectedItem="{Binding SelectedMark}"/>
+                        <ComboBox Style="{StaticResource VisionComboStyle}" Margin="16,0,16,12"
+                                  ItemsSource="{Binding Source={local:EnumValues {x:Type local:DirectType}}}"
+                                  SelectedItem="{Binding SelectedDirect}"/>
+
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,4"/>
+
+                        <!-- ═══ 1단계: 측정 ═══ -->
+                        <TextBlock Text="1. 비전 측정" Foreground="#3498DB"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Margin="16,12,16,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="16,0,16,8">
+                            현재 위치에서 비전 측정만 수행합니다. 결과를 확인한 후 이동 버튼을 누르세요.
+                        </TextBlock>
+
+                        <Button Style="{StaticResource VisionBtnStyle}"
+                                Content="측정"
+                                Command="{Binding MeasureCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Margin="16,0,16,8"/>
+
+                        <!-- 측정 결과 표시 -->
+                        <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,8"
+                                Visibility="{Binding HasMeasurement, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource ValueLabelStyle}" Text="X"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding MeasuredX, StringFormat='{}{0:F6} mm'}" Margin="12,2"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource ValueTextStyle}"
+                                           Foreground="#E67E22"
+                                           Text="{Binding MeasuredXUm, StringFormat='({0:+0.0;-0.0;0.0} um)'}"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource ValueLabelStyle}" Text="Y"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding MeasuredY, StringFormat='{}{0:F6} mm'}" Margin="12,2"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource ValueTextStyle}"
+                                           Foreground="#E67E22"
+                                           Text="{Binding MeasuredYUm, StringFormat='({0:+0.0;-0.0;0.0} um)'}"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource ValueLabelStyle}" Text="Dist"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding MeasuredDist, StringFormat='{}{0:F6} mm'}" Margin="12,2"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2" Style="{StaticResource ValueTextStyle}"
+                                           Foreground="#E67E22"
+                                           Text="{Binding MeasuredDistUm, StringFormat='({0:+0.0;-0.0;0.0} um)'}"/>
+                            </Grid>
+                        </Border>
+
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,4"/>
+
+                        <!-- ═══ 2단계: 이동 ═══ -->
+                        <TextBlock Text="2. 보정 이동" Foreground="#2ECC71"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Margin="16,12,16,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="16,0,16,8">
+                            측정값을 기반으로 마크 중심으로 이동합니다.
+                        </TextBlock>
+
+                        <!-- 이동량 표시 -->
+                        <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,8"
+                                Visibility="{Binding HasMeasurement, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource ValueLabelStyle}" Text="Move X"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Foreground="#2ECC71"
+                                           Text="{Binding MoveX, StringFormat='{}{0:F6} mm'}" Margin="12,2"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource ValueLabelStyle}" Text="Move Y"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Foreground="#2ECC71"
+                                           Text="{Binding MoveY, StringFormat='{}{0:F6} mm'}" Margin="12,2"/>
+                            </Grid>
+                        </Border>
+
+                        <Button Style="{StaticResource VisionBtnStyle}"
+                                Content="이동"
+                                Command="{Binding MoveToMarkCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Background="#1A4A3C" BorderBrush="#2A8A5C"
+                                Margin="16,0,16,8"/>
+
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,4"/>
+
+                        <!-- ═══ 3단계: 재측정 ═══ -->
+                        <TextBlock Text="3. 재측정 (잔차 확인)" Foreground="#E67E22"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Margin="16,12,16,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="16,0,16,8">
+                            이동 후 재측정하여 잔차를 확인합니다. CSV에 자동 저장됩니다.
+                        </TextBlock>
+
+                        <Button Style="{StaticResource VisionBtnStyle}"
+                                Content="재측정"
+                                Command="{Binding VerifyCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Background="#4A3A1A" BorderBrush="#8A6A2A"
+                                Margin="16,0,16,8"/>
+
+                        <!-- 잔차 결과 표시 -->
+                        <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,8"
+                                Visibility="{Binding HasVerification, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource ValueLabelStyle}" Text="Error X"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding ErrorX, StringFormat='{}{0:F6} mm'}" Margin="12,2"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource ValueTextStyle}"
+                                           Foreground="#E74C3C"
+                                           Text="{Binding ErrorXUm, StringFormat='({0:+0.0;-0.0;0.0} um)'}"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource ValueLabelStyle}" Text="Error Y"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding ErrorY, StringFormat='{}{0:F6} mm'}" Margin="12,2"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource ValueTextStyle}"
+                                           Foreground="#E74C3C"
+                                           Text="{Binding ErrorYUm, StringFormat='({0:+0.0;-0.0;0.0} um)'}"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource ValueLabelStyle}" Text="Dist"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding ErrorDist, StringFormat='{}{0:F6} mm'}" Margin="12,2"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2" Style="{StaticResource ValueTextStyle}"
+                                           Foreground="#E74C3C"
+                                           Text="{Binding ErrorDistUm, StringFormat='({0:+0.0;-0.0;0.0} um)'}"/>
+                            </Grid>
+                        </Border>
+
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,8"/>
+
+                        <!-- 결과 요약 -->
+                        <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+                                CornerRadius="6" Margin="16,4,16,8" Padding="14,10">
+                            <TextBlock Text="{Binding ResultSummary}"
+                                       Foreground="#E67E22" FontSize="14"
+                                       TextWrapping="Wrap"/>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 하단 상태바 -->
+                <Border Grid.Row="2"
+                        Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+                        CornerRadius="6" Margin="12,8,12,12" Padding="14,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="상태 " Foreground="#5E8BAA" FontSize="14"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding StatusText}"
+                                   Foreground="#3498DB" FontSize="14"
+                                   TextWrapping="Wrap" VerticalAlignment="Center"/>
+                        <Button Grid.Column="2" Style="{StaticResource VisionBtnStyle}"
+                                Content="중지" Width="80" Height="36"
+                                Command="{Binding StopCommand}"
+                                Background="#5A1A1A" BorderBrush="#8A2A2A"/>
+                    </Grid>
+                </Border>
+
             </Grid>
         </Border>
     </Grid>
