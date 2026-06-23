@@ -122,6 +122,9 @@
   <Page Include="SUB UI\USub01Tab\CalibrationTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\USub01Tab\VisionTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub01Tab\LoadingTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -290,6 +293,7 @@
   <Compile Include="SUB UI\USub01Tab\AutoTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\BondingInfoWindow.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\CalibrationTab.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\VisionTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\LoadingTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\ManualTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\RunInformation.cs" />
@@ -300,6 +304,7 @@
   <Compile Include="SUB UI\ViewModels\AlarmModalViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\CalibrationMath.cs" />
   <Compile Include="SUB UI\ViewModels\CalibrationTabViewModel.cs" />
+  <Compile Include="SUB UI\ViewModels\VisionTabViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\DieMeasurement.cs" />
   <Compile Include="SUB UI\ViewModels\JogWindowVM.cs" />
   <Compile Include="SUB UI\ViewModels\MotionMoveVM.cs" />

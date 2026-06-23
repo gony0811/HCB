@@ -322,6 +322,14 @@ namespace HCB.UI
             _elapsedTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _elapsedTimer.Tick += (_, _) => RefreshElapsed();
             _elapsedTimer.Start();
+
+            _sequenceService.InterlockActivated += OnInterlockActivated;
+        }
+
+        private void OnInterlockActivated()
+        {
+            try { _cts?.Cancel(); }
+            catch (ObjectDisposedException) { }
         }
 
         // ═════════════════════════════════════════════════════

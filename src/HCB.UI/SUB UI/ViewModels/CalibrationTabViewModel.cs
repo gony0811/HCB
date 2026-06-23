@@ -88,6 +88,14 @@ namespace HCB.UI
             _pyAxis = device.FindMotionByName(MotionExtensions.P_Y);
             _htAxis = device.FindMotionByName(MotionExtensions.H_T);
             _dyAxis = device.FindMotionByName(MotionExtensions.D_Y);
+
+            _sequenceService.InterlockActivated += OnInterlockActivated;
+        }
+
+        private void OnInterlockActivated()
+        {
+            try { _cts?.Cancel(); }
+            catch (ObjectDisposedException) { }
         }
 
         private CancellationToken GetToken()
