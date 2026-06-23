@@ -46,7 +46,7 @@ namespace HCB.UI
         [ObservableProperty] private double commandPosition;
         [ObservableProperty] private double currentPosition;
         [ObservableProperty] private double jitter;
-        [ObservableProperty] private double jitterTolerance = 0.00005;
+        [ObservableProperty] private double jitterTolerance =50;
         [ObservableProperty] private bool isJitterWarning;
 
         public DAxis(ILogger logger)
@@ -67,10 +67,11 @@ namespace HCB.UI
 
         partial void OnNameChanged(string value)
         {
+            // 단위 nm
             JitterTolerance = value switch
             {
-                MotionExtensions.h_z or MotionExtensions.D_Y => 0.0001,
-                _ => 0.00005,
+                MotionExtensions.h_z or MotionExtensions.D_Y => 100,
+                _ => 50,
             };
         }
 
