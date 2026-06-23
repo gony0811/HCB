@@ -54,11 +54,6 @@ namespace HCB.UI
         [ObservableProperty] private double hcROX;
         [ObservableProperty] private double hcROY;
 
-        // 정밀도 검증
-        [ObservableProperty] private CameraType selectedCamera = CameraType.HC1_HIGH;
-        [ObservableProperty] private MarkType selectedMark = MarkType.ALIGN_MARK;
-        [ObservableProperty] private DirectType selectedDirect = DirectType.LEFT;
-        [ObservableProperty] private string verifyResult = "-";
 
         // 전체 캘리브레이션
         [ObservableProperty] private int calibRepeatCount = 1;
@@ -88,6 +83,14 @@ namespace HCB.UI
             _pyAxis = device.FindMotionByName(MotionExtensions.P_Y);
             _htAxis = device.FindMotionByName(MotionExtensions.H_T);
             _dyAxis = device.FindMotionByName(MotionExtensions.D_Y);
+
+            _sequenceService.InterlockActivated += OnInterlockActivated;
+        }
+
+        private void OnInterlockActivated()
+        {
+            try { _cts?.Cancel(); }
+            catch (ObjectDisposedException) { }
         }
 
         private CancellationToken GetToken()
@@ -748,97 +751,6 @@ namespace HCB.UI
                 await _sequenceService.MappingOff();
                 if (standalone) IsNotBusy = true;
             }
-        }
-        // ══════════════════════════════════════════════
-        //  정밀도 검증
-        // ══════════════════════════════════════════════
-
-        [RelayCommand]
-        public async Task VerifyAlignmentAccuracy(CancellationToken ct = default)
-        {
-            if (!IsNotBusy) return;
-            IsNotBusy = false;
-            ct = GetToken();
-            try
-            {
-                CalibStatus = "정밀도 검증 중...";
-
-                string yAxisName = SelectedCamera == CameraType.PC_HIGH || SelectedCamera == CameraType.PC_LOW
-                    ? MotionExtensions.P_Y
-                    : MotionExtensions.W_Y;
-
-                // 1. 비전 측정
-                await _communication.RequestAFStart(SelectedCamera, SelectedMark, ct);
-                var measured = await _communication.RequestVisionMarkPosition(
-                    SelectedMark, SelectedCamera, SelectedDirect.ToString());
-
-                if (measured == null) throw new Exception("비전 응답 null");
-                if (measured.Result == Result.NG) throw new Exception("비전 측정 실패");
-
-                double measuredX = measured.X;
-                double measuredY = measured.Y;
-
-                // 2. 카메라별 이동 부호 결정
-                double moveX, moveY;
-                if (SelectedCamera == CameraType.PC_HIGH || SelectedCamera == CameraType.PC_LOW)
-                {
-                    moveX = -measuredX;
-                    moveY = +measuredY;
-                }
-                else
-                {
-                    moveX = -measuredX;
-                    moveY = -measuredY;
-                }
-
-                await Task.WhenAll(
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, moveX, ct),
-                    _sequenceService.RelativeMotionsMove(yAxisName, moveY, ct)
-                );
-
-                // 3. 재측정
-                await _communication.RequestAFStart(SelectedCamera, SelectedMark, ct);
-                var verify = await _communication.RequestVisionMarkPosition(
-                    SelectedMark, SelectedCamera, SelectedDirect.ToString());
-
-                if (verify == null) throw new Exception("재측정 응답 null");
-                if (verify.Result == Result.NG) throw new Exception("재측정 실패");
-
-                double errorX = verify.X;
-                double errorY = verify.Y;
-                double errorDist = Math.Sqrt(errorX * errorX + errorY * errorY);
-
-                VerifyResult = $"측정({measuredX * 1000:F1}, {measuredY * 1000:F1})μm → " +
-                               $"잔차({errorX * 1000:F1}, {errorY * 1000:F1})μm  dist={errorDist * 1000:F1}μm";
-
-                // 4. CSV 누적 저장
-                string folder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                    "HCB", "정밀도 데이터");
-                Directory.CreateDirectory(folder);
-
-                string path = Path.Combine(folder, $"VerifyAccuracy_{SelectedCamera}.csv");
-                bool exists = File.Exists(path);
-                var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss},{SelectedCamera}," +
-                           $"{measuredX:F6},{measuredY:F6},{errorX:F6},{errorY:F6},{errorDist:F6}";
-
-                if (!exists)
-                    await File.WriteAllTextAsync(path,
-                        "Timestamp,Camera,MeasuredX,MeasuredY,ErrorX,ErrorY,ErrorDist\n" + line + "\n", ct);
-                else
-                    await File.AppendAllTextAsync(path, line + "\n", ct);
-
-                CalibStatus = "검증 완료";
-                _logger.Information("검증 | 측정({MX:F4},{MY:F4}) → 잔차({EX:F4},{EY:F4}) dist={D:F4}mm",
-                    measuredX, measuredY, errorX, errorY, errorDist);
-            }
-            catch (OperationCanceledException) { CalibStatus = "취소됨"; }
-            catch (Exception e)
-            {
-                _logger.Error(e, "VerifyAlignmentAccuracy failed");
-                CalibStatus = $"오류: {e.Message}";
-            }
-            finally { IsNotBusy = true; }
         }
 
 

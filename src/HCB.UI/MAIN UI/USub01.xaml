@@ -42,6 +42,7 @@
                             <RowDefinition></RowDefinition>
                             <RowDefinition></RowDefinition>
                             <RowDefinition></RowDefinition>
+                            <RowDefinition></RowDefinition>
                         </Grid.RowDefinitions>
 
                         <telerik:RadToggleButton Tag="LOADING"
@@ -93,6 +94,16 @@
                                Style="{StaticResource RadToggleButtonStyle}"
                                 Margin="0 1 0 1">
 
+                        </telerik:RadToggleButton>
+
+                        <telerik:RadToggleButton Tag="VISION"
+                                Content="VISION"
+                                Grid.Row="5"
+                                Command="{Binding SetTabCommand}"
+                                CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
+                                IsChecked="{Binding SelectedTabKey, Converter={StaticResource KeyEquals}, ConverterParameter=VISION}"
+                                Style="{StaticResource RadToggleButtonStyle}"
+                                Margin="0 1 0 1">
                         </telerik:RadToggleButton>
                     </Grid>
                 </Grid>
