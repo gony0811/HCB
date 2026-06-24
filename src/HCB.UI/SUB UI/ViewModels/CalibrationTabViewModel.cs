@@ -312,10 +312,10 @@ namespace HCB.UI
                 else await _ecParamService.UpdateParam(dto);
 
                 CalibStatus = "Hc1 캘리브레이션 중...";
+                await _sequenceService.WTable2DMappingOn();
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC1_T_OFFSET", ct);
 
-                await _sequenceService.WTable2DMappingOn();
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
@@ -365,9 +365,9 @@ namespace HCB.UI
                 else await _ecParamService.UpdateParam(dto);
 
                 CalibStatus = "Hc2 캘리브레이션 중...";
+                await _sequenceService.WTable2DMappingOn();
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC2_T_OFFSET", ct);
-                await _sequenceService.WTable2DMappingOn();
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
@@ -415,11 +415,11 @@ namespace HCB.UI
             try
             {
                 CalibStatus = "카메라 거리측정 시작";
+                await _sequenceService.WTable2DMappingOn();
                 await _sequenceService.Init_Head(ct);
                 await Task.WhenAll(
                     _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION, ct),
                     _sequenceService.MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, ct));
-                await _sequenceService.WTable2DMappingOn();
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");

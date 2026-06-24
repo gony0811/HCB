@@ -162,10 +162,11 @@ namespace HCB.UI
             try
             {
                 var sw = Stopwatch.StartNew();
-                data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
-                _logger.Information("TopHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 if (data.Use2DMapping) await PTable2DMappingOn();
+
+                data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
+                _logger.Information("TopHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 sw.Restart();
                 data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove, ct);
@@ -207,11 +208,12 @@ namespace HCB.UI
             try
             {
                 var sw = Stopwatch.StartNew();
-                await TopDieSet(ct);
-                if(data.Use2DMapping)
+                if (data.Use2DMapping)
                 {
                     await WTable2DMappingOn();
                 }
+
+                await TopDieSet(ct);
 
                 sw.Restart();
 
