@@ -600,6 +600,7 @@ namespace HCB.UI
             try
             {
                 TopCorrState = StepState.InProgress;
+                
                 await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
                 ComputeDistances();
                 await _sequenceService.BondingCorr(hcbData, _cts.Token);

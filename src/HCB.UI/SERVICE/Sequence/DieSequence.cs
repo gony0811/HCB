@@ -208,7 +208,10 @@ namespace HCB.UI
             {
                 var sw = Stopwatch.StartNew();
                 await TopDieSet(ct);
-                await WTable2DMappingOn();
+                if(data.Use2DMapping)
+                {
+                    await WTable2DMappingOn();
+                }
 
                 sw.Restart();
 
