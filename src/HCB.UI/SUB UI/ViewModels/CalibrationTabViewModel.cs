@@ -530,10 +530,10 @@ namespace HCB.UI
                 else await _ecParamService.UpdateParam(dto);
 
                 CalibStatus = "Pc 캘리브레이션 중...";
+                await _sequenceService.PTable2DMappingOn();
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.P_Y], "T축 보정", ct);
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, "P_LEFT_FIDUCIAL_HIGH", ct);
-                await _sequenceService.PTable2DMappingOn();
                 double theta = await GetAnglePc(CameraType.PC_HIGH, MarkType.FIDUCIAL, DirectType.LEFT, ct);
                 ThetaPRad = theta;
                 ThetaPDeg = theta * (180.0 / Math.PI);
