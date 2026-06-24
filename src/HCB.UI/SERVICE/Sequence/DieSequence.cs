@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace HCB.UI
 {
@@ -287,16 +288,24 @@ namespace HCB.UI
                 double refHc1Dy = _paramService.GetDouble("Hc1FidRefDy");
                 double refHc2Dx = _paramService.GetDouble("Hc2FidRefDx");
                 double refHc2Dy = _paramService.GetDouble("Hc2FidRefDy");
+                Point2D camOffset = data.Hc2Offset;
 
+                Point2D lf = Point2D.of(
+                    -data.Hc1FidCurrent.X,
+                    -data.Hc1FidCurrent.Y);
+                Point2D rf = Point2D.of(
+                    camOffset.X - data.Hc2FidCurrent.X,
+                    camOffset.Y - data.Hc2FidCurrent.Y);
+                data.FidCurrentDist = CalibrationMath.Dist(rf, lf);
                 data.Hc1FidRef = Point2D.of(refHc1Dx, refHc1Dy);
                 data.Hc2FidRef = Point2D.of(refHc2Dx, refHc2Dy);
                 data.Hc1FidDrift = Point2D.of(fid1.X - refHc1Dx, fid1.Y - refHc1Dy);
                 data.Hc2FidDrift = Point2D.of(fid2.X - refHc2Dx, fid2.Y - refHc2Dy);
-
                 _logger.Information(
-                    "피듀셜 트래킹 — HC1 drift({Hc1Dx:F6},{Hc1Dy:F6}), HC2 drift({Hc2Dx:F6},{Hc2Dy:F6}) | {Elapsed}ms",
+                    "피듀셜 트래킹 — HC1 drift({Hc1Dx:F6},{Hc1Dy:F6}), HC2 drift({Hc2Dx:F6},{Hc2Dy:F6}), FidDist:{Cur:F6} | {Elapsed}ms",
                     data.Hc1FidDrift.X, data.Hc1FidDrift.Y,
                     data.Hc2FidDrift.X, data.Hc2FidDrift.Y,
+                    data.FidCurrentDist,
                     sw.ElapsedMilliseconds);
 
             }

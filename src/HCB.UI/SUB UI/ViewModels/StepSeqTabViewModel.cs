@@ -1091,7 +1091,8 @@ namespace HCB.UI
                     "BtmAlignDist", "TopAlignDist", "BtmFidDist", "TopFidDist",
                     "Vernier_OffsetX", "Vernier_OffsetY", "Vernier_OffsetT",
                     "HC1_Cur_X", "HC1_Cur_Y", "HC1_Ref_X", "HC1_Ref_Y", "HC1_Drift_X", "HC1_Drift_Y",
-                    "HC2_Cur_X", "HC2_Cur_Y", "HC2_Ref_X", "HC2_Ref_Y", "HC2_Drift_X", "HC2_Drift_Y"));
+                    "HC2_Cur_X", "HC2_Cur_Y", "HC2_Ref_X", "HC2_Ref_Y", "HC2_Drift_X", "HC2_Drift_Y",
+                    "Fid_CurDist"));
             }
 
             sb.AppendLine(string.Join(",",
@@ -1126,7 +1127,8 @@ namespace HCB.UI
                 hcbData != null ? Pt(hcbData.Hc1FidDrift) : NullPt(),
                 hcbData != null ? Pt(hcbData.Hc2FidCurrent) : NullPt(),
                 hcbData != null ? Pt(hcbData.Hc2FidRef) : NullPt(),
-                hcbData != null ? Pt(hcbData.Hc2FidDrift) : NullPt()));
+                hcbData != null ? Pt(hcbData.Hc2FidDrift) : NullPt(),
+                F(hcbData?.FidCurrentDist)));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
 

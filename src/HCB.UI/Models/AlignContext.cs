@@ -161,5 +161,6 @@ namespace HCB.UI
         public Point2D Hc2FidRef { get; set; } = Point2D.Zero;
         public Point2D Hc1FidDrift { get; set; } = Point2D.Zero;
         public Point2D Hc2FidDrift { get; set; } = Point2D.Zero;
+        public double FidCurrentDist { get; set; }
     }
 }
