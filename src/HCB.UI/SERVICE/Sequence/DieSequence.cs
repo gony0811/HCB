@@ -161,6 +161,7 @@ namespace HCB.UI
             var total = Stopwatch.StartNew();
             try
             {
+                LoadCalibrationInto(data);
                 var sw = Stopwatch.StartNew();
                 data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
                 _logger.Information("TopHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
