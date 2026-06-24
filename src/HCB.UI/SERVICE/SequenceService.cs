@@ -25,6 +25,14 @@ namespace HCB.UI
 
         private CancellationToken _stopToken = CancellationToken.None;
 
+        public event Action InterlockActivated;
+
+        public void RaiseInterlock()
+        {
+            _logger.Warning("Interlock 발생 — 모든 시퀀스 취소 요청");
+            InterlockActivated?.Invoke();
+        }
+
         public SequenceService(ILogger logger, DeviceManager deviceManager, ISequenceHelper sequenceHelper, DataOptions dataOptions, OperationService operationService, AlarmService alarmService,
             SequenceServiceVM sequenceServiceVM, EqpCommunicationService communicationService, RecipeService recipeService, ECParamService eCParamService)
         {

@@ -394,7 +394,6 @@ namespace HCB.UI
             try
             {
                 if (data == null) throw new ArgumentNullException(nameof(data));
-                LoadCalibrationInto(data);
                 
                 if (data.UseAutoTracing)
                 {

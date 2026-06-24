@@ -80,6 +80,16 @@ namespace HCB.UI
             _sequenceService = sequenceService;
             HzHomeCommand = new AsyncRelayCommand(ct => _sequenceService.HzHome(ct));
             Initialize();
+
+            _sequenceService.InterlockActivated += OnInterlockActivated;
+        }
+
+        private void OnInterlockActivated()
+        {
+            try { _cts?.Cancel(); }
+            catch (ObjectDisposedException) { }
+            try { _cancellationTokenSource?.Cancel(); }
+            catch (ObjectDisposedException) { }
         }
 
         private void Initialize()

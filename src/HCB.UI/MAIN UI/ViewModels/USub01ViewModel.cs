@@ -22,6 +22,7 @@ namespace HCB.UI
         private ManualTab manualTab;
         private StepSeqTab stepSeqTab;
         private CalibrationTab calibrationTab;
+        private VisionTab visionTab;
         private USub02ViewModel recipeViewModel;
         #endregion
 
@@ -31,13 +32,14 @@ namespace HCB.UI
 
 
 
-        public USub01ViewModel(LoadingTab loadingTab, AutoTab autoTab, ManualTab manualTab, StepSeqTab stepSeqTab, CalibrationTab calibrationTab, USub02ViewModel sub02ViewModel)
+        public USub01ViewModel(LoadingTab loadingTab, AutoTab autoTab, ManualTab manualTab, StepSeqTab stepSeqTab, CalibrationTab calibrationTab, VisionTab visionTab, USub02ViewModel sub02ViewModel)
         {
             this.loadingTab = loadingTab;
             this.autoTab = autoTab;
             this.manualTab = manualTab;
             this.stepSeqTab = stepSeqTab;
             this.calibrationTab = calibrationTab;
+            this.visionTab = visionTab;
             this.recipeViewModel = sub02ViewModel;
             SetTab(selectedTabKey);
 
@@ -56,6 +58,7 @@ namespace HCB.UI
                 case "MANUAL": CurrentTab = manualTab; break;
                 case "STEP": CurrentTab = stepSeqTab; break;
                 case "CALIBRATION": CurrentTab = calibrationTab; break;
+                case "VISION": CurrentTab = visionTab; break;
             }
         }
 

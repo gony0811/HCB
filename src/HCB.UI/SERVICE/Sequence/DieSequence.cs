@@ -161,6 +161,7 @@ namespace HCB.UI
             var total = Stopwatch.StartNew();
             try
             {
+                LoadCalibrationInto(data);
                 var sw = Stopwatch.StartNew();
 
                 if (data.Use2DMapping) await PTable2DMappingOn();

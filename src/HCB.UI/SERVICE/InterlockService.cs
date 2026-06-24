@@ -19,6 +19,7 @@ namespace HCB.UI
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
         private readonly OperationService _operationService;
+        private readonly SequenceService _sequenceService;
         private readonly Timer _timer;
         private readonly SemaphoreSlim _pollingLock = new SemaphoreSlim(1, 1);
         private readonly AlarmService _alarmService;
@@ -34,15 +35,16 @@ namespace HCB.UI
         private IAxis _PY;
         private IAxis _WY;
         private IAxis _WT;
-        private IAxis _DY;        
+        private IAxis _DY;
 
-        public InterlockService(ILogger logger, ISequenceHelper sequenceHelper, DeviceManager deviceManager, OperationService operationService,  AlarmService alarmService)
+        public InterlockService(ILogger logger, ISequenceHelper sequenceHelper, DeviceManager deviceManager, OperationService operationService, SequenceService sequenceService, AlarmService alarmService)
         {
             _logger = logger.ForContext<InterlockService>();
             _deviceManager = deviceManager;
             _sequenceHelper = sequenceHelper;
             _alarmService = alarmService;
             _operationService = operationService;
+            _sequenceService = sequenceService;
 
             this.Initialize();
 
@@ -120,6 +122,7 @@ namespace HCB.UI
 
                     /**** 모든 모션 축 정지 ****/
                     await _sequenceHelper.StopAllAsync(stoppingToken);
+                    _sequenceService.RaiseInterlock();
                     _sequenceHelper.SetTowerLamp(green: false, red: true, yellow: false, buzzer: true);
 
                     _logger.Warning(new SysLog("OperationService", status.Availability.ToString(), status.Run.ToString(), status.Alarm.ToString(), status.Operation.ToString(), "Heavy Alarm Detected - Stopping Operation").ToString());
@@ -142,6 +145,7 @@ namespace HCB.UI
                 // EMS 1 스위치가 눌렸을 때 처리
                 await _alarmService.SetAlarm("E001");
                 await _sequenceHelper.StopAllAsync(token);
+                _sequenceService.RaiseInterlock();
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_EMO_2_SWITCH) == true)
@@ -149,6 +153,7 @@ namespace HCB.UI
                 // EMS 2 스위치가 눌렸을 때 처리
                 await _alarmService.SetAlarm("E002");
                 await _sequenceHelper.StopAllAsync(token);
+                _sequenceService.RaiseInterlock();
             }
 
 
@@ -157,13 +162,15 @@ namespace HCB.UI
                 // 라이트 커튼이 차단되었을 때 처리
                 await _alarmService.SetAlarm("E003");
                 await _sequenceHelper.StopAllAsync(token);
+                _sequenceService.RaiseInterlock();
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FRONT_LEFT_DOOR) == true)
-            {                 
+            {
                 // 전면 왼쪽 도어가 열렸을 때 처리
                 await _alarmService.SetAlarm("E004");
                 await _sequenceHelper.StopAllAsync(token);
+                _sequenceService.RaiseInterlock();
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FRONT_RIGHT_DOOR) == true)
@@ -171,6 +178,7 @@ namespace HCB.UI
                 // 전면 오른쪽 도어가 열렸을 때 처리
                 await _alarmService.SetAlarm("E005");
                 await _sequenceHelper.StopAllAsync(token);
+                _sequenceService.RaiseInterlock();
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_SIDE_LEFT_DOOR) == true)
@@ -178,6 +186,7 @@ namespace HCB.UI
                 // 측면 왼쪽 도어가 열렸을 때 처리
                 await _alarmService.SetAlarm("E006");
                 await _sequenceHelper.StopAllAsync(token);
+                _sequenceService.RaiseInterlock();
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_SIDE_RIGHT_DOOR) == true)
@@ -185,6 +194,7 @@ namespace HCB.UI
                 // 측면 오른쪽 도어가 열렸을 때 처리
                 await _alarmService.SetAlarm("E0007");
                 await _sequenceHelper.StopAllAsync(token);
+                _sequenceService.RaiseInterlock();
             }
 
             if (_powerPmacDevice.GetDigital(IoExtensions.DI_FAN_1_ALARM) == true)
@@ -336,8 +346,8 @@ namespace HCB.UI
             {
                 if (_HX.IsBusy || _HZ.IsBusy || _HT.IsBusy || _hz.IsBusy || _PY.IsBusy || _WY.IsBusy || _WT.IsBusy || _DY.IsBusy)
                 {
-                   
                     await _sequenceHelper.StopAllAsync(token);
+                    _sequenceService.RaiseInterlock();
                     await _alarmService.SetAlarm("E0035");
                     _logger.Warning(new SysLog("InterlockService", _operationService.Status.Availability.ToString(), _operationService.Status.Run.ToString(), _operationService.Status.Alarm.ToString(), _operationService.Status.Operation.ToString(), "Interlock: Light curtain activated during motion. Stopping all axes.").ToString());
                 }
