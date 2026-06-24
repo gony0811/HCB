@@ -746,10 +746,6 @@ namespace HCB.UI
         {
             try
             {
-                if (d.Use2DMapping)
-                {
-                    await WTable2DMappingOn();
-                }
                 // ── 1. 카메라 거리 구하기 ──
                 var hc1 = await VisionResult(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
                 await Task.WhenAll(
@@ -816,10 +812,6 @@ namespace HCB.UI
             {
                 _logger.Error(e, "CamDistAndHcro 실패");
                 throw;
-            }
-            finally
-            {
-                await MappingOff();
             }
         }
 

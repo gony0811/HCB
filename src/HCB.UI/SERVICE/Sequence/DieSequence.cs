@@ -209,6 +209,9 @@ namespace HCB.UI
             try
             {
                 var sw = Stopwatch.StartNew();
+                
+                await MappingOff();
+
                 if (data.Use2DMapping)
                 {
                     await WTable2DMappingOn();
@@ -257,7 +260,6 @@ namespace HCB.UI
             }
             finally
             {
-                if (data.Use2DMapping) await MappingOff();
                 _logger.Information("BtmHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
             }
             

@@ -5,14 +5,15 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
+using Telerik.Windows.Persistence.Core;
 using static HCB.UI.SequenceService;
 using static HCB.UI.SERVICE.CalibrationService;
 
@@ -609,9 +610,8 @@ namespace HCB.UI
             {
                 TopCorrState = StepState.InProgress;
                 
-                await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
-                ComputeDistances();
-                await _sequenceService.BondingCorr(hcbData, _cts.Token);
+                
+                
                 TopCorrState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopCorrState = StepState.Idle; }
@@ -625,6 +625,9 @@ namespace HCB.UI
             try
             {
                 TopBondingState = StepState.InProgress;
+                await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
+                ComputeDistances();
+                await _sequenceService.BondingCorr(hcbData, _cts.Token);
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, _cts.Token));
                 TopBondingState = StepState.Completed;
@@ -632,6 +635,7 @@ namespace HCB.UI
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
             catch (Exception e) { TopBondingState = StepState.Failed; _logger.Error(e, "TopBonding Failed"); }
+            
         }
 
         [RelayCommand]
