@@ -292,7 +292,10 @@ namespace HCB.UI
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
                 double readyPosition = await GetRecipe("READY_POSITION");
-
+                if (data.Use2DMapping)
+                {
+                    await WTable2DMappingOn();
+                }
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, -data.ResultX, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, -data.ResultY, ct),
@@ -313,6 +316,9 @@ namespace HCB.UI
             {
                 _logger.Error(e, "BondingAlign 실패");
                 throw;
+            }finally
+            {
+                await MappingOff();
             }
         }
 

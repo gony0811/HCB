@@ -4,9 +4,11 @@ using SharpDX;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace HCB.UI
 {
@@ -176,6 +178,9 @@ namespace HCB.UI
                 sw.Restart();
                 data.TopLeftAlignRaw = await TopDieVisionLeftAlign(data.AvgMove, ct);
                 _logger.Information("TopHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
+
+                if (data.UseFiducialTracking)
+                    await MeasureFiducialDrift(data, ct);
             }
             catch (ErrorException e)
             {
@@ -203,36 +208,45 @@ namespace HCB.UI
             {
                 var sw = Stopwatch.StartNew();
                 await TopDieSet(ct);
-                await WTable2DMappingOn();
+                if(data.Use2DMapping)
+                {
+                    await WTable2DMappingOn();
+                }
 
                 sw.Restart();
-                var result = await BtmDieVisionAlign(avgMode: data.AvgMove);
-                data.BtmLeftFidRaw = result.LeftFid; 
-                data.BtmLeftAlignRaw= result.LeftAlign; 
-                data.BtmRightFidRaw = result.RightFid; 
-                data.BtmRightAlignRaw = result.RightAlign; 
 
-                _logger.Information("BtmHighAlign : {Elapsed}ms", sw.ElapsedMilliseconds);
+                if (data.UseBtmIndividualMeasure)
+                {
+                    var rFid = await BtmDieVisionRightFid(data.AvgMove, ct);
+                    data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark, rFid.DyCamToMark);
+                    _logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-                //_logger.Information("BtmHighAlign — TopDieSet: {Elapsed}ms", sw.ElapsedMilliseconds);
-                //sw.Restart();
-                //data.BtmRightFidRaw = await BtmDieVisionRightFid(data.AvgMove, ct);
-                //_logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
+                    sw.Restart();
+                    var rAlign = await BtmDieVisionRightAlign(data.AvgMove, ct);
+                    data.BtmRightAlignRaw = Point2D.of(rAlign.DxCamToMark, rAlign.DyCamToMark);
+                    _logger.Information("BtmHighAlign — RightAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-                //sw.Restart();
-                //data.BtmRightAlignRaw = await BtmDieVisionRightAlign(data.AvgMove, ct);
-                //_logger.Information("BtmHighAlign — RightAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
+                    sw.Restart();
+                    var lFid = await BtmDieVisionLeftFid(data.AvgMove, ct);
+                    data.BtmLeftFidRaw = Point2D.of(lFid.DxCamToMark, lFid.DyCamToMark);
+                    _logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-                //sw.Restart();
-                //data.BtmLeftFidRaw = await BtmDieVisionLeftFid(data.AvgMove, ct);
-                //_logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
-
-                //sw.Restart();
-                //data.BtmLeftAlignRaw = await BtmDieVisionLeftAlign(data.AvgMove, ct);
-                //_logger.Information("BtmHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
+                    sw.Restart();
+                    var lAlign = await BtmDieVisionLeftAlign(data.AvgMove, ct);
+                    data.BtmLeftAlignRaw = Point2D.of(lAlign.DxCamToMark, lAlign.DyCamToMark);
+                    _logger.Information("BtmHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
+                }
+                else
+                {
+                    var result = await BtmDieVisionAlign(avgMode: data.AvgMove);
+                    data.BtmLeftFidRaw = result.LeftFid;
+                    data.BtmLeftAlignRaw = result.LeftAlign;
+                    data.BtmRightFidRaw = result.RightFid;
+                    data.BtmRightAlignRaw = result.RightAlign;
+                    _logger.Information("BtmHighAlign : {Elapsed}ms", sw.ElapsedMilliseconds);
+                }
 
                 _logger.Information("BtmHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
-
             }
             catch(Exception e)
             {
@@ -245,6 +259,65 @@ namespace HCB.UI
             }
             
             return data;
+        }
+
+        #endregion
+
+        #region 피듀셜 트래킹
+
+        private async Task MeasureFiducialDrift(AlignData data, CancellationToken ct)
+        {
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                _logger.Information("피듀셜 트래킹 측정 시작");
+
+                await communicationService.RequestAFStart(CameraType.HC1_HIGH, MarkType.FIDUCIAL, ct);
+                var fid1 = await communicationService.RequestVisionMarkPosition(
+                    MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
+                if (fid1 == null || fid1.Result == Result.NG)
+                    throw new VisionException(VisionErrorCode.MEASUREMENT_FAIL);
+
+                await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
+                var fid2 = await communicationService.RequestVisionMarkPosition(
+                    MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
+                if (fid2 == null || fid2.Result == Result.NG)
+                    throw new VisionException(VisionErrorCode.MEASUREMENT_FAIL);
+
+                data.Hc1FidCurrent = Point2D.of(fid1.X, fid1.Y);
+                data.Hc2FidCurrent = Point2D.of(fid2.X, fid2.Y);
+
+                double refHc1Dx = _paramService.GetDouble("Hc1FidRefDx");
+                double refHc1Dy = _paramService.GetDouble("Hc1FidRefDy");
+                double refHc2Dx = _paramService.GetDouble("Hc2FidRefDx");
+                double refHc2Dy = _paramService.GetDouble("Hc2FidRefDy");
+                Point2D camOffset = data.Hc2Offset;
+
+                Point2D lf = Point2D.of(
+                    -data.Hc1FidCurrent.X,
+                    -data.Hc1FidCurrent.Y);
+                Point2D rf = Point2D.of(
+                    camOffset.X - data.Hc2FidCurrent.X,
+                    camOffset.Y - data.Hc2FidCurrent.Y);
+                data.FidCurrentDist = CalibrationMath.Dist(rf, lf);
+                data.Hc1FidRef = Point2D.of(refHc1Dx, refHc1Dy);
+                data.Hc2FidRef = Point2D.of(refHc2Dx, refHc2Dy);
+                data.Hc1FidDrift = Point2D.of(fid1.X - refHc1Dx, fid1.Y - refHc1Dy);
+                data.Hc2FidDrift = Point2D.of(fid2.X - refHc2Dx, fid2.Y - refHc2Dy);
+                _logger.Information(
+                    "피듀셜 트래킹 — HC1 drift({Hc1Dx:F6},{Hc1Dy:F6}), HC2 drift({Hc2Dx:F6},{Hc2Dy:F6}), FidDist:{Cur:F6} | {Elapsed}ms",
+                    data.Hc1FidDrift.X, data.Hc1FidDrift.Y,
+                    data.Hc2FidDrift.X, data.Hc2FidDrift.Y,
+                    data.FidCurrentDist,
+                    sw.ElapsedMilliseconds);
+
+            }
+            catch (VisionException) { throw; }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                _logger.Warning(e, "피듀셜 트래킹 측정 실패 — 건너뜀");
+            }
         }
 
         #endregion
