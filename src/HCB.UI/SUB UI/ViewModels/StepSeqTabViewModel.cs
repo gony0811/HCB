@@ -133,6 +133,8 @@ namespace HCB.UI
         [ObservableProperty] private bool use2DMapping = true;
         [ObservableProperty] private bool measureVernierAfterBonding = false;
         [ObservableProperty] private bool useAutoTracing = false;
+        [ObservableProperty] private bool useBtmIndividualMeasure = false;
+        [ObservableProperty] private bool useFiducialTracking = false;
 
         // ── CSV 저장 설정 ─────────────────────────────────────
         [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
@@ -151,6 +153,12 @@ namespace HCB.UI
 
         [RelayCommand]
         public void ChangeAutoTracing() => UseAutoTracing = !UseAutoTracing;
+
+        [RelayCommand]
+        public void ChangeBtmMeasureMode() => UseBtmIndividualMeasure = !UseBtmIndividualMeasure;
+
+        [RelayCommand]
+        public void ChangeFiducialTracking() => UseFiducialTracking = !UseFiducialTracking;
 
         [ObservableProperty] private bool isWTableMappingOn;
         [ObservableProperty] private bool isPTableMappingOn;
@@ -552,7 +560,7 @@ namespace HCB.UI
             try
             {
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing };
+                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
                 hcbData = await _sequenceService.TopHighAlign(data, _cts.Token);
                 ComputeDistances();
                 TopRightFid = hcbData.TopRightFidRaw;
@@ -657,7 +665,7 @@ namespace HCB.UI
                     ct.ThrowIfCancellationRequested();
 
                     TopHighAlignState = StepState.InProgress;
-                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing };
+                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
                     hcbData = await _sequenceService.TopHighAlign(data, ct);
                     TopRightFid = hcbData.TopRightFidRaw;
                     TopRightAlign = hcbData.TopRightAlignRaw;
@@ -722,7 +730,7 @@ namespace HCB.UI
 
                 // 2. 고배율 측정 (Top)
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing };
+                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
                 hcbData = await _sequenceService.TopHighAlign(data, ct);
                 TopRightFid = hcbData.TopRightFidRaw;
                 TopRightAlign = hcbData.TopRightAlignRaw;
@@ -1081,7 +1089,9 @@ namespace HCB.UI
                     "TCenter_X", "TCenter_Y", "BCenter_X", "BCenter_Y",
                     "ResultX", "ResultY", "ResultT",
                     "BtmAlignDist", "TopAlignDist", "BtmFidDist", "TopFidDist",
-                    "Vernier_OffsetX", "Vernier_OffsetY", "Vernier_OffsetT"));
+                    "Vernier_OffsetX", "Vernier_OffsetY", "Vernier_OffsetT",
+                    "HC1_Cur_X", "HC1_Cur_Y", "HC1_Ref_X", "HC1_Ref_Y", "HC1_Drift_X", "HC1_Drift_Y",
+                    "HC2_Cur_X", "HC2_Cur_Y", "HC2_Ref_X", "HC2_Ref_Y", "HC2_Drift_X", "HC2_Drift_Y"));
             }
 
             sb.AppendLine(string.Join(",",
@@ -1110,7 +1120,13 @@ namespace HCB.UI
                 F(hcbData?.ResultX), F(hcbData?.ResultY), F(hcbData?.ResultT),
                 F(hcbData?.BtmAlignDist), F(hcbData?.TopAlignDist),
                 F(hcbData?.BtmFidDist), F(hcbData?.TopFidDist),
-                F(VernierResult?.OffsetX), F(VernierResult?.OffsetY), F(VernierResult?.OffsetT)));
+                F(VernierResult?.OffsetX), F(VernierResult?.OffsetY), F(VernierResult?.OffsetT),
+                hcbData != null ? Pt(hcbData.Hc1FidCurrent) : NullPt(),
+                hcbData != null ? Pt(hcbData.Hc1FidRef) : NullPt(),
+                hcbData != null ? Pt(hcbData.Hc1FidDrift) : NullPt(),
+                hcbData != null ? Pt(hcbData.Hc2FidCurrent) : NullPt(),
+                hcbData != null ? Pt(hcbData.Hc2FidRef) : NullPt(),
+                hcbData != null ? Pt(hcbData.Hc2FidDrift) : NullPt()));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
 

@@ -832,6 +832,48 @@
                                         </StackPanel>
                                     </Border>
 
+                                    <!-- 피듀셜 트래킹 토글 -->
+                                    <Button Grid.Column="5" Margin="0,0,6,0"
+                                            Command="{Binding ChangeFiducialTrackingCommand}"
+                                            MinWidth="80" Height="32">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Bd"
+                                                                    Background="#1A2332"
+                                                                    BorderBrush="#2A3A4A"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="6"
+                                                                    Padding="10,4">
+                                                                <TextBlock x:Name="Txt"
+                                                                           Text="Fid Track OFF"
+                                                                           Foreground="#8899AA"
+                                                                           FontSize="12"
+                                                                           FontWeight="SemiBold"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <DataTrigger Binding="{Binding UseFiducialTracking}" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Background" Value="#0F6E56"/>
+                                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#1D9E75"/>
+                                                                    <Setter TargetName="Txt" Property="Text" Value="Fid Track ON"/>
+                                                                    <Setter TargetName="Txt" Property="Foreground" Value="#E1F5EE"/>
+                                                                </DataTrigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+
                                     <!-- START 버튼 -->
                                     <Button Grid.Column="6" Style="{StaticResource StartButtonStyle}"
                                         Command="{Binding TopHighAlignCommand}">
@@ -868,6 +910,46 @@
                                         </StackPanel>
                                         <TextBlock Text="High Magnification Calibration - Bottom" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                     </StackPanel>
+                                    <Button Grid.Column="3" Margin="0,0,6,0"
+                                            Command="{Binding ChangeBtmMeasureModeCommand}"
+                                            MinWidth="80" Height="32">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Bd"
+                                                                    Background="#1A2332"
+                                                                    BorderBrush="#2A3A4A"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="6"
+                                                                    Padding="10,4">
+                                                                <TextBlock x:Name="Txt"
+                                                                           Text="통합 측정"
+                                                                           Foreground="#8899AA"
+                                                                           FontSize="12"
+                                                                           FontWeight="SemiBold"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <DataTrigger Binding="{Binding UseBtmIndividualMeasure}" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Background" Value="#0F6E56"/>
+                                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#1D9E75"/>
+                                                                    <Setter TargetName="Txt" Property="Text" Value="개별 측정"/>
+                                                                    <Setter TargetName="Txt" Property="Foreground" Value="#E1F5EE"/>
+                                                                </DataTrigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                     <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
                                         Command="{Binding BtmHighAlignCommand}">
                                         <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
