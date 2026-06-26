@@ -528,6 +528,41 @@
                         </Grid>
                         <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
 
+                        <!-- 카메라 거리 결과 -->
+                        <TextBlock Text="Hc1 / Hc2 카메라 거리"
+                                   Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"
+                                   Margin="16,16,16,8"/>
+
+                        <Grid Margin="16,6,16,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="ΔX" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding CameraOffsetX, StringFormat=F4}"
+                                           Foreground="#E67E22" FontSize="20" FontWeight="SemiBold"/>
+                                <TextBlock Text=" mm" Foreground="#5E8BAA" FontSize="16"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                            </StackPanel>
+                        </Grid>
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+
+                        <Grid Margin="16,6,16,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="ΔY" Foreground="#5E8BAA" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding CameraOffsetY, StringFormat=F4}"
+                                           Foreground="#E67E22" FontSize="20" FontWeight="SemiBold"/>
+                                <TextBlock Text=" mm" Foreground="#5E8BAA" FontSize="16"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                            </StackPanel>
+                        </Grid>
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,0"/>
+
                         <!-- HcRO 결과 -->
                         <TextBlock Text="HcRO 회전 중심"
                                    Foreground="#5E8BAA" FontSize="13" FontWeight="SemiBold"

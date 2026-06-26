@@ -150,7 +150,7 @@ namespace HCB.UI
 
         public bool AvgMove { get; set; } = false;
         public bool Use2DMapping { get; set; } = true;
-        public bool UseAutoTracing { get; set; } = true;
+        public TracingMode TracingMode { get; set; } = TracingMode.Auto;
         public bool UseBtmIndividualMeasure { get; set; } = false;
         public bool UseFiducialTracking { get; set; } = false;
 

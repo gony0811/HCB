@@ -395,13 +395,16 @@ namespace HCB.UI
             {
                 if (data == null) throw new ArgumentNullException(nameof(data));
                 
-                if (data.UseAutoTracing)
+                switch (data.TracingMode)
                 {
-                    CompensateHc2Offset(data);
-                }
-                else
-                {
-                    await CamDistAndHcro(data, ct);
+                    case TracingMode.Auto:
+                        CompensateHc2Offset(data);
+                        break;
+                    case TracingMode.Manual:
+                        await CamDistAndHcro(data, ct);
+                        break;
+                    case TracingMode.None:
+                        break;
                 }
                 // ── STEP 1: Top Die — Fid→Align 이동량 ──
                 var lDist = Point2D.of(

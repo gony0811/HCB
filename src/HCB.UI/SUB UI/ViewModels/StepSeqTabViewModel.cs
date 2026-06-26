@@ -133,7 +133,7 @@ namespace HCB.UI
         [ObservableProperty] private bool avgMode = true;
         [ObservableProperty] private bool use2DMapping = true;
         [ObservableProperty] private bool measureVernierAfterBonding = false;
-        [ObservableProperty] private bool useAutoTracing = false;
+        [ObservableProperty] private TracingMode tracingMode = TracingMode.Auto;
         [ObservableProperty] private bool useBtmIndividualMeasure = false;
         [ObservableProperty] private bool useFiducialTracking = false;
 
@@ -153,7 +153,15 @@ namespace HCB.UI
         public void Change2DMapping() => Use2DMapping = !Use2DMapping;
 
         [RelayCommand]
-        public void ChangeAutoTracing() => UseAutoTracing = !UseAutoTracing;
+        public void CycleTracingMode()
+        {
+            TracingMode = TracingMode switch
+            {
+                TracingMode.Auto => TracingMode.Manual,
+                TracingMode.Manual => TracingMode.None,
+                _ => TracingMode.Auto
+            };
+        }
 
         [RelayCommand]
         public void ChangeBtmMeasureMode() => UseBtmIndividualMeasure = !UseBtmIndividualMeasure;
@@ -569,7 +577,7 @@ namespace HCB.UI
             try
             {
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
+                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
                 hcbData = await _sequenceService.TopHighAlign(data, _cts.Token);
                 ComputeDistances();
                 TopRightFid = hcbData.TopRightFidRaw;
@@ -678,7 +686,7 @@ namespace HCB.UI
                     ct.ThrowIfCancellationRequested();
 
                     TopHighAlignState = StepState.InProgress;
-                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
+                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
                     hcbData = await _sequenceService.TopHighAlign(data, ct);
                     TopRightFid = hcbData.TopRightFidRaw;
                     TopRightAlign = hcbData.TopRightAlignRaw;
@@ -743,7 +751,7 @@ namespace HCB.UI
 
                 // 2. 고배율 측정 (Top)
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
+                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
                 hcbData = await _sequenceService.TopHighAlign(data, ct);
                 TopRightFid = hcbData.TopRightFidRaw;
                 TopRightAlign = hcbData.TopRightAlignRaw;
