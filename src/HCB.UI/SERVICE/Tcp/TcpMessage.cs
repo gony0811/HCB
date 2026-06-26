@@ -303,6 +303,12 @@ namespace HCB.UI
         None
     }
 
+    public enum CoordSystemType
+    {
+        Hc,
+        Pc
+    }
+
     public enum Result
     {
         OK,

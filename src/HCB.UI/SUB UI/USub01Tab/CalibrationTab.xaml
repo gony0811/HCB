@@ -220,6 +220,12 @@
                         <Button Style="{StaticResource CalibBtnStyle}"
                                 Content="HcRO 회전 중심 계산"
                                 Command="{Binding CreateHcRoCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Margin="0,0,0,10"/>
+
+                        <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="HcRO Pc 회전 중심 계산"
+                                Command="{Binding CreateHcroPcCommand}"
                                 IsEnabled="{Binding IsNotBusy}"/>
                         <Rectangle Height="1" Fill="#1C3A52" Margin="0,20,0,20"/>
 

@@ -1331,6 +1331,51 @@
                                 </Button.Style>
                             </Button>
 
+                            <!-- Coord System Toggle (Hc ↔ Pc) -->
+                            <Button Margin="0,0,0,14" Height="38" Cursor="Hand"
+                                    Command="{Binding CycleCoordSystemCommand}">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="Bd"
+                                                            Background="#1A2332"
+                                                            BorderBrush="#2A3A4A"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="14,4">
+                                                        <StackPanel Orientation="Horizontal"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center">
+                                                            <TextBlock x:Name="Ico" Text="● "
+                                                                       Foreground="#3498DB" FontSize="14"
+                                                                       VerticalAlignment="Center"/>
+                                                            <TextBlock x:Name="Txt"
+                                                                       Text="좌표계: Hc"
+                                                                       Foreground="#E1F5EE"
+                                                                       FontSize="13" FontWeight="SemiBold"
+                                                                       VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding CoordSystem}" Value="Pc">
+                                                            <Setter TargetName="Bd" Property="Background" Value="#4A1A6E"/>
+                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#9B59B6"/>
+                                                            <Setter TargetName="Ico" Property="Foreground" Value="#9B59B6"/>
+                                                            <Setter TargetName="Txt" Property="Text" Value="좌표계: Pc"/>
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+
                             <!-- W Table 2D Mapping Toggle -->
                             <Grid Margin="0,0,0,14">
                                 <Grid.ColumnDefinitions>
