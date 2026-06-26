@@ -623,7 +623,7 @@ namespace HCB.UI
             await pmac.SendCommand("CompTable[1].sf[0]=1");
             await pmac.SendCommand("CompTable[2].sf[0]=0");
             await pmac.SendCommand("CompTable[3].sf[0]=0");
-            await pmac.SendCommand("sys.Compenable=4");
+            await pmac.SendCommand("sys.Compenable=2");
         }
 
 
