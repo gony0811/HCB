@@ -184,8 +184,8 @@ namespace HCB.UI
             double pcWT = Double.Parse(ecParamService.FindByName(MotionExtensions.PC_W_T).Value);
             double t = cameraType switch
             {
-                CameraType.HC1_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC1_T).Value) + pcWT,
-                CameraType.HC2_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC2_T).Value) + pcWT,
+                CameraType.HC1_HIGH => (Double.Parse(ecParamService.FindByName(MotionExtensions.HC1_T).Value) + pcWT) * 1,
+                CameraType.HC2_HIGH => (Double.Parse(ecParamService.FindByName(MotionExtensions.HC2_T).Value) + pcWT) * 1,
                 CameraType.PC_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.PC_T).Value),
                 _ => 0
             };
