@@ -50,6 +50,10 @@ namespace HCB.UI
         [ObservableProperty] private double thetaPRad;
         [ObservableProperty] private double thetaPDeg;
 
+        // 카메라 거리(오프셋) 결과
+        [ObservableProperty] private double cameraOffsetX;
+        [ObservableProperty] private double cameraOffsetY;
+
         // HcRO 회전 중심 결과
         [ObservableProperty] private double hcROX;
         [ObservableProperty] private double hcROY;
@@ -471,6 +475,8 @@ namespace HCB.UI
 
                 double offsetX = hc1StageX - hc2StageX;
                 double offsetY = hc1StageY - hc2StageY;
+                CameraOffsetX = offsetX;
+                CameraOffsetY = offsetY;
                 await UpdateCameraOffsets(hc1X: 0, hc1Y: 0, hc2X: offsetX, hc2Y: offsetY);
 
                 

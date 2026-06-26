@@ -296,9 +296,22 @@ namespace HCB.UI
         PC_HIGH
     }
 
+    public enum TracingMode
+    {
+        Auto,
+        Manual,
+        None
+    }
+
+    public enum CoordSystemType
+    {
+        Hc,
+        Pc
+    }
+
     public enum Result
     {
-        OK, 
+        OK,
         NG
     }
     public class EnumValues : MarkupExtension

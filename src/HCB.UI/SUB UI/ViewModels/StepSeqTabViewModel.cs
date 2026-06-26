@@ -133,7 +133,8 @@ namespace HCB.UI
         [ObservableProperty] private bool avgMode = true;
         [ObservableProperty] private bool use2DMapping = true;
         [ObservableProperty] private bool measureVernierAfterBonding = false;
-        [ObservableProperty] private bool useAutoTracing = false;
+        [ObservableProperty] private TracingMode tracingMode = TracingMode.Auto;
+        [ObservableProperty] private CoordSystemType coordSystem = CoordSystemType.Hc;
         [ObservableProperty] private bool useBtmIndividualMeasure = false;
         [ObservableProperty] private bool useFiducialTracking = false;
 
@@ -153,7 +154,21 @@ namespace HCB.UI
         public void Change2DMapping() => Use2DMapping = !Use2DMapping;
 
         [RelayCommand]
-        public void ChangeAutoTracing() => UseAutoTracing = !UseAutoTracing;
+        public void CycleTracingMode()
+        {
+            TracingMode = TracingMode switch
+            {
+                TracingMode.Auto => TracingMode.Manual,
+                TracingMode.Manual => TracingMode.None,
+                _ => TracingMode.Auto
+            };
+        }
+
+        [RelayCommand]
+        public void CycleCoordSystem()
+        {
+            CoordSystem = CoordSystem == CoordSystemType.Hc ? CoordSystemType.Pc : CoordSystemType.Hc;
+        }
 
         [RelayCommand]
         public void ChangeBtmMeasureMode() => UseBtmIndividualMeasure = !UseBtmIndividualMeasure;
@@ -569,7 +584,7 @@ namespace HCB.UI
             try
             {
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
+                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
                 hcbData = await _sequenceService.TopHighAlign(data, _cts.Token);
                 ComputeDistances();
                 TopRightFid = hcbData.TopRightFidRaw;
@@ -609,7 +624,10 @@ namespace HCB.UI
             try
             {
                 TopCorrState = StepState.InProgress;
-                await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
+                if (CoordSystem == CoordSystemType.Pc)
+                    await _sequenceService.PcCoordinateSystemIntegration(hcbData, _cts.Token);
+                else
+                    await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
                 ComputeDistances();
                 await _sequenceService.BondingCorr(hcbData, _cts.Token);
                 TopCorrState = StepState.Completed;
@@ -676,7 +694,7 @@ namespace HCB.UI
                     ct.ThrowIfCancellationRequested();
 
                     TopHighAlignState = StepState.InProgress;
-                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
+                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
                     hcbData = await _sequenceService.TopHighAlign(data, ct);
                     TopRightFid = hcbData.TopRightFidRaw;
                     TopRightAlign = hcbData.TopRightAlignRaw;
@@ -697,7 +715,10 @@ namespace HCB.UI
                         throw new Exception("Top/Btm 선분 길이 오차가 허용 범위를 초과했습니다.");
 
                     TopCorrState = StepState.InProgress;
-                    await _sequenceService.CoordinateSystemIntegration(hcbData, ct);
+                    if (CoordSystem == CoordSystemType.Pc)
+                        await _sequenceService.PcCoordinateSystemIntegration(hcbData, ct);
+                    else
+                        await _sequenceService.CoordinateSystemIntegration(hcbData, ct);
                     ComputeDistances();
                     TopCorrState = StepState.Completed;
 
@@ -741,7 +762,7 @@ namespace HCB.UI
 
                 // 2. 고배율 측정 (Top)
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, UseAutoTracing = UseAutoTracing, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
+                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
                 hcbData = await _sequenceService.TopHighAlign(data, ct);
                 TopRightFid = hcbData.TopRightFidRaw;
                 TopRightAlign = hcbData.TopRightAlignRaw;
@@ -765,7 +786,10 @@ namespace HCB.UI
 
                 // 5. 보정
                 TopCorrState = StepState.InProgress;
-                await _sequenceService.CoordinateSystemIntegration(hcbData, ct);
+                if (CoordSystem == CoordSystemType.Pc)
+                    await _sequenceService.PcCoordinateSystemIntegration(hcbData, ct);
+                else
+                    await _sequenceService.CoordinateSystemIntegration(hcbData, ct);
                 await _sequenceService.BondingCorr(hcbData, ct);
                 TopCorrState = StepState.Completed;
 
