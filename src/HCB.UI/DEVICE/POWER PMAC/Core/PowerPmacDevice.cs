@@ -166,7 +166,7 @@ namespace HCB.UI
                         bool ct01Off = Math.Abs(ct0) < 0.5 && Math.Abs(ct1) < 0.5;
                         bool ct23Off = Math.Abs(ct2) < 0.5 && Math.Abs(ct3) < 0.5;
 
-                        IsPTableMappingActive = compEnable == 4 && ct01On && ct23Off;
+                        IsPTableMappingActive = compEnable == 2 && ct01On && ct23Off;
                         IsWTableMappingActive = compEnable == 4 && ct01Off && ct23On;
                     }
                     catch (Exception ex)

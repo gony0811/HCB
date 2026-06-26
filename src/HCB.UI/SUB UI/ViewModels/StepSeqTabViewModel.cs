@@ -609,9 +609,9 @@ namespace HCB.UI
             try
             {
                 TopCorrState = StepState.InProgress;
-                
-                
-                
+                await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
+                ComputeDistances();
+                await _sequenceService.BondingCorr(hcbData, _cts.Token);
                 TopCorrState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopCorrState = StepState.Idle; }
@@ -625,9 +625,7 @@ namespace HCB.UI
             try
             {
                 TopBondingState = StepState.InProgress;
-                await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
-                ComputeDistances();
-                await _sequenceService.BondingCorr(hcbData, _cts.Token);
+                
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, _cts.Token));
                 TopBondingState = StepState.Completed;
