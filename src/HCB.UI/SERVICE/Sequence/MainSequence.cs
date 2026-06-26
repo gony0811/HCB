@@ -475,8 +475,8 @@ namespace HCB.UI
                 data.TCenter = tCenter;
                 data.BCenter = bCenter;
 
-                double shiftX = tCenter.X - bCenter.X;
-                double shiftY = tCenter.Y - bCenter.Y;
+                double shiftX = -(tCenter.X - bCenter.X);
+                double shiftY = -(tCenter.Y - bCenter.Y);
 
                 data.ResultX = shiftX + data.OffsetXY.X;
                 data.ResultY = shiftY + data.OffsetXY.Y;
@@ -515,7 +515,7 @@ namespace HCB.UI
             data.RDist = rDist;
 
             Point2D tl = Point2D.of(data.TopLeftAlignRaw.CenterX, data.TopLeftAlignRaw.CenterY);
-            Point2D tr = Point2D.of(data.TopRightAlignRaw.CenterX, data.TopLeftAlignRaw.CenterY);
+            Point2D tr = Point2D.of(data.TopRightAlignRaw.CenterX, data.TopRightAlignRaw.CenterY);
 
             Point2D bl = Point2D.of(data.TopLeftFidRaw.CenterX - lDist.X, data.TopLeftFidRaw.CenterY - lDist.Y);
             Point2D br = Point2D.of(data.TopRightFidRaw.CenterX - rDist.X, data.TopRightFidRaw.CenterY - rDist.Y);

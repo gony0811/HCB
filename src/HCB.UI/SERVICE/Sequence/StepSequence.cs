@@ -292,10 +292,16 @@ namespace HCB.UI
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
                 double readyPosition = await GetRecipe("READY_POSITION");
-                
+
+                // Hc좌표
+                //await Task.WhenAll(
+                //    RelativeMotionsMove(MotionExtensions.H_X, -data.ResultX, ct),
+                //    RelativeMotionsMove(MotionExtensions.W_Y, -data.ResultY, ct),
+                //    RelativeMotionsMove(MotionExtensions.H_T, data.ResultT, ct)
+                //);
                 await Task.WhenAll(
-                    RelativeMotionsMove(MotionExtensions.H_X, -data.ResultX, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, -data.ResultY, ct),
+                    RelativeMotionsMove(MotionExtensions.H_X, data.ResultX, ct),
+                    RelativeMotionsMove(MotionExtensions.W_Y, data.ResultY, ct),
                     RelativeMotionsMove(MotionExtensions.H_T, data.ResultT, ct)
                 );
 

@@ -660,62 +660,40 @@ namespace HCB.UI
             if (standalone) { IsNotBusy = false; ct = GetToken(); }
             try
             {
-                await _sequenceService.Init_Head(ct);
-
-                // Left 위치로 이동 → 스테이지 좌표 기록
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_HIGH, ct));
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
-                await _sequenceService.PTable2DMappingOn();
-
-                double leftHX = _hxAxis!.CurrentPosition;
-                double leftPY = _pyAxis!.CurrentPosition;
-
-                // Right 위치로 이동 → 스테이지 좌표 기록 → Offset 계산
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_HIGH, ct));
-
-                double rightHX = _hxAxis!.CurrentPosition;
-                double rightPY = _pyAxis!.CurrentPosition;
-
-                double pcOffsetX = leftHX - rightHX;
-                double pcOffsetY = rightPY - leftPY;
-
-                double[] angles = { -1.5, 0, 1.5 };
                 var leftPoints = new List<Point2D>();
                 var rightPoints = new List<Point2D>();
+                double[] angles = { -0.75, 0, 0.75 };
 
+                await _sequenceService.Init_Head(ct);
+
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, "PC_HCRO_L", ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, "PC_HCRO_L", ct));
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
+                await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
                 for (int i = 0; i < angles.Length; i++)
                 {
-                    ct.ThrowIfCancellationRequested();
-                    CalibStatus = $"H_T → {angles[i]:F2}° 측정 중... ({i + 1}/{angles.Length})";
                     await _sequenceService.MotionsMove(MotionExtensions.H_T, angles[i], ct);
+                    var point = await _communication.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.RIGHT.ToString());
+                    if (point.Result == Result.NG) throw new Exception($"PC Right {angles[i]}° 비전 측정 실패");
+                    double motionPositionX = _hxAxis!.CurrentPosition;
+                    double motionPositionY = _pyAxis!.CurrentPosition;
+                    leftPoints.Add(Point2D.of(motionPositionX - point.X, motionPositionY + point.Y));
+                }
 
-                    // Left 피듀셜 측정
-                    await Task.WhenAll(
-                        _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
-                        _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_HIGH, ct));
-                    await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
-
-                    await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
-                    var vL = await _communication.RequestVisionMarkPosition(
-                        MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.LEFT.ToString());
-                    if (vL.Result == Result.NG) throw new Exception($"PC Left {angles[i]}° 비전 측정 실패");
-                    leftPoints.Add(Point2D.of(-vL.X, -vL.Y));
-
-                    // Right 피듀셜 측정 (PC 카메라 1개 → 이동 후 측정)
-                    await Task.WhenAll(
-                        _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
-                        _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_HIGH, ct));
-                    await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
-
-                    await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
-                    var vR = await _communication.RequestVisionMarkPosition(
-                        MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.RIGHT.ToString());
-                    if (vR.Result == Result.NG) throw new Exception($"PC Right {angles[i]}° 비전 측정 실패");
-                    rightPoints.Add(Point2D.of(pcOffsetX - vR.X, pcOffsetY - vR.Y));
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, "PC_HCRO_R", ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, "PC_HCRO_R", ct));
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
+                await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
+                for (int i = 0; i < angles.Length; i++)
+                {
+                    await _sequenceService.MotionsMove(MotionExtensions.H_T, angles[i], ct);
+                    var point = await _communication.RequestVisionMarkPosition(MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.RIGHT.ToString());
+                    if (point.Result == Result.NG) throw new Exception($"PC Right {angles[i]}° 비전 측정 실패");
+                    double motionPositionX = _hxAxis!.CurrentPosition;
+                    double motionPositionY = _pyAxis!.CurrentPosition;
+                    rightPoints.Add(Point2D.of(motionPositionX - point.X, motionPositionY + point.Y));
                 }
 
                 CalibStatus = "H_T 복귀...";
@@ -729,16 +707,13 @@ namespace HCB.UI
                 HcROX = hcRO.X;
                 HcROY = hcRO.Y;
 
-                _logger.Information("HcRO(PC) FitCircle | Points={Count}, Center=({X:F4},{Y:F4}), Offset=({OX:F4},{OY:F4})",
-                    allPoints.Count, HcROX, HcROY, pcOffsetX, pcOffsetY);
-
-                ECParamDto dto = _ecParamService.FindByName(MotionExtensions.HCRO_X);
+                ECParamDto dto = _ecParamService.FindByName(MotionExtensions.HCRO_PC_X);
                 dto.Value = HcROX.ToString();
                 dto.ValueType = ValueType.Double;
                 if (dto.Id == 0) await _ecParamService.AddParam(dto);
                 else await _ecParamService.UpdateParam(dto);
 
-                ECParamDto dto2 = _ecParamService.FindByName(MotionExtensions.HCRO_Y);
+                ECParamDto dto2 = _ecParamService.FindByName(MotionExtensions.HCRO_PC_Y);
                 dto2.Value = HcROY.ToString();
                 dto2.ValueType = ValueType.Double;
                 if (dto2.Id == 0) await _ecParamService.AddParam(dto2);
@@ -754,7 +729,6 @@ namespace HCB.UI
             }
             finally
             {
-                await _sequenceService.MappingOff();
                 if (standalone) IsNotBusy = true;
             }
         }
