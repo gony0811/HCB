@@ -993,9 +993,9 @@ namespace HCB.UI
 
             if (hcbData.TopLeftAlignRaw != null && hcbData.TopRightAlignRaw != null)
             {
-                var dx = hcbData.TopRightAlignRaw.CenterX - hcbData.TopLeftAlignRaw.CenterX;
-                var dy = hcbData.TopRightAlignRaw.CenterY - hcbData.TopLeftAlignRaw.CenterY;
-                hcbData.TopAlignDist = Math.Sqrt(dx * dx + dy * dy);
+                //var dx = hcbData.TR.X - hcbData.TL.X;
+                //var dy = hcbData.TR.Y - hcbData.TopLeftAlignRaw.CenterY;
+                hcbData.TopAlignDist = CalibrationMath.Dist(hcbData.TR, hcbData.TL);
             }
 
             if (hcbData.TopLeftFidRaw != null && hcbData.TopRightFidRaw != null)

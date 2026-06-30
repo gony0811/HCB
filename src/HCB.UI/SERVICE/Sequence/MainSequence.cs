@@ -441,6 +441,9 @@ namespace HCB.UI
             btmLeftFid.X *= Math.Abs(fidScaleX);
             btmLeftFid.Y *= Math.Abs(fidScaleY);
 
+            btmRightFid.X *= Math.Abs(fidScaleX);
+            btmRightFid.Y *= Math.Abs(fidScaleY);
+
             data.BFL = btmLeftFid;
             data.BFR = btmRightFid;
 
@@ -778,7 +781,7 @@ namespace HCB.UI
                 hc2Points.Add(Point2D.of(hc2XOffset - d.BtmRightFidRaw.X, hc2YOffset - d.BtmRightFidRaw.Y));
 
                 // -1.5도, +1.5도: 회전 후 측정
-                double[] angles = { -1.5, 1.5 };
+                double[] angles = { -0.75, 0.75 };
                 for (int i = 0; i < angles.Length; i++)
                 {
                     ct.ThrowIfCancellationRequested();
