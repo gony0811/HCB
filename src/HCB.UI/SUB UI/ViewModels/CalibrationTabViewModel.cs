@@ -591,7 +591,7 @@ namespace HCB.UI
                 var hc2XOffset = double.TryParse(hc2XParam, out double xOffset) ? xOffset : 0.0;
                 var hc2YOffset = double.TryParse(hc2YParam, out double yOffset) ? yOffset : 0.0;
 
-                double[] angles = { -1.5, -0.75, 0, 0.75, 1.5 };
+                double[] angles = { -0.75, 0, 0.75 };
                 var hc1Points = new List<Point2D>();
                 var hc2Points = new List<Point2D>();
 
