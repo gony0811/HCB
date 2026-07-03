@@ -151,7 +151,7 @@ namespace HCB.UI
         }
 
 
-        public async Task<VisionMarkResult> TopDieVisionRightFid(bool AvgMode, CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionRightFid(bool AvgMode, string size, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Right Fid) Start");
             EQStatusCheck();
@@ -162,7 +162,7 @@ namespace HCB.UI
             await Init_Head(ct);
             await Task.WhenAll(
                 MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct),
-                MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH, ct)
+                MotionsMove(xy, MotionExtensions.P_RIGHT_HIGH + "_" + size, ct)
             );
             await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
 
@@ -188,7 +188,7 @@ namespace HCB.UI
                 MotionExtensions.P_Y, AvgMode, ct);
         }
 
-        public async Task<VisionMarkResult> TopDieVisionLeftFid(bool AvgMode, CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionLeftFid(bool AvgMode, string size, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Left Fid) Start");
             EQStatusCheck();
@@ -196,7 +196,7 @@ namespace HCB.UI
             string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
             string[] z = { MotionExtensions.H_Z };
 
-            await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH, ct);
+            await MotionsMove(xy, MotionExtensions.P_LEFT_HIGH + "_" + size, ct);
             await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
 
             return await MeasureWithRetry(MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.LEFT,

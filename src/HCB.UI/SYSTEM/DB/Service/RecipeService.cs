@@ -138,6 +138,7 @@ namespace HCB.UI
             {
                 Name = CreateCopyName(recipDto.Name),
                 IsActive = false,
+                Component = recipDto.Component,
                 ParamList = new List<RecipeParam>(),
                 StepList = new List<StepRecipe>()
             };

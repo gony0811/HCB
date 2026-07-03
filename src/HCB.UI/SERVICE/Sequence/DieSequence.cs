@@ -166,7 +166,10 @@ namespace HCB.UI
 
                 if (data.Use2DMapping) await PTable2DMappingOn();
 
-                data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
+                // TopDie 사이즈 검색
+                var size = _recipeService.FindByParam("TOP DIE SIZE");
+
+                data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, size.Value ,ct);
                 _logger.Information("TopHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 sw.Restart();
@@ -174,7 +177,7 @@ namespace HCB.UI
                 _logger.Information("TopHighAlign — RightAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 sw.Restart();
-                data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, ct);
+                data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, size.Value, ct);
                 _logger.Information("TopHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 sw.Restart();

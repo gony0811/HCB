@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using HCB.Data.Entity;
+using HCB.Data.Entity.Type;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -17,6 +18,9 @@ namespace HCB.UI
         private bool isActive;
 
         [ObservableProperty]
+        private ComponentType component;
+
+        [ObservableProperty]
         private ObservableCollection<RecipeParamDto> paramList = new ObservableCollection<RecipeParamDto>();
 
         [ObservableProperty]
@@ -25,11 +29,12 @@ namespace HCB.UI
         public RecipeDto()
         {
         }
-        private RecipeDto(int id, string name, bool isActive, ObservableCollection<RecipeParamDto> paramList, ObservableCollection<StepRecipeDto> stepList)
+        private RecipeDto(int id, string name, bool isActive, ComponentType component, ObservableCollection<RecipeParamDto> paramList, ObservableCollection<StepRecipeDto> stepList)
         {
             Id = id;
             Name = name;
             IsActive = isActive;
+            Component = component;
             ParamList = paramList;
             StepList = stepList;
         }
@@ -50,6 +55,7 @@ namespace HCB.UI
                 entity.Id,
                 entity.Name,
                 entity.IsActive,
+                entity.Component,
                 paramDtos,
                 stepDtos
             );
@@ -62,6 +68,7 @@ namespace HCB.UI
                 Id = this.Id,
                 Name = this.Name,
                 IsActive = this.IsActive,
+                Component = this.Component,
                 ParamList = new List<RecipeParam>(),
                 StepList = new List<StepRecipe>()
             };

@@ -106,8 +106,10 @@ namespace HCB.UI
             RadWindowInteropHelper.SetShowInTaskbar(mainWindow, true);
 
             mainWindow.Show();
+
             //mainWindow.Activate();
         }
+
 
         private async Task InitializeApplicationAsync()
         {
