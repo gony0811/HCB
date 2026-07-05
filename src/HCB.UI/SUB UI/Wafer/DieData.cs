@@ -9,6 +9,8 @@ namespace HCB.UI
         public int Row { get; set; }
         public int Col { get; set; }
         public Brush DieBrush { get; set; }
-        public string Information { get; set; } // 추가 정보 (Bin No, Yield 등)
+        public string Information { get; set; }
+        public double PositionX { get; set; }
+        public double PositionY { get; set; }
     }
 }

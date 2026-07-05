@@ -56,12 +56,66 @@ namespace HCB.UI
 
         public event EventHandler<DieData> DieClicked;
 
-        public WaferMapControl() => InitializeComponent();
+        private bool _initialCenterDone;
+        private DieData _highlightedDie;
+        private Brush _highlightBrush;
+
+        public WaferMapControl()
+        {
+            InitializeComponent();
+            Loaded += OnControlLoaded;
+        }
+
+        private void OnControlLoaded(object sender, RoutedEventArgs e)
+        {
+            if (!_initialCenterDone && ItemsSource != null && ItemsSource.Count > 0)
+                CenterWafer();
+        }
 
         public void UpdateWafer()
         {
             VisualHost.DieList = ItemsSource;
             VisualHost.RenderWafer();
+
+            if (_highlightedDie != null)
+                VisualHost.HighlightDie(_highlightedDie, _highlightBrush);
+
+            if (!_initialCenterDone && IsLoaded && Viewport.ActualWidth > 0)
+                CenterWafer();
+        }
+
+        public void HighlightDie(DieData die, Brush brush)
+        {
+            _highlightedDie = die;
+            _highlightBrush = brush;
+            VisualHost.HighlightDie(die, brush);
+        }
+
+        public void CenterWafer()
+        {
+            if (ItemsSource == null || ItemsSource.Count == 0) return;
+            if (Viewport.ActualWidth == 0 || Viewport.ActualHeight == 0) return;
+
+            int maxRow = ItemsSource.Max(d => d.Row);
+            int maxCol = ItemsSource.Max(d => d.Col);
+            int gridSize = Math.Max(maxRow, maxCol) + 1;
+            double totalSize = gridSize * (VisualHost.DieSize + VisualHost.Gap) - VisualHost.Gap;
+            double diameter = totalSize + 2 * VisualHost.Gap;
+
+            double scaleX = Viewport.ActualWidth / diameter;
+            double scaleY = Viewport.ActualHeight / diameter;
+            double scale = Math.Min(scaleX, scaleY) * 0.9;
+
+            double scaledSize = diameter * scale;
+            double offsetX = (Viewport.ActualWidth - scaledSize) / 2;
+            double offsetY = (Viewport.ActualHeight - scaledSize) / 2;
+
+            var m = new Matrix();
+            m.Scale(scale, scale);
+            m.Translate(offsetX, offsetY);
+            MainTransform.Matrix = m;
+
+            _initialCenterDone = true;
         }
 
         private void OnMouseWheel(object sender, MouseWheelEventArgs e)
