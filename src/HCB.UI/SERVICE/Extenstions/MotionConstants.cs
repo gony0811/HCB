@@ -94,8 +94,8 @@ namespace HCB.UI
         public const string P_RIGHT_FIDUCIAL_HIGH = "P_RIGHT_FIDUCIAL_HIGH";
         public const string P_LEFT_ALIGN_HIGH = "P_LEFT_ALIGN_HIGH";
         public const string P_RIGHT_ALIGN_HIGH = "P_RIGHT_ALIGN_HIGH";
-        public const string P_LEFT_HIGH = "P_LEFT_HIGH";
-        public const string P_RIGHT_HIGH = "P_RIGHT_HIGH";
+        //public const string P_LEFT_HIGH = "P_LEFT_HIGH";
+        //public const string P_RIGHT_HIGH = "P_RIGHT_HIGH";
 
         public const string PC_T = "PC_T";
 
