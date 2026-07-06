@@ -173,7 +173,7 @@ namespace HCB.UI
                 _logger.Information("TopHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 sw.Restart();
-                data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove, ct);
+                data.TopRightAlignRaw = await TopDieVisionRightAlign(data.AvgMove, size.Value, ct);
                 _logger.Information("TopHighAlign — RightAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 sw.Restart();
@@ -181,7 +181,7 @@ namespace HCB.UI
                 _logger.Information("TopHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 sw.Restart();
-                data.TopLeftAlignRaw = await TopDieVisionLeftAlign(data.AvgMove, ct);
+                data.TopLeftAlignRaw = await TopDieVisionLeftAlign(data.AvgMove, size.Value, ct);
                 _logger.Information("TopHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 if (data.UseFiducialTracking)
