@@ -766,17 +766,15 @@ namespace HCB.UI
                 BtmLeftAlign = hcbData.BtmLeftAlignRaw;
                 BtmHighAlignState = StepState.Completed;
 
-                // 4-1. 선분 길이 오차 검증
-                ComputeDistances();
-                if (!ValidateAlignDistances())
-                    throw new Exception("Top/Btm 선분 길이 오차가 허용 범위를 초과했습니다.");
-
                 // 5. 보정
                 TopCorrState = StepState.InProgress;
                 await _sequenceService.CoordinateSystemIntegration(hcbData, ct);
                 await _sequenceService.BondingCorr(hcbData, ct);
                 TopCorrState = StepState.Completed;
-
+                // 4-1. 선분 길이 오차 검증
+                ComputeDistances();
+                if (!ValidateAlignDistances())
+                    throw new Exception("Top/Btm 선분 길이 오차가 허용 범위를 초과했습니다.");
                 // 6. 본딩
                 TopBondingState = StepState.InProgress;
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
@@ -991,12 +989,15 @@ namespace HCB.UI
             if (hcbData.BFL != null && hcbData.BFR != null)
                 hcbData.BtmFidDist = CalibrationMath.Dist(hcbData.BFR, hcbData.BFL);
 
-            if (hcbData.TopLeftAlignRaw != null && hcbData.TopRightAlignRaw != null)
-            {
-                var dx = hcbData.TopRightAlignRaw.CenterX - hcbData.TopLeftAlignRaw.CenterX;
-                var dy = hcbData.TopRightAlignRaw.CenterY - hcbData.TopLeftAlignRaw.CenterY;
-                hcbData.TopAlignDist = Math.Sqrt(dx * dx + dy * dy);
-            }
+            if (hcbData.TL != null && hcbData.TR != null)
+                hcbData.TopAlignDist = CalibrationMath.Dist(hcbData.TR, hcbData.TL);
+
+            //if (hcbData.TopLeftAlignRaw != null && hcbData.TopRightAlignRaw != null)
+            //{
+            //    var dx = hcbData.TopRightAlignRaw.CenterX - hcbData.TopLeftAlignRaw.CenterX;
+            //    var dy = hcbData.TopRightAlignRaw.CenterY - hcbData.TopLeftAlignRaw.CenterY;
+            //    hcbData.TopAlignDist = Math.Sqrt(dx * dx + dy * dy);
+            //}
 
             if (hcbData.TopLeftFidRaw != null && hcbData.TopRightFidRaw != null)
             {

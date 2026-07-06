@@ -433,8 +433,7 @@ namespace HCB.UI
                 Point2D bfr = Point2D.of(
                     camOffset.X - data.BtmRightFidRaw.X,
                     camOffset.Y - data.BtmRightFidRaw.Y);
-                data.BFL = bfl;
-                data.BFR = bfr;
+                
 
                 // Top: Center 기준 X:-, Y:+ → lDist에 (-X, -Y) 적용
                 Point2D tl = Point2D.of(bfl.X - lDist.X, bfl.Y - lDist.Y);
@@ -446,14 +445,16 @@ namespace HCB.UI
                 br = Point2D.of(br.X - hcro.X, br.Y - hcro.Y);
                 tl = Point2D.of(tl.X - hcro.X, tl.Y - hcro.Y);
                 tr = Point2D.of(tr.X - hcro.X, tr.Y - hcro.Y);
-
+                
                 // ── STEP 4: θ 계산 ──
                 double thetaS = ParseRecipe("SPEC_THETA");
                 double bTheta = Math.Atan2(br.Y - bl.Y, br.X - bl.X);
                 double tTheta = Math.Atan2(tr.Y - tl.Y, tr.X - tl.X);
                 double thetaF = thetaS - CalibrationMath.ToDegree(tTheta - bTheta);
                 double thetaF_rad = CalibrationMath.ToRadian(thetaF);
-
+                
+                data.BFL = Point2D.of(bfl.X - hcro.X, bfl.Y - hcro.Y);
+                data.BFR = Point2D.of(bfr.X - hcro.X, bfr.Y - hcro.Y);
                 data.SpecTheta = thetaS;
                 data.BTheta = bTheta;
                 data.TTheta = tTheta;
