@@ -8,7 +8,12 @@
       mc:Ignorable="d">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
 
         <Style x:Key="PanelTabButton" TargetType="RadioButton">
             <Setter Property="Foreground" Value="#5E8BAA"/>
@@ -42,6 +47,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -131,65 +137,165 @@
 
                         <!-- 선택된 다이 정보 -->
                         <DockPanel Visibility="{Binding HasDieSelected, Converter={StaticResource BoolToVis}}">
-                            <telerik:RadButton DockPanel.Dock="Bottom" Content="BONDING"
-                                Command="{Binding BondingCommand}"
-                                Height="48" FontSize="16" FontWeight="Bold"
-                                Margin="0,16,0,0"/>
 
-                            <StackPanel>
-                                <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
-                                        HorizontalAlignment="Left" Margin="0,0,0,12">
-                                    <TextBlock Text="SELECTED DIE" Foreground="#3498DB"
-                                               FontSize="12" FontWeight="Bold"/>
-                                </Border>
+                            <!-- Bottom: Buttons -->
+                            <Grid DockPanel.Dock="Bottom" Margin="0,16,0,0">
+                                <!-- BONDING 버튼 (기본 표시, 진행 중 숨김) -->
+                                <Button Content="BONDING"
+                                    Command="{Binding BondingCommand}"
+                                    IsEnabled="{Binding IsBonding, Converter={StaticResource InverseBoolConverter}}"
+                                    Height="48" FontSize="16" FontWeight="Bold"/>
+                                <!-- CANCEL 버튼 (진행 중에만 표시) -->
+                                <Button Content="CANCEL"
+                                    Command="{Binding CancelBondingCommand}"
+                                    Height="48" FontSize="16" FontWeight="Bold"
+                                    Foreground="#E74C3C"
+                                    Visibility="{Binding IsBonding, Converter={StaticResource BoolToVis}}"/>
+                            </Grid>
 
-                                <Border Background="#0A1628" CornerRadius="6" Padding="14"
-                                        BorderBrush="#1C3A52" BorderThickness="1">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <!-- SELECTED DIE -->
+                                    <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
+                                            HorizontalAlignment="Left" Margin="0,0,0,12">
+                                        <TextBlock Text="SELECTED DIE" Foreground="#3498DB"
+                                                   FontSize="12" FontWeight="Bold"/>
+                                    </Border>
 
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Row"
-                                                   Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,10"/>
-                                        <TextBlock Grid.Row="0" Grid.Column="1"
-                                                   Text="{Binding SelectedDie.Row}"
-                                                   Foreground="#ECF0F1" FontSize="13" Margin="0,0,0,10"/>
+                                    <Border Background="#0A1628" CornerRadius="6" Padding="14"
+                                            BorderBrush="#1C3A52" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
 
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Column"
-                                                   Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,10"/>
-                                        <TextBlock Grid.Row="1" Grid.Column="1"
-                                                   Text="{Binding SelectedDie.Col}"
-                                                   Foreground="#ECF0F1" FontSize="13" Margin="0,0,0,10"/>
+                                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Row"
+                                                       Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,10"/>
+                                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                                       Text="{Binding SelectedDie.Row}"
+                                                       Foreground="#ECF0F1" FontSize="13" Margin="0,0,0,10"/>
 
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Position X"
-                                                   Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,10"/>
-                                        <TextBlock Grid.Row="2" Grid.Column="1"
-                                                   Text="{Binding SelectedDie.PositionX, StringFormat=F4}"
-                                                   Foreground="#ECF0F1" FontSize="13" Margin="0,0,0,10"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Column"
+                                                       Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,10"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                                       Text="{Binding SelectedDie.Col}"
+                                                       Foreground="#ECF0F1" FontSize="13" Margin="0,0,0,10"/>
 
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Position Y"
-                                                   Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,10"/>
-                                        <TextBlock Grid.Row="3" Grid.Column="1"
-                                                   Text="{Binding SelectedDie.PositionY, StringFormat=F4}"
-                                                   Foreground="#ECF0F1" FontSize="13" Margin="0,0,0,10"/>
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Position X"
+                                                       Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,10"/>
+                                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                                       Text="{Binding SelectedDie.PositionX, StringFormat=F4}"
+                                                       Foreground="#ECF0F1" FontSize="13" Margin="0,0,0,10"/>
 
-                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Status"
-                                                   Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,0"/>
-                                        <TextBlock Grid.Row="4" Grid.Column="1"
-                                                   Text="{Binding SelectedDie.Information}"
-                                                   Foreground="#2ECC71" FontSize="13"/>
-                                    </Grid>
-                                </Border>
-                            </StackPanel>
+                                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Position Y"
+                                                       Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,10"/>
+                                            <TextBlock Grid.Row="3" Grid.Column="1"
+                                                       Text="{Binding SelectedDie.PositionY, StringFormat=F4}"
+                                                       Foreground="#ECF0F1" FontSize="13" Margin="0,0,0,10"/>
+
+                                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Status"
+                                                       Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,0"/>
+                                            <TextBlock Grid.Row="4" Grid.Column="1"
+                                                       Text="{Binding SelectedDie.Information}"
+                                                       Foreground="#2ECC71" FontSize="13"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- SEQUENCE PROGRESS (본딩 진행 중에만 표시) -->
+                                    <StackPanel Margin="0,16,0,0"
+                                                Visibility="{Binding IsBonding, Converter={StaticResource BoolToVis}}">
+                                        <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
+                                                HorizontalAlignment="Left" Margin="0,0,0,12">
+                                            <TextBlock Text="SEQUENCE PROGRESS" Foreground="#3498DB"
+                                                       FontSize="12" FontWeight="Bold"/>
+                                        </Border>
+
+                                        <Border Background="#0A1628" CornerRadius="6" Padding="10"
+                                                BorderBrush="#1C3A52" BorderThickness="1">
+                                            <StackPanel>
+                                                <!-- Step 1: 저배율 보정 + Pickup -->
+                                                <Grid Margin="0,0,0,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <local:StepLamp Grid.Column="0" Style="{StaticResource StepLampStyle}"
+                                                        State="{Binding StepSeqTab.TopLowAlignState}" Margin="0,0,8,0"/>
+                                                    <TextBlock Grid.Column="1" Text="저배율 보정 + Pick Up"
+                                                               Foreground="#ECF0F1" FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding StepSeqTab.TopLowAlignElapsed}"
+                                                               Foreground="#F39C12" FontSize="11" FontFamily="Consolas" VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <!-- Step 2: 고배율 (Top) -->
+                                                <Grid Margin="0,0,0,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <local:StepLamp Grid.Column="0" Style="{StaticResource StepLampStyle}"
+                                                        State="{Binding StepSeqTab.TopHighAlignState}" Margin="0,0,8,0"/>
+                                                    <TextBlock Grid.Column="1" Text="고배율 측정 (Top)"
+                                                               Foreground="#ECF0F1" FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding StepSeqTab.TopHighAlignElapsed}"
+                                                               Foreground="#F39C12" FontSize="11" FontFamily="Consolas" VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <!-- Step 3: 고배율 (Btm) -->
+                                                <Grid Margin="0,0,0,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <local:StepLamp Grid.Column="0" Style="{StaticResource StepLampStyle}"
+                                                        State="{Binding StepSeqTab.BtmHighAlignState}" Margin="0,0,8,0"/>
+                                                    <TextBlock Grid.Column="1" Text="고배율 측정 (Btm)"
+                                                               Foreground="#ECF0F1" FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding StepSeqTab.BtmHighAlignElapsed}"
+                                                               Foreground="#F39C12" FontSize="11" FontFamily="Consolas" VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <!-- Step 4: 보정 -->
+                                                <Grid Margin="0,0,0,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <local:StepLamp Grid.Column="0" Style="{StaticResource StepLampStyle}"
+                                                        State="{Binding StepSeqTab.TopCorrState}" Margin="0,0,8,0"/>
+                                                    <TextBlock Grid.Column="1" Text="보정"
+                                                               Foreground="#ECF0F1" FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding StepSeqTab.TopCorrElapsed}"
+                                                               Foreground="#F39C12" FontSize="11" FontFamily="Consolas" VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <!-- Step 5: 본딩 -->
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <local:StepLamp Grid.Column="0" Style="{StaticResource StepLampStyle}"
+                                                        State="{Binding StepSeqTab.TopBondingState}" Margin="0,0,8,0"/>
+                                                    <TextBlock Grid.Column="1" Text="본딩"
+                                                               Foreground="#ECF0F1" FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding StepSeqTab.TopBondingElapsed}"
+                                                               Foreground="#F39C12" FontSize="11" FontFamily="Consolas" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
                         </DockPanel>
                     </Grid>
 
@@ -301,10 +407,10 @@
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <telerik:RadButton Grid.Column="0" Content="Load Recipe"
+                                <Button Grid.Column="0" Content="Load Recipe"
                                     Command="{Binding LoadRecipeParamsCommand}"
                                     Height="36" FontSize="13"/>
-                                <telerik:RadButton Grid.Column="2" Content="Apply"
+                                <Button Grid.Column="2" Content="Apply"
                                     Command="{Binding ApplyAndSaveCommand}"
                                     Height="36" FontSize="13"/>
                             </Grid>
@@ -313,5 +419,63 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- ═══════════════════════════════════════════════════════
+             RIGHT SIDEBAR (hover to reveal)
+             ═══════════════════════════════════════════════════════ -->
+        <Border Grid.RowSpan="2" HorizontalAlignment="Right"
+                Panel.ZIndex="5" ClipToBounds="True" Margin="0,6,0,6">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Width" Value="16"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                         To="420" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                         To="16" Duration="0:0:0.25">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseIn"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <Grid Width="420">
+                <Border HorizontalAlignment="Left" Width="16"
+                        Background="#152238" CornerRadius="6,0,0,6" Opacity="0.8">
+                    <Path Data="M 9 6 L 4 12 L 9 18"
+                          Stroke="#3498DB" StrokeThickness="1.5" StrokeLineJoin="Round"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Margin="16,0,0,0" Background="#0D1B2A"
+                        BorderBrush="#1C3A52" BorderThickness="1,0,0,0">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="16">
+                            <local:SettingsSidebar/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Border>
+
     </Grid>
 </UserControl>

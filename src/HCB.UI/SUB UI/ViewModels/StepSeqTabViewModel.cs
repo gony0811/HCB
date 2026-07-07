@@ -31,8 +31,10 @@ namespace HCB.UI
         private readonly RecipeService _recipeService;
         private readonly ECParamService _ecParamService;
         private readonly IOManager _ioManager;
+        private readonly SettingsViewModel _settings;
 
         public RecipeService RecipeService => _recipeService;
+        public SettingsViewModel Settings => _settings;
 
         // 사용 레시피의 Component가 WAFER로 바뀌면 발생 (DIE면 현재 화면 유지, WAFER면 화면 전환 요청)
         public event Action<ComponentType> RecipeComponentChanged;
@@ -134,44 +136,9 @@ namespace HCB.UI
 
         [ObservableProperty] private VernierResult vernierResult;
         [ObservableProperty] private ObservableCollection<VernierRow> vernierRows = new();
-        [ObservableProperty] private bool avgMode = true;
-        [ObservableProperty] private bool use2DMapping = true;
-        [ObservableProperty] private bool measureVernierAfterBonding = false;
-        [ObservableProperty] private TracingMode tracingMode = TracingMode.Auto;
-        [ObservableProperty] private bool useBtmIndividualMeasure = false;
-        [ObservableProperty] private bool useFiducialTracking = false;
-
-        // ── CSV 저장 설정 ─────────────────────────────────────
-        [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
-        [ObservableProperty] private string csvVernierFileName = "버니어 측정 데이터_{date}.csv";
-        [ObservableProperty] private string csvDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "데이터");
-        [ObservableProperty] private string csvDataFileName = "bonding_hcb_{date}.csv";
 
         public ObservableCollection<IAxis> JitterAxes { get; } = new();
         public PowerPmacDevice Pmac { get; private set; }
-
-        [RelayCommand]
-        public void ChangeMeasureVernier() => MeasureVernierAfterBonding = !MeasureVernierAfterBonding;
-
-        [RelayCommand]
-        public void Change2DMapping() => Use2DMapping = !Use2DMapping;
-
-        [RelayCommand]
-        public void CycleTracingMode()
-        {
-            TracingMode = TracingMode switch
-            {
-                TracingMode.Auto => TracingMode.Manual,
-                TracingMode.Manual => TracingMode.None,
-                _ => TracingMode.Auto
-            };
-        }
-
-        [RelayCommand]
-        public void ChangeBtmMeasureMode() => UseBtmIndividualMeasure = !UseBtmIndividualMeasure;
-
-        [RelayCommand]
-        public void ChangeFiducialTracking() => UseFiducialTracking = !UseFiducialTracking;
 
         [ObservableProperty] private bool isWTableMappingOn;
         [ObservableProperty] private bool isPTableMappingOn;
@@ -244,36 +211,6 @@ namespace HCB.UI
             catch (Exception ex) { _logger.Error(ex, "Wafer Vacuum OFF 실패"); }
         }
 
-        [RelayCommand]
-        private void BrowseVernierDir()
-        {
-            var dlg = new Microsoft.Win32.OpenFolderDialog
-            {
-                Title = "Vernier CSV 저장 폴더 선택",
-                InitialDirectory = Directory.Exists(CsvVernierDir) ? CsvVernierDir : ""
-            };
-            if (dlg.ShowDialog() == true)
-                CsvVernierDir = dlg.FolderName;
-        }
-
-        [RelayCommand]
-        private void BrowseDataDir()
-        {
-            var dlg = new Microsoft.Win32.OpenFolderDialog
-            {
-                Title = "본딩 데이터 CSV 저장 폴더 선택",
-                InitialDirectory = Directory.Exists(CsvDataDir) ? CsvDataDir : ""
-            };
-            if (dlg.ShowDialog() == true)
-                CsvDataDir = dlg.FolderName;
-        }
-
-        private string ResolveCsvPath(string dir, string fileNamePattern)
-        {
-            var resolved = fileNamePattern.Replace("{date}", DateTime.Now.ToString("yyyyMMdd"));
-            return Path.Combine(dir, resolved);
-        }
-
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
 
@@ -312,9 +249,11 @@ namespace HCB.UI
             IOManager ioManager,
             ECParamService eCParamService,
             RecipeService recipeService,
+            SettingsViewModel settingsViewModel,
             ILogger logger)
         {
             _logger = logger.ForContext<StepSeqTabViewModel>();
+            _settings = settingsViewModel;
             SequenceServiceVM = sequenceServiceVM;
             _sequenceService = sequenceService;
             _sequenceHelper = sequenceHelper;
@@ -581,7 +520,7 @@ namespace HCB.UI
             try
             {
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
+                var data = new AlignData { AvgMove = Settings.AvgMode, Use2DMapping = Settings.Use2DMapping, TracingMode = Settings.TracingMode, UseBtmIndividualMeasure = Settings.BtmIndividualMeasure, UseFiducialTracking = Settings.FiducialTracing };
                 hcbData = await _sequenceService.TopHighAlign(data, _cts.Token);
                 ComputeDistances();
                 TopRightFid = hcbData.TopRightFidRaw;
@@ -688,7 +627,7 @@ namespace HCB.UI
                     ct.ThrowIfCancellationRequested();
 
                     TopHighAlignState = StepState.InProgress;
-                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
+                    var data = new AlignData { AvgMove = Settings.AvgMode, Use2DMapping = Settings.Use2DMapping, TracingMode = Settings.TracingMode, UseBtmIndividualMeasure = Settings.BtmIndividualMeasure, UseFiducialTracking = Settings.FiducialTracing };
                     hcbData = await _sequenceService.TopHighAlign(data, ct);
                     TopRightFid = hcbData.TopRightFidRaw;
                     TopRightAlign = hcbData.TopRightAlignRaw;
@@ -753,7 +692,7 @@ namespace HCB.UI
 
                 // 2. 고배율 측정 (Top)
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
+                var data = new AlignData { AvgMove = Settings.AvgMode, Use2DMapping = Settings.Use2DMapping, TracingMode = Settings.TracingMode, UseBtmIndividualMeasure = Settings.BtmIndividualMeasure, UseFiducialTracking = Settings.FiducialTracing };
                 hcbData = await _sequenceService.TopHighAlign(data, ct);
                 TopRightFid = hcbData.TopRightFidRaw;
                 TopRightAlign = hcbData.TopRightAlignRaw;
@@ -789,7 +728,7 @@ namespace HCB.UI
                 TrackStep("TopFullExMeasure", StepState.Completed);
 
                 // 7. 버니어 측정 (옵션)
-                if (MeasureVernierAfterBonding)
+                if (Settings.MeasureVernierAfterBonding)
                 {
                     var vernier = await _sequenceService.GetVernier(ct);
                     double distX = double.Parse(_recipeService.FindByParam("버니어_거리_X").Value);
@@ -881,8 +820,6 @@ namespace HCB.UI
         {
             var result = await _sequenceService.GetVernier(_cts.Token);
         }
-        [RelayCommand]
-        public void ChangeAvgMode() => AvgMode = !AvgMode;
 
         // ═════════════════════════════════════════════════════
         //  Reset 메서드
@@ -1064,8 +1001,8 @@ namespace HCB.UI
                 _logger.Information("저장할 Vernier 결과가 없습니다.");
                 return;
             }
-            Directory.CreateDirectory(CsvVernierDir);
-            var path = ResolveCsvPath(CsvVernierDir, CsvVernierFileName);
+            Directory.CreateDirectory(Settings.CsvVernierDir);
+            var path = Settings.ResolveCsvPath(Settings.CsvVernierDir, Settings.CsvVernierFileName);
 
             bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
             var sb = new StringBuilder();
@@ -1081,8 +1018,8 @@ namespace HCB.UI
 
         private void ExportHcbData()
         {
-            Directory.CreateDirectory(CsvDataDir);
-            var path = ResolveCsvPath(CsvDataDir, CsvDataFileName);
+            Directory.CreateDirectory(Settings.CsvDataDir);
+            var path = Settings.ResolveCsvPath(Settings.CsvDataDir, Settings.CsvDataFileName);
 
             ComputeDistances();
 

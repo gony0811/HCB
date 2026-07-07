@@ -2,6 +2,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Entity.Type;
 using HCB.IoC;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -41,9 +43,23 @@ namespace HCB.UI
         [ObservableProperty] private DieData selectedDie;
         [ObservableProperty] private bool hasDieSelected;
 
-        public WaferSeqTabViewModel(RecipeService recipeService)
+        public SettingsViewModel Settings { get; }
+        public StepSeqTabViewModel StepSeqTab { get; }
+
+        private readonly ILogger _logger;
+
+        [ObservableProperty] private bool isBonding;
+
+        public WaferSeqTabViewModel(
+            RecipeService recipeService,
+            SettingsViewModel settingsViewModel,
+            StepSeqTabViewModel stepSeqTabViewModel,
+            ILogger logger)
         {
             RecipeService = recipeService;
+            Settings = settingsViewModel;
+            StepSeqTab = stepSeqTabViewModel;
+            _logger = logger.ForContext<WaferSeqTabViewModel>();
             LoadRecipeParams();
             GenerateWaferMap();
         }
@@ -103,7 +119,7 @@ namespace HCB.UI
             var dies = new List<DieData>();
             double halfCol = (WaferSize - 1) / 2.0;
             double halfRow = (WaferSize - 1) / 2.0;
-            double radius = WaferSize / 2.0;
+            double radius = (WaferSize + 1) / 2.0;
 
             for (int row = 0; row < WaferSize; row++)
             {
@@ -138,13 +154,40 @@ namespace HCB.UI
         }
 
         [RelayCommand]
-        private void Bonding()
+        private async Task Bonding()
         {
             if (SelectedDie == null) return;
-            SelectedDie.DieBrush = BondedDieBrush;
-            SelectedDie.Information = "Bonded";
+
+            IsBonding = true;
+            SelectedDie.Information = "Bonding...";
+            OnPropertyChanged(nameof(SelectedDie));
+
+            _logger.Information("Wafer Bonding 시작 — Die({Row},{Col})",
+                SelectedDie.Row, SelectedDie.Col);
+
+            await StepSeqTab.TopRunFullSequence();
+
+            if (StepSeqTab.TopBondingState == StepState.Completed)
+            {
+                SelectedDie.DieBrush = BondedDieBrush;
+                SelectedDie.Information = "Bonded";
+            }
+            else
+            {
+                SelectedDie.Information = "Failed";
+            }
+
             OnPropertyChanged(nameof(SelectedDie));
             DieList = new List<DieData>(DieList);
+            IsBonding = false;
+        }
+
+        [RelayCommand]
+        private async Task CancelBonding()
+        {
+            if (!IsBonding) return;
+            await StepSeqTab.Stop();
+            _logger.Information("Wafer Bonding 취소");
         }
     }
 }
