@@ -262,11 +262,14 @@ namespace HCB.UI
             if (response.Result != Result.OK)
                 return new BtmMarkResponse { Result = Result.NG };
 
+           
             response.LeftFid = CalibrationMath.ApplyRotation(response.LeftFid, hc1T);
             response.LeftAlign = CalibrationMath.ApplyRotation(response.LeftAlign, hc1T);
             response.RightFid = CalibrationMath.ApplyRotation(response.RightFid, hc2T);
             response.RightAlign = CalibrationMath.ApplyRotation(response.RightAlign, hc2T);
-
+            //// 임시 스케일 적용
+            //response.LeftFid = Point2D.of(response.LeftFid.X * 0.87944, response.LeftFid.Y * 1.00238);
+            //response.RightFid = Point2D.of(response.RightFid.X * 0.87944, response.RightFid.Y * 1.00238);
             return response;
         }
 
