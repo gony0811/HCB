@@ -139,9 +139,17 @@ namespace HCB.UI
 
         // 선분 길이 측정값
         public double BtmAlignDist { get; set; }
+        public double BtmAlignDistX { get; set; }
+        public double BtmAlignDistY { get; set; }
         public double TopAlignDist { get; set; }
+        public double TopAlignDistX { get; set; }
+        public double TopAlignDistY { get; set; }
         public double BtmFidDist { get; set; }
+        public double BtmFidDistX { get; set; }
+        public double BtmFidDistY { get; set; }
         public double TopFidDist { get; set; }
+        public double TopFidDistX { get; set; }
+        public double TopFidDistY { get; set; }
 
         public double ResultX { get; set; } = 0;
         public double ResultY { get; set; } = 0;

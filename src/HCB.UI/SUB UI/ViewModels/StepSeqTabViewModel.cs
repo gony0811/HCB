@@ -984,26 +984,33 @@ namespace HCB.UI
             if (hcbData == null) return;
 
             if (hcbData.BL != null && hcbData.BR != null)
+            {
                 hcbData.BtmAlignDist = CalibrationMath.Dist(hcbData.BR, hcbData.BL);
-            
+                hcbData.BtmAlignDistX = hcbData.BR.X - hcbData.BL.X;
+                hcbData.BtmAlignDistY = hcbData.BR.Y - hcbData.BL.Y;
+            }
+
             if (hcbData.BFL != null && hcbData.BFR != null)
+            {
                 hcbData.BtmFidDist = CalibrationMath.Dist(hcbData.BFR, hcbData.BFL);
+                hcbData.BtmFidDistX = hcbData.BFR.X - hcbData.BFL.X;
+                hcbData.BtmFidDistY = hcbData.BFR.Y - hcbData.BFL.Y;
+            }
 
             if (hcbData.TL != null && hcbData.TR != null)
+            {
                 hcbData.TopAlignDist = CalibrationMath.Dist(hcbData.TR, hcbData.TL);
-
-            //if (hcbData.TopLeftAlignRaw != null && hcbData.TopRightAlignRaw != null)
-            //{
-            //    var dx = hcbData.TopRightAlignRaw.CenterX - hcbData.TopLeftAlignRaw.CenterX;
-            //    var dy = hcbData.TopRightAlignRaw.CenterY - hcbData.TopLeftAlignRaw.CenterY;
-            //    hcbData.TopAlignDist = Math.Sqrt(dx * dx + dy * dy);
-            //}
+                hcbData.TopAlignDistX = hcbData.TR.X - hcbData.TL.X;
+                hcbData.TopAlignDistY = hcbData.TR.Y - hcbData.TL.Y;
+            }
 
             if (hcbData.TopLeftFidRaw != null && hcbData.TopRightFidRaw != null)
             {
                 var dx = hcbData.TopRightFidRaw.CenterX - hcbData.TopLeftFidRaw.CenterX;
                 var dy = hcbData.TopRightFidRaw.CenterY - hcbData.TopLeftFidRaw.CenterY;
                 hcbData.TopFidDist = Math.Sqrt(dx * dx + dy * dy);
+                hcbData.TopFidDistX = dx;
+                hcbData.TopFidDistY = dy;
             }
         }
 
@@ -1108,7 +1115,10 @@ namespace HCB.UI
                     "SpecTheta", "BTheta", "TTheta", "ThetaF", "ThetaFRad",
                     "TCenter_X", "TCenter_Y", "BCenter_X", "BCenter_Y",
                     "ResultX", "ResultY", "ResultT",
-                    "BtmAlignDist", "TopAlignDist", "BtmFidDist", "TopFidDist",
+                    "BtmAlignDist", "BtmAlignDistX", "BtmAlignDistY",
+                    "TopAlignDist", "TopAlignDistX", "TopAlignDistY",
+                    "BtmFidDist", "BtmFidDistX", "BtmFidDistY",
+                    "TopFidDist", "TopFidDistX", "TopFidDistY",
                     "Vernier_OffsetX", "Vernier_OffsetY", "Vernier_OffsetT",
                     "HC1_Cur_X", "HC1_Cur_Y", "HC1_Ref_X", "HC1_Ref_Y", "HC1_Drift_X", "HC1_Drift_Y",
                     "HC2_Cur_X", "HC2_Cur_Y", "HC2_Ref_X", "HC2_Ref_Y", "HC2_Drift_X", "HC2_Drift_Y",
@@ -1139,8 +1149,10 @@ namespace HCB.UI
                 F(hcbData?.ThetaF), F(hcbData?.ThetaFRad),
                 hcbData != null ? Pt(hcbData.TCenter) : NullPt(), hcbData != null ? Pt(hcbData.BCenter) : NullPt(),
                 F(hcbData?.ResultX), F(hcbData?.ResultY), F(hcbData?.ResultT),
-                F(hcbData?.BtmAlignDist), F(hcbData?.TopAlignDist),
-                F(hcbData?.BtmFidDist), F(hcbData?.TopFidDist),
+                F(hcbData?.BtmAlignDist), F(hcbData?.BtmAlignDistX), F(hcbData?.BtmAlignDistY),
+                F(hcbData?.TopAlignDist), F(hcbData?.TopAlignDistX), F(hcbData?.TopAlignDistY),
+                F(hcbData?.BtmFidDist), F(hcbData?.BtmFidDistX), F(hcbData?.BtmFidDistY),
+                F(hcbData?.TopFidDist), F(hcbData?.TopFidDistX), F(hcbData?.TopFidDistY),
                 F(VernierResult?.OffsetX), F(VernierResult?.OffsetY), F(VernierResult?.OffsetT),
                 hcbData != null ? Pt(hcbData.Hc1FidCurrent) : NullPt(),
                 hcbData != null ? Pt(hcbData.Hc1FidRef) : NullPt(),

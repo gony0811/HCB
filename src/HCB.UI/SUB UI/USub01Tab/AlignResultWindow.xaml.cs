@@ -58,6 +58,11 @@ namespace HCB.UI
             if (data == null)
             {
                 TopAlignDistText.Text = BtmAlignDistText.Text = "N/A";
+                TopAlignDistXText.Text = TopAlignDistYText.Text = "—";
+                BtmAlignDistXText.Text = BtmAlignDistYText.Text = "—";
+                TopFidDistText.Text = BtmFidDistText.Text = "N/A";
+                TopFidDistXText.Text = TopFidDistYText.Text = "—";
+                BtmFidDistXText.Text = BtmFidDistYText.Text = "—";
                 TopAlignRefText.Text = BtmAlignRefText.Text = "—";
                 TopAlignErrText.Text = BtmAlignErrText.Text = "—";
                 FidDiffText.Text = "N/A";
@@ -67,8 +72,21 @@ namespace HCB.UI
 
             SetDistRow(TopAlignDistText, TopAlignRefText, TopAlignErrText,
                        data.TopAlignDist, _refTopAlignDist);
+            TopAlignDistXText.Text = $"{data.TopAlignDistX:F4} mm";
+            TopAlignDistYText.Text = $"{data.TopAlignDistY:F4} mm";
+
             SetDistRow(BtmAlignDistText, BtmAlignRefText, BtmAlignErrText,
                        data.BtmAlignDist, _refBtmAlignDist);
+            BtmAlignDistXText.Text = $"{data.BtmAlignDistX:F4} mm";
+            BtmAlignDistYText.Text = $"{data.BtmAlignDistY:F4} mm";
+
+            TopFidDistText.Text = data.TopFidDist > 0 ? $"{data.TopFidDist:F4} mm" : "N/A";
+            TopFidDistXText.Text = $"{data.TopFidDistX:F4} mm";
+            TopFidDistYText.Text = $"{data.TopFidDistY:F4} mm";
+
+            BtmFidDistText.Text = data.BtmFidDist > 0 ? $"{data.BtmFidDist:F4} mm" : "N/A";
+            BtmFidDistXText.Text = $"{data.BtmFidDistX:F4} mm";
+            BtmFidDistYText.Text = $"{data.BtmFidDistY:F4} mm";
 
             // Top Fid − Btm Fid 차이
             if (data.TopFidDist > 0 && data.BtmFidDist > 0)
@@ -225,8 +243,9 @@ namespace HCB.UI
                         Color.FromArgb(180, 52, 152, 219), 2.0);
                 if (data.TopAlignDist > 0)
                     AddDistLabel(CX((data.TL.X + data.TR.X) / 2),
-                                 CY((data.TL.Y + data.TR.Y) / 2) - 16,
-                                 data.TopAlignDist, Color.FromRgb(52, 152, 219));
+                                 CY((data.TL.Y + data.TR.Y) / 2) - 28,
+                                 data.TopAlignDist, data.TopAlignDistX, data.TopAlignDistY,
+                                 Color.FromRgb(52, 152, 219));
             }
 
             if (data.BL != null && data.BR != null)
@@ -237,7 +256,8 @@ namespace HCB.UI
                 if (data.BtmAlignDist > 0)
                     AddDistLabel(CX((data.BL.X + data.BR.X) / 2),
                                  CY((data.BL.Y + data.BR.Y) / 2) + 6,
-                                 data.BtmAlignDist, Color.FromRgb(231, 76, 60));
+                                 data.BtmAlignDist, data.BtmAlignDistX, data.BtmAlignDistY,
+                                 Color.FromRgb(231, 76, 60));
             }
 
             if (data.BFL != null && data.BFR != null)
@@ -275,7 +295,7 @@ namespace HCB.UI
                     Color.FromArgb(140, 160, 190, 220), 10);
         }
 
-        private void AddDistLabel(double cx, double cy, double dist, Color color)
+        private void AddDistLabel(double cx, double cy, double dist, double distX, double distY, Color color)
         {
             var border = new Border
             {
@@ -285,14 +305,23 @@ namespace HCB.UI
                 CornerRadius = new CornerRadius(3),
                 Padding = new Thickness(4, 1, 4, 1)
             };
-            border.Child = new TextBlock
+            var sp = new StackPanel();
+            sp.Children.Add(new TextBlock
             {
                 Text = $"{dist:F4} mm",
                 Foreground = new SolidColorBrush(color),
                 FontSize = 10,
                 FontFamily = new FontFamily("Consolas")
-            };
-            Canvas.SetLeft(border, cx - 36);
+            });
+            sp.Children.Add(new TextBlock
+            {
+                Text = $"ΔX {distX:F4}  ΔY {distY:F4}",
+                Foreground = new SolidColorBrush(Color.FromArgb(180, color.R, color.G, color.B)),
+                FontSize = 9,
+                FontFamily = new FontFamily("Consolas")
+            });
+            border.Child = sp;
+            Canvas.SetLeft(border, cx - 56);
             Canvas.SetTop(border, cy);
             GraphCanvas.Children.Add(border);
         }
