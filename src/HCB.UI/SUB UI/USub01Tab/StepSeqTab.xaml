@@ -1629,6 +1629,86 @@
                                 </StackPanel>
                             </Border>
 
+                            <!-- ── FIDUCIAL ANGLE TRACKING ── -->
+                            <Rectangle Height="1" Fill="#1C3A52" Margin="0,16,0,14"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
+                                        Margin="0,0,10,0">
+                                    <TextBlock Text="ANGLE" Foreground="#3498DB" FontSize="13" FontWeight="Bold"/>
+                                </Border>
+                                <TextBlock Text="Fiducial Angle Tracking"
+                                           Foreground="#ECF0F1" FontSize="18" FontWeight="Bold"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Button Height="38" Cursor="Hand" Margin="0,0,0,14"
+                                    Command="{Binding RunFiducialAngleTrackingCommand}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd" Background="#1A3A5C"
+                                                BorderBrush="#2A5A8C" BorderThickness="1" CornerRadius="6">
+                                            <TextBlock Text="각도 추적 START" Foreground="#ECF0F1"
+                                                       FontSize="14" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="#2A5A8C"/>
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3498DB"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <Border Background="#060F1A" CornerRadius="6"
+                                    BorderBrush="#1C3A52" BorderThickness="1"
+                                    Padding="16,12" Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="10"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="6"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="6"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                                               Text="Fiducial Angle" Foreground="#3498DB"
+                                               FontSize="14" FontWeight="Bold"/>
+
+                                    <TextBlock Grid.Row="2" Text="PC Table"
+                                               Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1"
+                                               FontSize="18" FontFamily="Consolas" FontWeight="Bold"
+                                               Foreground="#ECF0F1" VerticalAlignment="Center"
+                                               Text="{Binding FiducialPcAngle, StringFormat={}{0:F6}°}"/>
+
+                                    <TextBlock Grid.Row="4" Text="Hc"
+                                               Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1"
+                                               FontSize="18" FontFamily="Consolas" FontWeight="Bold"
+                                               Foreground="#ECF0F1" VerticalAlignment="Center"
+                                               Text="{Binding FiducialHcAngle, StringFormat={}{0:F6}°}"/>
+
+                                    <TextBlock Grid.Row="6" Text="Wafer"
+                                               Foreground="#5E8BAA" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="6" Grid.Column="1"
+                                               FontSize="18" FontFamily="Consolas" FontWeight="Bold"
+                                               Foreground="#ECF0F1" VerticalAlignment="Center"
+                                               Text="{Binding FiducialWaferAngle, StringFormat={}{0:F6}°}"/>
+                                </Grid>
+                            </Border>
+
                             <!-- ── STATUS ── -->
                             <Rectangle Height="1" Fill="#1C3A52" Margin="0,16,0,14"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">

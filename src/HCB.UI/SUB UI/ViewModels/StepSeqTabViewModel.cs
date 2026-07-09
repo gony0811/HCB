@@ -137,6 +137,11 @@ namespace HCB.UI
         [ObservableProperty] private bool useBtmIndividualMeasure = false;
         [ObservableProperty] private bool useFiducialTracking = false;
 
+        // ── 피듀셜 각도 추적 결과 ────────────────────────────
+        [ObservableProperty] private double fiducialPcAngle;
+        [ObservableProperty] private double fiducialHcAngle;
+        [ObservableProperty] private double fiducialWaferAngle;
+
         // ── CSV 저장 설정 ─────────────────────────────────────
         [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
         [ObservableProperty] private string csvVernierFileName = "버니어 측정 데이터_{date}.csv";
@@ -168,6 +173,21 @@ namespace HCB.UI
 
         [RelayCommand]
         public void ChangeFiducialTracking() => UseFiducialTracking = !UseFiducialTracking;
+
+        [RelayCommand]
+        public async Task RunFiducialAngleTracking()
+        {
+            ResetCts();
+            try
+            {
+                var result = await _sequenceService.FiducialAngleTracking(AvgMode, _cts.Token);
+                FiducialPcAngle = result.PcAngleDeg;
+                FiducialHcAngle = result.HcAngleDeg;
+                FiducialWaferAngle = result.WaferAngleDeg;
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception e) { _logger.Error(e, "FiducialAngleTracking Failed"); }
+        }
 
         [ObservableProperty] private bool isWTableMappingOn;
         [ObservableProperty] private bool isPTableMappingOn;

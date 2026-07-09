@@ -171,4 +171,22 @@ namespace HCB.UI
         public Point2D Hc2FidDrift { get; set; } = Point2D.Zero;
         public double FidCurrentDist { get; set; }
     }
+
+    public class FiducialAngleResult
+    {
+        // PC Table (TopDIE Fiducial — CenterX/CenterY 기준)
+        public Point2D PcLeftFid { get; set; } = Point2D.Zero;
+        public Point2D PcRightFid { get; set; } = Point2D.Zero;
+        public double PcAngleDeg { get; set; }
+
+        // Hc1/Hc2 (Bonding 위치 — camOffset 좌표 변환)
+        public Point2D HcLeftFid { get; set; } = Point2D.Zero;
+        public Point2D HcRightFid { get; set; } = Point2D.Zero;
+        public double HcAngleDeg { get; set; }
+
+        // Wafer Table (camOffset 좌표 변환)
+        public Point2D WaferLeftFid { get; set; } = Point2D.Zero;
+        public Point2D WaferRightFid { get; set; } = Point2D.Zero;
+        public double WaferAngleDeg { get; set; }
+    }
 }

@@ -430,10 +430,11 @@ namespace HCB.UI
                 Point2D bfl = Point2D.of(
                     -data.BtmLeftFidRaw.X,
                     -data.BtmLeftFidRaw.Y);
+
+
                 Point2D bfr = Point2D.of(
                     camOffset.X - data.BtmRightFidRaw.X,
                     camOffset.Y - data.BtmRightFidRaw.Y);
-                
 
                 // Top: Center 기준 X:-, Y:+ → lDist에 (-X, -Y) 적용
                 Point2D tl = Point2D.of(bfl.X - lDist.X, bfl.Y - lDist.Y);
@@ -452,9 +453,9 @@ namespace HCB.UI
                 double tTheta = Math.Atan2(tr.Y - tl.Y, tr.X - tl.X);
                 double thetaF = thetaS - CalibrationMath.ToDegree(tTheta - bTheta);
                 double thetaF_rad = CalibrationMath.ToRadian(thetaF);
-                
-                data.BFL = Point2D.of(bfl.X - hcro.X, bfl.Y - hcro.Y);
-                data.BFR = Point2D.of(bfr.X - hcro.X, bfr.Y - hcro.Y);
+
+                data.BFL = bfl;
+                data.BFR = bfr;
                 data.SpecTheta = thetaS;
                 data.BTheta = bTheta;
                 data.TTheta = tTheta;
@@ -565,6 +566,116 @@ namespace HCB.UI
         }
         #endregion
 
+        #region 피듀셜 각도 추적
+
+        public async Task<FiducialAngleResult> FiducialAngleTracking(bool avgMode, CancellationToken ct)
+        {
+            var result = new FiducialAngleResult();
+
+            try
+            {
+                _logger.Information("피듀셜 각도 추적 시작");
+
+                // ── 1. PC TABLE: TopDIE Fiducial 촬상 ──
+                await PTable2DMappingOn();
+
+                var topRightFid = await TopDieVisionRightFid(avgMode, ct);
+                var topLeftFid = await TopDieVisionLeftFid(avgMode, ct);
+
+                result.PcLeftFid = Point2D.of(topLeftFid.CenterX, topLeftFid.CenterY);
+                result.PcRightFid = Point2D.of(topRightFid.CenterX, topRightFid.CenterY);
+                result.PcAngleDeg = CalibrationMath.ToDegree(
+                    Math.Atan2(
+                        result.PcRightFid.Y - result.PcLeftFid.Y,
+                        result.PcRightFid.X - result.PcLeftFid.X));
+
+                await MappingOff();
+                _logger.Information(
+                    "PC Table 피듀셜 각도: {Angle:F6}°, LF=({LX:F4},{LY:F4}), RF=({RX:F4},{RY:F4})",
+                    result.PcAngleDeg,
+                    result.PcLeftFid.X, result.PcLeftFid.Y,
+                    result.PcRightFid.X, result.PcRightFid.Y);
+
+                // ── 2. Hc1/Hc2: Bonding 위치 Fiducial 촬상 ──
+                var hc2XParam = _paramService.FindByName(MotionExtensions.HC2_X);
+                var hc2YParam = _paramService.FindByName(MotionExtensions.HC2_Y);
+                Point2D camOffset = Point2D.of(
+                    ParseDouble(hc2XParam.Value),
+                    ParseDouble(hc2YParam.Value));
+
+                await WTable2DMappingOn();
+                await TopDieSet(ct);
+
+                var hcLeftFid = await BtmDieVisionLeftFid(avgMode, ct);
+                var hcRightFid = await BtmDieVisionRightFid(avgMode, ct);
+
+                result.HcLeftFid = Point2D.of(
+                    -hcLeftFid.DxCamToMark,
+                    +hcLeftFid.DyCamToMark);
+                result.HcRightFid = Point2D.of(
+                    camOffset.X - hcRightFid.DxCamToMark,
+                    camOffset.Y + hcRightFid.DyCamToMark);
+                result.HcAngleDeg = CalibrationMath.ToDegree(
+                    Math.Atan2(
+                        result.HcRightFid.Y - result.HcLeftFid.Y,
+                        result.HcRightFid.X - result.HcLeftFid.X));
+
+                _logger.Information(
+                    "Hc 피듀셜 각도: {Angle:F6}°, LF=({LX:F4},{LY:F4}), RF=({RX:F4},{RY:F4})",
+                    result.HcAngleDeg,
+                    result.HcLeftFid.X, result.HcLeftFid.Y,
+                    result.HcRightFid.X, result.HcRightFid.Y);
+
+                // ── 3. Wafer Table: Fiducial 촬상 ──
+                await Init_Head(ct);
+                await Task.WhenAll(
+                    MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_LEFT_POSITION, ct),
+                    MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_LEFT_POSITION, ct));
+
+                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
+                double topDieThickness = await GetRecipe("TopDieThickness");
+                double btmDieThickness = await GetRecipe("BtmDieThickness");
+                await MotionsMove(MotionExtensions.H_Z,
+                    shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
+
+                var wLeftFid = await BtmDieVisionLeftFid(avgMode, ct);
+                var wRightFid = await BtmDieVisionRightFid(avgMode, ct);
+
+                result.WaferLeftFid = Point2D.of(
+                    -wLeftFid.DxCamToMark,
+                    +wLeftFid.DyCamToMark);
+                result.WaferRightFid = Point2D.of(
+                    camOffset.X - wRightFid.DxCamToMark,
+                    camOffset.Y + wRightFid.DyCamToMark);
+                result.WaferAngleDeg = CalibrationMath.ToDegree(
+                    Math.Atan2(
+                        result.WaferRightFid.Y - result.WaferLeftFid.Y,
+                        result.WaferRightFid.X - result.WaferLeftFid.X));
+
+                await MappingOff();
+                await Init_Head(ct);
+
+                _logger.Information(
+                    "Wafer Table 피듀셜 각도: {Angle:F6}°, LF=({LX:F4},{LY:F4}), RF=({RX:F4},{RY:F4})",
+                    result.WaferAngleDeg,
+                    result.WaferLeftFid.X, result.WaferLeftFid.Y,
+                    result.WaferRightFid.X, result.WaferRightFid.Y);
+
+                _logger.Information(
+                    "피듀셜 각도 추적 완료 — PC={PcAngle:F6}°, Hc={HcAngle:F6}°, Wafer={WaferAngle:F6}°",
+                    result.PcAngleDeg, result.HcAngleDeg, result.WaferAngleDeg);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "피듀셜 각도 추적 실패");
+                throw;
+            }
+
+            return result;
+        }
+
+        #endregion
 
         public async Task DTableReady(CancellationToken ct)
         {
