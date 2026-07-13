@@ -611,11 +611,11 @@ namespace HCB.UI
 
                 result.HcLeftFid = Point2D.of(
                     -hcLeftFid.DxCamToMark,
-                    +hcLeftFid.DyCamToMark);
+                    -hcLeftFid.DyCamToMark);
                 result.HcRightFid = Point2D.of(
                     camOffset.X - hcRightFid.DxCamToMark,
-                    camOffset.Y + hcRightFid.DyCamToMark);
-                result.HcAngleDeg = CalibrationMath.ToDegree(
+                    camOffset.Y - hcRightFid.DyCamToMark);
+                result.HcAngleDeg = 180 + CalibrationMath.ToDegree(
                     Math.Atan2(
                         result.HcRightFid.Y - result.HcLeftFid.Y,
                         result.HcRightFid.X - result.HcLeftFid.X));
@@ -629,8 +629,8 @@ namespace HCB.UI
                 // ── 3. Wafer Table: Fiducial 촬상 ──
                 await Init_Head(ct);
                 await Task.WhenAll(
-                    MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_LEFT_POSITION, ct),
-                    MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_LEFT_POSITION, ct));
+                    MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION, ct),
+                    MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, ct));
 
                 double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
                 double topDieThickness = await GetRecipe("TopDieThickness");
@@ -643,11 +643,11 @@ namespace HCB.UI
 
                 result.WaferLeftFid = Point2D.of(
                     -wLeftFid.DxCamToMark,
-                    +wLeftFid.DyCamToMark);
+                    -wLeftFid.DyCamToMark);
                 result.WaferRightFid = Point2D.of(
                     camOffset.X - wRightFid.DxCamToMark,
-                    camOffset.Y + wRightFid.DyCamToMark);
-                result.WaferAngleDeg = CalibrationMath.ToDegree(
+                    camOffset.Y - wRightFid.DyCamToMark);
+                result.WaferAngleDeg = 180 + CalibrationMath.ToDegree(
                     Math.Atan2(
                         result.WaferRightFid.Y - result.WaferLeftFid.Y,
                         result.WaferRightFid.X - result.WaferLeftFid.X));
