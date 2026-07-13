@@ -12,6 +12,16 @@ namespace HCB.UI
             var dy = b.Y - a.Y;
             return Math.Sqrt(dx * dx + dy * dy);
         }
+
+        public static (double dx, double dy, double dist, double theta) CalcRelative(
+            double x1, double y1, double x2, double y2)
+        {
+            double dx = x2 - x1;
+            double dy = y2 - y1;
+            double dist = Math.Sqrt(dx * dx + dy * dy);
+            double theta = Math.Atan2(dy, dx) * (180.0 / Math.PI);
+            return (dx, dy, dist, theta);
+        }
         // ═══════════════════════════════════════════════════════════════════
         //  1. 카메라 각도 산출
         // ═══════════════════════════════════════════════════════════════════

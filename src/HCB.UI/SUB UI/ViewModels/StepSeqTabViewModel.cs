@@ -468,7 +468,7 @@ namespace HCB.UI
         {
             var (refTop, refBtm) = GetRefAlignDists();
             _ = RunDialogOnNewThread(() =>
-                new AlignResultWindow(() => { ComputeDistances(); return hcbData; }, refTop, refBtm)
+                new AlignResultWindow(() => { _sequenceService.ComputeDistances(hcbData); return hcbData; }, refTop, refBtm)
                 { Header = "정렬 결과 — 실시간", WindowStartupLocation = WindowStartupLocation.CenterScreen }
                 .ShowDialog());
         }
@@ -478,7 +478,7 @@ namespace HCB.UI
         {
             var (refTop, refBtm) = GetRefAlignDists();
             _ = RunDialogOnNewThread(() =>
-                new AlignResultWindow(() => { ComputeDistances(); return hcbData; }, refTop, refBtm)
+                new AlignResultWindow(() => { _sequenceService.ComputeDistances(hcbData); return hcbData; }, refTop, refBtm)
                 { Header = "정렬 결과 — 실시간", WindowStartupLocation = WindowStartupLocation.CenterScreen }
                 .ShowDialog());
         }
@@ -597,13 +597,9 @@ namespace HCB.UI
             try
             {
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
-                hcbData = await _sequenceService.TopHighAlign(data, _cts.Token);
-                ComputeDistances();
-                TopRightFid = hcbData.TopRightFidRaw;
-                TopRightAlign = hcbData.TopRightAlignRaw;
-                TopLeftFid = hcbData.TopLeftFidRaw;
-                TopLeftAlign = hcbData.TopLeftAlignRaw;
+                hcbData = await _sequenceService.TopHighAlign(NewAlignData(), _cts.Token);
+                _sequenceService.ProcessMeasurement(hcbData, 1);
+                UpdateTopMarks();
                 TopHighAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopHighAlignState = StepState.Idle; }
@@ -617,13 +613,9 @@ namespace HCB.UI
             try
             {
                 BtmHighAlignState = StepState.InProgress;
-                //hcbData = await _sequenceService.BtmHighAlign(hcbData, _cts.Token);
                 hcbData = await _sequenceService.BtmHighAlign(hcbData, _cts.Token);
-                ComputeDistances();
-                BtmRightFid = hcbData.BtmRightFidRaw;
-                BtmRightAlign = hcbData.BtmRightAlignRaw;
-                BtmLeftFid = hcbData.BtmLeftFidRaw;
-                BtmLeftAlign = hcbData.BtmLeftAlignRaw;
+                _sequenceService.ProcessMeasurement(hcbData, 3);
+                UpdateBtmMarks();
                 BtmHighAlignState = StepState.Completed;
             }
             catch (OperationCanceledException) { BtmHighAlignState = StepState.Idle; }
@@ -638,7 +630,7 @@ namespace HCB.UI
             {
                 TopCorrState = StepState.InProgress;
                 await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
-                ComputeDistances();
+                _sequenceService.ProcessMeasurement(hcbData, 2);
                 await _sequenceService.BondingCorr(hcbData, _cts.Token);
                 TopCorrState = StepState.Completed;
             }
@@ -704,29 +696,23 @@ namespace HCB.UI
                     ct.ThrowIfCancellationRequested();
 
                     TopHighAlignState = StepState.InProgress;
-                    var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
-                    hcbData = await _sequenceService.TopHighAlign(data, ct);
-                    TopRightFid = hcbData.TopRightFidRaw;
-                    TopRightAlign = hcbData.TopRightAlignRaw;
-                    TopLeftFid = hcbData.TopLeftFidRaw;
-                    TopLeftAlign = hcbData.TopLeftAlignRaw;
+                    hcbData = await _sequenceService.TopHighAlign(NewAlignData(), ct);
+                    _sequenceService.ProcessMeasurement(hcbData, 1);
+                    UpdateTopMarks();
                     TopHighAlignState = StepState.Completed;
 
                     BtmHighAlignState = StepState.InProgress;
                     hcbData = await _sequenceService.BtmHighAlign(hcbData, ct);
-                    BtmRightFid = hcbData.BtmRightFidRaw;
-                    BtmRightAlign = hcbData.BtmRightAlignRaw;
-                    BtmLeftFid = hcbData.BtmLeftFidRaw;
-                    BtmLeftAlign = hcbData.BtmLeftAlignRaw;
+                    _sequenceService.ProcessMeasurement(hcbData, 3);
+                    UpdateBtmMarks();
                     BtmHighAlignState = StepState.Completed;
 
-                    ComputeDistances();
                     if (!ValidateAlignDistances())
                         throw new Exception("Top/Btm 선분 길이 오차가 허용 범위를 초과했습니다.");
 
                     TopCorrState = StepState.InProgress;
                     await _sequenceService.CoordinateSystemIntegration(hcbData, ct);
-                    ComputeDistances();
+                    _sequenceService.ProcessMeasurement(hcbData, 2);
                     TopCorrState = StepState.Completed;
 
                     ExportHcbData();
@@ -769,30 +755,25 @@ namespace HCB.UI
 
                 // 2. 고배율 측정 (Top)
                 TopHighAlignState = StepState.InProgress;
-                var data = new AlignData { AvgMove = AvgMode, Use2DMapping = Use2DMapping, TracingMode = TracingMode, UseBtmIndividualMeasure = UseBtmIndividualMeasure, UseFiducialTracking = UseFiducialTracking };
-                hcbData = await _sequenceService.TopHighAlign(data, ct);
-                TopRightFid = hcbData.TopRightFidRaw;
-                TopRightAlign = hcbData.TopRightAlignRaw;
-                TopLeftFid = hcbData.TopLeftFidRaw;
-                TopLeftAlign = hcbData.TopLeftAlignRaw;
+                hcbData = await _sequenceService.TopHighAlign(NewAlignData(), ct);
+                _sequenceService.ProcessMeasurement(hcbData, 1);
+                UpdateTopMarks();
                 TopHighAlignState = StepState.Completed;
 
                 // 4. 고배율 측정 (Btm)
                 BtmHighAlignState = StepState.InProgress;
                 hcbData = await _sequenceService.BtmHighAlign(hcbData, ct);
-                BtmRightFid = hcbData.BtmRightFidRaw;
-                BtmRightAlign = hcbData.BtmRightAlignRaw;
-                BtmLeftFid = hcbData.BtmLeftFidRaw;
-                BtmLeftAlign = hcbData.BtmLeftAlignRaw;
+                _sequenceService.ProcessMeasurement(hcbData, 3);
+                UpdateBtmMarks();
                 BtmHighAlignState = StepState.Completed;
 
                 // 5. 보정
                 TopCorrState = StepState.InProgress;
                 await _sequenceService.CoordinateSystemIntegration(hcbData, ct);
+                _sequenceService.ProcessMeasurement(hcbData, 2);
                 await _sequenceService.BondingCorr(hcbData, ct);
                 TopCorrState = StepState.Completed;
-                // 4-1. 선분 길이 오차 검증
-                ComputeDistances();
+
                 if (!ValidateAlignDistances())
                     throw new Exception("Top/Btm 선분 길이 오차가 허용 범위를 초과했습니다.");
                 // 6. 본딩
@@ -996,45 +977,37 @@ namespace HCB.UI
         }
 
         // ═════════════════════════════════════════════════════
-        //  선분 길이 계산 & 기준 거리 헬퍼
+        //  UI 바인딩 헬퍼
         // ═════════════════════════════════════════════════════
 
-        private void ComputeDistances()
+        private AlignData NewAlignData() => new AlignData
+        {
+            AvgMove = AvgMode,
+            Use2DMapping = Use2DMapping,
+            TracingMode = TracingMode,
+            UseBtmIndividualMeasure = UseBtmIndividualMeasure,
+            UseFiducialTracking = UseFiducialTracking
+        };
+
+        private void UpdateTopMarks()
         {
             if (hcbData == null) return;
-
-            if (hcbData.BL != null && hcbData.BR != null)
-            {
-                hcbData.BtmAlignDist = CalibrationMath.Dist(hcbData.BR, hcbData.BL);
-                hcbData.BtmAlignDistX = hcbData.BR.X - hcbData.BL.X;
-                hcbData.BtmAlignDistY = hcbData.BR.Y - hcbData.BL.Y;
-            }
-
-            if (hcbData.BFL != null && hcbData.BFR != null)
-            {
-                hcbData.BtmFidDist = CalibrationMath.Dist(hcbData.BFR, hcbData.BFL);
-                hcbData.BtmFidDistX = hcbData.BFR.X - hcbData.BFL.X;
-                hcbData.BtmFidDistY = hcbData.BFR.Y - hcbData.BFL.Y;
-            }
-
-            if (hcbData.TL != null && hcbData.TR != null)
-            {
-                hcbData.TopAlignDist = CalibrationMath.Dist(hcbData.TR, hcbData.TL);
-                hcbData.TopAlignDistX = hcbData.TR.X - hcbData.TL.X;
-                hcbData.TopAlignDistY = hcbData.TR.Y - hcbData.TL.Y;
-            }
-
-            if (hcbData.TopLeftFidRaw != null && hcbData.TopRightFidRaw != null)
-            {
-                var dx = hcbData.TopRightFidRaw.CenterX - hcbData.TopLeftFidRaw.CenterX;
-                var dy = hcbData.TopRightFidRaw.CenterY - hcbData.TopLeftFidRaw.CenterY;
-                hcbData.TopFidDist = Math.Sqrt(dx * dx + dy * dy);
-                hcbData.TopFidDistX = dx;
-                hcbData.TopFidDistY = dy;
-            }
+            TopRightFid = hcbData.TopRightFidRaw;
+            TopRightAlign = hcbData.TopRightAlignRaw;
+            TopLeftFid = hcbData.TopLeftFidRaw;
+            TopLeftAlign = hcbData.TopLeftAlignRaw;
         }
 
-        // ViewModel - GetRefAlignDist → 두 개로 분리
+        private void UpdateBtmMarks()
+        {
+            if (hcbData == null) return;
+            BtmRightFid = hcbData.BtmRightFidRaw;
+            BtmRightAlign = hcbData.BtmRightAlignRaw;
+            BtmLeftFid = hcbData.BtmLeftFidRaw;
+            BtmLeftAlign = hcbData.BtmLeftAlignRaw;
+        }
+
+        // ViewModel - GetRefAlignDist
         private (double refTop, double refBtm) GetRefAlignDists()
         {
             double refTop = double.NaN, refBtm = double.NaN;
@@ -1108,7 +1081,7 @@ namespace HCB.UI
             Directory.CreateDirectory(CsvDataDir);
             var path = ResolveCsvPath(CsvDataDir, CsvDataFileName);
 
-            ComputeDistances();
+            _sequenceService.ComputeDistances(hcbData);
 
             bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
             var sb = new StringBuilder();
@@ -1142,7 +1115,17 @@ namespace HCB.UI
                     "Vernier_OffsetX", "Vernier_OffsetY", "Vernier_OffsetT",
                     "HC1_Cur_X", "HC1_Cur_Y", "HC1_Ref_X", "HC1_Ref_Y", "HC1_Drift_X", "HC1_Drift_Y",
                     "HC2_Cur_X", "HC2_Cur_Y", "HC2_Ref_X", "HC2_Ref_Y", "HC2_Drift_X", "HC2_Drift_Y",
-                    "Fid_CurDist"));
+                    "Fid_CurDist",
+                    "P_PC_Fid_DX", "P_PC_Fid_DY", "P_PC_Fid_Dist", "P_PC_Fid_Theta",
+                    "P_PC_Align_DX", "P_PC_Align_DY", "P_PC_Align_Dist", "P_PC_Align_Theta",
+                    "P_HC_Fid_L_X", "P_HC_Fid_L_Y", "P_HC_Fid_R_X", "P_HC_Fid_R_Y",
+                    "P_HC_Fid_DX", "P_HC_Fid_DY", "P_HC_Fid_Dist", "P_HC_Fid_Theta",
+                    "P_HC_Align_L_X", "P_HC_Align_L_Y", "P_HC_Align_R_X", "P_HC_Align_R_Y",
+                    "P_HC_Align_DX", "P_HC_Align_DY", "P_HC_Align_Dist", "P_HC_Align_Theta",
+                    "W_HC_Fid_L_X", "W_HC_Fid_L_Y", "W_HC_Fid_R_X", "W_HC_Fid_R_Y",
+                    "W_HC_Fid_DX", "W_HC_Fid_DY", "W_HC_Fid_Dist", "W_HC_Fid_Theta",
+                    "W_HC_Align_L_X", "W_HC_Align_L_Y", "W_HC_Align_R_X", "W_HC_Align_R_Y",
+                    "W_HC_Align_DX", "W_HC_Align_DY", "W_HC_Align_Dist", "W_HC_Align_Theta"));
             }
 
             sb.AppendLine(string.Join(",",
@@ -1180,7 +1163,8 @@ namespace HCB.UI
                 hcbData != null ? Pt(hcbData.Hc2FidCurrent) : NullPt(),
                 hcbData != null ? Pt(hcbData.Hc2FidRef) : NullPt(),
                 hcbData != null ? Pt(hcbData.Hc2FidDrift) : NullPt(),
-                F(hcbData?.FidCurrentDist)));
+                F(hcbData?.FidCurrentDist),
+                CsvMeasurementData()));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
 
@@ -1193,6 +1177,68 @@ namespace HCB.UI
             }
 
             _logger.Information("본딩 데이터 저장: {Path}", path);
+        }
+
+        private string CsvMeasurementData()
+        {
+            var vals = new List<string>(40);
+            var offset = hcbData?.Hc2Offset;
+
+            // ── 측정1: P_TABLE PC_Camera ──
+            if (hcbData?.TopLeftFidRaw != null && hcbData?.TopRightFidRaw != null)
+            {
+                var r = CalibrationMath.CalcRelative(hcbData.TopLeftFidRaw.CenterX, hcbData.TopLeftFidRaw.CenterY,
+                    hcbData.TopRightFidRaw.CenterX, hcbData.TopRightFidRaw.CenterY);
+                vals.AddRange(new[] { F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
+            }
+            else vals.AddRange(new[] { "", "", "", "" });
+
+            if (hcbData?.TopLeftAlignRaw != null && hcbData?.TopRightAlignRaw != null)
+            {
+                var r = CalibrationMath.CalcRelative(hcbData.TopLeftAlignRaw.CenterX, hcbData.TopLeftAlignRaw.CenterY,
+                    hcbData.TopRightAlignRaw.CenterX, hcbData.TopRightAlignRaw.CenterY);
+                vals.AddRange(new[] { F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
+            }
+            else vals.AddRange(new[] { "", "", "", "" });
+
+            // ── 측정2: P_TABLE HC1/HC2 ──
+            if (offset != null && hcbData?.Hc1FidCurrent != null && hcbData?.Hc2FidCurrent != null)
+            {
+                double lx = -hcbData.Hc1FidCurrent.X, ly = -hcbData.Hc1FidCurrent.Y;
+                double rx = offset.X - hcbData.Hc2FidCurrent.X, ry = offset.Y - hcbData.Hc2FidCurrent.Y;
+                var r = CalibrationMath.CalcRelative(lx, ly, rx, ry);
+                vals.AddRange(new[] { F(lx), F(ly), F(rx), F(ry), F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
+            }
+            else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
+
+            if (hcbData?.TL != null && hcbData?.TR != null)
+            {
+                var r = CalibrationMath.CalcRelative(hcbData.TL.X, hcbData.TL.Y, hcbData.TR.X, hcbData.TR.Y);
+                vals.AddRange(new[] { F(hcbData.TL.X), F(hcbData.TL.Y), F(hcbData.TR.X), F(hcbData.TR.Y),
+                    F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
+            }
+            else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
+
+            // ── 측정3: W_TABLE HC1/HC2 ──
+            if (offset != null && hcbData?.BtmLeftFidRaw != null && hcbData?.BtmRightFidRaw != null)
+            {
+                double lx = -hcbData.BtmLeftFidRaw.X, ly = -hcbData.BtmLeftFidRaw.Y;
+                double rx = offset.X - hcbData.BtmRightFidRaw.X, ry = offset.Y - hcbData.BtmRightFidRaw.Y;
+                var r = CalibrationMath.CalcRelative(lx, ly, rx, ry);
+                vals.AddRange(new[] { F(lx), F(ly), F(rx), F(ry), F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
+            }
+            else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
+
+            if (offset != null && hcbData?.BtmLeftAlignRaw != null && hcbData?.BtmRightAlignRaw != null)
+            {
+                double lx = -hcbData.BtmLeftAlignRaw.X, ly = -hcbData.BtmLeftAlignRaw.Y;
+                double rx = offset.X - hcbData.BtmRightAlignRaw.X, ry = offset.Y - hcbData.BtmRightAlignRaw.Y;
+                var r = CalibrationMath.CalcRelative(lx, ly, rx, ry);
+                vals.AddRange(new[] { F(lx), F(ly), F(rx), F(ry), F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
+            }
+            else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
+
+            return string.Join(",", vals);
         }
 
         // 사용 레시피 변경 중 재진입 방지
