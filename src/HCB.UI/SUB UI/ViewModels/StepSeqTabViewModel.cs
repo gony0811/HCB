@@ -776,7 +776,7 @@ namespace HCB.UI
 
                 if (!ValidateAlignDistances())
                     throw new Exception("Top/Btm 선분 길이 오차가 허용 범위를 초과했습니다.");
-                // 6. 본딩
+                // 6. 본딩    
                 TopBondingState = StepState.InProgress;
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, ct));

@@ -137,6 +137,7 @@ namespace HCB.UI
                     data.Hc2FidCurrent.X, data.Hc2FidCurrent.Y, offset.X, offset.Y, rfAbsX, rfAbsY);
 
                 var r = CalibrationMath.CalcRelative(lfAbsX, lfAbsY, rfAbsX, rfAbsY);
+                data.M2FidTheta = r.theta;
                 LogRelativeDistance(h, "HC1/HC2", "Fiducial", r.dx, r.dy, r.dist, r.theta);
             }
 
@@ -173,6 +174,7 @@ namespace HCB.UI
                     data.BtmRightFidRaw.X, data.BtmRightFidRaw.Y, offset.X, offset.Y, rfAbsX, rfAbsY);
 
                 var r = CalibrationMath.CalcRelative(lfAbsX, lfAbsY, rfAbsX, rfAbsY);
+                data.M3FidTheta = r.theta;
                 LogRelativeDistance(h, "HC1/HC2", "Fiducial", r.dx, r.dy, r.dist, r.theta);
             }
 
