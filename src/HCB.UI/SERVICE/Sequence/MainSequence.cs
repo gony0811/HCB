@@ -406,13 +406,43 @@ namespace HCB.UI
                     case TracingMode.None:
                         break;
                 }
+                // ── STEP 0: 측정2→3 Theta 변화량을 Top 마크에 반영 ──
+                Point2D topLF, topRF, topLA, topRA;
+
+                if (data.M2FidTheta != 0 && data.M3FidTheta != 0)
+                {
+                    double deltaTheta = -(data.M3FidTheta - data.M2FidTheta);
+                    double deltaThetaRad = CalibrationMath.ToRadian(deltaTheta);
+
+                    Point2D fidCenter = Point2D.of(data.TopLeftFidRaw.CenterX, data.TopLeftFidRaw.CenterY);
+
+                    topLF = CalibrationMath.RotateAroundPivot(
+                        Point2D.of(data.TopLeftFidRaw.CenterX, data.TopLeftFidRaw.CenterY), fidCenter, deltaThetaRad);
+                    topRF = CalibrationMath.RotateAroundPivot(
+                        Point2D.of(data.TopRightFidRaw.CenterX, data.TopRightFidRaw.CenterY), fidCenter, deltaThetaRad);
+                    topLA = CalibrationMath.RotateAroundPivot(
+                        Point2D.of(data.TopLeftAlignRaw.CenterX, data.TopLeftAlignRaw.CenterY), fidCenter, deltaThetaRad);
+                    topRA = CalibrationMath.RotateAroundPivot(
+                        Point2D.of(data.TopRightAlignRaw.CenterX, data.TopRightAlignRaw.CenterY), fidCenter, deltaThetaRad);
+
+                    _logger.Information(
+                        "Theta 보정 — M2={M2:F4}° M3={M3:F4}° Δ={Delta:F4}°",
+                        data.M2FidTheta, data.M3FidTheta, deltaTheta);
+                }
+                else
+                {
+                    topLF = Point2D.of(data.TopLeftFidRaw.CenterX, data.TopLeftFidRaw.CenterY);
+                    topRF = Point2D.of(data.TopRightFidRaw.CenterX, data.TopRightFidRaw.CenterY);
+                    topLA = Point2D.of(data.TopLeftAlignRaw.CenterX, data.TopLeftAlignRaw.CenterY);
+                    topRA = Point2D.of(data.TopRightAlignRaw.CenterX, data.TopRightAlignRaw.CenterY);
+
+                    _logger.Information("Theta 보정 스킵 — M2={M2:F4}° M3={M3:F4}°",
+                        data.M2FidTheta, data.M3FidTheta);
+                }
+
                 // ── STEP 1: Top Die — Fid→Align 이동량 ──
-                var lDist = Point2D.of(
-                    data.TopLeftAlignRaw.CenterX - data.TopLeftFidRaw.CenterX,
-                    data.TopLeftAlignRaw.CenterY - data.TopLeftFidRaw.CenterY);
-                var rDist = Point2D.of(
-                    data.TopRightAlignRaw.CenterX - data.TopRightFidRaw.CenterX,
-                    data.TopRightAlignRaw.CenterY - data.TopRightFidRaw.CenterY);
+                var lDist = Point2D.of(topLA.X - topLF.X, topLA.Y - topLF.Y);
+                var rDist = Point2D.of(topRA.X - topRF.X, topRA.Y - topRF.Y);
                 data.LDist = lDist;
                 data.RDist = rDist;
 
