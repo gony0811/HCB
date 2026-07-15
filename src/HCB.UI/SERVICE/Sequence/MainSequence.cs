@@ -450,6 +450,7 @@ namespace HCB.UI
                 // Btm: Stage 기준 X:-, Y:- → DxCam 부호 반전
                 Point2D camOffset = data.Hc2Offset;
 
+                
                 Point2D bl = Point2D.of(
                     -data.BtmLeftAlignRaw.X,
                     -data.BtmLeftAlignRaw.Y);
@@ -457,14 +458,16 @@ namespace HCB.UI
                     camOffset.X - data.BtmRightAlignRaw.X,
                     camOffset.Y - data.BtmRightAlignRaw.Y);
 
+                // Hc1X: 0.00361, Hc1Y: -0.00112, Hc2X: 0.00807, Hc2Y: -0.00269
+                // X: +, Y: -   1.7 um
+                // X: +, Y: +   0.2 um
                 Point2D bfl = Point2D.of(
-                    -data.BtmLeftFidRaw.X,
-                    -data.BtmLeftFidRaw.Y);
-
+                    -data.BtmLeftFidRaw.X + 0.00361,
+                    -data.BtmLeftFidRaw.Y -0.00112);
 
                 Point2D bfr = Point2D.of(
-                    camOffset.X - data.BtmRightFidRaw.X,
-                    camOffset.Y - data.BtmRightFidRaw.Y);
+                    camOffset.X - data.BtmRightFidRaw.X + 0.00807,
+                    camOffset.Y - data.BtmRightFidRaw.Y -0.00269);
 
                 // Top: Center 기준 X:-, Y:+ → lDist에 (-X, -Y) 적용
                 Point2D tl = Point2D.of(bfl.X - lDist.X, bfl.Y - lDist.Y);

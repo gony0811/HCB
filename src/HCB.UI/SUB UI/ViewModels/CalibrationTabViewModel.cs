@@ -779,8 +779,8 @@ namespace HCB.UI
                 // 1. Right Fiducial
                 CalibStatus = "PC AF — Right Fiducial...";
                 await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_HIGH, ct));
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct));
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
                 await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
                 RightFidHeight = _hzAxis!.CurrentPosition;
@@ -796,8 +796,8 @@ namespace HCB.UI
                 CalibStatus = "PC AF — Left Fiducial...";
                 await _sequenceService.Init_Head(ct);
                 await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_HIGH, ct));
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct));
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
                 await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
                 LeftFidHeight = _hzAxis!.CurrentPosition;
