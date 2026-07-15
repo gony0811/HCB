@@ -336,9 +336,10 @@
                               SelectedItem="{Binding SelectedParam, Mode=TwoWay}"
                               Margin="8,6,8,4">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name"  Binding="{Binding Name}"     Width="2*"/>
-                            <DataGridTextColumn Header="Value" Binding="{Binding Value}"     Width="2*"/>
-                            <DataGridTextColumn Header="Unit"  Binding="{Binding UnitType}"  Width="100"/>
+                            <DataGridTextColumn Header="Name"        Binding="{Binding Name}"        Width="2*"/>
+                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="2*"/>
+                            <DataGridTextColumn Header="Value"       Binding="{Binding Value}"       Width="2*"/>
+                            <DataGridTextColumn Header="Unit"        Binding="{Binding UnitType}"    Width="100"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
