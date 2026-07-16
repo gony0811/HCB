@@ -469,9 +469,10 @@ namespace HCB.UI
                     camOffset.X - data.BtmRightFidRaw.X + 0.00807,
                     camOffset.Y - data.BtmRightFidRaw.Y -0.00269);
 
-                // Top: Center 기준 X:-, Y:+ → lDist에 (-X, -Y) 적용
+                Point2D topRel = Point2D.of(topRA.X - topLA.X, topRA.Y - topLA.Y);
                 Point2D tl = Point2D.of(bfl.X - lDist.X, bfl.Y - lDist.Y);
-                Point2D tr = Point2D.of(bfr.X - rDist.X, bfr.Y - rDist.Y);
+                Point2D tr = Point2D.of(tl.X - topRel.X, tl.Y - topRel.Y);
+                //Point2D tr = Point2D.of(bfr.X - rDist.X, bfr.Y - rDist.Y);
 
                 // ── STEP 3: 회전중심(HCRO) 기준으로 좌표 이동 ──
                 Point2D hcro = data.Hcro;
