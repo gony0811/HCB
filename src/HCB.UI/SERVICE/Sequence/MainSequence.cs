@@ -449,30 +449,40 @@ namespace HCB.UI
                 // ── STEP 2: Btm Die 좌표 통합 + Top 위치 생성 ──
                 // Btm: Stage 기준 X:-, Y:- → DxCam 부호 반전
                 Point2D camOffset = data.Hc2Offset;
-
                 
+                // Hc1X: 0.00361, Hc1Y: -0.00112, Hc2X: 0.00807, Hc2Y: -0.00269
+                // X: +, Y: -   1.7 um
+                // X: +, Y: +   0.2 um
+                Point2D topFidRel = Point2D.of(topRF.X - topLF.X, topRF.Y - topLF.Y);
+                Point2D bfl = Point2D.of(
+                    -data.BtmLeftFidRaw.X,
+                    -data.BtmLeftFidRaw.Y);
+
+                //Point2D bfr = Point2D.of(
+                //    camOffset.X - data.BtmRightFidRaw.X,
+                //    camOffset.Y - data.BtmRightFidRaw.Y);
+
+                Point2D bfr = Point2D.of(bfl.X - topFidRel.X, bfl.Y - topFidRel.Y);
+                Point2D topRel = Point2D.of(topRA.X - topLA.X, topRA.Y - topLA.Y);
+                Point2D tl = Point2D.of(bfl.X - lDist.X, bfl.Y - lDist.Y);
+                Point2D tr = Point2D.of(tl.X - topRel.X, tl.Y - topRel.Y);
+                //Point2D tr = Point2D.of(bfr.X - rDist.X, bfr.Y - rDist.Y);
+
+                //var blDist = Point2D.of(data.BtmLeftAlignRaw.X - data.BtmLeftFidRaw.X, data.BtmLeftAlignRaw.Y - data.BtmLeftFidRaw.Y);
+                //var brDist = Point2D.of(data.BtmRightAlignRaw.X - data.BtmRightFidRaw.X, data.BtmRightAlignRaw.Y - data.BtmRightFidRaw.Y);
+
+                //Point2D bl = Point2D.of(
+                //    bfl.X - blDist.X,
+                //    bfl.Y - blDist.Y);
+                //Point2D br = Point2D.of(
+                //    bfr.X - brDist.X,
+                //    bfr.Y - brDist.Y);
                 Point2D bl = Point2D.of(
                     -data.BtmLeftAlignRaw.X,
                     -data.BtmLeftAlignRaw.Y);
                 Point2D br = Point2D.of(
                     camOffset.X - data.BtmRightAlignRaw.X,
                     camOffset.Y - data.BtmRightAlignRaw.Y);
-
-                // Hc1X: 0.00361, Hc1Y: -0.00112, Hc2X: 0.00807, Hc2Y: -0.00269
-                // X: +, Y: -   1.7 um
-                // X: +, Y: +   0.2 um
-                Point2D bfl = Point2D.of(
-                    -data.BtmLeftFidRaw.X,
-                    -data.BtmLeftFidRaw.Y);
-
-                Point2D bfr = Point2D.of(
-                    camOffset.X - data.BtmRightFidRaw.X,
-                    camOffset.Y - data.BtmRightFidRaw.Y);
-
-                Point2D topRel = Point2D.of(topRA.X - topLA.X, topRA.Y - topLA.Y);
-                Point2D tl = Point2D.of(bfl.X - lDist.X, bfl.Y - lDist.Y);
-                Point2D tr = Point2D.of(tl.X - topRel.X, tl.Y - topRel.Y);
-                //Point2D tr = Point2D.of(bfr.X - rDist.X, bfr.Y - rDist.Y);
 
                 // ── STEP 3: 회전중심(HCRO) 기준으로 좌표 이동 ──
                 Point2D hcro = data.Hcro;
@@ -897,6 +907,10 @@ namespace HCB.UI
         {
             try
             {
+                double hc1FidOffsetX = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 X");
+                double hc1FidOffsetY = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 Y");
+                double hc2FidOffsetX = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 X");
+                double hc2FidOffsetY = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 Y");
                 // ── 1. 카메라 거리 구하기 ──
                 var hc1 = await VisionResult(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
                 await Task.WhenAll(
@@ -935,15 +949,18 @@ namespace HCB.UI
                         MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
                     if (v1.Result == Result.NG)
                         throw new Exception($"Hc1 {angles[i]}° 피듀셜 측정 실패");
+                    v1.X = v1.X + hc1FidOffsetX;
+                    v1.Y = v1.X + hc1FidOffsetY;
 
                     await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
                     var v2 = await communicationService.RequestVisionMarkPosition(
                         MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
                     if (v2.Result == Result.NG)
                         throw new Exception($"Hc2 {angles[i]}° 피듀셜 측정 실패");
-
-                    hc1Points.Add(Point2D.of(-v1.X + 0.00361, -v1.Y - 0.00112));
-                    hc2Points.Add(Point2D.of(hc2XOffset - v2.X + 0.00807, hc2YOffset - v2.Y - 0.00269));
+                    v2.X = v2.X + hc2FidOffsetX;
+                    v2.Y = v2.X + hc2FidOffsetY;
+                    hc1Points.Add(Point2D.of(-v1.X, -v1.Y ));
+                    hc2Points.Add(Point2D.of(hc2XOffset - v2.X , hc2YOffset - v2.Y));
                 }
 
                 // H_T 복귀

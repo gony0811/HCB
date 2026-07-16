@@ -218,13 +218,16 @@ namespace HCB.UI
                 }
 
                 await TopDieSet(ct);
-
+                double hc1FidOffsetX = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 X");
+                double hc1FidOffsetY = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 Y");
+                double hc2FidOffsetX = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 X");
+                double hc2FidOffsetY = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 Y");
                 sw.Restart();
                 // Hc1X: 0.00361, Hc1Y: -0.00112, Hc2X: 0.00807, Hc2Y: -0.00269
                 if (data.UseBtmIndividualMeasure)
                 {
                     var rFid = await BtmDieVisionRightFid(data.AvgMove, ct);
-                    data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark - 0.00807, rFid.DyCamToMark + 0.00269);
+                    data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark + hc2FidOffsetX, rFid.DyCamToMark + hc2FidOffsetY);
                     _logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                     sw.Restart();
@@ -234,7 +237,7 @@ namespace HCB.UI
 
                     sw.Restart();
                     var lFid = await BtmDieVisionLeftFid(data.AvgMove, ct);
-                    data.BtmLeftFidRaw = Point2D.of(lFid.DxCamToMark - 0.00361, lFid.DyCamToMark + 0.00112);
+                    data.BtmLeftFidRaw = Point2D.of(lFid.DxCamToMark + hc1FidOffsetX, lFid.DyCamToMark + hc1FidOffsetY);
                     _logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                     sw.Restart();
@@ -245,9 +248,9 @@ namespace HCB.UI
                 else
                 {
                     var result = await BtmDieVisionAlign(avgMode: data.AvgMove);
-                    data.BtmLeftFidRaw = result.LeftFid;
+                    data.BtmLeftFidRaw = Point2D.of(result.LeftFid.X + hc1FidOffsetX, result.LeftFid.Y + hc1FidOffsetY);
                     data.BtmLeftAlignRaw = result.LeftAlign;
-                    data.BtmRightFidRaw = result.RightFid;
+                    data.BtmRightFidRaw = Point2D.of(result.RightFid.X + hc2FidOffsetX, result.RightFid.Y + hc2FidOffsetY);
                     data.BtmRightAlignRaw = result.RightAlign;
                     _logger.Information("BtmHighAlign : {Elapsed}ms", sw.ElapsedMilliseconds);
                 }
