@@ -411,7 +411,7 @@ namespace HCB.UI
 
                 if (data.M2FidTheta != 0 && data.M3FidTheta != 0)
                 {
-                    double deltaTheta = -(data.M3FidTheta - data.M2FidTheta);
+                    double deltaTheta = (data.M3FidTheta - data.M2FidTheta);
                     double deltaThetaRad = CalibrationMath.ToRadian(deltaTheta);
 
                     Point2D fidCenter = Point2D.of(data.TopLeftFidRaw.CenterX, data.TopLeftFidRaw.CenterY);
@@ -600,7 +600,7 @@ namespace HCB.UI
         #endregion
 
         #region 피듀셜 각도 추적
-
+        // Hc1X: 0.00361, Hc1Y: -0.00112, Hc2X: 0.00807, Hc2Y: -0.00269
         public async Task<FiducialAngleResult> FiducialAngleTracking(bool avgMode, CancellationToken ct)
         {
             var result = new FiducialAngleResult();
@@ -608,6 +608,10 @@ namespace HCB.UI
             try
             {
                 _logger.Information("피듀셜 각도 추적 시작");
+                double hc1FidOffsetX = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 X");
+                double hc1FidOffsetY = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 Y");
+                double hc2FidOffsetX = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 X");
+                double hc2FidOffsetY = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 Y");
 
                 // ── 1. PC TABLE: TopDIE Fiducial 촬상 ──
                 await PTable2DMappingOn();
@@ -615,8 +619,8 @@ namespace HCB.UI
                 var topRightFid = await TopDieVisionRightFid(avgMode, ct);
                 var topLeftFid = await TopDieVisionLeftFid(avgMode, ct);
 
-                result.PcLeftFid = Point2D.of(topLeftFid.CenterX, topLeftFid.CenterY);
-                result.PcRightFid = Point2D.of(topRightFid.CenterX, topRightFid.CenterY);
+                result.PcLeftFid = Point2D.of(topLeftFid.CenterX + hc1FidOffsetX, topLeftFid.CenterY + hc1FidOffsetY);
+                result.PcRightFid = Point2D.of(topRightFid.CenterX + hc2FidOffsetX, topRightFid.CenterY + hc2FidOffsetY);
                 result.PcAngleDeg = CalibrationMath.ToDegree(
                     Math.Atan2(
                         result.PcRightFid.Y - result.PcLeftFid.Y,
@@ -849,7 +853,7 @@ namespace HCB.UI
             var refLfDyParam = _paramService.FindByName("Hc1FidRefDy");
             var refRfDxParam = _paramService.FindByName("Hc2FidRefDx");
             var refRfDyParam = _paramService.FindByName("Hc2FidRefDy");
-
+            
             if (string.IsNullOrEmpty(refLfDxParam?.Value) || string.IsNullOrEmpty(refRfDxParam?.Value))
             {
                 _logger.Warning("피듀셜 기준값 미설정 — 보정 스킵");
