@@ -462,12 +462,12 @@ namespace HCB.UI
                 // X: +, Y: -   1.7 um
                 // X: +, Y: +   0.2 um
                 Point2D bfl = Point2D.of(
-                    -data.BtmLeftFidRaw.X + 0.00361,
-                    -data.BtmLeftFidRaw.Y -0.00112);
+                    -data.BtmLeftFidRaw.X,
+                    -data.BtmLeftFidRaw.Y);
 
                 Point2D bfr = Point2D.of(
-                    camOffset.X - data.BtmRightFidRaw.X + 0.00807,
-                    camOffset.Y - data.BtmRightFidRaw.Y -0.00269);
+                    camOffset.X - data.BtmRightFidRaw.X,
+                    camOffset.Y - data.BtmRightFidRaw.Y);
 
                 Point2D topRel = Point2D.of(topRA.X - topLA.X, topRA.Y - topLA.Y);
                 Point2D tl = Point2D.of(bfl.X - lDist.X, bfl.Y - lDist.Y);
@@ -925,6 +925,8 @@ namespace HCB.UI
                 double[] angles = { -0.75, 0.75 };
                 for (int i = 0; i < angles.Length; i++)
                 {
+                    // Hc1X: 0.00361, Hc1Y: -0.00112, Hc2X: 0.00807, Hc2Y: -0.00269
+
                     ct.ThrowIfCancellationRequested();
                     await MotionsMove(MotionExtensions.H_T, angles[i], ct);
 
@@ -940,8 +942,8 @@ namespace HCB.UI
                     if (v2.Result == Result.NG)
                         throw new Exception($"Hc2 {angles[i]}° 피듀셜 측정 실패");
 
-                    hc1Points.Add(Point2D.of(-v1.X, -v1.Y));
-                    hc2Points.Add(Point2D.of(hc2XOffset - v2.X, hc2YOffset - v2.Y));
+                    hc1Points.Add(Point2D.of(-v1.X + 0.00361, -v1.Y - 0.00112));
+                    hc2Points.Add(Point2D.of(hc2XOffset - v2.X + 0.00807, hc2YOffset - v2.Y - 0.00269));
                 }
 
                 // H_T 복귀

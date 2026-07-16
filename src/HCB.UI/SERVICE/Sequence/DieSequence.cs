@@ -220,11 +220,11 @@ namespace HCB.UI
                 await TopDieSet(ct);
 
                 sw.Restart();
-
+                // Hc1X: 0.00361, Hc1Y: -0.00112, Hc2X: 0.00807, Hc2Y: -0.00269
                 if (data.UseBtmIndividualMeasure)
                 {
                     var rFid = await BtmDieVisionRightFid(data.AvgMove, ct);
-                    data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark, rFid.DyCamToMark);
+                    data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark - 0.00807, rFid.DyCamToMark + 0.00269);
                     _logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                     sw.Restart();
@@ -234,7 +234,7 @@ namespace HCB.UI
 
                     sw.Restart();
                     var lFid = await BtmDieVisionLeftFid(data.AvgMove, ct);
-                    data.BtmLeftFidRaw = Point2D.of(lFid.DxCamToMark, lFid.DyCamToMark);
+                    data.BtmLeftFidRaw = Point2D.of(lFid.DxCamToMark - 0.00361, lFid.DyCamToMark + 0.00112);
                     _logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                     sw.Restart();
