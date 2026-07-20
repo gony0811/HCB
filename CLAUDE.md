@@ -90,6 +90,46 @@ Reusable components in `SUB UI/`: MotionMoveController, PositionTable, MotorStat
 - **System.Reactive** — device status streaming
 - **Power PMAC native DLLs** — motion controller communication
 
+## Bonding Alignment Pipeline
+
+전체 흐름: `TopHighAlign → BtmHighAlign → CoordinateSystemIntegration → BondingCorr → BondingPress`
+
+`AlignData`가 전 과정의 공유 데이터 객체로, 각 단계가 측정/계산 결과를 누적 저장한다.
+
+### TopHighAlign (DieSequence.cs)
+Top Die 고배율 비전 측정. PC Table 카메라로 4개 마크 순차 촬상.
+- `LoadCalibrationInto()` → DB에서 캘리브레이션 파라미터(Hcro, Hc2Offset, OffsetXY, OffsetT) 로드
+- `PTable2DMappingOn()` → 2D 매핑 보정 활성화 (옵션)
+- RightFid → RightAlign → LeftFid → LeftAlign 순서로 촬상
+- 출력: `data.TopRightFidRaw`, `TopRightAlignRaw`, `TopLeftFidRaw`, `TopLeftAlignRaw` (CenterX/Y 절대 픽셀좌표)
+- 옵션: `MeasureFiducialDrift()` — HC1/HC2 드리프트 측정
+
+### BtmHighAlign (DieSequence.cs)
+Btm Die 고배율 비전 측정. HC1/HC2 카메라 사용.
+- `WTable2DMappingOn()` → Wafer Table 2D 매핑 전환 (옵션)
+- `TopDieSet()` → Head를 본딩 위치(Z축 하강)로 이동
+- HC1/HC2 피듀셜 위치 보정값 적용 (`hc1FidOffset`, `hc2FidOffset`)
+- 개별 측정: RightFid → RightAlign → LeftFid → LeftAlign 순차, 동시 측정: `BtmDieVisionAlign()` 한 번에 4점
+- 출력: `data.BtmRightFidRaw`, `BtmRightAlignRaw`, `BtmLeftFidRaw`, `BtmLeftAlignRaw` (DxCamToMark 카메라 중심 대비 상대거리)
+- **좌표 차이**: Top은 PC카메라 CenterX/Y (절대), Btm은 HC카메라 DxCamToMark (상대)
+
+### CoordinateSystemIntegration (MainSequence.cs)
+Top/Btm 측정 좌표를 통합하여 보정량(ResultX, ResultY, ResultT) 계산.
+1. **TracingMode 분기**: Auto → `CompensateHc2Offset()` (피듀셜 드리프트 기반 Hc2Offset/Hcro 보정), Manual → `CamDistAndHcro()` (카메라 거리 측정 + 3점 회전으로 FitCircle 회전중심), None → 스킵
+2. **Theta 보정**: M2/M3 FidTheta 변화량 → Top 마크 4점 `RotateAroundPivot`
+3. **Fid→Align 이동량**: `lDist = TopLeftAlign - TopLeftFid`, `rDist = TopRightAlign - TopRightFid`
+4. **좌표 통합**: Btm Fid 부호 반전(Stage→DxCam), Top Align 위치 = bfl - lDist, Btm Align = (-Raw) or (camOffset - Raw)
+5. **HCRO 기준 이동**: bl, br, tl, tr 모두 `- hcro`
+6. **θ 계산**: `thetaF = SPEC_THETA - ToDegree(atan2(tr-tl) - atan2(br-bl))`
+7. **회전 보정**: Top 마크에 `ApplyRotation(thetaF_rad)`
+8. **Shift**: `ResultX = (tCenter - bCenter).X + OffsetXY.X`, `ResultY = ... + OffsetXY.Y`, `ResultT = thetaF + OffsetT`
+
+### BondingCorr (StepSequence.cs)
+CoordinateSystemIntegration 결과를 모션 축에 적용하여 본딩 위치 보정.
+- XY/T 보정 이동 (병렬): `H_X: -ResultX`, `W_Y: -ResultY`, `H_T: +ResultT`
+- Z축 하강: `H_Z = ShankToWaferOffset - TopDieThickness - BtmDieThickness - READY_POSITION`
+- 후속: `BondingPress()`가 PMAC 가압 시퀀스 실행 (status=6 완료 폴링, Vacuum OFF)
+
 ## Conventions
 
 - Views and ViewModels are matched by name: `USub01` view ↔ `USub01ViewModel`

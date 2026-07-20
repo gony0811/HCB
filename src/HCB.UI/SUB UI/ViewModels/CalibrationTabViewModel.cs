@@ -774,7 +774,10 @@ namespace HCB.UI
             ct = GetToken();
             try
             {
+
+                double fidAlignGap = await _sequenceService.GetRecipe(MotionExtensions.FID_ALIGN_GAP);
                 await _sequenceService.Init_Head(ct);
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);
 
                 // 1. Right Fiducial
                 CalibStatus = "PC AF — Right Fiducial...";
@@ -788,7 +791,7 @@ namespace HCB.UI
                 // 2. Right Align
                 CalibStatus = "PC AF — Right Align...";
                 double thickness = _recipeService.FindByParamDouble("TopDieThickness");
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, -thickness, ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, - thickness, ct);
                 await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.ALIGN_MARK, ct);
                 RightAlignHeight = _hzAxis!.CurrentPosition;
 

@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -155,13 +156,15 @@ namespace HCB.UI
         {
             _logger.Information("Top Die Vision (Right Fid) Start");
             EQStatusCheck();
-
+            double fidAlignGap = await GetRecipe(MotionExtensions.FID_ALIGN_GAP);
             string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
             string[] z = { MotionExtensions.H_Z };
 
             await Init_Head(ct);
+            
             await Task.WhenAll(
                 MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct),
+                RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct),
                 MotionsMove(xy, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct)
             );
             await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);

@@ -191,6 +191,7 @@ namespace HCB.UI
             finally
             {
                 if (data.Use2DMapping) await MappingOff();
+                await Init_Head(ct);
                 _logger.Information("TopHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
             }
             return data;
