@@ -950,7 +950,7 @@ namespace HCB.UI
                     if (v1.Result == Result.NG)
                         throw new Exception($"Hc1 {angles[i]}° 피듀셜 측정 실패");
                     v1.X = v1.X + hc1FidOffsetX;
-                    v1.Y = v1.X + hc1FidOffsetY;
+                    v1.Y = v1.Y + hc1FidOffsetY;
 
                     await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
                     var v2 = await communicationService.RequestVisionMarkPosition(
@@ -958,7 +958,7 @@ namespace HCB.UI
                     if (v2.Result == Result.NG)
                         throw new Exception($"Hc2 {angles[i]}° 피듀셜 측정 실패");
                     v2.X = v2.X + hc2FidOffsetX;
-                    v2.Y = v2.X + hc2FidOffsetY;
+                    v2.Y = v2.Y + hc2FidOffsetY;
                     hc1Points.Add(Point2D.of(-v1.X, -v1.Y ));
                     hc2Points.Add(Point2D.of(hc2XOffset - v2.X , hc2YOffset - v2.Y));
                 }
