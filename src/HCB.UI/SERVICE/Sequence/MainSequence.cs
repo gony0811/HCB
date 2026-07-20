@@ -411,7 +411,7 @@ namespace HCB.UI
 
                 if (data.M2FidTheta != 0 && data.M3FidTheta != 0)
                 {
-                    double deltaTheta = (data.M3FidTheta - data.M2FidTheta);
+                    double deltaTheta = -(data.M3FidTheta - data.M2FidTheta);
                     double deltaThetaRad = CalibrationMath.ToRadian(deltaTheta);
 
                     Point2D fidCenter = Point2D.of(data.TopLeftFidRaw.CenterX, data.TopLeftFidRaw.CenterY);

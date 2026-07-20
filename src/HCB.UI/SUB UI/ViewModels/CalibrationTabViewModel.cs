@@ -797,7 +797,6 @@ namespace HCB.UI
 
                 // 3. Left Fiducial
                 CalibStatus = "PC AF — Left Fiducial...";
-                await _sequenceService.Init_Head(ct);
                 await Task.WhenAll(
                     _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct),
                     _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct));

@@ -180,9 +180,10 @@ namespace HCB.UI
                 sw.Restart();
                 data.TopLeftAlignRaw = await TopDieVisionLeftAlign(data.AvgMove, ct);
                 _logger.Information("TopHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
-
+                await Init_Head(ct);
                 if (data.UseFiducialTracking)
                     await MeasureFiducialDrift(data, ct);
+                    ProcessMeasurement(data, 2);
             }
             catch (ErrorException e)
             {
@@ -313,6 +314,7 @@ namespace HCB.UI
                 data.Hc2FidRef = Point2D.of(refHc2Dx, refHc2Dy);
                 data.Hc1FidDrift = Point2D.of(fid1.X - refHc1Dx, fid1.Y - refHc1Dy);
                 data.Hc2FidDrift = Point2D.of(fid2.X - refHc2Dx, fid2.Y - refHc2Dy);
+                
                 _logger.Information(
                     "피듀셜 트래킹 — HC1 drift({Hc1Dx:F6},{Hc1Dy:F6}), HC2 drift({Hc2Dx:F6},{Hc2Dy:F6}), FidDist:{Cur:F6} | {Elapsed}ms",
                     data.Hc1FidDrift.X, data.Hc1FidDrift.Y,
