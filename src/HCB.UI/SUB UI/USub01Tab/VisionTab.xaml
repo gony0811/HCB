@@ -473,14 +473,15 @@
                                     DataMemberBinding="{Binding Position}" Width="120"/>
                                 <telerik:GridViewDataColumn Header="Z (mm)"
                                     DataMemberBinding="{Binding ZAbsolute, StringFormat=F4}" Width="120"/>
-                                <telerik:GridViewDataColumn Header="HC1 ΔX (um)"
-                                    DataMemberBinding="{Binding Hc1DeltaXUm, StringFormat=F2}" Width="120"/>
-                                <telerik:GridViewDataColumn Header="HC1 ΔY (um)"
-                                    DataMemberBinding="{Binding Hc1DeltaYUm, StringFormat=F2}" Width="120"/>
-                                <telerik:GridViewDataColumn Header="HC2 ΔX (um)"
-                                    DataMemberBinding="{Binding Hc2DeltaXUm, StringFormat=F2}" Width="120"/>
-                                <telerik:GridViewDataColumn Header="HC2 ΔY (um)"
-                                    DataMemberBinding="{Binding Hc2DeltaYUm, StringFormat=F2}" Width="120"/>
+                                
+                                <telerik:GridViewDataColumn Header="HC1 X"
+                                    DataMemberBinding="{Binding Hc1X, StringFormat=F4}" Width="120"/>
+                                <telerik:GridViewDataColumn Header="HC1 Y"
+                                    DataMemberBinding="{Binding Hc1Y, StringFormat=F4}" Width="120"/>
+                                <telerik:GridViewDataColumn Header="HC2 X"
+                                    DataMemberBinding="{Binding Hc2X, StringFormat=F4}" Width="120"/>
+                                <telerik:GridViewDataColumn Header="HC2 Y"
+                                    DataMemberBinding="{Binding Hc2X, StringFormat=F4}" Width="120"/>
                             </telerik:RadGridView.Columns>
                         </telerik:RadGridView>
 

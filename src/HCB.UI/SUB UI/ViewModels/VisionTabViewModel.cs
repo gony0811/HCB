@@ -338,7 +338,7 @@ namespace HCB.UI
                         double targetZ = positions[p];
                         ZTrackStatus = $"[{current}/{totalSteps}] {label} 지점(Z={targetZ:F4}) 이동 중...";
 
-                        await _sequenceService.MotionsMove(MotionExtensions.H_Z, targetZ, ct);
+                        await _sequenceService.MotionsMove(MotionExtensions.H_Z, targetZ, 100, ct);
                         await Task.Delay(200, ct);
 
                         ZTrackStatus = $"[{current}/{totalSteps}] {label} 지점 HC1 측정 중...";
