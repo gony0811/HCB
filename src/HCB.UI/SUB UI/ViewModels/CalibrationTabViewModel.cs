@@ -99,6 +99,8 @@ namespace HCB.UI
 
         private CancellationToken GetToken()
         {
+            _cts?.Cancel();
+            _cts?.Dispose();
             _cts = new CancellationTokenSource();
             return _cts.Token;
         }
@@ -348,9 +350,9 @@ namespace HCB.UI
                 _logger.Error(e, "Hc1 Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
             }
-            finally { 
-                if (standalone) IsNotBusy = true;
+            finally {
                 await _sequenceService.MappingOff();
+                if (standalone) IsNotBusy = true;
             }
         }
 
@@ -400,9 +402,9 @@ namespace HCB.UI
                 CalibStatus = $"오류: {e.Message}";
 
             }
-            finally { 
-                if (standalone) IsNotBusy = true;
+            finally {
                 await _sequenceService.MappingOff();
+                if (standalone) IsNotBusy = true;
             }
         }
 
@@ -513,8 +515,8 @@ namespace HCB.UI
                 CalibStatus = $"오류: {e.Message}";
             }
             finally {
-                if (standalone) IsNotBusy = true;
                 await _sequenceService.MappingOff();
+                if (standalone) IsNotBusy = true;
             }
         }
 
