@@ -152,7 +152,7 @@ namespace HCB.UI
         }
 
 
-        public async Task<VisionMarkResult> TopDieVisionRightFid(bool AvgMode, string size, CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionRightFid(bool AvgMode, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Right Fid) Start");
             EQStatusCheck();
@@ -192,7 +192,7 @@ namespace HCB.UI
                 MotionExtensions.P_Y, AvgMode, ct);
         }
 
-        public async Task<VisionMarkResult> TopDieVisionLeftFid(bool AvgMode, string size, CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionLeftFid(bool AvgMode, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Left Fid) Start");
             EQStatusCheck();
