@@ -664,8 +664,8 @@ namespace HCB.UI
 
                 // Left 위치로 이동 → 스테이지 좌표 기록
                 await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_HIGH, ct));
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct));
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
                 await _sequenceService.PTable2DMappingOn();
 
@@ -674,8 +674,8 @@ namespace HCB.UI
 
                 // Right 위치로 이동 → 스테이지 좌표 기록 → Offset 계산
                 await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_HIGH, ct));
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct));
 
                 double rightHX = _hxAxis!.CurrentPosition;
                 double rightPY = _pyAxis!.CurrentPosition;
@@ -695,8 +695,8 @@ namespace HCB.UI
 
                     // Left 피듀셜 측정
                     await Task.WhenAll(
-                        _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_HIGH, ct),
-                        _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_HIGH, ct));
+                        _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct),
+                        _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct));
                     await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
 
                     await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);
@@ -707,8 +707,8 @@ namespace HCB.UI
 
                     // Right 피듀셜 측정 (PC 카메라 1개 → 이동 후 측정)
                     await Task.WhenAll(
-                        _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_HIGH, ct),
-                        _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_HIGH, ct));
+                        _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct),
+                        _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct));
                     await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
 
                     await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.FIDUCIAL, ct);

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HCB.Data.Entity.Type;
 using HCB.IoC;
 using Serilog;
 using System;
@@ -32,6 +33,9 @@ namespace HCB.UI
         private readonly IOManager _ioManager;
 
         public RecipeService RecipeService => _recipeService;
+
+        // 사용 레시피의 Component가 WAFER로 바뀌면 발생 (DIE면 현재 화면 유지, WAFER면 화면 전환 요청)
+        public event Action<ComponentType> RecipeComponentChanged;
 
         // ── CancellationToken ─────────────────────────────────
         private CancellationTokenSource _cts;
@@ -1270,6 +1274,8 @@ namespace HCB.UI
 
                 RecipeSelectState = StepState.Completed;
                 _logger.Information("사용 레시피 변경: {Name}", recipe.Name);
+
+                RecipeComponentChanged?.Invoke(recipe.Component);
             }
             catch (Exception e)
             {

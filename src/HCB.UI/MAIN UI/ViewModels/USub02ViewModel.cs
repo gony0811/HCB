@@ -97,7 +97,7 @@ namespace HCB.UI
             try
             {
 
-                await _recipeService.AddRecipe(new RecipeDto { Name = recipe.Name, IsActive = recipe.IsActive });
+                await _recipeService.AddRecipe(new RecipeDto { Name = recipe.Name, IsActive = recipe.IsActive, Component = recipe.Component });
 
                 _dialogService.ShowMessage("저장", "저장되었습니다");
             }
@@ -115,7 +115,8 @@ namespace HCB.UI
             var recipe = new RecipeCreateDto
             {
                 Name = SelectedRecipe.Name,
-                IsActive = SelectedRecipe.IsActive
+                IsActive = SelectedRecipe.IsActive,
+                Component = SelectedRecipe.Component
             };
 
             bool? result = await _dialogService.ShowEditDialog(recipe);
@@ -126,6 +127,7 @@ namespace HCB.UI
             {
                 SelectedRecipe.Name = recipe.Name;
                 SelectedRecipe.IsActive = recipe.IsActive;
+                SelectedRecipe.Component = recipe.Component;
                 await _recipeService.UpdateRecipe(SelectedRecipe);
                 _dialogService.ShowMessage("저장", "저장되었습니다");
             }

@@ -152,28 +152,24 @@ namespace HCB.UI
         }
 
 
-        public async Task<VisionMarkResult> TopDieVisionRightFid(bool AvgMode, CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionRightFid(bool AvgMode, string size, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Right Fid) Start");
             EQStatusCheck();
-            //double fidAlignGap = await GetRecipe(MotionExtensions.FID_ALIGN_GAP);
-            string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
-            string[] z = { MotionExtensions.H_Z };
-
             await Init_Head(ct);
-            
+
             await Task.WhenAll(
                 MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct),
-                //RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct),
-                MotionsMove(xy, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct)
+                MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct),
+                MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct)
             );
-            await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
+            await MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
 
             return await MeasureWithRetry(MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.RIGHT,
                 MotionExtensions.P_Y, AvgMode, ct);
         }
 
-        public async Task<VisionMarkResult> TopDieVisionRightAlign(bool AvgMode, CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionRightAlign(bool AvgMode, string size, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Right Align) Start");
             EQStatusCheck();
@@ -184,6 +180,11 @@ namespace HCB.UI
             if (param == null)
                 throw new DBException(DBErrorCode.NOT_FOUND, $"사용하는 레시피에 {name} 이 없습니다.");
             double zPosition = double.Parse(param.Value);
+            
+            await Task.WhenAll(
+                MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_ALIGN_HIGH + size,  ct),
+                MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_ALIGN_HIGH + size, ct)
+            );
 
             await MotionsMove(MotionExtensions.H_Z, zPosition, ct);
 
@@ -191,22 +192,22 @@ namespace HCB.UI
                 MotionExtensions.P_Y, AvgMode, ct);
         }
 
-        public async Task<VisionMarkResult> TopDieVisionLeftFid(bool AvgMode, CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionLeftFid(bool AvgMode, string size, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Left Fid) Start");
             EQStatusCheck();
 
-            string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
-            string[] z = { MotionExtensions.H_Z };
-
-            await MotionsMove(xy, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
-            await MotionsMove(z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
+            await Task.WhenAll(
+                MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct),
+                MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct)
+            );
+            await MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
 
             return await MeasureWithRetry(MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.LEFT,
                 MotionExtensions.P_Y, AvgMode, ct);
         }
 
-        public async Task<VisionMarkResult> TopDieVisionLeftAlign(bool AvgMode, CancellationToken ct)
+        public async Task<VisionMarkResult> TopDieVisionLeftAlign(bool AvgMode, string size, CancellationToken ct)
         {
             _logger.Information("Top Die Vision (Left Align) Start");
             EQStatusCheck();
@@ -218,6 +219,10 @@ namespace HCB.UI
                 throw new DBException(DBErrorCode.NOT_FOUND, $"사용하는 레시피에 {name} 이 없습니다.");
 
             double zPosition = double.Parse(param.Value);
+            await Task.WhenAll(
+                MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_ALIGN_HIGH + size, ct),
+                MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_ALIGN_HIGH + size, ct)
+            );
             await MotionsMove(MotionExtensions.H_Z, zPosition, ct);
             return await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.PC_HIGH, DirectType.LEFT,
                 MotionExtensions.P_Y, AvgMode, ct);

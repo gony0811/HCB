@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using HCB.Data.Entity.Type;
 
 namespace HCB.UI
 {
@@ -6,5 +7,6 @@ namespace HCB.UI
     {
         [ObservableProperty] private string name;
         [ObservableProperty] private bool isActive;
+        [ObservableProperty] private ComponentType component;
     }
 }

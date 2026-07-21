@@ -134,6 +134,12 @@
   <Page Include="SUB UI\USub01Tab\StepSeqTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\USub01Tab\WaferSeqTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
+  <Page Include="SUB UI\USub01Tab\PreparationTab.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub01Tab\TopHighAlignInfoWindow.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -301,6 +307,8 @@
   <Compile Include="SUB UI\USub01Tab\RunningStatus.cs" />
   <Compile Include="SUB UI\USub01Tab\StepLamp.cs" />
   <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\WaferSeqTab.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\PreparationTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\TopHighAlignInfoWindow.xaml.cs" />
   <Compile Include="SUB UI\ViewModels\AlarmModalViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\CalibrationMath.cs" />
@@ -322,6 +330,7 @@
   <Compile Include="SUB UI\ViewModels\RecipeCreateVM.cs" />
   <Compile Include="SUB UI\ViewModels\RoleScreenVM.cs" />
   <Compile Include="SUB UI\ViewModels\StepSeqTabViewModel.cs" />
+  <Compile Include="SUB UI\ViewModels\WaferSeqTabViewModel.cs" />
   <Compile Include="SUB UI\Wafer\DieData.cs" />
   <Compile Include="SUB UI\Wafer\WaferMapControl.xaml.cs" />
   <Compile Include="SUB UI\Wafer\WaferVisualHost.cs" />

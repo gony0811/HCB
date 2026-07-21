@@ -1,4 +1,5 @@
-﻿using HCB.Data.Interface;
+﻿using HCB.Data.Entity.Type;
+using HCB.Data.Interface;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -12,6 +13,8 @@ namespace HCB.Data.Entity
         public string Name { get; set; } = "";
 
         public bool IsActive { get; set; } = false;
+
+        public ComponentType Component { get; set; } = ComponentType.DIE;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; }
