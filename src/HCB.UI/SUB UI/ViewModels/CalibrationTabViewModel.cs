@@ -775,9 +775,9 @@ namespace HCB.UI
             try
             {
 
-                double fidAlignGap = await _sequenceService.GetRecipe(MotionExtensions.FID_ALIGN_GAP);
+                //double fidAlignGap = await _sequenceService.GetRecipe(MotionExtensions.FID_ALIGN_GAP);
                 await _sequenceService.Init_Head(ct);
-                await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);
+                //await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);
 
                 // 1. Right Fiducial
                 CalibStatus = "PC AF — Right Fiducial...";
@@ -837,6 +837,10 @@ namespace HCB.UI
             finally { IsNotBusy = true; }
         }
 
+        [RelayCommand]
+        public async Task CalculatePiezoPitch(CancellationToken ct= default)
+        {
+        }
         private async Task SavePositionHeight(string positionName, double height)
         {
             var pos = _hzAxis!.PositionList.FirstOrDefault(p => p.Name == positionName);

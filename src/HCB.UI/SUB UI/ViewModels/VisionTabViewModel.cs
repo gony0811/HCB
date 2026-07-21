@@ -4,7 +4,10 @@ using HCB.Data.Entity.Type;
 using HCB.IoC;
 using Serilog;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -60,6 +63,15 @@ namespace HCB.UI
 
         // 결과 요약
         [ObservableProperty] private string resultSummary = "-";
+
+        // Z축 피듀셜 트래킹 파라미터
+        [ObservableProperty] private double zPositionA;
+        [ObservableProperty] private double zPositionB;
+        [ObservableProperty] private int zTrackRepeat = 10;
+        [ObservableProperty] private string zTrackStatus = "-";
+
+        // Z축 피듀셜 트래킹 결과
+        public ObservableCollection<FiducialZTrackPoint> ZTrackResults { get; } = new();
 
         public VisionTabViewModel(
             DeviceManager deviceManager,
@@ -262,5 +274,194 @@ namespace HCB.UI
                 _logger.Warning(e, "정밀도 CSV 저장 실패");
             }
         }
+
+        // ══════════════════════════════════════════════
+        //  Z축 피듀셜 트래킹
+        //  A/B 두 Z 위치를 오가며 HC1/HC2 Fiducial을 반복 측정하여
+        //  A 첫 측정 기준 변화량을 기록한다.
+        // ══════════════════════════════════════════════
+
+        [RelayCommand]
+        public async Task SetPositionA()
+        {
+            var ct = GetToken();
+            ZPositionA = await _sequenceService.GetCurrentPosition(MotionExtensions.H_Z, ct);
+            ZTrackStatus = $"A 지점 설정: {ZPositionA:F4} mm";
+            _logger.Information("Z트래킹 A 지점 설정: {Z:F4}", ZPositionA);
+        }
+
+        [RelayCommand]
+        public async Task SetPositionB()
+        {
+            var ct = GetToken();
+            ZPositionB = await _sequenceService.GetCurrentPosition(MotionExtensions.H_Z, ct);
+            ZTrackStatus = $"B 지점 설정: {ZPositionB:F4} mm";
+            _logger.Information("Z트래킹 B 지점 설정: {Z:F4}", ZPositionB);
+        }
+
+        [RelayCommand]
+        public async Task FiducialZTrack()
+        {
+            if (!IsNotBusy) return;
+            IsNotBusy = false;
+            ZTrackResults.Clear();
+            var ct = GetToken();
+
+            try
+            {
+                if (ZTrackRepeat <= 0)
+                    throw new ArgumentException("반복 횟수는 1 이상이어야 합니다.");
+
+                double baseZ = await _sequenceService.GetCurrentPosition(MotionExtensions.H_Z, ct);
+                _logger.Information(
+                    "Z 피듀셜 트래킹 시작 | A={A:F4}, B={B:F4}, repeat={Repeat}",
+                    ZPositionA, ZPositionB, ZTrackRepeat);
+
+                int totalSteps = ZTrackRepeat * 2;
+                ZTrackStatus = $"준비 완료 — A/B 반복 {ZTrackRepeat}회 (총 {totalSteps}회 측정)";
+
+                Point2D? refHc1 = null;
+                Point2D? refHc2 = null;
+                int current = 0;
+
+                for (int rep = 0; rep < ZTrackRepeat; rep++)
+                {
+                    double[] positions = { ZPositionA, ZPositionB };
+                    string[] labels = { "A", "B" };
+
+                    for (int p = 0; p < 2; p++)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        current++;
+
+                        string label = labels[p];
+                        double targetZ = positions[p];
+                        ZTrackStatus = $"[{current}/{totalSteps}] {label} 지점(Z={targetZ:F4}) 이동 중...";
+
+                        await _sequenceService.MotionsMove(MotionExtensions.H_Z, targetZ, ct);
+                        await Task.Delay(200, ct);
+
+                        ZTrackStatus = $"[{current}/{totalSteps}] {label} 지점 HC1 측정 중...";
+                        await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.FIDUCIAL, ct);
+                        var hc1Result = await _communication.RequestVisionMarkPosition(
+                            MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
+                        if (hc1Result?.Result == Result.NG)
+                            throw new Exception($"HC1 Fiducial 측정 실패 ({label} 지점)");
+
+                        ZTrackStatus = $"[{current}/{totalSteps}] {label} 지점 HC2 측정 중...";
+                        await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
+                        var hc2Result = await _communication.RequestVisionMarkPosition(
+                            MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
+                        if (hc2Result?.Result == Result.NG)
+                            throw new Exception($"HC2 Fiducial 측정 실패 ({label} 지점)");
+
+                        var hc1Pos = Point2D.of(hc1Result.X, hc1Result.Y);
+                        var hc2Pos = Point2D.of(hc2Result.X, hc2Result.Y);
+
+                        if (refHc1 == null)
+                        {
+                            refHc1 = hc1Pos;
+                            refHc2 = hc2Pos;
+                        }
+
+                        var point = new FiducialZTrackPoint
+                        {
+                            Repeat = rep + 1,
+                            Position = label,
+                            ZAbsolute = targetZ,
+                            Hc1X = hc1Pos.X,
+                            Hc1Y = hc1Pos.Y,
+                            Hc2X = hc2Pos.X,
+                            Hc2Y = hc2Pos.Y,
+                            Hc1DeltaX = hc1Pos.X - refHc1.X,
+                            Hc1DeltaY = hc1Pos.Y - refHc1.Y,
+                            Hc2DeltaX = hc2Pos.X - refHc2.X,
+                            Hc2DeltaY = hc2Pos.Y - refHc2.Y,
+                        };
+                        ZTrackResults.Add(point);
+
+                        _logger.Information(
+                            "Z트래킹 [{Current}/{Total}] {Label}(Z={Z:F4}) | " +
+                            "HC1({H1X:F6},{H1Y:F6}) Δ({D1X:F6},{D1Y:F6}) | " +
+                            "HC2({H2X:F6},{H2Y:F6}) Δ({D2X:F6},{D2Y:F6})",
+                            current, totalSteps, label, targetZ,
+                            hc1Pos.X, hc1Pos.Y, point.Hc1DeltaX, point.Hc1DeltaY,
+                            hc2Pos.X, hc2Pos.Y, point.Hc2DeltaX, point.Hc2DeltaY);
+                    }
+                }
+
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, baseZ, ct);
+
+                await SaveZTrackCsv(ct);
+                ZTrackStatus = $"완료 — {ZTrackRepeat}회 반복, {ZTrackResults.Count}개 측정, CSV 저장됨";
+                _logger.Information("Z 피듀셜 트래킹 완료 | 총 {Count}개 포인트", ZTrackResults.Count);
+            }
+            catch (OperationCanceledException)
+            {
+                ZTrackStatus = "취소됨";
+                _logger.Warning("Z 피듀셜 트래킹 취소");
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Z 피듀셜 트래킹 실패");
+                ZTrackStatus = $"오류: {e.Message}";
+            }
+            finally
+            {
+                IsNotBusy = true;
+            }
+        }
+
+        private async Task SaveZTrackCsv(CancellationToken ct)
+        {
+            try
+            {
+                string folder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    "HCB", "정밀도 데이터");
+                Directory.CreateDirectory(folder);
+
+                string path = Path.Combine(folder, $"FiducialZTrack_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+
+                var sb = new StringBuilder();
+                sb.AppendLine("Repeat,Position,ZAbsolute,HC1_X,HC1_Y,HC2_X,HC2_Y,HC1_DeltaX,HC1_DeltaY,HC2_DeltaX,HC2_DeltaY");
+                foreach (var p in ZTrackResults)
+                {
+                    sb.AppendLine($"{p.Repeat},{p.Position},{p.ZAbsolute:F6}," +
+                                  $"{p.Hc1X:F6},{p.Hc1Y:F6},{p.Hc2X:F6},{p.Hc2Y:F6}," +
+                                  $"{p.Hc1DeltaX:F6},{p.Hc1DeltaY:F6}," +
+                                  $"{p.Hc2DeltaX:F6},{p.Hc2DeltaY:F6}");
+                }
+
+                await File.WriteAllTextAsync(path, sb.ToString(), ct);
+                _logger.Information("Z트래킹 CSV 저장: {Path}", path);
+            }
+            catch (Exception e)
+            {
+                _logger.Warning(e, "Z트래킹 CSV 저장 실패");
+            }
+        }
+    }
+
+    public class FiducialZTrackPoint
+    {
+        public int Repeat { get; set; }
+        public string Position { get; set; } = "";
+        public double ZAbsolute { get; set; }
+
+        public double Hc1X { get; set; }
+        public double Hc1Y { get; set; }
+        public double Hc2X { get; set; }
+        public double Hc2Y { get; set; }
+
+        public double Hc1DeltaX { get; set; }
+        public double Hc1DeltaY { get; set; }
+        public double Hc2DeltaX { get; set; }
+        public double Hc2DeltaY { get; set; }
+
+        public double Hc1DeltaXUm => Hc1DeltaX * 1000.0;
+        public double Hc1DeltaYUm => Hc1DeltaY * 1000.0;
+        public double Hc2DeltaXUm => Hc2DeltaX * 1000.0;
+        public double Hc2DeltaYUm => Hc2DeltaY * 1000.0;
     }
 }

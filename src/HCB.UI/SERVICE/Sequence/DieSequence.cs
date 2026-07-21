@@ -180,7 +180,7 @@ namespace HCB.UI
                 sw.Restart();
                 data.TopLeftAlignRaw = await TopDieVisionLeftAlign(data.AvgMove, ct);
                 _logger.Information("TopHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
-                await Init_Head(ct);
+                //await Init_Head(ct);
                 if (data.UseFiducialTracking)
                     await MeasureFiducialDrift(data, ct);
                     ProcessMeasurement(data, 2);
@@ -192,7 +192,7 @@ namespace HCB.UI
             finally
             {
                 if (data.Use2DMapping) await MappingOff();
-                await Init_Head(ct);
+                //await Init_Head(ct);
                 _logger.Information("TopHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
             }
             return data;

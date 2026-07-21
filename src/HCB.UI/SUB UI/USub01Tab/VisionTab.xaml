@@ -143,6 +143,26 @@
                 <Setter Property="VerticalAlignment" Value="Center"/>
                 <Setter Property="HorizontalAlignment" Value="Right"/>
             </Style>
+
+            <!-- Z트래킹 입력 스타일 -->
+            <Style x:Key="ZTrackInputStyle" TargetType="TextBox">
+                <Setter Property="Background" Value="#0A1628"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="BorderBrush" Value="#2A5A8C"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontFamily" Value="Consolas"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Padding" Value="6,4"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="HorizontalContentAlignment" Value="Right"/>
+            </Style>
+            <Style x:Key="ZTrackLabelStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="#5E8BAA"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="Margin" Value="0,0,8,0"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -345,6 +365,124 @@
                                        Foreground="#E67E22" FontSize="14"
                                        TextWrapping="Wrap"/>
                         </Border>
+
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,8"/>
+
+                        <!-- ═══ 4. Z축 피듀셜 트래킹 ═══ -->
+                        <TextBlock Text="4. Z축 피듀셜 트래킹 (A/B 반복)" Foreground="#9B59B6"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Margin="16,12,16,4"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="16,0,16,10">
+                            A/B 두 Z 위치를 오가며 HC1/HC2 Fiducial 변화량을 반복 측정합니다.
+                            먼저 Z축을 원하는 위치로 이동한 후 [A 설정] / [B 설정] 버튼으로 좌표를 지정하세요.
+                        </TextBlock>
+
+                        <!-- A/B 지점 설정 -->
+                        <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- A 지점 -->
+                                <Button Grid.Row="0" Grid.Column="0"
+                                        Style="{StaticResource VisionBtnStyle}"
+                                        Content="A 설정" Width="80" Height="32"
+                                        Command="{Binding SetPositionACommand}"
+                                        IsEnabled="{Binding IsNotBusy}"
+                                        Background="#1A3A5C" BorderBrush="#2A5A8C"/>
+                                <TextBox Grid.Row="0" Grid.Column="1"
+                                         Style="{StaticResource ZTrackInputStyle}"
+                                         Text="{Binding ZPositionA, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="8,0,0,0"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2"
+                                           Style="{StaticResource ZTrackLabelStyle}" Text="mm"
+                                           Margin="6,0,0,0"/>
+
+                                <!-- B 지점 -->
+                                <Button Grid.Row="2" Grid.Column="0"
+                                        Style="{StaticResource VisionBtnStyle}"
+                                        Content="B 설정" Width="80" Height="32"
+                                        Command="{Binding SetPositionBCommand}"
+                                        IsEnabled="{Binding IsNotBusy}"
+                                        Background="#1A3A5C" BorderBrush="#2A5A8C"/>
+                                <TextBox Grid.Row="2" Grid.Column="1"
+                                         Style="{StaticResource ZTrackInputStyle}"
+                                         Text="{Binding ZPositionB, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="8,0,0,0"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2"
+                                           Style="{StaticResource ZTrackLabelStyle}" Text="mm"
+                                           Margin="6,0,0,0"/>
+
+                                <!-- 반복 횟수 -->
+                                <TextBlock Grid.Row="4" Grid.Column="0"
+                                           Style="{StaticResource ZTrackLabelStyle}" Text="반복 횟수"
+                                           HorizontalAlignment="Center"/>
+                                <TextBox Grid.Row="4" Grid.Column="1"
+                                         Style="{StaticResource ZTrackInputStyle}"
+                                         Text="{Binding ZTrackRepeat, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="8,0,0,0"/>
+                                <TextBlock Grid.Row="4" Grid.Column="2"
+                                           Style="{StaticResource ZTrackLabelStyle}" Text="회"
+                                           Margin="6,0,0,0"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 실행 버튼 -->
+                        <Button Style="{StaticResource VisionBtnStyle}"
+                                Content="Z 트래킹 시작"
+                                Command="{Binding FiducialZTrackCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Background="#3A1A5C" BorderBrush="#6A3A8C"
+                                Margin="16,0,16,8"/>
+
+                        <!-- 진행 상태 -->
+                        <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,8">
+                            <TextBlock Text="{Binding ZTrackStatus}"
+                                       Foreground="#9B59B6" FontSize="13"
+                                       TextWrapping="Wrap"/>
+                        </Border>
+
+                        <!-- 결과 테이블 -->
+                        <telerik:RadGridView ItemsSource="{Binding ZTrackResults}"
+                                             AutoGenerateColumns="False"
+                                             IsReadOnly="True"
+                                             ShowGroupPanel="False"
+                                             RowIndicatorVisibility="Collapsed"
+                                             CanUserFreezeColumns="False"
+                                             Margin="16,0,16,12"
+                                             MaxHeight="320"
+                                             FontSize="12"
+                                             FontFamily="Consolas">
+                            <telerik:RadGridView.Columns>
+                                <telerik:GridViewDataColumn Header="Rep"
+                                    DataMemberBinding="{Binding Repeat}" Width="120"/>
+                                <telerik:GridViewDataColumn Header="Pos"
+                                    DataMemberBinding="{Binding Position}" Width="120"/>
+                                <telerik:GridViewDataColumn Header="Z (mm)"
+                                    DataMemberBinding="{Binding ZAbsolute, StringFormat=F4}" Width="120"/>
+                                <telerik:GridViewDataColumn Header="HC1 ΔX (um)"
+                                    DataMemberBinding="{Binding Hc1DeltaXUm, StringFormat=F2}" Width="120"/>
+                                <telerik:GridViewDataColumn Header="HC1 ΔY (um)"
+                                    DataMemberBinding="{Binding Hc1DeltaYUm, StringFormat=F2}" Width="120"/>
+                                <telerik:GridViewDataColumn Header="HC2 ΔX (um)"
+                                    DataMemberBinding="{Binding Hc2DeltaXUm, StringFormat=F2}" Width="120"/>
+                                <telerik:GridViewDataColumn Header="HC2 ΔY (um)"
+                                    DataMemberBinding="{Binding Hc2DeltaYUm, StringFormat=F2}" Width="120"/>
+                            </telerik:RadGridView.Columns>
+                        </telerik:RadGridView>
 
                     </StackPanel>
                 </ScrollViewer>

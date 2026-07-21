@@ -156,7 +156,7 @@ namespace HCB.UI
         {
             _logger.Information("Top Die Vision (Right Fid) Start");
             EQStatusCheck();
-            double fidAlignGap = await GetRecipe(MotionExtensions.FID_ALIGN_GAP);
+            //double fidAlignGap = await GetRecipe(MotionExtensions.FID_ALIGN_GAP);
             string[] xy = { MotionExtensions.P_Y, MotionExtensions.H_X };
             string[] z = { MotionExtensions.H_Z };
 
@@ -164,7 +164,7 @@ namespace HCB.UI
             
             await Task.WhenAll(
                 MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct),
-                RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct),
+                //RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct),
                 MotionsMove(xy, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct)
             );
             await MotionsMove(z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
