@@ -131,6 +131,9 @@
   <Page Include="SUB UI\USub01Tab\ManualTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\SettingsSidebar.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub01Tab\StepSeqTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -306,6 +309,7 @@
   <Compile Include="SUB UI\USub01Tab\RunInformation.cs" />
   <Compile Include="SUB UI\USub01Tab\RunningStatus.cs" />
   <Compile Include="SUB UI\USub01Tab\StepLamp.cs" />
+  <Compile Include="SUB UI\SettingsSidebar.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\WaferSeqTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\PreparationTab.xaml.cs" />
@@ -313,6 +317,7 @@
   <Compile Include="SUB UI\ViewModels\AlarmModalViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\CalibrationMath.cs" />
   <Compile Include="SUB UI\ViewModels\CalibrationTabViewModel.cs" />
+  <Compile Include="SUB UI\ViewModels\SettingsViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\VisionTabViewModel.cs" />
   <Compile Include="SUB UI\ViewModels\DieMeasurement.cs" />
   <Compile Include="SUB UI\ViewModels\JogWindowVM.cs" />

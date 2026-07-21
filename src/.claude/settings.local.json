@@ -4,7 +4,8 @@
       "Read(//c/2025_project/Hybrid Bonding 설비/3. 구현/EMC 4.7.2/Git_Clone_EMC/HCB/**)",
       "Bash(dotnet build *)",
       "Bash(xargs grep -l \"TopHighAlign\\\\|BtmHighAlign\")",
-      "Bash(awk 'NR==527,NR==1812' \"HCB.UI/SUB UI/USub01Tab/StepSeqTab.xaml\")"
+      "Bash(awk 'NR==527,NR==1812' \"HCB.UI/SUB UI/USub01Tab/StepSeqTab.xaml\")",
+      "PowerShell(dotnet build *)"
     ]
   }
 }
