@@ -97,6 +97,14 @@ namespace HCB.UI
         //public const string P_LEFT_HIGH = "P_LEFT_HIGH";
         //public const string P_RIGHT_HIGH = "P_RIGHT_HIGH";
         public const string FID_ALIGN_GAP = "FID_ALIGN_GAP";
+        public const string PC_L_HZ_TILT_X = "PC_L_HZ_TILT_X";
+        public const string PC_L_HZ_TILT_Y = "PC_L_HZ_TILT_Y";
+        public const string PC_R_HZ_TILT_X = "PC_R_HZ_TILT_X";
+        public const string PC_R_HZ_TILT_Y = "PC_R_HZ_TILT_Y";
+        public const string HC1_HZ_TILT_X = "HC1_HZ_TILT_X";
+        public const string HC1_HZ_TILT_Y = "HC1_HZ_TILT_Y";
+        public const string HC2_HZ_TILT_X = "HC2_HZ_TILT_X";
+        public const string HC2_HZ_TILT_Y = "HC2_HZ_TILT_Y";
 
         public const string PC_T = "PC_T";
 

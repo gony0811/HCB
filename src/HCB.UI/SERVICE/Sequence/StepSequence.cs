@@ -156,15 +156,7 @@ namespace HCB.UI
         {
             _logger.Information("Top Die Vision (Right Fid) Start");
             EQStatusCheck();
-            await Init_Head(ct);
-
-            await Task.WhenAll(
-                MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct),
-                MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct),
-                MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct)
-            );
             await MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct);
-
             return await MeasureWithRetry(MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.RIGHT,
                 MotionExtensions.P_Y, AvgMode, ct);
         }
@@ -197,10 +189,6 @@ namespace HCB.UI
             _logger.Information("Top Die Vision (Left Fid) Start");
             EQStatusCheck();
 
-            await Task.WhenAll(
-                MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct),
-                MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct)
-            );
             await MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_LEFT_FIDUCIAL_HIGH, ct);
 
             return await MeasureWithRetry(MarkType.FIDUCIAL, CameraType.PC_HIGH, DirectType.LEFT,

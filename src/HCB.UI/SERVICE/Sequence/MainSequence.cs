@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -401,7 +402,9 @@ namespace HCB.UI
                         CompensateHc2Offset(data);
                         break;
                     case TracingMode.Manual:
-                        await CamDistAndHcro(data, ct);
+                        await CameraDist(data, ct);
+                        var (hc1Raw, hc2Raw) = await MeasureHcroPoints(data, ct);
+                        ComputeHcroCenter(data, hc1Raw, hc2Raw);
                         break;
                     case TracingMode.None:
                         break;
@@ -903,20 +906,20 @@ namespace HCB.UI
                 hcroDeltaX, hcroDeltaY, d.Hcro.X, d.Hcro.Y);
         }
 
-        private async Task CamDistAndHcro(AlignData d, CancellationToken ct)
+        /// <summary>
+        /// HC1/HC2 카메라 간 거리(Hc2Offset)를 측정한다.
+        /// HC1으로 좌측 마크를 측정한 뒤 스테이지를 이동해 HC2로 동일 마크를 측정,
+        /// 두 카메라 중심 좌표 차이를 Hc2Offset에 저장한다.
+        /// </summary>
+        private async Task CameraDist(AlignData d, CancellationToken ct)
         {
             try
             {
-                double hc1FidOffsetX = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 X");
-                double hc1FidOffsetY = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 Y");
-                double hc2FidOffsetX = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 X");
-                double hc2FidOffsetY = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 Y");
-                // ── 1. 카메라 거리 구하기 ──
                 var hc1 = await VisionResult(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, -12.5, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, 7, ct));
-                
+
                 var hc2 = await VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, ct);
                 d.Hc2Offset = Point2D.of(hc1.CenterX - hc2.CenterX, hc1.CenterY - hc2.CenterY);
 
@@ -924,18 +927,35 @@ namespace HCB.UI
                     RelativeMotionsMove(MotionExtensions.H_X, 12.5, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, -7, ct));
 
-                // ── 2. HcRO 회전 중심 계산 ──
-                var hc2XOffset = d.Hc2Offset.X;
-                var hc2YOffset = d.Hc2Offset.Y;
+                _logger.Information("CameraDist — Hc2Offset=({Hc2X:F4}, {Hc2Y:F4})",
+                    d.Hc2Offset.X, d.Hc2Offset.Y);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "CameraDist 실패");
+                throw;
+            }
+        }
 
-                var hc1Points = new System.Collections.Generic.List<Point2D>();
-                var hc2Points = new System.Collections.Generic.List<Point2D>();
+        /// <summary>
+        /// H_T를 0°/±0.75°로 회전시키며 HC1/HC2 피듀셜을 측정하고, 피듀셜 위치 보정만 적용한
+        /// raw 측정 점을 HC1/HC2로 나누어 반환한다. 좌표계 통합(부호 반전, Hc2Offset 적용)은
+        /// <see cref="ComputeHcroCenter"/>에서 수행한다.
+        /// </summary>
+        private async Task<(List<Point2D> hc1Raw, List<Point2D> hc2Raw)>
+            MeasureHcroPoints(AlignData d, CancellationToken ct)
+        {
+            try
+            {
+                var hc1Raw = new List<Point2D>();
+                var hc2Raw = new List<Point2D>();
 
                 // 0도: 이미 측정된 BtmLeftFidRaw(HC1), BtmRightFidRaw(HC2) 사용
-                hc1Points.Add(Point2D.of(-d.BtmLeftFidRaw.X, -d.BtmLeftFidRaw.Y));
-                hc2Points.Add(Point2D.of(hc2XOffset - d.BtmRightFidRaw.X, hc2YOffset - d.BtmRightFidRaw.Y));
+                hc1Raw.Add(Point2D.of(d.BtmLeftFidRaw.X, d.BtmLeftFidRaw.Y));
+                hc2Raw.Add(Point2D.of(d.BtmRightFidRaw.X, d.BtmRightFidRaw.Y));
 
-                // -1.5도, +1.5도: 회전 후 측정
+                // -0.75도, +0.75도: 회전 후 측정
                 double[] angles = { -0.75, 0.75 };
                 for (int i = 0; i < angles.Length; i++)
                 {
@@ -949,40 +969,69 @@ namespace HCB.UI
                         MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
                     if (v1.Result == Result.NG)
                         throw new Exception($"Hc1 {angles[i]}° 피듀셜 측정 실패");
-                    v1.X = v1.X + hc1FidOffsetX;
-                    v1.Y = v1.Y + hc1FidOffsetY;
+                    v1.X = v1.X;
+                    v1.Y = v1.Y;
 
                     await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
                     var v2 = await communicationService.RequestVisionMarkPosition(
                         MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
                     if (v2.Result == Result.NG)
                         throw new Exception($"Hc2 {angles[i]}° 피듀셜 측정 실패");
-                    v2.X = v2.X + hc2FidOffsetX;
-                    v2.Y = v2.Y + hc2FidOffsetY;
-                    hc1Points.Add(Point2D.of(-v1.X, -v1.Y ));
-                    hc2Points.Add(Point2D.of(hc2XOffset - v2.X , hc2YOffset - v2.Y));
+                    v2.X = v2.X;
+                    v2.Y = v2.Y;
+                    hc1Raw.Add(Point2D.of(v1.X, v1.Y));
+                    hc2Raw.Add(Point2D.of(v2.X, v2.Y));
                 }
 
                 // H_T 복귀
                 await MotionsMove(MotionExtensions.H_T, 0, ct);
 
-                // 원 피팅으로 회전 중심 계산
-                var allPoints = new System.Collections.Generic.List<Point2D>();
-                allPoints.AddRange(hc1Points);
-                allPoints.AddRange(hc2Points);
-
-                var hcRO = CalibrationMath.FitCircleCenter(allPoints);
-                d.Hcro = Point2D.of(hcRO.X, hcRO.Y);
-
-                _logger.Information("CamDistAndHcro — Hc2Offset=({Hc2X:F4}, {Hc2Y:F4}), HcRO=({RoX:F4}, {RoY:F4}), Points={Count}",
-                    d.Hc2Offset.X, d.Hc2Offset.Y, hcRO.X, hcRO.Y, allPoints.Count);
+                _logger.Information("MeasureHcroPoints — Hc1={Hc1Count}, Hc2={Hc2Count}",
+                    hc1Raw.Count, hc2Raw.Count);
+                return (hc1Raw, hc2Raw);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception e)
             {
-                _logger.Error(e, "CamDistAndHcro 실패");
+                _logger.Error(e, "MeasureHcroPoints 실패");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// <see cref="MeasureHcroPoints"/>가 반환한 raw 측정 점을 통합 좌표계로 변환(HC1 부호 반전,
+        /// HC2에 Hc2Offset 적용)한 뒤 원 피팅하여 회전 중심(Hcro)을 계산하고 <paramref name="d"/>에 저장한다.
+        /// <paramref name="hc1Tilt"/>/<paramref name="hc2Tilt"/>가 주어지면 각 측정 점에 카메라별
+        /// H_Z 수직도 보정량을 더해 Fid/Align을 동일 평면으로 맞춘 뒤 피팅한다(미지정 시 0).
+        /// </summary>
+        private void ComputeHcroCenter(
+            AlignData d,
+            List<Point2D> hc1Raw,
+            List<Point2D> hc2Raw,
+            Point2D hc1Tilt = null,
+            Point2D hc2Tilt = null)
+        {
+            if (hc1Raw == null || hc2Raw == null || hc1Raw.Count == 0 || hc2Raw.Count == 0)
+                throw new Exception("회전 중심 계산용 측정 점이 없습니다");
+
+            var hc2XOffset = d.Hc2Offset.X;
+            var hc2YOffset = d.Hc2Offset.Y;
+
+            // 카메라별 H_Z 수직도(tilt) 보정량 (미지정 시 0)
+            double h1tx = hc1Tilt?.X ?? 0.0, h1ty = hc1Tilt?.Y ?? 0.0;
+            double h2tx = hc2Tilt?.X ?? 0.0, h2ty = hc2Tilt?.Y ?? 0.0;
+
+            var allPoints = new System.Collections.Generic.List<Point2D>();
+            foreach (var p in hc1Raw)
+                allPoints.Add(Point2D.of(-(p.X + h1tx), -(p.Y + h1ty)));
+            foreach (var p in hc2Raw)
+                allPoints.Add(Point2D.of(hc2XOffset - (p.X + h2tx), hc2YOffset - (p.Y + h2ty)));
+
+            var hcRO = CalibrationMath.FitCircleCenter(allPoints);
+            d.Hcro = Point2D.of(hcRO.X, hcRO.Y);
+
+            _logger.Information("ComputeHcroCenter — Hc2Offset=({Hc2X:F4}, {Hc2Y:F4}), tilt(HC1={H1x:F5},{H1y:F5} / HC2={H2x:F5},{H2y:F5}), HcRO=({RoX:F4}, {RoY:F4}), Points={Count}",
+                hc2XOffset, hc2YOffset, h1tx, h1ty, h2tx, h2ty, hcRO.X, hcRO.Y, allPoints.Count);
         }
 
         // ═══════════════════════════════════════════════════
