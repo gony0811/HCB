@@ -362,7 +362,7 @@ namespace HCB.UI
         {
             if (_cts == null || _cts.IsCancellationRequested) return;
             _cts.Cancel();
-            await _sequenceService.StopAsync(_cts.Token);
+            await _sequenceService.StopAsync(CancellationToken.None);
 
             InitState = StepState.Idle;
             BtmLowAlignState = BtmPickupState = BtmHighAlignState = BtmPlaceState = StepState.Idle;
@@ -525,7 +525,7 @@ namespace HCB.UI
                 BtmLowAlignState = StepState.Completed;
 
                 BtmPlaceState = StepState.InProgress;
-                await _sequenceService.DieDrop(1, _cts.Token);
+                await _sequenceService.DieDrop(1, ct);
                 BtmPlaceState = StepState.Completed;
 
                 TrackStep("BtmFull", StepState.Completed);
@@ -852,6 +852,7 @@ namespace HCB.UI
 
         public async Task AccuracyMode()
         {
+            ResetCts();
             var result = await _sequenceService.GetVernier(_cts.Token);
         }
 

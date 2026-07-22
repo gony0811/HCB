@@ -99,6 +99,8 @@ namespace HCB.UI
 
         private CancellationToken GetToken()
         {
+            _cts?.Cancel();
+            _cts?.Dispose();
             _cts = new CancellationTokenSource();
             return _cts.Token;
         }
@@ -348,9 +350,9 @@ namespace HCB.UI
                 _logger.Error(e, "Hc1 Angle calibration failed");
                 CalibStatus = $"오류: {e.Message}";
             }
-            finally { 
-                if (standalone) IsNotBusy = true;
+            finally {
                 await _sequenceService.MappingOff();
+                if (standalone) IsNotBusy = true;
             }
         }
 
@@ -400,9 +402,9 @@ namespace HCB.UI
                 CalibStatus = $"오류: {e.Message}";
 
             }
-            finally { 
-                if (standalone) IsNotBusy = true;
+            finally {
                 await _sequenceService.MappingOff();
+                if (standalone) IsNotBusy = true;
             }
         }
 
@@ -513,8 +515,8 @@ namespace HCB.UI
                 CalibStatus = $"오류: {e.Message}";
             }
             finally {
-                if (standalone) IsNotBusy = true;
                 await _sequenceService.MappingOff();
+                if (standalone) IsNotBusy = true;
             }
         }
 
@@ -791,7 +793,12 @@ namespace HCB.UI
                 // 2. Right Align
                 CalibStatus = "PC AF — Right Align...";
                 double thickness = _recipeService.FindByParamDouble("TopDieThickness");
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, - thickness, ct);
+                var size = _recipeService.FindByParam("TOP DIE SIZE");
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_ALIGN_HIGH + size.Value, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_ALIGN_HIGH + size.Value, ct));
+
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, -thickness, ct);
                 await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.ALIGN_MARK, ct);
                 RightAlignHeight = _hzAxis!.CurrentPosition;
 
@@ -806,6 +813,9 @@ namespace HCB.UI
 
                 // 4. Left Align
                 CalibStatus = "PC AF — Left Align...";
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_LEFT_ALIGN_HIGH + size.Value, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_LEFT_ALIGN_HIGH + size.Value, ct));
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, RightAlignHeight, ct);
                 await _communication.RequestAFStart(CameraType.PC_HIGH, MarkType.ALIGN_MARK, ct);
                 LeftAlignHeight = _hzAxis!.CurrentPosition;
