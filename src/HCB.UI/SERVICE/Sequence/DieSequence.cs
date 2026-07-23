@@ -174,18 +174,15 @@ namespace HCB.UI
                     MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct)
                 );
 
-                // 1. Hc 피듀셜 측정
+                // 1. Hc 피듀셜 측정 — HC1/HC2는 raw 수집만.
+                //    (M2FidTheta/FidCurrentDist 등 Hc2Offset 의존 계산은 CoordinateSystemIntegration)
                 if (data.UseFiducialTracking)
+                {
                     await MeasureFiducialDrift(data, ct);
-                    ProcessMeasurement(data, 2);
-
+                }
                 // TopDie 사이즈 검색
                 var size = _recipeService.FindByParam("TOP DIE SIZE");
 
-                double PC_L_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.PC_L_HZ_TILT_X);
-                double PC_L_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.PC_L_HZ_TILT_Y);
-                double PC_R_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.PC_R_HZ_TILT_X);
-                double PC_R_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.PC_R_HZ_TILT_Y);
                 // ── Right: Fid → Align 측정 (Fid/Align은 서로 다른 H_Z 높이에서 촬상) ──
                 data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
                 double rightFidZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);   // Fid 촬상 Z
@@ -196,17 +193,8 @@ namespace HCB.UI
                 double rightAlignZ = await GetCurrentPosition(MotionExtensions.H_Z, ct); // Align 촬상 Z
                 _logger.Information("TopHighAlign — RightAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-                // Z축 수직도 보정: Align 좌표를 Fid와 동일한 Z 평면으로 투영
-                //   ΔZ = FidZ − AlignZ,  보정량 = tilt(1mm당 XY 변화량) × ΔZ
-                //   CenterX = StageX − DxCamToMark,  CenterY(PC) = StageY + DyCamToMark 이므로 Stage 좌표에 가산
-                double rDz = rightFidZ - rightAlignZ;
-                double rTiltX = PC_R_HZ_TILT_X * rDz;
-                double rTiltY = PC_R_HZ_TILT_Y * rDz;
-                data.TopRightAlignRaw.DxCamToMark += rTiltX;
-                data.TopRightAlignRaw.DyCamToMark += rTiltY;
-                _logger.Information(
-                    "TopHighAlign — Right H_Z tilt 보정: FidZ={FidZ:F4}, AlignZ={AlignZ:F4}, ΔZ={Dz:F4}mm → ΔX={Dx:F5}, ΔY={Dy:F5}",
-                    rightFidZ, rightAlignZ, rDz, rTiltX, rTiltY);
+                // 측정만: ΔZ만 기록. H_Z tilt 투영은 CoordinateSystemIntegration에서 수행.
+                data.TopRightDz = rightFidZ - rightAlignZ;
 
                 sw.Restart();
                 await Task.WhenAll(
@@ -224,15 +212,8 @@ namespace HCB.UI
                 double leftAlignZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);  // Align 촬상 Z
                 _logger.Information("TopHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-                // Z축 수직도 보정: Left Align 좌표를 Left Fid Z 평면으로 투영 (PC_L 계수)
-                double lDz = leftFidZ - leftAlignZ;
-                double lTiltX = PC_L_HZ_TILT_X * lDz;
-                double lTiltY = PC_L_HZ_TILT_Y * lDz;
-                data.TopLeftAlignRaw.DxCamToMark += lTiltX;
-                data.TopLeftAlignRaw.DyCamToMark += lTiltY;
-                _logger.Information(
-                    "TopHighAlign — Left H_Z tilt 보정: FidZ={FidZ:F4}, AlignZ={AlignZ:F4}, ΔZ={Dz:F4}mm → ΔX={Dx:F5}, ΔY={Dy:F5}",
-                    leftFidZ, leftAlignZ, lDz, lTiltX, lTiltY);
+                // 측정만: ΔZ만 기록.
+                data.TopLeftDz = leftFidZ - leftAlignZ;
             }
             catch (ErrorException e)
             {
@@ -269,80 +250,38 @@ namespace HCB.UI
                 }
 
                 await TopDieSet(ct);
-                //double hc1FidOffsetX = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 X");
-                //double hc1FidOffsetY = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 Y");
-                //double hc2FidOffsetX = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 X");
-                //double hc2FidOffsetY = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 Y");
                 double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
 
-                // H_Z 수직도(tilt) 계수 — Z 1mm 변화 시 XY 변화량 (Right=HC2, Left=HC1)
-                double HC1_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.HC1_HZ_TILT_X);
-                double HC1_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.HC1_HZ_TILT_Y);
-                double HC2_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.HC2_HZ_TILT_X);
-                double HC2_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.HC2_HZ_TILT_Y);
-
                 sw.Restart();
-                // Hc1X: 0.00361, Hc1Y: -0.00112, Hc2X: 0.00807, Hc2Y: -0.00269
-
-                // 개별 측정
                 if (data.UseBtmIndividualMeasure)
                 {
                     var rFid = await BtmDieVisionRightFid(data.AvgMove, ct);
-                    //data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark + hc2FidOffsetX, rFid.DyCamToMark + hc2FidOffsetY);
                     data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark, rFid.DyCamToMark);
                     _logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
-                   
+
                     sw.Restart();
                     var lFid = await BtmDieVisionLeftFid(data.AvgMove, ct);
                     data.BtmLeftFidRaw = Point2D.of(lFid.DxCamToMark , lFid.DyCamToMark);
                     _logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-                    // Fiducial 촬상 시점의 H_Z (Fid 평면)
                     double btmFidZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
 
-                    List<Point2D> hc1Raw = null;
-                    List<Point2D> hc2Raw = null;
-                    if(data.TracingMode == TracingMode.Manual)
+                    if (data.TracingMode == TracingMode.Manual)
                     {
-                        (hc1Raw, hc2Raw) = await MeasureHcroPoints(data, ct);
+                        (data.Hc1RoRaw, data.Hc2RoRaw) = await MeasureHcroPoints(data, ct);
                     }
 
                     await RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
                     await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
 
-                    // Align 촬상 시점의 H_Z (Align 평면)
                     double btmAlignZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
 
-                    // ── Z축 수직도 보정량 계산 ──
-                    //   Fid/Align은 서로 다른 H_Z에서 촬상되어 tilt로 XY가 어긋남
-                    //   ΔZ = AlignZ − FidZ, 보정량 = tilt(1mm당 XY 변화량) × ΔZ 를 Fid 평면 좌표에 가산
-                    //   Right = HC2, Left = HC1
-                    double bDz = btmAlignZ - btmFidZ;
-                    Point2D lFidTilt = Point2D.of(HC1_HZ_TILT_X * bDz, HC1_HZ_TILT_Y * bDz);
-                    Point2D rFidTilt = Point2D.of(HC2_HZ_TILT_X * bDz, HC2_HZ_TILT_Y * bDz);
+                    data.BtmDz = btmAlignZ - btmFidZ;
 
                     if (data.TracingMode == TracingMode.Manual)
                     {
                         await CameraDist(data, ct);
                     }
-
-                    if (data.TracingMode == TracingMode.Manual)
-                    {
-                        // 회전중심 측정점(HC1/HC2)도 동일하게 Align 평면으로 보정 후 원 피팅
-                        ComputeHcroCenter(data, hc1Raw, hc2Raw, lFidTilt, rFidTilt);
-                    }
-
-                    // ── Fiducial을 Align과 동일한 Z 평면으로 투영 ──
-                    data.BtmRightFidRaw = Point2D.of(
-                        data.BtmRightFidRaw.X + rFidTilt.X,
-                        data.BtmRightFidRaw.Y + rFidTilt.Y);
-                    data.BtmLeftFidRaw = Point2D.of(
-                        data.BtmLeftFidRaw.X + lFidTilt.X,
-                        data.BtmLeftFidRaw.Y + lFidTilt.Y);
-                    _logger.Information(
-                        "BtmHighAlign — H_Z tilt 보정(Fid+HcRO): FidZ={FidZ:F4}, AlignZ={AlignZ:F4}, ΔZ={Dz:F4}mm → " +
-                        "Right(HC2) ΔX={RDx:F5},ΔY={RDy:F5} / Left(HC1) ΔX={LDx:F5},ΔY={LDy:F5}",
-                        btmFidZ, btmAlignZ, bDz, rFidTilt.X, rFidTilt.Y, lFidTilt.X, lFidTilt.Y);
 
                     sw.Restart();
                     var rAlign = await BtmDieVisionRightAlign(data.AvgMove, ct);
@@ -408,25 +347,16 @@ namespace HCB.UI
                 double refHc1Dy = _paramService.GetDouble("Hc1FidRefDy");
                 double refHc2Dx = _paramService.GetDouble("Hc2FidRefDx");
                 double refHc2Dy = _paramService.GetDouble("Hc2FidRefDy");
-                Point2D camOffset = data.Hc2Offset;
 
-                Point2D lf = Point2D.of(
-                    -data.Hc1FidCurrent.X,
-                    -data.Hc1FidCurrent.Y);
-                Point2D rf = Point2D.of(
-                    camOffset.X - data.Hc2FidCurrent.X,
-                    camOffset.Y - data.Hc2FidCurrent.Y);
-                data.FidCurrentDist = CalibrationMath.Dist(rf, lf);
                 data.Hc1FidRef = Point2D.of(refHc1Dx, refHc1Dy);
                 data.Hc2FidRef = Point2D.of(refHc2Dx, refHc2Dy);
                 data.Hc1FidDrift = Point2D.of(fid1.X - refHc1Dx, fid1.Y - refHc1Dy);
                 data.Hc2FidDrift = Point2D.of(fid2.X - refHc2Dx, fid2.Y - refHc2Dy);
-                
+
                 _logger.Information(
-                    "피듀셜 트래킹 — HC1 drift({Hc1Dx:F6},{Hc1Dy:F6}), HC2 drift({Hc2Dx:F6},{Hc2Dy:F6}), FidDist:{Cur:F6} | {Elapsed}ms",
+                    "피듀셜 트래킹(raw 수집) — HC1 drift({Hc1Dx:F6},{Hc1Dy:F6}), HC2 drift({Hc2Dx:F6},{Hc2Dy:F6}) | {Elapsed}ms",
                     data.Hc1FidDrift.X, data.Hc1FidDrift.Y,
                     data.Hc2FidDrift.X, data.Hc2FidDrift.Y,
-                    data.FidCurrentDist,
                     sw.ElapsedMilliseconds);
 
             }

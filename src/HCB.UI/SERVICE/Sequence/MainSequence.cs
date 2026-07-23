@@ -395,20 +395,25 @@ namespace HCB.UI
             try
             {
                 if (data == null) throw new ArgumentNullException(nameof(data));
-                
+
+                ApplyMeasurementCorrections(data);
+
                 switch (data.TracingMode)
                 {
                     case TracingMode.Auto:
                         CompensateHc2Offset(data);
                         break;
-                    case TracingMode.Manual:
-                        await CameraDist(data, ct);
-                        var (hc1Raw, hc2Raw) = await MeasureHcroPoints(data, ct);
-                        ComputeHcroCenter(data, hc1Raw, hc2Raw);
-                        break;
+                    //case TracingMode.Manual:
+                    //    await CameraDist(data, ct);
+                    //    var (hc1Raw, hc2Raw) = await MeasureHcroPoints(data, ct);
+                    //    ComputeHcroCenter(data, hc1Raw, hc2Raw);
+                    //    break;
                     case TracingMode.None:
                         break;
                 }
+
+                ComputeHc2OffsetDependent(data);
+
                 // ── STEP 0: 측정2→3 Theta 변화량을 Top 마크에 반영 ──
                 Point2D topLF, topRF, topLA, topRA;
 
@@ -530,6 +535,7 @@ namespace HCB.UI
                 data.ResultX = shiftX + data.OffsetXY.X;
                 data.ResultY = shiftY + data.OffsetXY.Y;
                 data.ResultT = thetaF + data.OffsetT;
+
             }catch(Exception e)
             {
                 throw;
@@ -846,6 +852,95 @@ namespace HCB.UI
             {
                 throw new Exception("데이터를 찾을 수 없습니다");
             }
+        }
+
+        /// <summary>
+        /// TopHighAlign/BtmHighAlign에서 raw로만 수집한 측정값에 대해 계산(보정)을 일괄 수행한다.
+        ///   1) Top Align 좌표 → Fid Z 평면 투영 (PC 계수 × ΔZ 를 DxCam/DyCam에 가산)
+        ///   2) Btm Fid 좌표  → Align Z 평면 투영 (HC 계수 × ΔZ 를 BtmFidRaw에 가산)
+        ///   3) (Manual) HcRO 회전중심 계산 (CameraDist로 확정된 Hc2Offset + raw 회전점 + tilt)
+        /// tilt 계수는 레시피에서 읽고, ΔZ는 측정 단계에서 기록한 값을 사용한다.
+        /// </summary>
+        private void ApplyMeasurementCorrections(AlignData data)
+        {
+            if (data == null) return;
+
+            // 1) Top: Align → Fid Z 평면 투영
+            double PC_L_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.PC_L_HZ_TILT_X);
+            double PC_L_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.PC_L_HZ_TILT_Y);
+            double PC_R_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.PC_R_HZ_TILT_X);
+            double PC_R_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.PC_R_HZ_TILT_Y);
+
+            if (data.TopRightAlignRaw != null)
+            {
+                data.TopRightAlignRaw.DxCamToMark += PC_R_HZ_TILT_X * data.TopRightDz;
+                data.TopRightAlignRaw.DyCamToMark += PC_R_HZ_TILT_Y * data.TopRightDz;
+            }
+            if (data.TopLeftAlignRaw != null)
+            {
+                data.TopLeftAlignRaw.DxCamToMark += PC_L_HZ_TILT_X * data.TopLeftDz;
+                data.TopLeftAlignRaw.DyCamToMark += PC_L_HZ_TILT_Y * data.TopLeftDz;
+            }
+
+            // 2) Btm: Fid → Align Z 평면 투영 (Right=HC2, Left=HC1)
+            double HC1_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.HC1_HZ_TILT_X);
+            double HC1_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.HC1_HZ_TILT_Y);
+            double HC2_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.HC2_HZ_TILT_X);
+            double HC2_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.HC2_HZ_TILT_Y);
+
+            Point2D lFidTilt = Point2D.of(HC1_HZ_TILT_X * data.BtmDz, HC1_HZ_TILT_Y * data.BtmDz);
+            Point2D rFidTilt = Point2D.of(HC2_HZ_TILT_X * data.BtmDz, HC2_HZ_TILT_Y * data.BtmDz);
+
+            if (data.BtmRightFidRaw != null)
+                data.BtmRightFidRaw = Point2D.of(data.BtmRightFidRaw.X + rFidTilt.X, data.BtmRightFidRaw.Y + rFidTilt.Y);
+            if (data.BtmLeftFidRaw != null)
+                data.BtmLeftFidRaw = Point2D.of(data.BtmLeftFidRaw.X + lFidTilt.X, data.BtmLeftFidRaw.Y + lFidTilt.Y);
+
+            // 3) (Manual) HcRO 회전중심 — CameraDist로 확정된 Hc2Offset + raw 회전점 + tilt
+            if (data.TracingMode == TracingMode.Manual && data.Hc1RoRaw != null && data.Hc2RoRaw != null)
+            {
+                ComputeHcroCenter(data, data.Hc1RoRaw, data.Hc2RoRaw, lFidTilt, rFidTilt);
+            }
+
+            _logger.Information(
+                "ApplyMeasurementCorrections — TopΔZ(R={TRz:F4},L={TLz:F4}), BtmΔZ={BDz:F4}, " +
+                "BtmFidTilt R({RDx:F5},{RDy:F5})/L({LDx:F5},{LDy:F5})",
+                data.TopRightDz, data.TopLeftDz, data.BtmDz,
+                rFidTilt.X, rFidTilt.Y, lFidTilt.X, lFidTilt.Y);
+        }
+
+        /// <summary>
+        /// Hc2Offset(HC1↔HC2 카메라 거리)이 확정된 뒤 호출한다.
+        /// raw로 수집한 HC1/HC2 피듀셜을 공통 좌표계로 결합해 카메라거리 의존 값을 일괄 계산한다.
+        ///   - M2FidTheta / FidCurrentDist : P-Table HC 피듀셜(Hc1FidCurrent / Hc2FidCurrent)
+        ///   - M3FidTheta                  : W-Table HC 피듀셜(BtmLeftFidRaw / BtmRightFidRaw, tilt 투영 후)
+        /// 좌표 규약: 절대 = (−HC1) , (Hc2Offset − HC2). (LogMeasurement2/3와 동일)
+        /// </summary>
+        private void ComputeHc2OffsetDependent(AlignData data)
+        {
+            if (data?.Hc2Offset == null) return;
+            var offset = data.Hc2Offset;
+
+            if (data.Hc1FidCurrent != null && data.Hc2FidCurrent != null)
+            {
+                double lfX = -data.Hc1FidCurrent.X, lfY = -data.Hc1FidCurrent.Y;
+                double rfX = offset.X - data.Hc2FidCurrent.X, rfY = offset.Y - data.Hc2FidCurrent.Y;
+                var r = CalibrationMath.CalcRelative(lfX, lfY, rfX, rfY);
+                data.M2FidTheta = r.theta;
+                data.FidCurrentDist = CalibrationMath.Dist(Point2D.of(rfX, rfY), Point2D.of(lfX, lfY));
+            }
+
+            if (data.BtmLeftFidRaw != null && data.BtmRightFidRaw != null)
+            {
+                double lfX = -data.BtmLeftFidRaw.X, lfY = -data.BtmLeftFidRaw.Y;
+                double rfX = offset.X - data.BtmRightFidRaw.X, rfY = offset.Y - data.BtmRightFidRaw.Y;
+                var r = CalibrationMath.CalcRelative(lfX, lfY, rfX, rfY);
+                data.M3FidTheta = r.theta;
+            }
+
+            _logger.Information(
+                "ComputeHc2OffsetDependent — Hc2Offset=({OX:F4},{OY:F4}), M2FidTheta={M2:F4}°, M3FidTheta={M3:F4}°, FidCurrentDist={D:F6}",
+                offset.X, offset.Y, data.M2FidTheta, data.M3FidTheta, data.FidCurrentDist);
         }
 
         /// <summary>

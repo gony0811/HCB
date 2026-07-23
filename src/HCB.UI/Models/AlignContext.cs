@@ -174,6 +174,15 @@ namespace HCB.UI
         // 측정2/3 Fiducial Theta (deg)
         public double M2FidTheta { get; set; }
         public double M3FidTheta { get; set; }
+
+        // ── 측정 시 수집만 하고, 보정/계산은 CoordinateSystemIntegration에서 수행 ──
+        //   H_Z tilt 투영용 ΔZ (측정만; PC/HC 계수 곱은 계산 단계에서 적용)
+        public double TopRightDz { get; set; }   // = rightFidZ - rightAlignZ
+        public double TopLeftDz { get; set; }    // = leftFidZ - leftAlignZ
+        public double BtmDz { get; set; }        // = btmAlignZ - btmFidZ
+        //   HcRO 회전중심 계산용 raw 측정점(0°/±0.75°). 계산은 ComputeHcroCenter에서.
+        public System.Collections.Generic.List<Point2D> Hc1RoRaw { get; set; }
+        public System.Collections.Generic.List<Point2D> Hc2RoRaw { get; set; }
     }
 
     public class FiducialAngleResult

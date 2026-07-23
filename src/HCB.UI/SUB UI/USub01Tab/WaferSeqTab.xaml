@@ -415,10 +415,10 @@
                                     Height="36" FontSize="13"/>
                             </Grid>
 
-                            <!-- ═══════════════ WAFER ALIGN ═══════════════ -->
+                            <!-- ═══════════════ WAFER CENTER ALIGN ═══════════════ -->
                             <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
                                     HorizontalAlignment="Left" Margin="0,20,0,12">
-                                <TextBlock Text="WAFER ALIGN (Center / Theta)" Foreground="#3498DB"
+                                <TextBlock Text="WAFER CENTER ALIGN (엣지 3점 원피팅)" Foreground="#3498DB"
                                            FontSize="12" FontWeight="Bold"/>
                             </Border>
 
@@ -434,25 +434,31 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Center 허용오차 (µm)"
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="저배율 재시도"
                                                Foreground="#5E8BAA" FontSize="13"
                                                VerticalAlignment="Center" Margin="0,0,16,8"/>
                                     <TextBox Grid.Row="0" Grid.Column="1"
-                                             Text="{Binding CenterToleranceUm}" Margin="0,0,0,8"/>
+                                             Text="{Binding LowVisionRetryMax}" Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Theta 반복 횟수"
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="AlignMark 조정 반복"
                                                Foreground="#5E8BAA" FontSize="13"
                                                VerticalAlignment="Center" Margin="0,0,16,8"/>
                                     <TextBox Grid.Row="1" Grid.Column="1"
-                                             Text="{Binding ThetaIterations}" Margin="0,0,0,8"/>
+                                             Text="{Binding AlignAdjustMaxIter}" Margin="0,0,0,8"/>
 
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="안정화 대기 (ms)"
                                                Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,0"/>
+                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
                                     <TextBox Grid.Row="2" Grid.Column="1"
-                                             Text="{Binding SettleDelayMs}"/>
+                                             Text="{Binding SettleDelayMs}" Margin="0,0,0,8"/>
+
+                                    <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                              Content="센터 후 Theta 보정 적용"
+                                              IsChecked="{Binding ApplyThetaAfterCenter}"
+                                              Foreground="#5E8BAA" FontSize="13"/>
                                 </Grid>
                             </Border>
 
@@ -477,17 +483,25 @@
                                                Text="{Binding AlignStatus}" TextWrapping="Wrap"
                                                Foreground="#F39C12" FontSize="13" Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="잔차 X (µm)"
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="웨이퍼 중심 (X,Y)"
                                                Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1"
-                                               Text="{Binding LastResidualXUm, StringFormat=F2}"
-                                               Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas" Margin="0,0,0,8"/>
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="{Binding WaferCenterX, StringFormat=F4}"
+                                                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
+                                        <TextBlock Text=", " Foreground="#5E8BAA" FontSize="13"/>
+                                        <TextBlock Text="{Binding WaferCenterY, StringFormat=F4}"
+                                                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
+                                    </StackPanel>
 
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="잔차 Y (µm)"
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="로딩 편차 (µm)"
                                                Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1"
-                                               Text="{Binding LastResidualYUm, StringFormat=F2}"
-                                               Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas" Margin="0,0,0,8"/>
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="{Binding LoadingErrorXUm, StringFormat=F1}"
+                                                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
+                                        <TextBlock Text=", " Foreground="#5E8BAA" FontSize="13"/>
+                                        <TextBlock Text="{Binding LoadingErrorYUm, StringFormat=F1}"
+                                                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
+                                    </StackPanel>
 
                                     <TextBlock Grid.Row="3" Grid.Column="0" Text="기울기 (°)"
                                                Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,0"/>
@@ -497,27 +511,20 @@
                                 </Grid>
                             </Border>
 
-                            <!-- 정렬 실행 버튼 -->
-                            <Grid Margin="0,4,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Content="Center 보정"
-                                    Command="{Binding CenterCorrectionCommand}"
-                                    IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
-                                    Height="36" FontSize="13"/>
-                                <Button Grid.Column="2" Content="Theta 보정"
-                                    Command="{Binding ThetaCorrectionCommand}"
-                                    IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
-                                    Height="36" FontSize="13"/>
-                            </Grid>
+                            <!-- 재로딩 필요 경고 (실패 시에만 표시) -->
+                            <Border Background="#3A1A1A" CornerRadius="6" Padding="12" Margin="0,0,0,12"
+                                    BorderBrush="#E74C3C" BorderThickness="1"
+                                    Visibility="{Binding ReloadRequired, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="⚠ 웨이퍼 재로딩이 필요합니다. 로딩 후 다시 실행하세요."
+                                           Foreground="#E74C3C" FontSize="13" FontWeight="Bold"
+                                           TextWrapping="Wrap"/>
+                            </Border>
 
-                            <Grid Margin="0,8,0,0">
-                                <!-- WAFER ALIGN 통합 실행 (정렬 중엔 비활성, STOP이 위에 오버레이) -->
-                                <Button Content="WAFER ALIGN"
-                                    Command="{Binding WaferAlignCommand}"
+                            <!-- 실행 버튼 -->
+                            <Grid Margin="0,4,0,0">
+                                <!-- WAFER CENTER ALIGN 실행 (정렬 중엔 비활성, STOP이 위에 오버레이) -->
+                                <Button Content="WAFER CENTER ALIGN"
+                                    Command="{Binding WaferCenterAlignCommand}"
                                     IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
                                     Height="44" FontSize="15" FontWeight="Bold"/>
                                 <!-- STOP (정렬 중에만 표시) -->

@@ -284,7 +284,8 @@ namespace HCB.UI
         CORNER,
         ALIGN_MARK,
         ALIGN_MARK_TOP,
-        VERNIER
+        VERNIER,
+        WAFER_EDGE   // 저배율(HC_LOW) 웨이퍼 엣지 검출용. 기존 값 보존 위해 끝에 추가.
     }
 
     public enum CameraType

@@ -576,7 +576,6 @@ namespace HCB.UI
             {
                 TopHighAlignState = StepState.InProgress;
                 hcbData = await _sequenceService.TopHighAlign(NewAlignData(), _cts.Token);
-                _sequenceService.ProcessMeasurement(hcbData, 1);
                 UpdateTopMarks();
                 TopHighAlignState = StepState.Completed;
             }
@@ -592,6 +591,9 @@ namespace HCB.UI
             {
                 BtmHighAlignState = StepState.InProgress;
                 hcbData = await _sequenceService.BtmHighAlign(hcbData, _cts.Token);
+                await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
+                _sequenceService.ProcessMeasurement(hcbData, 1);
+                _sequenceService.ProcessMeasurement(hcbData, 2);
                 _sequenceService.ProcessMeasurement(hcbData, 3);
                 UpdateBtmMarks();
                 BtmHighAlignState = StepState.Completed;
@@ -607,8 +609,6 @@ namespace HCB.UI
             try
             {
                 TopCorrState = StepState.InProgress;
-                await _sequenceService.CoordinateSystemIntegration(hcbData, _cts.Token);
-                _sequenceService.ProcessMeasurement(hcbData, 2);
                 await _sequenceService.BondingCorr(hcbData, _cts.Token);
                 TopCorrState = StepState.Completed;
             }

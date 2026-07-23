@@ -51,9 +51,10 @@ namespace HCB.UI
 
         private readonly ILogger _logger;
 
-        // 비전/모션 서비스 (VisionTabViewModel과 동일한 주입 패턴)
+        // 비전/모션/파라미터 서비스 (CalibrationTabViewModel과 동일한 주입 패턴)
         private readonly SequenceService _sequenceService;
         private readonly EqpCommunicationService _communication;
+        private readonly ECParamService _ecParamService;
 
         [ObservableProperty] private bool isBonding;
 
@@ -63,6 +64,7 @@ namespace HCB.UI
             StepSeqTabViewModel stepSeqTabViewModel,
             SequenceService sequenceService,
             EqpCommunicationService communication,
+            ECParamService ecParamService,
             ILogger logger)
         {
             RecipeService = recipeService;
@@ -70,6 +72,7 @@ namespace HCB.UI
             StepSeqTab = stepSeqTabViewModel;
             _sequenceService = sequenceService;
             _communication = communication;
+            _ecParamService = ecParamService;
             _logger = logger.ForContext<WaferSeqTabViewModel>();
 
             // Interlock 발생 시 진행 중인 정렬을 즉시 취소
@@ -206,52 +209,68 @@ namespace HCB.UI
         }
 
         // ═══════════════════════════════════════════════════════════════
-        //  Wafer Center / Theta 보정
-        //  (MDS AccuracyPageViewModel.WaferAlign 알고리즘 이식)
-        //  - Center 보정 : 웨이퍼 중심 마크를 카메라 중심에 정렬
-        //  - Theta 보정  : 좌/우 마크의 위치 차이(atan2)로 웨이퍼 기울기를
-        //                  구해 W_T(웨이퍼 테타축)를 회전. 2회 반복(coarse→fine).
+        //  Wafer Center Align (엣지 3점 원 피팅)
+        //
+        //  절차:
+        //   1) 사용자가 W-Table 척 중심에 웨이퍼를 중심/기울기 ~0으로 로딩.
+        //   2) 레시피에서 웨이퍼 직경을 읽어 엣지 3점 위치를 계산하고
+        //      저배율(HC_LOW) 카메라로 각 엣지를 측정.
+        //   3) 측정 Motion+Vision으로 엣지 절대좌표 3점 → 원 피팅으로 중심 계산.
+        //   4) (저배율 카메라 ↔ 샹크) 간격(ShankLowOffsetX/Y)만큼 시프트해
+        //      샹크 중심이 웨이퍼 중심에 오도록 이동.  (참고: TopLowMeasure / DTablePickup)
+        //   5) HC1/HC2 고배율로 AlignMark 촬상.
+        //   6) 둘 다 실패 → "재로딩 필요" 알림(수동).
+        //   6.1) 한쪽만 성공 → 둘 다 보이는 위치로 X,Y 조정 후 재촬상.
+        //   6.2) 반복 조정에도 실패 → "재로딩 필요" 알림(수동).
         // ═══════════════════════════════════════════════════════════════
 
-        #region Wafer Align 설정 (필요 시 UI 바인딩/레시피 연동 가능)
+        #region 설정 (필요 시 UI 바인딩/레시피 연동 가능)
 
-        // 웨이퍼 마크를 촬상하는 카메라 / 마크 / 방향
-        private const CameraType WaferCamera = CameraType.HC1_HIGH;
-        private const MarkType WaferMarkType = MarkType.ALIGN_MARK;
-        private const DirectType WaferDirect = DirectType.LEFT;
+        // 저배율 엣지 검출
+        private const CameraType LowCam = CameraType.HC_LOW;
+        private const MarkType EdgeMark = MarkType.WAFER_EDGE;
+        private const string LowVisionZPos = MotionExtensions.WAFER_ALIGN_LOW; // HC_LOW 촬상용 H_Z 위치
+
+        // 고배율 AlignMark 검출
+        private const CameraType Hc1Cam = CameraType.HC1_HIGH;
+        private const CameraType Hc2Cam = CameraType.HC2_HIGH;
+        private const MarkType AlignMark = MarkType.ALIGN_MARK;
 
         // 사용 축
         private const string XAxis = MotionExtensions.H_X;   // 스테이지 X
         private const string YAxis = MotionExtensions.W_Y;   // 웨이퍼 테이블 Y
         private const string ThetaAxis = MotionExtensions.W_T; // 웨이퍼 테타
 
-        // 티칭 위치명 (MotionConstants 참조)
         private const string CenterPosName = MotionExtensions.WAFER_CENTER_POSITION; // "PLACE_CENTER"
-        private const string LeftPosName = MotionExtensions.WAFER_LEFT_POSITION;    // "WAFER_LEFT"
-        private const string RightPosName = MotionExtensions.WAFER_RIGHT_POSITION;  // "WAFER_RIGHT"
 
-        // W_T 회전 부호. 하드웨어 회전 방향과 부호가 반대면 -1 ↔ +1 로 뒤집는다.
-        private const double ThetaSign = -1.0;
+        // 엣지 3점 각도(도). 원 피팅은 120° 간격이 조건수가 좋다.
+        // (Notch/Flat 위치와 겹치지 않도록 필요 시 조정)
+        private static readonly double[] EdgeAnglesDeg = { 90.0, 210.0, 330.0 };
 
-        // Center 보정: 잔차가 이 값(µm) 이하가 될 때까지 반복(최대 CenterMaxIter회)
-        [ObservableProperty] private double centerToleranceUm = 3.0;
-        [ObservableProperty] private int centerMaxIter = 3;
-
-        // Theta 보정: 반복 횟수(1차 coarse, 2차 fine)와 이동 스킵 임계각(deg)
-        [ObservableProperty] private int thetaIterations = 2;
-        [ObservableProperty] private double thetaMinDeg = 0.0005;
+        // 저배율 재시도, AlignMark 조정 반복 한계
+        [ObservableProperty] private int lowVisionRetryMax = 3;
+        [ObservableProperty] private int alignAdjustMaxIter = 3;
 
         // 이동/촬상 사이 진동 안정화 대기(ms)
         [ObservableProperty] private int settleDelayMs = 300;
 
+        // 센터 후 Theta 보정 적용 여부 (HC1/HC2 AlignMark 기울기로 W_T 회전)
+        [ObservableProperty] private bool applyThetaAfterCenter = true;
+        // W_T 회전 부호 (하드웨어 방향과 반대면 +1로 뒤집기), 스킵 임계각(deg)
+        private const double ThetaSign = -1.0;
+        [ObservableProperty] private double thetaMinDeg = 0.0005;
+
         #endregion
 
-        #region Wafer Align 상태(UI 바인딩용)
+        #region 상태(UI 바인딩용)
 
         [ObservableProperty] private bool isAligning;
         [ObservableProperty] private string alignStatus = "-";
-        [ObservableProperty] private double lastResidualXUm;
-        [ObservableProperty] private double lastResidualYUm;
+        [ObservableProperty] private bool reloadRequired;      // 재로딩 필요 플래그(수동 처리)
+        [ObservableProperty] private double waferCenterX;      // 계산된 웨이퍼 중심 (스테이지 좌표계)
+        [ObservableProperty] private double waferCenterY;
+        [ObservableProperty] private double loadingErrorXUm;   // 척 중심 대비 로딩 편차
+        [ObservableProperty] private double loadingErrorYUm;
         [ObservableProperty] private double lastThetaDeg;
 
         private CancellationTokenSource? _alignCts;
@@ -271,227 +290,250 @@ namespace HCB.UI
 
         #endregion
 
-        /// <summary>
-        /// 현재 FOV의 마크를 촬상하여 카메라 중심으로 정렬(센터링)하고,
-        /// 정렬 후 스테이지 피드백 위치와 정렬 전 잔차(mm)를 반환한다.
-        /// (MDS VisionCorrectAndCapturePosAsync 이식)
-        /// </summary>
-        /// <returns>ok=측정 성공 여부, stageX/stageY=정렬 후 (H_X,W_Y) 위치,
-        /// resX/resY=정렬 전 마크 offset(mm, =잔차)</returns>
-        private async Task<(bool ok, double stageX, double stageY, double resX, double resY)>
-            MeasureAndCenterAsync(CancellationToken ct)
-        {
-            // 진동 안정화 대기
-            await Task.Delay(SettleDelayMs, ct);
-
-            // AF + 마크 위치 측정
-            await _communication.RequestAFStart(WaferCamera, WaferMarkType, ct);
-            var mark = await _communication.RequestVisionMarkPosition(
-                WaferMarkType, WaferCamera, WaferDirect.ToString());
-
-            if (mark == null || mark.Result == Result.NG)
-            {
-                double sx0 = await _sequenceService.GetCurrentPosition(XAxis, ct);
-                double sy0 = await _sequenceService.GetCurrentPosition(YAxis, ct);
-                return (false, sx0, sy0, 0, 0);
-            }
-
-            double resX = mark.X;
-            double resY = mark.Y;
-
-            // 센터링 이동 — HC 카메라 규약(VisionTabViewModel): H_X -= X, W_Y -= Y
-            await Task.WhenAll(
-                _sequenceService.RelativeMotionsMove(XAxis, -resX, ct),
-                _sequenceService.RelativeMotionsMove(YAxis, -resY, ct));
-
-            await Task.Delay(100, ct);
-
-            double sx = await _sequenceService.GetCurrentPosition(XAxis, ct);
-            double sy = await _sequenceService.GetCurrentPosition(YAxis, ct);
-            return (true, sx, sy, resX, resY);
-        }
-
-        /// <summary>
-        /// 한 위치에서 잔차가 허용치 이하가 될 때까지 센터링을 반복한다.
-        /// </summary>
-        private async Task<(bool ok, double stageX, double stageY, double resX, double resY)>
-            CenterAtPositionAsync(string positionName, CancellationToken ct)
-        {
-            // 티칭 위치로 이동 (X,Y 동시)
-            await Task.WhenAll(
-                _sequenceService.MotionsMove(XAxis, positionName, ct),
-                _sequenceService.MotionsMove(YAxis, positionName, ct));
-
-            double tolMm = CenterToleranceUm / 1000.0;
-            (bool ok, double sx, double sy, double rx, double ry) last = (false, 0, 0, 0, 0);
-
-            for (int i = 0; i < Math.Max(1, CenterMaxIter); i++)
-            {
-                ct.ThrowIfCancellationRequested();
-                last = await MeasureAndCenterAsync(ct);
-                if (!last.ok) break;
-
-                double dist = Math.Sqrt(last.rx * last.rx + last.ry * last.ry);
-                LastResidualXUm = last.rx * 1000.0;
-                LastResidualYUm = last.ry * 1000.0;
-
-                if (dist <= tolMm) break;
-            }
-
-            return last;
-        }
-
-        // ── Center 보정 단독 ──────────────────────────────────────────
+        // ── 메인 커맨드 ───────────────────────────────────────────────
         [RelayCommand]
-        public async Task CenterCorrection()
+        public async Task WaferCenterAlign()
         {
             if (IsAligning) return;
             IsAligning = true;
+            ReloadRequired = false;
             _alignCts = new CancellationTokenSource();
             var ct = _alignCts.Token;
+
             try
             {
-                AlignStatus = "Center 보정 중...";
-                var r = await CenterAtPositionAsync(CenterPosName, ct);
-                if (!r.ok)
+                _logger.Information("Wafer Center Align 시작");
+
+                // ── 2) 웨이퍼 직경 → 반경 (레시피 WaferSize = mm 직경) ──
+                double diameter = RecipeService.FindByParamDouble("WaferSize");
+                double radius = diameter / 2.0;
+                if (radius <= 0)
                 {
-                    AlignStatus = "비전 검출 실패 — 마크가 FOV 내에 없습니다.";
-                    _logger.Warning("Center 보정 실패: 비전 검출 NG");
+                    AlignStatus = "레시피 WaferSize(직경 mm)가 유효하지 않습니다.";
                     return;
                 }
 
-                AlignStatus = $"Center 보정 완료 — 잔차 X:{r.resX * 1000:F1}μm, Y:{r.resY * 1000:F1}μm";
-                _logger.Information("Center 보정 완료 | Stage=({X:F4},{Y:F4}), 잔차=({RX:F4},{RY:F4})mm",
-                    r.stageX, r.stageY, r.resX, r.resY);
-            }
-            catch (OperationCanceledException) { AlignStatus = "취소됨"; }
-            catch (Exception e)
-            {
-                _logger.Error(e, "Center 보정 오류");
-                AlignStatus = $"오류: {e.Message}";
-            }
-            finally { IsAligning = false; }
-        }
+                // ── 저배율 촬상 높이로 H_Z 이동 후 척 중심(PLACE_CENTER)으로 XY 이동 ──
+                AlignStatus = "저배율 촬상 위치 이동 중...";
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, LowVisionZPos, ct);
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(XAxis, CenterPosName, ct),
+                    _sequenceService.MotionsMove(YAxis, CenterPosName, ct));
 
-        // ── Theta 보정 단독 ───────────────────────────────────────────
-        [RelayCommand]
-        public async Task ThetaCorrection()
-        {
-            if (IsAligning) return;
-            IsAligning = true;
-            _alignCts = new CancellationTokenSource();
-            var ct = _alignCts.Token;
-            try
-            {
-                double total = await RunThetaAsync(ct);
-                AlignStatus = $"Theta 보정 완료 — 총 {total:F4}°";
+                double cHX = await _sequenceService.GetCurrentPosition(XAxis, ct);
+                double cWY = await _sequenceService.GetCurrentPosition(YAxis, ct);
+
+                // ── 2~3) 엣지 3점 측정 → 원 피팅 ──
+                var edgePoints = new List<Point2D>();
+                for (int i = 0; i < EdgeAnglesDeg.Length; i++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    AlignStatus = $"엣지 측정 {i + 1}/{EdgeAnglesDeg.Length} ({EdgeAnglesDeg[i]:F0}°)...";
+                    var pt = await MeasureWaferEdgeAsync(cHX, cWY, radius, EdgeAnglesDeg[i], ct);
+                    if (pt == null)
+                    {
+                        ReloadRequired = true;
+                        AlignStatus = $"엣지 {i + 1} 검출 실패 — 재로딩이 필요합니다.";
+                        _logger.Warning("Wafer 엣지 {Idx} 검출 실패 — 재로딩 필요", i + 1);
+                        return;
+                    }
+                    edgePoints.Add(pt);
+                }
+
+                var center = CalibrationMath.FitCircleCenter(edgePoints);
+                WaferCenterX = center.X;
+                WaferCenterY = center.Y;
+                LoadingErrorXUm = (center.X - cHX) * 1000.0;
+                LoadingErrorYUm = (center.Y - cWY) * 1000.0;
+                _logger.Information(
+                    "Wafer 중심(원 피팅)=({CX:F4},{CY:F4}), 로딩편차=({EX:F1},{EY:F1})μm",
+                    center.X, center.Y, LoadingErrorXUm, LoadingErrorYUm);
+
+                // ── 4) 샹크 중심을 웨이퍼 중심으로: (저배율↔샹크) 오프셋만큼 시프트 ──
+                //     DTablePickup 참고: 샹크가 측정 마크로 오도록 (ShankLowOffset - 측정오차) 이동.
+                //     여기선 절대 목표 = 웨이퍼중심 + ShankLowOffset.
+                double shankLowX = _ecParamService.GetDouble("ShankLowOffsetX");
+                double shankLowY = _ecParamService.GetDouble("ShankLowOffsetY");
+                double targetHX = center.X + shankLowX;
+                double targetWY = center.Y + shankLowY;
+
+                AlignStatus = "샹크 중심을 웨이퍼 중심으로 이동 중...";
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(XAxis, targetHX, ct),
+                    _sequenceService.MotionsMove(YAxis, targetWY, ct));
+
+                // ── 고배율(HC1/HC2) 촬상 높이로 H_Z 이동 (FiducialAngleTracking과 동일 Z) ──
+                double shankToWafer = _ecParamService.GetDouble("ShankToWaferOffset");
+                double topDieThickness = RecipeService.FindByParamDouble("TopDieThickness");
+                double btmDieThickness = RecipeService.FindByParamDouble("BtmDieThickness");
+                double zHigh = shankToWafer - topDieThickness - btmDieThickness - 0.1;
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, zHigh, ct);
+
+                // ── 5~6) HC1/HC2 AlignMark 촬상 + 실패 처리 ──
+                bool ok = await VerifyAlignMarksAsync(ct);
+                if (!ok)
+                {
+                    // VerifyAlignMarksAsync가 상태/ReloadRequired 설정 완료
+                    return;
+                }
+
+                AlignStatus = ReloadRequired
+                    ? AlignStatus
+                    : $"Wafer Center Align 완료 — 중심=({center.X:F4},{center.Y:F4}), " +
+                      $"로딩편차=({LoadingErrorXUm:F1},{LoadingErrorYUm:F1})μm" +
+                      (ApplyThetaAfterCenter ? $", Theta={LastThetaDeg:F4}°" : "");
+
+                WriteAlignLog(center, LoadingErrorXUm, LoadingErrorYUm, LastThetaDeg);
+                _logger.Information("Wafer Center Align 완료");
             }
-            catch (OperationCanceledException) { AlignStatus = "취소됨"; }
+            catch (OperationCanceledException) { AlignStatus = "Wafer Center Align 중단됨"; }
             catch (Exception e)
             {
-                _logger.Error(e, "Theta 보정 오류");
+                _logger.Error(e, "Wafer Center Align 오류");
                 AlignStatus = $"오류: {e.Message}";
             }
             finally { IsAligning = false; }
         }
 
         /// <summary>
-        /// 좌/우 웨이퍼 마크를 센터링한 뒤 두 점의 기울기(atan2)로 W_T를 회전.
-        /// ThetaIterations회 반복(1차 coarse, 2차 fine)한다.
-        /// (MDS WaferAlignAsync의 2단계 atan2 보정 이식)
+        /// 척 중심(cHX,cWY) 기준 반경 radius, 각도 angleDeg 위치로 저배율 카메라를 이동해
+        /// 웨이퍼 엣지를 측정하고, 엣지의 절대 좌표(스테이지 좌표계)를 반환한다.
+        /// 실패(재시도 소진) 시 null.
         /// </summary>
-        /// <returns>적용한 총 보정각(deg)</returns>
-        private async Task<double> RunThetaAsync(CancellationToken ct)
+        private async Task<Point2D?> MeasureWaferEdgeAsync(
+            double cHX, double cWY, double radius, double angleDeg, CancellationToken ct)
         {
-            double totalCorr = 0;
+            double rad = angleDeg * Math.PI / 180.0;
+            double tHX = cHX + radius * Math.Cos(rad);
+            double tWY = cWY + radius * Math.Sin(rad);
 
-            for (int iter = 1; iter <= Math.Max(1, ThetaIterations); iter++)
+            await Task.WhenAll(
+                _sequenceService.MotionsMove(XAxis, tHX, ct),
+                _sequenceService.MotionsMove(YAxis, tWY, ct));
+            await Task.Delay(SettleDelayMs, ct);
+
+            for (int attempt = 0; attempt <= Math.Max(0, LowVisionRetryMax); attempt++)
             {
                 ct.ThrowIfCancellationRequested();
-
-                // 좌측 마크 센터링
-                AlignStatus = $"[{iter}차] 좌측 마크 측정 중...";
-                var l = await CenterAtPositionAsync(LeftPosName, ct);
-                if (!l.ok) throw new Exception($"[{iter}차] 좌측 마크 비전 검출 실패");
-
-                // 우측 마크 센터링
-                AlignStatus = $"[{iter}차] 우측 마크 측정 중...";
-                var r = await CenterAtPositionAsync(RightPosName, ct);
-                if (!r.ok) throw new Exception($"[{iter}차] 우측 마크 비전 검출 실패");
-
-                // 기울기 = atan2(ΔY, ΔX). 우측이 +X 이므로 ΔX>0.
-                double dx = r.stageX - l.stageX;
-                double dy = r.stageY - l.stageY;
-                double angleDeg = Math.Atan2(dy, dx) * (180.0 / Math.PI);
-
-                // 기준 벡터(+X) 대비 기울기로 정규화(±90° 범위로 접기)
-                if (angleDeg > 90) angleDeg -= 180;
-                else if (angleDeg < -90) angleDeg += 180;
-
-                double corr = ThetaSign * angleDeg; // 기울기를 0으로 만드는 반대방향 회전
-                LastThetaDeg = angleDeg;
-
-                _logger.Information(
-                    "[{Iter}차] Theta | L=({LX:F4},{LY:F4}) R=({RX:F4},{RY:F4}) 기울기={A:F4}° 보정={C:F4}°",
-                    iter, l.stageX, l.stageY, r.stageX, r.stageY, angleDeg, corr);
-
-                if (Math.Abs(corr) < ThetaMinDeg)
+                // 저배율은 방향 인자 없이 호출 (BtmLowMeasure와 동일 규약)
+                var r = await _communication.RequestVisionMarkPosition(EdgeMark, LowCam, "");
+                if (r != null && r.Result != Result.NG)
                 {
-                    AlignStatus = $"[{iter}차] 보정 불필요 (기울기 {angleDeg:F4}°)";
-                    break; // 이미 충분히 수평 → 종료
+                    // 엣지 절대좌표 = 현재 스테이지 위치 − 카메라→마크 오프셋
+                    double curHX = await _sequenceService.GetCurrentPosition(XAxis, ct);
+                    double curWY = await _sequenceService.GetCurrentPosition(YAxis, ct);
+                    return Point2D.of(curHX - r.X, curWY - r.Y);
+                }
+                if (attempt < LowVisionRetryMax)
+                    _logger.Warning("엣지 저배율 측정 실패 — 재시도 {A}/{M}", attempt + 1, LowVisionRetryMax);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// HC1/HC2 고배율로 AlignMark를 촬상한다.
+        /// 둘 다 실패 → 재로딩 필요. 한쪽만 성공 → 성공 카메라 오프셋으로 X,Y를 조정해
+        /// 둘 다 보이는 위치로 이동 후 재촬상(최대 AlignAdjustMaxIter회). 계속 실패 → 재로딩 필요.
+        /// 성공 시 (옵션) 두 마크 기울기로 W_T Theta 보정.
+        /// </summary>
+        private async Task<bool> VerifyAlignMarksAsync(CancellationToken ct)
+        {
+            for (int iter = 0; iter <= Math.Max(0, AlignAdjustMaxIter); iter++)
+            {
+                ct.ThrowIfCancellationRequested();
+                AlignStatus = iter == 0
+                    ? "HC1/HC2 AlignMark 촬상 중..."
+                    : $"AlignMark 위치 조정 후 재촬상 {iter}/{AlignAdjustMaxIter}...";
+
+                var h1 = await MeasureAlignAsync(Hc1Cam, DirectType.LEFT, ct);
+                var h2 = await MeasureAlignAsync(Hc2Cam, DirectType.RIGHT, ct);
+                bool ok1 = h1 != null && h1.Result != Result.NG;
+                bool ok2 = h2 != null && h2.Result != Result.NG;
+
+                if (ok1 && ok2)
+                {
+                    if (ApplyThetaAfterCenter)
+                        await ApplyThetaFromAlignMarksAsync(h1!, h2!, ct);
+                    AlignStatus = "AlignMark 양쪽 검출 완료";
+                    return true;
                 }
 
-                AlignStatus = $"[{iter}차] W_T {corr:F4}° 회전 중...";
-                await _sequenceService.RelativeMotionsMove(ThetaAxis, corr, ct);
-                totalCorr += corr;
+                // 6) 둘 다 실패 → 재로딩
+                if (!ok1 && !ok2)
+                {
+                    ReloadRequired = true;
+                    AlignStatus = "AlignMark 양쪽 검출 실패 — 재로딩이 필요합니다.";
+                    _logger.Warning("AlignMark 양쪽 검출 실패 — 재로딩 필요");
+                    return false;
+                }
+
+                // 6.1) 한쪽만 성공 → 성공한 카메라의 마크를 중심으로 가져와 둘 다 보이게 조정
+                if (iter >= AlignAdjustMaxIter) break; // 다음 루프 없으면 조정 생략
+
+                var okMark = ok1 ? h1! : h2!;
+                _logger.Information("AlignMark 한쪽만 검출({Cam}) — 조정 이동 ΔX={X:F4},ΔY={Y:F4}",
+                    ok1 ? "HC1" : "HC2", -okMark.X, -okMark.Y);
+                await Task.WhenAll(
+                    _sequenceService.RelativeMotionsMove(XAxis, -okMark.X, ct),
+                    _sequenceService.RelativeMotionsMove(YAxis, -okMark.Y, ct));
+                await Task.Delay(SettleDelayMs, ct);
             }
 
-            // 정렬 후 웨이퍼 센터로 복귀
-            AlignStatus = "Theta 보정 완료 — Center 복귀 중";
-            await Task.WhenAll(
-                _sequenceService.MotionsMove(XAxis, CenterPosName, ct),
-                _sequenceService.MotionsMove(YAxis, CenterPosName, ct));
-
-            return totalCorr;
+            // 6.2) 반복 조정에도 실패
+            ReloadRequired = true;
+            AlignStatus = "AlignMark 반복 조정 실패 — 재로딩이 필요합니다.";
+            _logger.Warning("AlignMark 반복 조정 실패 — 재로딩 필요");
+            return false;
         }
 
-        // ── Center + Theta 통합 (Wafer Align) ─────────────────────────
-        [RelayCommand]
-        public async Task WaferAlign()
+        private async Task<VisionMarkPositionResponse?> MeasureAlignAsync(
+            CameraType cam, DirectType direct, CancellationToken ct)
         {
-            if (IsAligning) return;
-            IsAligning = true;
-            _alignCts = new CancellationTokenSource();
-            var ct = _alignCts.Token;
             try
             {
-                _logger.Information("Wafer Align 시작");
-
-                // 1) Theta 보정 (좌/우 마크 → W_T 회전, 2회 반복)
-                double totalTheta = await RunThetaAsync(ct);
-
-                // 2) 회전 후 Center 재보정 (회전으로 인한 중심 이동 보정)
-                AlignStatus = "Center 재보정 중...";
-                var c = await CenterAtPositionAsync(CenterPosName, ct);
-                if (!c.ok) throw new Exception("Center 마크 비전 검출 실패");
-
-                AlignStatus = $"Wafer Align 완료 — Theta {totalTheta:F4}°, " +
-                              $"Center 잔차 ({c.resX * 1000:F1}, {c.resY * 1000:F1})μm";
-
-                WriteAlignLog(totalTheta, c.resX, c.resY);
-                _logger.Information("Wafer Align 완료 | Theta 총 {T:F4}°, Center 잔차=({RX:F4},{RY:F4})mm",
-                    totalTheta, c.resX, c.resY);
+                await _communication.RequestAFStart(cam, AlignMark, ct);
+                return await _communication.RequestVisionMarkPosition(AlignMark, cam, direct.ToString());
             }
-            catch (OperationCanceledException) { AlignStatus = "Wafer Align 중단됨"; }
+            catch (OperationCanceledException) { throw; }
             catch (Exception e)
             {
-                _logger.Error(e, "Wafer Align 오류");
-                AlignStatus = $"오류: {e.Message}";
+                _logger.Warning(e, "{Cam} AlignMark 촬상 예외", cam);
+                return null;
             }
-            finally { IsAligning = false; }
         }
 
-        private void WriteAlignLog(double totalTheta, double resX, double resY)
+        /// <summary>
+        /// HC1(Left)/HC2(Right) AlignMark 두 점의 기울기(atan2)로 W_T를 회전해 웨이퍼 Theta를 보정.
+        /// (MainSequence.FiducialAngleTracking의 Hc 각도 산출 규약을 따름: Hc2Offset=HC2_X/HC2_Y 적용)
+        /// </summary>
+        private async Task ApplyThetaFromAlignMarksAsync(
+            VisionMarkPositionResponse h1, VisionMarkPositionResponse h2, CancellationToken ct)
+        {
+            double hc2OffX = _ecParamService.GetDouble(MotionExtensions.HC2_X);
+            double hc2OffY = _ecParamService.GetDouble(MotionExtensions.HC2_Y);
+
+            var left = Point2D.of(-h1.X, -h1.Y);
+            var right = Point2D.of(hc2OffX - h2.X, hc2OffY - h2.Y);
+
+            double angleDeg = Math.Atan2(right.Y - left.Y, right.X - left.X) * (180.0 / Math.PI);
+            // 두 마크를 잇는 선의 수평 대비 기울기로 정규화(±90° 접기)
+            if (angleDeg > 90) angleDeg -= 180;
+            else if (angleDeg < -90) angleDeg += 180;
+
+            LastThetaDeg = angleDeg;
+            double corr = ThetaSign * angleDeg;
+            if (Math.Abs(corr) < ThetaMinDeg)
+            {
+                _logger.Information("Theta 보정 불필요 (기울기 {A:F4}°)", angleDeg);
+                return;
+            }
+
+            AlignStatus = $"Theta 보정: W_T {corr:F4}° 회전 중...";
+            await _sequenceService.RelativeMotionsMove(ThetaAxis, corr, ct);
+            _logger.Information("Theta 보정 적용 — 기울기={A:F4}°, W_T 회전={C:F4}°", angleDeg, corr);
+        }
+
+        private void WriteAlignLog(Point2D center, double errXUm, double errYUm, double thetaDeg)
         {
             try
             {
@@ -499,19 +541,21 @@ namespace HCB.UI
                     Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                     "HCB", "정밀도 데이터");
                 Directory.CreateDirectory(folder);
-                string path = Path.Combine(folder, "WaferAlign.log");
+                string path = Path.Combine(folder, "WaferCenterAlign.log");
 
                 var sb = new StringBuilder();
-                sb.AppendLine($"[Wafer Align] {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                sb.AppendLine($"  Theta 총 보정 : {totalTheta:F4}°");
-                sb.AppendLine($"  Center 잔차   : X={resX * 1000:F2}μm, Y={resY * 1000:F2}μm");
+                sb.AppendLine($"[Wafer Center Align] {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                sb.AppendLine($"  중심(스테이지) : X={center.X:F4}, Y={center.Y:F4}");
+                sb.AppendLine($"  로딩 편차      : X={errXUm:F2}μm, Y={errYUm:F2}μm");
+                if (ApplyThetaAfterCenter)
+                    sb.AppendLine($"  Theta          : {thetaDeg:F4}°");
                 sb.AppendLine("─────────────────────────────────────");
 
                 File.AppendAllText(path, sb.ToString());
             }
             catch (Exception e)
             {
-                _logger.Warning(e, "WaferAlign 로그 저장 실패");
+                _logger.Warning(e, "WaferCenterAlign 로그 저장 실패");
             }
         }
     }
