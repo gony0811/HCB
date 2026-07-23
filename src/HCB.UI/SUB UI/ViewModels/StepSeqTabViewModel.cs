@@ -139,9 +139,9 @@ namespace HCB.UI
         [ObservableProperty] private bool avgMode = true;
         [ObservableProperty] private bool use2DMapping = true;
         [ObservableProperty] private bool measureVernierAfterBonding = false;
-        [ObservableProperty] private TracingMode tracingMode = TracingMode.Auto;
-        [ObservableProperty] private bool useBtmIndividualMeasure = false;
-        [ObservableProperty] private bool useFiducialTracking = false;
+        [ObservableProperty] private TracingMode tracingMode = TracingMode.Manual;
+        [ObservableProperty] private bool useBtmIndividualMeasure = true;
+        [ObservableProperty] private bool useFiducialTracking = true;
 
         // ── 피듀셜 각도 추적 결과 ────────────────────────────
         [ObservableProperty] private double fiducialPcAngle;

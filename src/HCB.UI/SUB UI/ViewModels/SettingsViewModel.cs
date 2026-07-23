@@ -12,9 +12,9 @@ namespace HCB.UI
         [ObservableProperty] private bool avgMode = true;
         [ObservableProperty] private bool use2DMapping = true;
         [ObservableProperty] private bool measureVernierAfterBonding = false;
-        [ObservableProperty] private TracingMode tracingMode = TracingMode.Auto;
-        [ObservableProperty] private bool fiducialTracing = false;
-        [ObservableProperty] private bool btmIndividualMeasure = false;
+        [ObservableProperty] private TracingMode tracingMode = TracingMode.Manual;
+        [ObservableProperty] private bool fiducialTracing = true;
+        [ObservableProperty] private bool btmIndividualMeasure = true;
 
         // ── CSV 저장 설정 ─────────────────────────────────────
         [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
