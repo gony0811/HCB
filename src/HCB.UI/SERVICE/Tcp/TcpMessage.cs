@@ -262,14 +262,13 @@ namespace HCB.UI
             return response;
         }
     }
-    // 스크라이브 라인(HC 저배율 / HC1 / HC2) 검출 응답.
-    // X/Y = 카메라 중심 대비 라인상 기준점 오프셋(mm), Theta = 라인 기울기(도).
+    // 스크라이브 교차점(십자) 검출 응답. Vision 회신 v1.0 확정 규약.
+    // X/Y = 교차점의 카메라 중심 대비 오프셋(mm). THETA는 규약에서 제외(각도는 EQP가 atan2로 산출).
     public class ScribeLineResponse
     {
         public Result Result { get; set; } = Result.NG;
         public double X { get; set; }
         public double Y { get; set; }
-        public double Theta { get; set; }
 
         public static ScribeLineResponse Parse(string? content)
         {
@@ -283,7 +282,6 @@ namespace HCB.UI
                 if (Enum.TryParse(xml.Element("RESULT")?.Value, out Result r)) response.Result = r;
                 if (double.TryParse(xml.Element("X")?.Value, out double x)) response.X = x;
                 if (double.TryParse(xml.Element("Y")?.Value, out double y)) response.Y = y;
-                if (double.TryParse(xml.Element("THETA")?.Value, out double theta)) response.Theta = theta;
             }
             catch (Exception ex)
             {
@@ -316,7 +314,8 @@ namespace HCB.UI
         ALIGN_MARK,
         ALIGN_MARK_TOP,
         VERNIER,
-        WAFER_EDGE   // 저배율(HC_LOW) 웨이퍼 엣지 검출용. 기존 값 보존 위해 끝에 추가.
+        WAFER_EDGE,   // 저배율(HC_LOW) 웨이퍼 엣지 검출용. 기존 값 보존 위해 끝에 추가.
+        SCRIBE_LINE   // 고배율(HC1/HC2) 스크라이브 교차점 AF/검출용. REQUEST_AF_START MARKTYPE 신규값.
     }
 
     public enum CameraType

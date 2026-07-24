@@ -299,6 +299,8 @@ namespace HCB.UI
         // 현재 카메라 FOV 안의 웨이퍼 엣지를 찾아 카메라 중심 대비 오프셋(mm)을 반환.
         // 저배율은 FOV(≈110mm) 안에 3점 동시 촬상이 불가하므로 EQP가 12→4→7시로
         // 이동하며 각 위치마다 1회 요청한다. clock은 검출 ROI/엣지 방향 힌트.
+        // ※ Vision 회신 v1.0(§5): 스크라이브(패턴매칭)와 알고리즘(원호 에지)이 달라
+        //    REQUEST_WAFER_EDGE는 아직 Vision 미구현. 일정 별도 협의 예정 — EQP측 스텁 유지.
         public async Task<VisionMarkPositionResponse> RequestWaferEdge(WaferClock clock, CancellationToken ct = default)
         {
             var request = MessageFactory.Create(
@@ -331,16 +333,19 @@ namespace HCB.UI
             return response;
         }
 
-        // ─── Scribe Line 검출 (HC 저배율 / HC1 / HC2 통합) ───────────────
-        // cameraType으로 저배율(HC_LOW)·고배율(HC1_HIGH/HC2_HIGH)을 모두 처리.
-        // direct = 검출할 스크라이브 방향(Horizontal/Vertical).
-        // 반환: 라인 기준점 오프셋(X/Y, mm) + 라인 기울기(Theta, 도).
-        public async Task<ScribeLineResponse> RequestScribeLine(CameraType cameraType, DirectType direct, CancellationToken ct = default)
+        // ─── Scribe Line(교차점) 검출 — Vision 회신 v1.0 확정 규약 ───────────────
+        // Vision은 스크라이브 "라인"이 아니라 다이 꼭짓점의 십자(교차점)를 검출하므로
+        // X/Y가 동시에 확정된다. → DIRECT/THETA 필드 제외(요청은 CAMERATYPE만).
+        // 각도(W_T 보정)는 Vision이 주지 않고 EQP가 중심·좌·우 N다이 3점을 atan2로 산출한다.
+        // 고배율(HC1/HC2)은 초점이 필요하므로 호출 전 RequestAFStart(cam, MarkType.SCRIBE_LINE)로
+        // AF를 먼저 수행해야 한다(Vision은 Z를 사전이동하지 않음 → 웨이퍼 상면 근처 Z 유지).
+        // 저배율(HC_LOW)은 화소당 ~7µm라 신뢰도가 낮아 권장되지 않음(고배율 기준 시퀀스 구성).
+        public async Task<ScribeLineResponse> RequestScribeLine(CameraType cameraType, CancellationToken ct = default)
         {
             var request = MessageFactory.Create(
                 messageName: "REQUEST_SCRIBE_LINE",
                 unitName: "EQP",
-                content: $"<CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT>"
+                content: $"<CAMERATYPE>{cameraType}</CAMERATYPE>"
             );
 
             double pcWT = Double.Parse(ecParamService.FindByName(MotionExtensions.PC_W_T).Value);
