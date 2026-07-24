@@ -181,7 +181,7 @@ namespace HCB.UI
                     await MeasureFiducialDrift(data, ct);
                 }
                 // TopDie 사이즈 검색
-                var size = _recipeService.FindByParam("TOP DIE SIZE");
+                var size = _recipeService.FindByParam("TOP_DIE_SIZE");
 
                 // ── Right: Fid → Align 측정 (Fid/Align은 서로 다른 H_Z 높이에서 촬상) ──
                 data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
@@ -255,8 +255,8 @@ namespace HCB.UI
                 sw.Restart();
                 if (data.UseBtmIndividualMeasure)
                 {
-                    await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap, ct);
-                    await RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);
+                    await RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
+                    await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
                     double btmAlignZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
 
                     if (data.TracingMode == TracingMode.Manual)
@@ -274,9 +274,11 @@ namespace HCB.UI
                     data.BtmLeftAlignRaw = Point2D.of(lAlign.DxCamToMark, lAlign.DyCamToMark);
                     _logger.Information("BtmHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-                    await RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
-                    await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
+                    
                     double btmFidZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
+
+                    await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap, ct);
+                    await RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);
 
                     var rFid = await BtmDieVisionRightFid(data.AvgMove, ct);
                     data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark, rFid.DyCamToMark);

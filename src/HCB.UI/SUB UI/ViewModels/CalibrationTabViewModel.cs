@@ -793,7 +793,7 @@ namespace HCB.UI
                 // 2. Right Align
                 CalibStatus = "PC AF — Right Align...";
                 double thickness = _recipeService.FindByParamDouble("TopDieThickness");
-                var size = _recipeService.FindByParam("TOP DIE SIZE");
+                var size = _recipeService.FindByParam("TOP_DIE_SIZE");
                 await Task.WhenAll(
                     _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_ALIGN_HIGH + size.Value, ct),
                     _sequenceService.MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_ALIGN_HIGH + size.Value, ct));
