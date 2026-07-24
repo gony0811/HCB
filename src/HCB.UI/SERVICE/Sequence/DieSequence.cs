@@ -292,6 +292,9 @@ namespace HCB.UI
                     var lAlign = await BtmDieVisionLeftAlign(data.AvgMove, ct);
                     data.BtmLeftAlignRaw = Point2D.of(lAlign.DxCamToMark, lAlign.DyCamToMark);
                     _logger.Information("BtmHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
+
+                    await RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);
+                    await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap, ct);
                 }
                 else
                 {
