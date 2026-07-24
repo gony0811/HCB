@@ -295,6 +295,104 @@ namespace HCB.UI
             return response;
         }
 
+        // ─── Wafer Edge 검출 (HC 저배율, 시계 위치 12/4/7시) ───────────────
+        // 현재 카메라 FOV 안의 웨이퍼 엣지를 찾아 카메라 중심 대비 오프셋(mm)을 반환.
+        // 저배율은 FOV(≈110mm) 안에 3점 동시 촬상이 불가하므로 EQP가 12→4→7시로
+        // 이동하며 각 위치마다 1회 요청한다. clock은 검출 ROI/엣지 방향 힌트.
+        public async Task<VisionMarkPositionResponse> RequestWaferEdge(WaferClock clock, CancellationToken ct = default)
+        {
+            var request = MessageFactory.Create(
+                messageName: "REQUEST_WAFER_EDGE",
+                unitName: "EQP",
+                content: $"<CAMERATYPE>{CameraType.HC_LOW}</CAMERATYPE><CLOCK>{(int)clock}</CLOCK>"
+            );
+
+            var result = await _server.RequestAsync(request, timeout: TimeSpan.FromSeconds(10), ct: ct);
+
+            if (!result.Success)
+            {
+                _logger.Warning($"[WaferEdge] 요청 실패: {result.ErrorMessage}");
+                return new VisionMarkPositionResponse { Result = Result.NG };
+            }
+
+            var response = VisionMarkPositionResponse.Parse(result.Response!.Data?.Content);
+            if (response.Result != Result.OK)
+                return new VisionMarkPositionResponse { Result = Result.NG };
+
+            // HC_LOW FOV(110mm) 범위 체크 (절반이 유효 범위)
+            const double fov = 110.0;
+            double half = fov / 2.0;
+            if (Math.Abs(response.X) > half || Math.Abs(response.Y) > half)
+            {
+                _logger.Warning($"[WaferEdge] FOV 범위 초과 - X:{response.X:F3}, Y:{response.Y:F3}, FOV:{fov}");
+                return new VisionMarkPositionResponse { Result = Result.NG };
+            }
+
+            return response;
+        }
+
+        // ─── Scribe Line 검출 (HC 저배율 / HC1 / HC2 통합) ───────────────
+        // cameraType으로 저배율(HC_LOW)·고배율(HC1_HIGH/HC2_HIGH)을 모두 처리.
+        // direct = 검출할 스크라이브 방향(Horizontal/Vertical).
+        // 반환: 라인 기준점 오프셋(X/Y, mm) + 라인 기울기(Theta, 도).
+        public async Task<ScribeLineResponse> RequestScribeLine(CameraType cameraType, DirectType direct, CancellationToken ct = default)
+        {
+            var request = MessageFactory.Create(
+                messageName: "REQUEST_SCRIBE_LINE",
+                unitName: "EQP",
+                content: $"<CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT>"
+            );
+
+            double pcWT = Double.Parse(ecParamService.FindByName(MotionExtensions.PC_W_T).Value);
+            double t = cameraType switch
+            {
+                CameraType.HC1_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC1_T).Value) + pcWT,
+                CameraType.HC2_HIGH => Double.Parse(ecParamService.FindByName(MotionExtensions.HC2_T).Value) + pcWT,
+                _ => 0
+            };
+
+            double fov = cameraType switch
+            {
+                CameraType.HC1_HIGH => 7.2,
+                CameraType.HC2_HIGH => 7.2,
+                CameraType.HC_LOW => 110.0,
+                _ => 0
+            };
+
+            var result = await _server.RequestAsync(request, timeout: TimeSpan.FromSeconds(10), ct: ct);
+
+            if (!result.Success)
+            {
+                _logger.Warning($"[ScribeLine] 요청 실패: {result.ErrorMessage}");
+                return new ScribeLineResponse { Result = Result.NG };
+            }
+
+            var response = ScribeLineResponse.Parse(result.Response!.Data?.Content);
+            if (response.Result != Result.OK)
+                return new ScribeLineResponse { Result = Result.NG };
+
+            // FOV 범위 체크 (회전 보정 전 원시 좌표 기준 — RequestVisionMarkPosition과 동일 순서)
+            if (fov > 0)
+            {
+                double half = fov / 2.0;
+                if (Math.Abs(response.X) > half || Math.Abs(response.Y) > half)
+                {
+                    _logger.Warning($"[ScribeLine] FOV 범위 초과 - X:{response.X:F3}, Y:{response.Y:F3}, FOV:{fov}");
+                    return new ScribeLineResponse { Result = Result.NG };
+                }
+            }
+
+            // 고배율(HC1/HC2)은 카메라 장착각(t)만큼 좌표 회전 보정
+            if (t != 0)
+            {
+                var xy = CalibrationMath.ApplyRotation(Point2D.of(response.X, response.Y), t);
+                response.X = xy.X;
+                response.Y = xy.Y;
+            }
+
+            return response;
+        }
+
         public async Task<Result> PiezoHome(CancellationToken ct = default)
         {
             var request = MessageFactory.Create(

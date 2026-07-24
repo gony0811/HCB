@@ -255,28 +255,9 @@ namespace HCB.UI
                 sw.Restart();
                 if (data.UseBtmIndividualMeasure)
                 {
-                    var rFid = await BtmDieVisionRightFid(data.AvgMove, ct);
-                    data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark, rFid.DyCamToMark);
-                    _logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
-
-                    sw.Restart();
-                    var lFid = await BtmDieVisionLeftFid(data.AvgMove, ct);
-                    data.BtmLeftFidRaw = Point2D.of(lFid.DxCamToMark , lFid.DyCamToMark);
-                    _logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
-
-                    double btmFidZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
-
-                    if (data.TracingMode == TracingMode.Manual)
-                    {
-                        (data.Hc1RoRaw, data.Hc2RoRaw) = await MeasureHcroPoints(data, ct);
-                    }
-
-                    await RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
-                    await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
-
+                    await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap, ct);
+                    await RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);
                     double btmAlignZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
-
-                    data.BtmDz = btmAlignZ - btmFidZ;
 
                     if (data.TracingMode == TracingMode.Manual)
                     {
@@ -293,8 +274,26 @@ namespace HCB.UI
                     data.BtmLeftAlignRaw = Point2D.of(lAlign.DxCamToMark, lAlign.DyCamToMark);
                     _logger.Information("BtmHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-                    await RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);
-                    await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap, ct);
+                    await RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
+                    await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
+                    double btmFidZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
+
+                    var rFid = await BtmDieVisionRightFid(data.AvgMove, ct);
+                    data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark, rFid.DyCamToMark);
+                    _logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
+
+                    sw.Restart();
+                    var lFid = await BtmDieVisionLeftFid(data.AvgMove, ct);
+                    data.BtmLeftFidRaw = Point2D.of(lFid.DxCamToMark , lFid.DyCamToMark);
+                    _logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
+
+
+                    if (data.TracingMode == TracingMode.Manual)
+                    {
+                        (data.Hc1RoRaw, data.Hc2RoRaw) = await MeasureHcroPoints(data, ct);
+                    }
+
+                    data.BtmDz = btmAlignZ - btmFidZ;
                 }
                 else
                 {

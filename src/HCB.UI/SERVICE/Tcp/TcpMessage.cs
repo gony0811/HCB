@@ -262,6 +262,37 @@ namespace HCB.UI
             return response;
         }
     }
+    // 스크라이브 라인(HC 저배율 / HC1 / HC2) 검출 응답.
+    // X/Y = 카메라 중심 대비 라인상 기준점 오프셋(mm), Theta = 라인 기울기(도).
+    public class ScribeLineResponse
+    {
+        public Result Result { get; set; } = Result.NG;
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Theta { get; set; }
+
+        public static ScribeLineResponse Parse(string? content)
+        {
+            var response = new ScribeLineResponse();
+            if (string.IsNullOrEmpty(content)) return response;
+
+            try
+            {
+                var xml = XElement.Parse($"<DATA>{content}</DATA>");
+
+                if (Enum.TryParse(xml.Element("RESULT")?.Value, out Result r)) response.Result = r;
+                if (double.TryParse(xml.Element("X")?.Value, out double x)) response.X = x;
+                if (double.TryParse(xml.Element("Y")?.Value, out double y)) response.Y = y;
+                if (double.TryParse(xml.Element("THETA")?.Value, out double theta)) response.Theta = theta;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ScribeLineResponse] 파싱 오류: {ex.Message}");
+            }
+
+            return response;
+        }
+    }
     public enum DieType
     {
         TOP,
@@ -295,6 +326,14 @@ namespace HCB.UI
         HC2_HIGH,
         PC_LOW,
         PC_HIGH
+    }
+
+    // 웨이퍼 엣지 검출 시계 위치. 값 = 시각(12/4/7시). XML에는 정수로 직렬화.
+    public enum WaferClock
+    {
+        H12 = 12,
+        H04 = 4,
+        H07 = 7
     }
 
     public enum TracingMode
