@@ -760,7 +760,7 @@ namespace HCB.UI
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, ct));
                 TopBondingState = StepState.Completed;
                 TrackStep("TopFullExMeasure", StepState.Completed);
-
+                await Task.Delay(3000);
                 // 7. 버니어 측정 (옵션)
                 if (Settings.MeasureVernierAfterBonding)
                 {
