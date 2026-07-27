@@ -367,39 +367,6 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Center Position -->
-                            <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
-                                    HorizontalAlignment="Left" Margin="0,0,0,12">
-                                <TextBlock Text="CENTER POSITION" Foreground="#3498DB"
-                                           FontSize="12" FontWeight="Bold"/>
-                            </Border>
-
-                            <Border Background="#0A1628" CornerRadius="6" Padding="14" Margin="0,0,0,16"
-                                    BorderBrush="#1C3A52" BorderThickness="1">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Center X"
-                                               Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
-                                    <TextBox Grid.Row="0" Grid.Column="1"
-                                             Text="{Binding CenterX}" Margin="0,0,0,8"/>
-
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Center Y"
-                                               Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,0"/>
-                                    <TextBox Grid.Row="1" Grid.Column="1"
-                                             Text="{Binding CenterY}"/>
-                                </Grid>
-                            </Border>
-
                             <!-- Buttons -->
                             <Grid Margin="0,8,0,0">
                                 <Grid.ColumnDefinitions>
@@ -415,14 +382,14 @@
                                     Height="36" FontSize="13"/>
                             </Grid>
 
-                            <!-- ═══════════════ WAFER CENTER ALIGN ═══════════════ -->
+                            <!-- ═══════════ WAFER 중심 찾기 (Scribeline) ═══════════ -->
                             <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
                                     HorizontalAlignment="Left" Margin="0,20,0,12">
-                                <TextBlock Text="WAFER CENTER ALIGN (엣지 3점 원피팅)" Foreground="#3498DB"
+                                <TextBlock Text="WAFER 중심 찾기 (Scribeline)" Foreground="#3498DB"
                                            FontSize="12" FontWeight="Bold"/>
                             </Border>
 
-                            <!-- 정렬 옵션 -->
+                            <!-- 측정 결과 -->
                             <Border Background="#0A1628" CornerRadius="6" Padding="14" Margin="0,0,0,12"
                                     BorderBrush="#1C3A52" BorderThickness="1">
                                 <Grid>
@@ -431,47 +398,6 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="저배율 재시도"
-                                               Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
-                                    <TextBox Grid.Row="0" Grid.Column="1"
-                                             Text="{Binding LowVisionRetryMax}" Margin="0,0,0,8"/>
-
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="AlignMark 조정 반복"
-                                               Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
-                                    <TextBox Grid.Row="1" Grid.Column="1"
-                                             Text="{Binding AlignAdjustMaxIter}" Margin="0,0,0,8"/>
-
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="안정화 대기 (ms)"
-                                               Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
-                                    <TextBox Grid.Row="2" Grid.Column="1"
-                                             Text="{Binding SettleDelayMs}" Margin="0,0,0,8"/>
-
-                                    <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
-                                              Content="센터 후 Theta 보정 적용"
-                                              IsChecked="{Binding ApplyThetaAfterCenter}"
-                                              Foreground="#5E8BAA" FontSize="13"/>
-                                </Grid>
-                            </Border>
-
-                            <!-- 정렬 결과 -->
-                            <Border Background="#0A1628" CornerRadius="6" Padding="14" Margin="0,0,0,12"
-                                    BorderBrush="#1C3A52" BorderThickness="1">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
@@ -480,59 +406,51 @@
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="상태"
                                                Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
                                     <TextBlock Grid.Row="0" Grid.Column="1"
-                                               Text="{Binding AlignStatus}" TextWrapping="Wrap"
+                                               Text="{Binding ScribeCenterStatus}" TextWrapping="Wrap"
                                                Foreground="#F39C12" FontSize="13" Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="웨이퍼 중심 (X,Y)"
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="측정 오프셋 (µm)"
                                                Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
                                     <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
-                                        <TextBlock Text="{Binding WaferCenterX, StringFormat=F4}"
+                                        <TextBlock Text="{Binding ScribeOffsetXUm, StringFormat=F1}"
                                                    Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
                                         <TextBlock Text=", " Foreground="#5E8BAA" FontSize="13"/>
-                                        <TextBlock Text="{Binding WaferCenterY, StringFormat=F4}"
+                                        <TextBlock Text="{Binding ScribeOffsetYUm, StringFormat=F1}"
                                                    Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
                                     </StackPanel>
 
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="로딩 편차 (µm)"
-                                               Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
-                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
-                                        <TextBlock Text="{Binding LoadingErrorXUm, StringFormat=F1}"
-                                                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
-                                        <TextBlock Text=", " Foreground="#5E8BAA" FontSize="13"/>
-                                        <TextBlock Text="{Binding LoadingErrorYUm, StringFormat=F1}"
-                                                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
-                                    </StackPanel>
-
-                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="기울기 (°)"
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="교차점 (X,Y)"
                                                Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,0"/>
-                                    <TextBlock Grid.Row="3" Grid.Column="1"
-                                               Text="{Binding LastThetaDeg, StringFormat=F4}"
-                                               Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+                                        <TextBlock Text="{Binding ScribeAbsX, StringFormat=F4}"
+                                                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
+                                        <TextBlock Text=", " Foreground="#5E8BAA" FontSize="13"/>
+                                        <TextBlock Text="{Binding ScribeAbsY, StringFormat=F4}"
+                                                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
 
-                            <!-- 재로딩 필요 경고 (실패 시에만 표시) -->
-                            <Border Background="#3A1A1A" CornerRadius="6" Padding="12" Margin="0,0,0,12"
-                                    BorderBrush="#E74C3C" BorderThickness="1"
-                                    Visibility="{Binding ReloadRequired, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="⚠ 웨이퍼 재로딩이 필요합니다. 로딩 후 다시 실행하세요."
-                                           Foreground="#E74C3C" FontSize="13" FontWeight="Bold"
-                                           TextWrapping="Wrap"/>
-                            </Border>
-
-                            <!-- 실행 버튼 -->
+                            <!-- 3단계 실행 버튼 -->
                             <Grid Margin="0,4,0,0">
-                                <!-- WAFER CENTER ALIGN 실행 (정렬 중엔 비활성, STOP이 위에 오버레이) -->
-                                <Button Content="WAFER CENTER ALIGN"
-                                    Command="{Binding WaferCenterAlignCommand}"
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="1차 (3점)"
+                                    Command="{Binding FindCenterStep1Command}"
+                                    Height="40" FontSize="12" FontWeight="Bold"/>
+                                <Button Grid.Column="2" Content="2차 (Scribe 측정)"
+                                    Command="{Binding FindCenterStep2Command}"
                                     IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
-                                    Height="44" FontSize="15" FontWeight="Bold"/>
-                                <!-- STOP (정렬 중에만 표시) -->
-                                <Button Content="STOP"
-                                    Command="{Binding StopAlignCommand}"
-                                    Height="44" FontSize="15" FontWeight="Bold"
-                                    Foreground="#E74C3C"
-                                    Visibility="{Binding IsAligning, Converter={StaticResource BoolToVis}}"/>
+                                    Height="40" FontSize="12" FontWeight="Bold"/>
+                                <Button Grid.Column="4" Content="3차 (Shift)"
+                                    Command="{Binding FindCenterStep3Command}"
+                                    IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
+                                    Height="40" FontSize="12" FontWeight="Bold"/>
                             </Grid>
                         </StackPanel>
                     </ScrollViewer>
