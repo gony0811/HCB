@@ -359,7 +359,7 @@ namespace HCB.UI
                 throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{motionName}' 축을 찾을 수 없습니다.");
             if (motionName.Equals(MotionExtensions.W_T))
             {
-                position = position / 360;
+                position = position * 3.22722;
             }
 
             // 이동 명령

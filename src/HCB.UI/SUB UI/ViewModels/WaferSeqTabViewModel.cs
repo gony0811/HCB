@@ -375,8 +375,8 @@ namespace HCB.UI
         [ObservableProperty] private int thetaShiftDies = 1;     // 스텝당 이동 Die 수(피치 배수)
         [ObservableProperty] private int thetaMaxIter = 10;      // 패스당 최대 스텝(안전 상한)
         [ObservableProperty] private double thetaMinDeg = 0.01; // 보정 임계각(°, 미만이면 해당 스텝 보정 생략)
-        [ObservableProperty] private double thetaSearchStepMm = 5.0;   // FOV 이탈 시 Y 탐색 스텝(mm)
-        [ObservableProperty] private double thetaSearchRangeMm = 30.0; // Y 탐색 최대 범위(mm, ±)
+        [ObservableProperty] private double thetaSearchStepMm = 0.30;   // FOV 이탈 시 Y 탐색 스텝(mm)
+        [ObservableProperty] private double thetaSearchRangeMm = 0.60; // Y 탐색 최대 범위(mm, ±)
 
         // ── Theta 보정 버튼 ──
         [RelayCommand]
@@ -454,7 +454,7 @@ namespace HCB.UI
                 if (cur == null)
                 {
                     // 회복 불가 → 끝 Die 도달로 간주. 직전 이동 되돌리고 스윕 종료.
-                    await _sequenceService.RelativeMotionsMove(XAxis, -shift, ct);
+                    await _sequenceService.RelativeMotionsMove(XAxis, shift, ct);
                     ThetaStatus = $"{pass} 스윕 — 끝 Die 도달(마크 소실), {s} 스텝 보정 완료";
                     _logger.Information("Theta 보정 — {Pass} 끝 Die 도달(step {S})", pass, s);
                     return true;
@@ -470,10 +470,10 @@ namespace HCB.UI
                 {
                     // 기울기를 상쇄하도록 W_T 회전
                     double corr = ThetaSign * angleDeg;
-                    ThetaStatus = $"{pass} 스윕 — 기울기 {angleDeg:F4}° → W_T {corr:F4}° 회전 ({s + 1}/{steps})...";
+                    ThetaStatus = $"{pass} 스윕 — 기울기 {angleDeg:F4}° → W_T {-corr:F4}° 회전 ({s + 1}/{steps})...";
                     _logger.Information("Theta 보정 — {Pass} 기울기={A:F4}°, W_T 회전={C:F4}° (step {S})",
-                        pass, angleDeg, corr, s + 1);
-                    await _sequenceService.RelativeMotionsMove(ThetaAxis, corr, ct);
+                        pass, angleDeg, -corr, s + 1);
+                    await _sequenceService.RelativeMotionsMove(ThetaAxis, -corr, ct);
 
                     // 회전으로 현재 마크가 이동 → 다음 세그먼트 기준점 재측정
                     prev = await MeasureHc1AlignAbsAsync(ct) ?? cur;
