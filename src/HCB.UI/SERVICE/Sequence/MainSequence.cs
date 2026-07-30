@@ -1010,17 +1010,21 @@ namespace HCB.UI
         {
             try
             {
+                double HcCenterErrorX = await GetRecipe("HcCenterErrorX");
+                double HcCenterErrorY = await GetRecipe("HcCenterErrorY");
+
                 var hc1 = await VisionResult(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, -12.5, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, 7, ct));
+                    RelativeMotionsMove(MotionExtensions.W_Y, 7,ct));
 
                 var hc2 = await VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, ct);
                 d.Hc2Offset = Point2D.of(hc1.CenterX - hc2.CenterX, hc1.CenterY - hc2.CenterY);
 
                 await Task.WhenAll(
-                    RelativeMotionsMove(MotionExtensions.H_X, 12.5, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, -7, ct));
+                    MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", HcCenterErrorX, ct),
+                    MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", HcCenterErrorY, ct)
+                );
 
                 _logger.Information("CameraDist — Hc2Offset=({Hc2X:F4}, {Hc2Y:F4})",
                     d.Hc2Offset.X, d.Hc2Offset.Y);

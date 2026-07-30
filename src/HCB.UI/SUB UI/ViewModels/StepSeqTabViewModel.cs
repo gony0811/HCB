@@ -760,7 +760,7 @@ namespace HCB.UI
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, ct));
                 TopBondingState = StepState.Completed;
                 TrackStep("TopFullExMeasure", StepState.Completed);
-                await Task.Delay(3000);
+                
                 // 7. 버니어 측정 (옵션)
                 if (Settings.MeasureVernierAfterBonding)
                 {
@@ -959,11 +959,11 @@ namespace HCB.UI
 
         private AlignData NewAlignData() => new AlignData
         {
-            AvgMove = AvgMode,
-            Use2DMapping = Use2DMapping,
-            TracingMode = TracingMode,
-            UseBtmIndividualMeasure = UseBtmIndividualMeasure,
-            UseFiducialTracking = UseFiducialTracking
+            AvgMove = Settings.AvgMode,
+            Use2DMapping = Settings.Use2DMapping,
+            TracingMode = Settings.TracingMode,
+            UseBtmIndividualMeasure = Settings.BtmIndividualMeasure,
+            UseFiducialTracking = Settings.FiducialTracing
         };
 
         private void UpdateTopMarks()

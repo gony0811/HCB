@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using Telerik.Windows.Controls;
 using ValueType = HCB.Data.Entity.Type.ValueType;
 
 namespace HCB.UI
@@ -220,6 +221,7 @@ namespace HCB.UI
         private const CameraType LowCam = CameraType.HC_LOW; // 저배율 카메라
         private const string XAxis = MotionExtensions.H_X;   // 스테이지 X
         private const string YAxis = MotionExtensions.W_Y;   // 웨이퍼 테이블 Y
+        private const string TAxis = MotionExtensions.W_T;   // 웨이퍼 테이블 Y
 
         [ObservableProperty] private bool isAligning;          // 측정/시프트 진행 중 busy 플래그
         [ObservableProperty] private string scribeCenterStatus = "-";
@@ -227,6 +229,7 @@ namespace HCB.UI
         [ObservableProperty] private double scribeOffsetYUm;
         [ObservableProperty] private double scribeAbsX;        // 스크라이브 교차점 절대(스테이지) 좌표
         [ObservableProperty] private double scribeAbsY;
+        [ObservableProperty] private double scribeAbsT;
         [ObservableProperty] private bool hasScribeMeasure;    // 2차 측정 완료 여부(3차 활성화용)
 
         private CancellationTokenSource? _alignCts;
@@ -261,7 +264,7 @@ namespace HCB.UI
                 ScribeCenterStatus = "저배율 Scribeline 측정 중...";
                 _logger.Information("Wafer 중심 2차 — HC_LOW Scribeline 측정 시작");
 
-                var r = await _communication.RequestScribeLine(LowCam, ct);
+                var r = await _communication.RequestVisionMarkPosition(MarkType.DIE_CENTER_BOTTOM, CameraType.HC_LOW, "");
                 if (r == null || r.Result == Result.NG)
                 {
                     HasScribeMeasure = false;
@@ -272,10 +275,12 @@ namespace HCB.UI
 
                 double curHX = await _sequenceService.GetCurrentPosition(XAxis, ct);
                 double curWY = await _sequenceService.GetCurrentPosition(YAxis, ct);
+                double curWT = await _sequenceService.GetCurrentPosition(TAxis, ct);
 
                 // 스크라이브 교차점 절대좌표 = 현재 스테이지 − 카메라→교차점 오프셋
                 ScribeAbsX = curHX - r.X;
                 ScribeAbsY = curWY - r.Y;
+                ScribeAbsT = curWY - r.Theta;
                 ScribeOffsetXUm = r.X * 1000.0;
                 ScribeOffsetYUm = r.Y * 1000.0;
                 HasScribeMeasure = true;
@@ -328,6 +333,7 @@ namespace HCB.UI
 
                 await Task.WhenAll(
                     _sequenceService.MotionsMove(XAxis, targetHX, ct),
+                    _sequenceService.MotionsMove(YAxis, targetWY, ct),
                     _sequenceService.MotionsMove(YAxis, targetWY, ct));
 
                 ScribeCenterStatus = $"시프트 완료 — Shank 목표=({targetHX:F4},{targetWY:F4})";

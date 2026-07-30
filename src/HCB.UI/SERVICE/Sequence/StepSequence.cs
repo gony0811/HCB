@@ -438,7 +438,7 @@ namespace HCB.UI
                 {
                     await device.SendCommand(MotionExtensions.BONDING_START + "=0");
                     await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
-                    await Task.Delay(100);
+                    await Task.Delay(5000);
                     await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
                     _logger.Information("BondingPress 초기화 완료");
                     await MappingOff();
