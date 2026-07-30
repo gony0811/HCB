@@ -349,5 +349,215 @@ namespace HCB.UI
         }
 
         #endregion
+
+        // ═══════════════════════════════════════════════════════════════
+        //  Wafer Theta 보정 (HC1 AlignMark · Die-to-Die 왕복 스윕)
+        //   1) 현재 위치에서 HC1 AlignMark 측정.
+        //       - 검출 실패 → Y 탐색 후에도 미검출이면 "H_X/W_Y/W_T 조정 후 재실행" 안내(수동).
+        //   2) 정방향(+X): 피치(=DieSize+Gap)×스텝Die 만큼 X를 쉬프트하며, 인접 두 지점의
+        //      AlignMark 기울기(atan2)가 0이 되도록 매 Die마다 W_T를 점진 보정한다.
+        //      끝 Die(마크 소실) 또는 최대 스텝까지 진행.
+        //   3) 역방향(-X): 끝 Die에서 시작 방향으로 역주행하며 동일하게 Die마다 보정한다.
+        //
+        //  전제: HC1 고배율 촬상 높이(Z)에 초점이 맞아 있어야 한다.
+        // ═══════════════════════════════════════════════════════════════
+
+        #region Wafer Theta 보정 (HC1 AlignMark)
+
+        private const CameraType Hc1Cam = CameraType.HC1_HIGH;
+        private const MarkType AlignMark = MarkType.ALIGN_MARK;
+        private const string ThetaAxis = MotionExtensions.W_T;   // 웨이퍼 테타 축
+        // W_T 회전 부호 (하드웨어 방향과 반대면 +1로 뒤집기)
+        private const double ThetaSign = -1.0;
+
+        [ObservableProperty] private string thetaStatus = "-";
+        [ObservableProperty] private double thetaAngleDeg;       // 마지막 측정 기울기(°)
+        [ObservableProperty] private int thetaShiftDies = 1;     // 스텝당 이동 Die 수(피치 배수)
+        [ObservableProperty] private int thetaMaxIter = 10;      // 패스당 최대 스텝(안전 상한)
+        [ObservableProperty] private double thetaMinDeg = 0.01; // 보정 임계각(°, 미만이면 해당 스텝 보정 생략)
+        [ObservableProperty] private double thetaSearchStepMm = 5.0;   // FOV 이탈 시 Y 탐색 스텝(mm)
+        [ObservableProperty] private double thetaSearchRangeMm = 30.0; // Y 탐색 최대 범위(mm, ±)
+
+        // ── Theta 보정 버튼 ──
+        [RelayCommand]
+        private async Task ThetaCorrection()
+        {
+            if (IsAligning) return;
+            IsAligning = true;
+            _alignCts = new CancellationTokenSource();
+            var ct = _alignCts.Token;
+
+            try
+            {
+                // 스텝(=피치×스텝Die)과 편도 스텝 수 산출
+                double pitch = DieSizeX + GapX;                    // X 방향 Die 피치
+                int stepDies = Math.Max(1, ThetaShiftDies);        // 스텝당 이동 Die 수
+                double pitchStep = pitch * stepDies;
+                if (pitchStep <= 0)
+                {
+                    ThetaStatus = "DieSize/Gap 값이 유효하지 않습니다.";
+                    return;
+                }
+                int steps = Math.Max(1, ThetaMaxIter);             // 패스당 최대 스텝(끝 Die 소실 시 조기 종료)
+
+                // ── 1) 정방향(+X): 시작 → 끝 Die 까지 Die마다 점진 보정 ──
+                if (!await RunThetaSweepAsync(+1, pitchStep, steps, "정방향", ct)) return;
+
+                // ── 2) 역방향(-X): 끝 Die → 시작 방향 역주행, 동일 보정 ──
+                if (!await RunThetaSweepAsync(-1, pitchStep, steps, "역방향", ct)) return;
+
+                ThetaStatus = $"Theta 보정 완료 — 왕복 스윕, 최종 기울기 {ThetaAngleDeg:F4}°";
+                _logger.Information("Theta 보정 완료 — 왕복 스윕, 최종 기울기={A:F4}°", ThetaAngleDeg);
+            }
+            catch (OperationCanceledException) { ThetaStatus = "Theta 보정 중단됨"; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Theta 보정 오류");
+                ThetaStatus = $"오류: {e.Message}";
+            }
+            finally { IsAligning = false; }
+        }
+
+        /// <summary>
+        /// 한 방향(dir=+1: +X, dir=-1: -X)으로 pitchStep 만큼 X를 쉬프트하며,
+        /// 인접 두 지점의 AlignMark 기울기가 0이 되도록 매 스텝(Die)마다 W_T를 점진 보정한다.
+        /// 지정 스텝 수(steps)를 채우거나, 마크를 회복 불가하게 놓치면(웨이퍼 끝 Die) 종료한다.
+        /// 반환: 시작 마크 검출에 성공해 스윕을 진행했으면 true, 초기 미검출이면 false.
+        /// </summary>
+        private async Task<bool> RunThetaSweepAsync(int dir, double pitchStep, int steps, string pass, CancellationToken ct)
+        {
+            // 시작점(기준 Die) 측정 — FOV 이탈 시 Y 탐색으로 보강
+            ThetaStatus = $"{pass} 스윕 — 시작 AlignMark 측정 중...";
+            var prev = await MeasureHc1AlignAbsAsync(ct) ?? await SearchAlignByYAsync(ct);
+            if (prev == null)
+            {
+                ThetaStatus = $"{pass} 시작 AlignMark 미검출 — H_X/W_Y/W_T로 마크가 보이는 위치로 이동 후 다시 실행하세요.";
+                _logger.Warning("Theta 보정 — {Pass} 시작 AlignMark 미검출(수동 조정 필요)", pass);
+                return false;
+            }
+
+            for (int s = 0; s < steps; s++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                // 다음 Die로 X 쉬프트 후 측정 (FOV 이탈 시 Y 탐색)
+                double shift = dir * pitchStep;
+                ThetaStatus = $"{pass} 스윕 — X {shift:+0.000;-0.000}mm 이동 후 측정 ({s + 1}/{steps})...";
+                await _sequenceService.RelativeMotionsMove(XAxis, shift, ct);
+
+                var cur = await MeasureHc1AlignAbsAsync(ct);
+                if (cur == null)
+                {
+                    _logger.Warning("Theta 보정 — {Pass} AlignMark FOV 이탈, Y 탐색 시작(step {S})", pass, s + 1);
+                    cur = await SearchAlignByYAsync(ct);
+                }
+                if (cur == null)
+                {
+                    // 회복 불가 → 끝 Die 도달로 간주. 직전 이동 되돌리고 스윕 종료.
+                    await _sequenceService.RelativeMotionsMove(XAxis, -shift, ct);
+                    ThetaStatus = $"{pass} 스윕 — 끝 Die 도달(마크 소실), {s} 스텝 보정 완료";
+                    _logger.Information("Theta 보정 — {Pass} 끝 Die 도달(step {S})", pass, s);
+                    return true;
+                }
+
+                // 인접 두 점 기울기(수평 대비, ±90° 정규화 — 역방향도 동일 부호로 수렴)
+                double angleDeg = Math.Atan2(cur.Y - prev.Y, cur.X - prev.X) * (180.0 / Math.PI);
+                if (angleDeg > 90) angleDeg -= 180;
+                else if (angleDeg < -90) angleDeg += 180;
+                ThetaAngleDeg = angleDeg;
+
+                if (Math.Abs(angleDeg) >= ThetaMinDeg)
+                {
+                    // 기울기를 상쇄하도록 W_T 회전
+                    double corr = ThetaSign * angleDeg;
+                    ThetaStatus = $"{pass} 스윕 — 기울기 {angleDeg:F4}° → W_T {corr:F4}° 회전 ({s + 1}/{steps})...";
+                    _logger.Information("Theta 보정 — {Pass} 기울기={A:F4}°, W_T 회전={C:F4}° (step {S})",
+                        pass, angleDeg, corr, s + 1);
+                    await _sequenceService.RelativeMotionsMove(ThetaAxis, corr, ct);
+
+                    // 회전으로 현재 마크가 이동 → 다음 세그먼트 기준점 재측정
+                    prev = await MeasureHc1AlignAbsAsync(ct) ?? cur;
+                }
+                else
+                {
+                    prev = cur;
+                }
+            }
+
+            ThetaStatus = $"{pass} 스윕 — {steps} 스텝 완료 (기울기 {ThetaAngleDeg:F4}°)";
+            _logger.Information("Theta 보정 — {Pass} {S} 스텝 완료, 기울기={A:F4}°", pass, steps, ThetaAngleDeg);
+            return true;
+        }
+
+        /// <summary>
+        /// HC1 고배율로 AlignMark를 AF 후 측정하고, 마크의 절대(스테이지) 좌표를 반환한다.
+        /// 검출 실패 시 null.  (절대좌표 = 현재 스테이지 − 카메라→마크 오프셋)
+        /// </summary>
+        private async Task<Point2D?> MeasureHc1AlignAbsAsync(CancellationToken ct)
+        {
+            try
+            {
+                await _communication.RequestAFStart(Hc1Cam, AlignMark, ct);
+                var r = await _communication.RequestVisionMarkPosition(AlignMark, Hc1Cam, DirectType.LEFT.ToString());
+                if (r == null || r.Result == Result.NG) return null;
+
+                double curHX = await _sequenceService.GetCurrentPosition(XAxis, ct);
+                double curWY = await _sequenceService.GetCurrentPosition(YAxis, ct);
+                return Point2D.of(curHX - r.X, curWY - r.Y);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                _logger.Warning(e, "HC1 AlignMark 측정 예외");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// AlignMark가 FOV를 벗어났을 때의 탐색 전략.
+        /// 기울기로 인한 변위는 주로 Y 방향이므로 W_Y를 0 기준 좌우로 확장 스캔
+        /// (+step, -step, +2step, -2step ...)하며 재측정한다.
+        /// 마크를 찾으면 그 절대좌표를 반환하고, 성공/실패와 무관하게 W_Y는 원위치로 복귀한다
+        /// (절대좌표는 W_Y 이동에 불변이므로 결과에 영향 없음).
+        /// </summary>
+        private async Task<Point2D?> SearchAlignByYAsync(CancellationToken ct)
+        {
+            double step = Math.Max(0.1, ThetaSearchStepMm);
+            double maxRange = Math.Max(step, ThetaSearchRangeMm);
+            double applied = 0;      // 현재까지 적용된 W_Y 상대 이동량
+            Point2D? found = null;
+
+            try
+            {
+                for (int k = 1; k * step <= maxRange + 1e-9 && found == null; k++)
+                {
+                    foreach (int sign in new[] { +1, -1 })
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        double target = sign * k * step;
+                        await _sequenceService.RelativeMotionsMove(YAxis, target - applied, ct);
+                        applied = target;
+
+                        var r = await MeasureHc1AlignAbsAsync(ct);
+                        if (r != null)
+                        {
+                            found = r;
+                            _logger.Information("Theta 보정 — Y 탐색 성공(W_Y {D:F3}mm 지점)", target);
+                            break;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                // W_Y 원위치 복귀 (취소되어도 복귀 보장)
+                if (Math.Abs(applied) > 1e-9)
+                    await _sequenceService.RelativeMotionsMove(YAxis, -applied, CancellationToken.None);
+            }
+
+            return found;
+        }
+
+        #endregion
     }
 }
