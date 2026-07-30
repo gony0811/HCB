@@ -273,13 +273,14 @@ namespace HCB.UI
                     var lAlign = await BtmDieVisionLeftAlign(data.AvgMove, ct);
                     data.BtmLeftAlignRaw = Point2D.of(lAlign.DxCamToMark, lAlign.DyCamToMark);
                     _logger.Information("BtmHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
-
                     
                     double btmFidZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
 
-                    await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap, ct);
-                    await RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);
-
+                    await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap-0.2, ct);                    
+                    //await RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);                    
+                    await MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, ct);
+                    await RelativeMotionsMove(MotionExtensions.H_Z, 0.2, ct);
+                    
                     var rFid = await BtmDieVisionRightFid(data.AvgMove, ct);
                     data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark, rFid.DyCamToMark);
                     _logger.Information("BtmHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
