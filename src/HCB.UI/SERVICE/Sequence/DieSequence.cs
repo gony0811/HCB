@@ -263,7 +263,7 @@ namespace HCB.UI
                     double btmAlignZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
 
                     // 1. 카메라 거리 측정 (Manual 트레이싱 또는 DIE 레시피 θ보정용 Hc2Offset 확보)
-                    if (data.TracingMode == TracingMode.Manual)
+                    if (data.TracingMode == TracingMode.Manual || isDieRecipe)
                     {
                         await CameraDist(data, ct);
                     }
@@ -282,7 +282,7 @@ namespace HCB.UI
                     // 3. BTM 보정 시퀀스 → 4. BTM DIE 재측정 (DIE 레시피 전용)
                     if (isDieRecipe)
                     {
-                        // 3. 카메라 거리 기반 BLA→BRA 각도 계산 후 W_T 회전 보정
+                        // 3. 측정 θ(카메라 거리 기반 BLA→BRA)와 도면 θ의 차이만큼 W_T 회전 보정
                         await BtmThetaCorrection(data, ct);
 
                         // 4. 보정 후 BTM DIE 재측정 (다운스트림 좌표통합에 보정된 값 반영)
@@ -352,83 +352,90 @@ namespace HCB.UI
 
         /// <summary>
         /// RECIPE가 DIE일 때만 수행하는 Btm 각도 보정.
-        /// BLA(Btm Left AlignMark, HC1) / BRA(Btm Right AlignMark, HC2)는 서로 다른 카메라
-        /// 프레임에서 측정되므로, 카메라 거리(<see cref="AlignData.Hc2Offset"/> = CameraDist 결과)로
-        /// 두 측정을 통합해 실제 BLA→BRA 상대 벡터를 구하고, 그 각도만큼 W_T를 회전시켜 보정한다.
-        ///  1.1 상대거리 X,Y를 레시피(BTM_ALIGN_REF_X/Y)에 저장.
-        ///  1.2 상대 벡터의 θ 계산(±90° 정규화).
-        ///  1.3 θ만큼 W_T 회전 보정(BL/BR 미사용, 카메라 거리 기반 각도만 사용).
+        /// BLA→BRA 도면상 상대거리(레시피 BTM_ALIGN_REF_X/Y)로부터 "도면 θ"를 구하고,
+        /// 실제 측정한 BLA/BRA로부터 "측정 θ"를 구해, 둘이 다를 때 그 차이만큼 W_T를 회전 보정한다.
+        ///
+        ///  · 측정 θ: BLA(Btm Left AlignMark, HC1) / BRA(Btm Right AlignMark, HC2)는 서로 다른 카메라
+        ///           프레임에서 측정되므로, 카메라 거리(<see cref="AlignData.Hc2Offset"/> = CameraDist 결과)로
+        ///           두 측정을 통합한 실제 BLA→BRA 벡터의 각도.
+        ///  · 도면 θ: 레시피에 입력된 도면상 BLA→BRA 상대거리(BTM_ALIGN_REF_X/Y) 벡터의 각도.
+        ///           (미설정 시 0° = 수평 도면으로 간주)
+        ///  · 보정량: (측정 θ − 도면 θ) 만큼 W_T 회전 → 다이의 실제 각도를 도면 각도에 일치.
+        ///
         /// 호출 전 <paramref name="data"/>.Hc2Offset, BtmLeftAlignRaw, BtmRightAlignRaw가
         /// 채워져 있어야 한다(카메라 거리 측정 + Btm Die 측정 완료 후 호출).
+        /// 반환: 적용한 (측정 θ − 도면 θ) 차이(°).
         /// </summary>
         private async Task<double> BtmThetaCorrection(AlignData data, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
 
-            // 카메라 거리(Hc2Offset)로 HC1/HC2 두 프레임의 측정을 통합
+            // ── 측정 θ: 카메라 거리(Hc2Offset)로 HC1/HC2 두 프레임 측정을 통합한 실제 BLA→BRA 벡터 각도 ──
             //  bl = -BtmLeftAlignRaw (HC1, Stage 기준 부호 반전)
             //  br = Hc2Offset - BtmRightAlignRaw (HC2, 카메라 거리 적용)
             Point2D camOffset = data.Hc2Offset;
             Point2D bl = Point2D.of(-data.BtmLeftAlignRaw.X, -data.BtmLeftAlignRaw.Y);
             Point2D br = Point2D.of(camOffset.X - data.BtmRightAlignRaw.X,
                                     camOffset.Y - data.BtmRightAlignRaw.Y);
+            Point2D measRel = Point2D.of(br.X - bl.X, br.Y - bl.Y);
+            double measThetaDeg = NormalizeHalfDeg(Math.Atan2(measRel.Y, measRel.X) * (180.0 / Math.PI));
 
-            // 1.1 BLA→BRA 상대거리 레시피 저장
-            Point2D rel = Point2D.of(br.X - bl.X, br.Y - bl.Y);
-            await SaveRecipeParamDouble("BTM_ALIGN_REF_X", rel.X);
-            await SaveRecipeParamDouble("BTM_ALIGN_REF_Y", rel.Y);
-
-            // 1.2 θ 계산(±90° 정규화 — 좌/우 마크 순서 뒤바뀜 방지)
-            double angleDeg = Math.Atan2(rel.Y, rel.X) * (180.0 / Math.PI);
-            if (angleDeg > 90) angleDeg -= 180;
-            else if (angleDeg < -90) angleDeg += 180;
-
-            // 1.3 W_T 회전 보정 (WaferSeqTab의 W_T θ 보정과 동일 부호 규약)
-            double thetaSign = GetEcParamDouble("BtmThetaSign", -1.0);
-            double thetaMinDeg = GetEcParamDouble("BtmThetaMinDeg", 0.0);
-            if (Math.Abs(angleDeg) >= thetaMinDeg)
+            // ── 도면 θ: 레시피에 입력된 도면상 BLA→BRA 상대거리(BTM_ALIGN_REF_X/Y)의 각도 ──
+            double designThetaDeg = 0.0;
+            if (TryGetRecipeDouble("BTM_ALIGN_REF_X", out double refX) &&
+                TryGetRecipeDouble("BTM_ALIGN_REF_Y", out double refY) &&
+                (refX != 0.0 || refY != 0.0))
             {
-                double corr = thetaSign * angleDeg;
+                designThetaDeg = NormalizeHalfDeg(Math.Atan2(refY, refX) * (180.0 / Math.PI));
+            }
+            else
+            {
+                _logger.Warning("BTM θ 보정 — 도면상 BLA→BRA 상대거리(BTM_ALIGN_REF_X/Y) 미설정 → 도면 θ=0°로 간주");
+            }
+
+            // ── 측정 θ와 도면 θ의 차이만큼 W_T 회전 보정 ──
+            double diffDeg = NormalizeHalfDeg(measThetaDeg - designThetaDeg);
+
+            double thetaSign = GetEcParamDouble("BtmThetaSign", -1.0);   // 하드웨어 방향 반대면 +1
+            double thetaMinDeg = GetEcParamDouble("BtmThetaMinDeg", 0.0); // 데드밴드(° 미만이면 스킵)
+            if (Math.Abs(diffDeg) >= thetaMinDeg)
+            {
+                double corr = thetaSign * diffDeg;
                 _logger.Information(
-                    "BTM θ 보정 — rel=({X:F6},{Y:F6}) θ={A:F6}° → W_T {M:F6}° 회전 (Hc2Offset=({OX:F5},{OY:F5}))",
-                    rel.X, rel.Y, angleDeg, -corr, camOffset.X, camOffset.Y);
+                    "BTM θ 보정 — 측정θ={Meas:F6}°, 도면θ={Design:F6}°, 차이={Diff:F6}° → W_T {Move:F6}° 회전 " +
+                    "(measRel=({RX:F6},{RY:F6}), Hc2Offset=({OX:F5},{OY:F5}))",
+                    measThetaDeg, designThetaDeg, diffDeg, -corr, measRel.X, measRel.Y, camOffset.X, camOffset.Y);
                 await RelativeMotionsMove(MotionExtensions.W_T, -corr, ct);
             }
             else
             {
-                _logger.Information("BTM θ 보정 — θ={A:F6}° < {Min}° → 보정 스킵", angleDeg, thetaMinDeg);
+                _logger.Information(
+                    "BTM θ 보정 — 측정θ={Meas:F6}°, 도면θ={Design:F6}°, 차이={Diff:F6}° < {Min}° → 보정 스킵",
+                    measThetaDeg, designThetaDeg, diffDeg, thetaMinDeg);
             }
 
-            return angleDeg;
+            return diffDeg;
         }
 
         /// <summary>
-        /// 사용중인 레시피에 double 파라미터를 저장/갱신한다.
-        /// 기존 파라미터가 있으면 값만 갱신(UpdateRecipeParam), 없으면 신규 추가(AddRecipeParam).
+        /// 각도를 ±90° 범위로 정규화한다(좌/우 마크 순서 뒤바뀜 등 180° 모호성 제거).
         /// </summary>
-        private async Task SaveRecipeParamDouble(string name, double value)
+        private static double NormalizeHalfDeg(double deg)
         {
-            var recipe = _recipeService.UseRecipe
-                ?? throw new Exception("사용중인 레시피가 없습니다.");
+            while (deg > 90.0) deg -= 180.0;
+            while (deg < -90.0) deg += 180.0;
+            return deg;
+        }
 
-            string text = value.ToString("F8");
-            var existing = recipe.ParamList.FirstOrDefault(p => p.Name == name);
-            if (existing != null)
-            {
-                existing.Value = text;
-                await _recipeService.UpdateRecipeParam(existing);
-            }
-            else
-            {
-                await _recipeService.AddRecipeParam(new RecipeParamDto
-                {
-                    RecipeId = recipe.Id,
-                    Name = name,
-                    Value = text,
-                    ValueType = HCB.Data.Entity.Type.ValueType.Double,
-                    UnitType = HCB.Data.Entity.Type.UnitType.mm
-                });
-            }
+        /// <summary>
+        /// 사용중인 레시피에서 double 파라미터를 안전하게 읽는다(없거나 파싱 실패 시 false).
+        /// </summary>
+        private bool TryGetRecipeDouble(string name, out double value)
+        {
+            value = 0.0;
+            var p = _recipeService.UseRecipe?.ParamList?.FirstOrDefault(x => x.Name == name);
+            if (p == null || string.IsNullOrWhiteSpace(p.Value)) return false;
+            return double.TryParse(p.Value, out value);
         }
 
         #endregion
