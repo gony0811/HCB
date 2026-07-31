@@ -540,6 +540,12 @@
                                 Command="{Binding ThetaCorrectionCommand}"
                                 IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
                                 Height="44" FontSize="15" FontWeight="Bold" Margin="0,4,0,0"/>
+
+                            <!-- 동작 취소: 진행 중(중심 찾기 · Theta 보정 · 본딩)일 때만 활성화 -->
+                            <Button Content="동작 취소"
+                                Command="{Binding CancelOperationCommand}"
+                                Background="#C0392B" Foreground="White"
+                                Height="40" FontSize="14" FontWeight="Bold" Margin="0,8,0,0"/>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

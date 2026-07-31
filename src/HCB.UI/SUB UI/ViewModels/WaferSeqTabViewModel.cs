@@ -55,7 +55,9 @@ namespace HCB.UI
         private readonly EqpCommunicationService _communication;
         private readonly ECParamService _ecParamService;
 
-        [ObservableProperty] private bool isBonding;
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(CancelOperationCommand))]
+        private bool isBonding;
 
         public WaferSeqTabViewModel(
             RecipeService recipeService,
@@ -223,7 +225,9 @@ namespace HCB.UI
         private const string YAxis = MotionExtensions.W_Y;   // 웨이퍼 테이블 Y
         private const string TAxis = MotionExtensions.W_T;   // 웨이퍼 테이블 Y
 
-        [ObservableProperty] private bool isAligning;          // 측정/시프트 진행 중 busy 플래그
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(CancelOperationCommand))]
+        private bool isAligning;          // 측정/시프트 진행 중 busy 플래그
         [ObservableProperty] private string scribeCenterStatus = "-";
         [ObservableProperty] private double scribeOffsetXUm;   // 카메라 중심 → 스크라이브 교차점 오프셋(μm)
         [ObservableProperty] private double scribeOffsetYUm;
@@ -239,6 +243,25 @@ namespace HCB.UI
             try { _alignCts?.Cancel(); }
             catch (ObjectDisposedException) { }
         }
+
+        /// <summary>
+        /// 진행 중인 Wafer 동작(중심 찾기 · Theta 보정 · 본딩)을 즉시 취소한다.
+        /// _alignCts 기반 시퀀스(FindCenterStep2/3, ThetaCorrection)는 토큰 취소로,
+        /// 본딩은 StepSeq 정지로 중단한다.
+        /// </summary>
+        [RelayCommand(CanExecute = nameof(CanCancelOperation))]
+        private async Task CancelOperation()
+        {
+            _logger.Information("Wafer 동작 취소 요청");
+
+            try { _alignCts?.Cancel(); }
+            catch (ObjectDisposedException) { }
+
+            if (IsBonding)
+                await StepSeqTab.Stop();
+        }
+
+        private bool CanCancelOperation() => IsAligning || IsBonding;
 
         // ── 1차: 저배율 3점 측정 (미구현 — 측정 방법 미정이라 스킵) ──
         [RelayCommand]
@@ -401,10 +424,10 @@ namespace HCB.UI
                 int steps = Math.Max(1, ThetaMaxIter);             // 패스당 최대 스텝(끝 Die 소실 시 조기 종료)
 
                 // ── 1) 정방향(+X): 시작 → 끝 Die 까지 Die마다 점진 보정 ──
-                if (!await RunThetaSweepAsync(+1, pitchStep, steps, "정방향", ct)) return;
+                if (!await RunThetaSweepAsync(+1, pitchStep, stepDies, steps, "정방향", ct)) return;
 
                 // ── 2) 역방향(-X): 끝 Die → 시작 방향 역주행, 동일 보정 ──
-                if (!await RunThetaSweepAsync(-1, pitchStep, steps, "역방향", ct)) return;
+                if (!await RunThetaSweepAsync(-1, pitchStep, stepDies, steps, "역방향", ct)) return;
 
                 ThetaStatus = $"Theta 보정 완료 — 왕복 스윕, 최종 기울기 {ThetaAngleDeg:F4}°";
                 _logger.Information("Theta 보정 완료 — 왕복 스윕, 최종 기울기={A:F4}°", ThetaAngleDeg);
@@ -424,7 +447,7 @@ namespace HCB.UI
         /// 지정 스텝 수(steps)를 채우거나, 마크를 회복 불가하게 놓치면(웨이퍼 끝 Die) 종료한다.
         /// 반환: 시작 마크 검출에 성공해 스윕을 진행했으면 true, 초기 미검출이면 false.
         /// </summary>
-        private async Task<bool> RunThetaSweepAsync(int dir, double pitchStep, int steps, string pass, CancellationToken ct)
+        private async Task<bool> RunThetaSweepAsync(int dir, double pitchStep, int stepDies, int steps, string pass, CancellationToken ct)
         {
             // 시작점(기준 Die) 측정 — FOV 이탈 시 Y 탐색으로 보강
             ThetaStatus = $"{pass} 스윕 — 시작 AlignMark 측정 중...";
@@ -436,13 +459,28 @@ namespace HCB.UI
                 return false;
             }
 
-            for (int s = 0; s < steps; s++)
+            // Die 수 × 스텝 수로 스윕 범위를 사전 제한 → 화면(웨이퍼) 밖 이탈 방지.
+            // 시작 위치에서 sweep 방향으로 남은 Die 수를 스텝당 이동 Die 수로 나눈 값과
+            // 사용자가 설정한 최대 스텝(steps) 중 작은 값을 실제 스텝 수로 사용한다.
+            int maxByWafer = MaxStepsWithinWafer(prev, dir, stepDies);
+            int effectiveSteps = Math.Min(steps, maxByWafer);
+            if (effectiveSteps < steps)
+                _logger.Information("Theta 보정 — {Pass} 웨이퍼 경계 제한: {Eff}/{Req} 스텝(잔여 Die {Rem}개)",
+                    pass, effectiveSteps, steps, maxByWafer * Math.Max(1, stepDies));
+            if (effectiveSteps <= 0)
+            {
+                ThetaStatus = $"{pass} 스윕 — 이 방향으로 이동 가능한 Die 없음(웨이퍼 경계), 스킵";
+                _logger.Information("Theta 보정 — {Pass} 이동 가능한 Die 없음(웨이퍼 경계)", pass);
+                return true;
+            }
+
+            for (int s = 0; s < effectiveSteps; s++)
             {
                 ct.ThrowIfCancellationRequested();
 
                 // 다음 Die로 X 쉬프트 후 측정 (FOV 이탈 시 Y 탐색)
                 double shift = dir * pitchStep;
-                ThetaStatus = $"{pass} 스윕 — X {shift:+0.000;-0.000}mm 이동 후 측정 ({s + 1}/{steps})...";
+                ThetaStatus = $"{pass} 스윕 — X {shift:+0.000;-0.000}mm 이동 후 측정 ({s + 1}/{effectiveSteps})...";
                 await _sequenceService.RelativeMotionsMove(XAxis, shift, ct);
 
                 var cur = await MeasureHc1AlignAbsAsync(ct);
@@ -470,7 +508,7 @@ namespace HCB.UI
                 {
                     // 기울기를 상쇄하도록 W_T 회전
                     double corr = ThetaSign * angleDeg;
-                    ThetaStatus = $"{pass} 스윕 — 기울기 {angleDeg:F4}° → W_T {-corr:F4}° 회전 ({s + 1}/{steps})...";
+                    ThetaStatus = $"{pass} 스윕 — 기울기 {angleDeg:F4}° → W_T {-corr:F4}° 회전 ({s + 1}/{effectiveSteps})...";
                     _logger.Information("Theta 보정 — {Pass} 기울기={A:F4}°, W_T 회전={C:F4}° (step {S})",
                         pass, angleDeg, -corr, s + 1);
                     await _sequenceService.RelativeMotionsMove(ThetaAxis, -corr, ct);
@@ -484,9 +522,48 @@ namespace HCB.UI
                 }
             }
 
-            ThetaStatus = $"{pass} 스윕 — {steps} 스텝 완료 (기울기 {ThetaAngleDeg:F4}°)";
-            _logger.Information("Theta 보정 — {Pass} {S} 스텝 완료, 기울기={A:F4}°", pass, steps, ThetaAngleDeg);
+            ThetaStatus = $"{pass} 스윕 — {effectiveSteps} 스텝 완료 (기울기 {ThetaAngleDeg:F4}°)";
+            _logger.Information("Theta 보정 — {Pass} {S} 스텝 완료, 기울기={A:F4}°", pass, effectiveSteps, ThetaAngleDeg);
             return true;
+        }
+
+        /// <summary>
+        /// 시작 위치(startAbs)에서 sweep 방향(dir=+1:+X, -1:-X)으로 웨이퍼 가장자리(가장 바깥 Die)까지
+        /// 남은 Die 수를 스텝당 이동 Die 수(stepDies)로 나눠, 화면(웨이퍼) 밖으로 벗어나지 않는
+        /// 최대 스텝 수를 계산한다. DieList(웨이퍼 맵)가 있으면 해당 Row의 Col 범위로 정확히,
+        /// 없으면 웨이퍼 반경(Die 단위)으로 근사한다.
+        /// </summary>
+        private int MaxStepsWithinWafer(Point2D startAbs, int dir, int stepDies)
+        {
+            double pitchX = DieSizeX + GapX;
+            if (pitchX <= 0) return 0;
+
+            double halfCol = (WaferSize - 1) / 2.0;
+            int startCol = (int)Math.Round((startAbs.X - CenterX) / pitchX + halfCol);
+
+            // 반경(Die 단위) 기반 근사 — DieList/센터 정보가 없을 때의 안전 상한
+            int radiusDies = (int)Math.Floor((WaferSize + 1) / 2.0);
+            int availableDies = radiusDies;
+
+            if (DieList != null && DieList.Count > 0)
+            {
+                double pitchY = DieSizeY + GapY;
+                double halfRow = (WaferSize - 1) / 2.0;
+                int startRow = pitchY > 0
+                    ? (int)Math.Round(halfRow - (startAbs.Y - CenterY) / pitchY)
+                    : (int)Math.Round(halfRow);
+
+                var cols = DieList.Where(d => d.Row == startRow).Select(d => d.Col).ToList();
+                if (cols.Count > 0)
+                {
+                    int minCol = cols.Min();
+                    int maxCol = cols.Max();
+                    availableDies = dir > 0 ? (maxCol - startCol) : (startCol - minCol);
+                }
+            }
+
+            if (availableDies < 0) availableDies = 0;
+            return availableDies / Math.Max(1, stepDies);   // 정수 나눗셈(내림)
         }
 
         /// <summary>
