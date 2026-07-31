@@ -252,6 +252,9 @@ namespace HCB.UI
                 await TopDieSet(ct);
                 double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
 
+                // RECIPE가 DIE일 때만 Btm θ 보정(카메라 거리 → BLA/BRA 각도 → W_T)을 수행한다.
+                bool isDieRecipe = _recipeService.UseRecipe?.Component == HCB.Data.Entity.Type.ComponentType.DIE;
+
                 sw.Restart();
                 if (data.UseBtmIndividualMeasure)
                 {
@@ -259,11 +262,13 @@ namespace HCB.UI
                     await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
                     double btmAlignZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
 
+                    // 1. 카메라 거리 측정 (Manual 트레이싱 또는 DIE 레시피 θ보정용 Hc2Offset 확보)
                     if (data.TracingMode == TracingMode.Manual)
                     {
                         await CameraDist(data, ct);
                     }
 
+                    // 2. BTM DIE 측정 (BLA=Left/HC1, BRA=Right/HC2 얼라인마크)
                     sw.Restart();
                     var rAlign = await BtmDieVisionRightAlign(data.AvgMove, ct);
                     data.BtmRightAlignRaw = Point2D.of(rAlign.DxCamToMark, rAlign.DyCamToMark);
@@ -273,7 +278,22 @@ namespace HCB.UI
                     var lAlign = await BtmDieVisionLeftAlign(data.AvgMove, ct);
                     data.BtmLeftAlignRaw = Point2D.of(lAlign.DxCamToMark, lAlign.DyCamToMark);
                     _logger.Information("BtmHighAlign — LeftAlign: {Elapsed}ms", sw.ElapsedMilliseconds);
-                    
+
+                    // 3. BTM 보정 시퀀스 → 4. BTM DIE 재측정 (DIE 레시피 전용)
+                    if (isDieRecipe)
+                    {
+                        // 3. 카메라 거리 기반 BLA→BRA 각도 계산 후 W_T 회전 보정
+                        await BtmThetaCorrection(data, ct);
+
+                        // 4. 보정 후 BTM DIE 재측정 (다운스트림 좌표통합에 보정된 값 반영)
+                        sw.Restart();
+                        var rAlign2 = await BtmDieVisionRightAlign(data.AvgMove, ct);
+                        data.BtmRightAlignRaw = Point2D.of(rAlign2.DxCamToMark, rAlign2.DyCamToMark);
+                        var lAlign2 = await BtmDieVisionLeftAlign(data.AvgMove, ct);
+                        data.BtmLeftAlignRaw = Point2D.of(lAlign2.DxCamToMark, lAlign2.DyCamToMark);
+                        _logger.Information("BtmHighAlign — DIE θ보정 후 재측정 완료: {Elapsed}ms", sw.ElapsedMilliseconds);
+                    }
+
                     double btmFidZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
 
                     await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap-0.2, ct);                    
@@ -306,6 +326,10 @@ namespace HCB.UI
                     data.BtmRightFidRaw = Point2D.of(result.RightFid.X, result.RightFid.Y);
                     data.BtmRightAlignRaw = result.RightAlign;
                     _logger.Information("BtmHighAlign : {Elapsed}ms", sw.ElapsedMilliseconds);
+
+                    // DIE θ 보정은 개별 측정(카메라 거리 → 측정 → 보정 → 재측정) 흐름을 전제로 한다.
+                    if (isDieRecipe)
+                        _logger.Warning("BtmHighAlign — DIE 레시피이나 통합 측정 모드입니다. Btm θ 보정을 수행하려면 개별 측정(UseBtmIndividualMeasure=true)을 사용하세요.");
                 }
 
                 _logger.Information("BtmHighAlign — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
@@ -320,6 +344,91 @@ namespace HCB.UI
             }
             
             return data;
+        }
+
+        #endregion
+
+        #region Btm θ 보정 (RECIPE=DIE 전용)
+
+        /// <summary>
+        /// RECIPE가 DIE일 때만 수행하는 Btm 각도 보정.
+        /// BLA(Btm Left AlignMark, HC1) / BRA(Btm Right AlignMark, HC2)는 서로 다른 카메라
+        /// 프레임에서 측정되므로, 카메라 거리(<see cref="AlignData.Hc2Offset"/> = CameraDist 결과)로
+        /// 두 측정을 통합해 실제 BLA→BRA 상대 벡터를 구하고, 그 각도만큼 W_T를 회전시켜 보정한다.
+        ///  1.1 상대거리 X,Y를 레시피(BTM_ALIGN_REF_X/Y)에 저장.
+        ///  1.2 상대 벡터의 θ 계산(±90° 정규화).
+        ///  1.3 θ만큼 W_T 회전 보정(BL/BR 미사용, 카메라 거리 기반 각도만 사용).
+        /// 호출 전 <paramref name="data"/>.Hc2Offset, BtmLeftAlignRaw, BtmRightAlignRaw가
+        /// 채워져 있어야 한다(카메라 거리 측정 + Btm Die 측정 완료 후 호출).
+        /// </summary>
+        private async Task<double> BtmThetaCorrection(AlignData data, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            // 카메라 거리(Hc2Offset)로 HC1/HC2 두 프레임의 측정을 통합
+            //  bl = -BtmLeftAlignRaw (HC1, Stage 기준 부호 반전)
+            //  br = Hc2Offset - BtmRightAlignRaw (HC2, 카메라 거리 적용)
+            Point2D camOffset = data.Hc2Offset;
+            Point2D bl = Point2D.of(-data.BtmLeftAlignRaw.X, -data.BtmLeftAlignRaw.Y);
+            Point2D br = Point2D.of(camOffset.X - data.BtmRightAlignRaw.X,
+                                    camOffset.Y - data.BtmRightAlignRaw.Y);
+
+            // 1.1 BLA→BRA 상대거리 레시피 저장
+            Point2D rel = Point2D.of(br.X - bl.X, br.Y - bl.Y);
+            await SaveRecipeParamDouble("BTM_ALIGN_REF_X", rel.X);
+            await SaveRecipeParamDouble("BTM_ALIGN_REF_Y", rel.Y);
+
+            // 1.2 θ 계산(±90° 정규화 — 좌/우 마크 순서 뒤바뀜 방지)
+            double angleDeg = Math.Atan2(rel.Y, rel.X) * (180.0 / Math.PI);
+            if (angleDeg > 90) angleDeg -= 180;
+            else if (angleDeg < -90) angleDeg += 180;
+
+            // 1.3 W_T 회전 보정 (WaferSeqTab의 W_T θ 보정과 동일 부호 규약)
+            double thetaSign = GetEcParamDouble("BtmThetaSign", -1.0);
+            double thetaMinDeg = GetEcParamDouble("BtmThetaMinDeg", 0.0);
+            if (Math.Abs(angleDeg) >= thetaMinDeg)
+            {
+                double corr = thetaSign * angleDeg;
+                _logger.Information(
+                    "BTM θ 보정 — rel=({X:F6},{Y:F6}) θ={A:F6}° → W_T {M:F6}° 회전 (Hc2Offset=({OX:F5},{OY:F5}))",
+                    rel.X, rel.Y, angleDeg, -corr, camOffset.X, camOffset.Y);
+                await RelativeMotionsMove(MotionExtensions.W_T, -corr, ct);
+            }
+            else
+            {
+                _logger.Information("BTM θ 보정 — θ={A:F6}° < {Min}° → 보정 스킵", angleDeg, thetaMinDeg);
+            }
+
+            return angleDeg;
+        }
+
+        /// <summary>
+        /// 사용중인 레시피에 double 파라미터를 저장/갱신한다.
+        /// 기존 파라미터가 있으면 값만 갱신(UpdateRecipeParam), 없으면 신규 추가(AddRecipeParam).
+        /// </summary>
+        private async Task SaveRecipeParamDouble(string name, double value)
+        {
+            var recipe = _recipeService.UseRecipe
+                ?? throw new Exception("사용중인 레시피가 없습니다.");
+
+            string text = value.ToString("F8");
+            var existing = recipe.ParamList.FirstOrDefault(p => p.Name == name);
+            if (existing != null)
+            {
+                existing.Value = text;
+                await _recipeService.UpdateRecipeParam(existing);
+            }
+            else
+            {
+                await _recipeService.AddRecipeParam(new RecipeParamDto
+                {
+                    RecipeId = recipe.Id,
+                    Name = name,
+                    Value = text,
+                    ValueType = HCB.Data.Entity.Type.ValueType.Double,
+                    UnitType = HCB.Data.Entity.Type.UnitType.mm
+                });
+            }
         }
 
         #endregion
