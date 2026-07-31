@@ -135,22 +135,26 @@ namespace HCB.UI
                 if (h_z is null || !h_z.IsEnabled) throw new PmacException(PmacErrorCode.SERVO_OFF, "h_z축이 준비되지 않았습니다. h_z축 Servo On, Home 실행여부를 확인하십시요.");
 
                 // 현재 위치가 안전 위치보다 아래인 축만 이동
-                const double tolerance = 0.01;
-                var needsMove = new List<string>();
+                //const double tolerance = 0.01;
+                //var needsMove = new List<string>();
 
-                var hzSafety = H_Z.PositionList.FirstOrDefault(p => p.Name == MotionExtensions.HEAD_SAFETY);
-                var hzSmallSafety = h_z.PositionList.FirstOrDefault(p => p.Name == MotionExtensions.HEAD_SAFETY);
+                //var hzSafety = H_Z.PositionList.FirstOrDefault(p => p.Name == MotionExtensions.HEAD_SAFETY);
+                //var hzSmallSafety = h_z.PositionList.FirstOrDefault(p => p.Name == MotionExtensions.HEAD_SAFETY);
 
-                if (hzSafety != null && H_Z.CurrentPosition > hzSafety.Position + tolerance)
-                    needsMove.Add(MotionExtensions.H_Z);
-                if (hzSmallSafety != null && h_z.CurrentPosition > hzSmallSafety.Position + tolerance)
-                    needsMove.Add(MotionExtensions.h_z);
+                await Task.WhenAll(
+                    MotionsMove(MotionExtensions.H_Z, MotionExtensions.HEAD_SAFETY, ct),
+                    MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, ct)
+                    );
+                await Task.Delay(50);
+                ////if (hzSafety != null && H_Z.CurrentPosition > hzSafety.Position + tolerance)
+                //needsMove.Add(MotionExtensions.H_Z);
+                ////if (hzSmallSafety != null && h_z.CurrentPosition > hzSmallSafety.Position + tolerance)
+                //needsMove.Add(MotionExtensions.h_z);
 
-                if (needsMove.Count > 0)
-                {
-                    await MotionsMove(needsMove.ToArray(), MotionExtensions.HEAD_SAFETY, ct);
-                    await Task.Delay(50);
-                }
+                //if (needsMove.Count > 0)
+                //{
+                //    await MotionsMove(needsMove.ToArray(), MotionExtensions.HEAD_SAFETY, ct);
+                //}
 
             }
             catch (OperationCanceledException)
