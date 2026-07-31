@@ -394,7 +394,7 @@ namespace HCB.UI
             }
 
             // ── 측정 θ와 도면 θ의 차이만큼 W_T 회전 보정 ──
-            double diffDeg = NormalizeHalfDeg(measThetaDeg - designThetaDeg);
+            double diffDeg = NormalizeHalfDeg(measThetaDeg + designThetaDeg);
 
             double thetaSign = GetEcParamDouble("BtmThetaSign", -1.0);   // 하드웨어 방향 반대면 +1
             double thetaMinDeg = GetEcParamDouble("BtmThetaMinDeg", 0.0); // 데드밴드(° 미만이면 스킵)
