@@ -111,6 +111,68 @@ namespace HCB.UI
         }
 
         /// <summary>
+        /// 강체 피팅: 강체 회전 전/후의 대응점 쌍으로 회전각 β와 회전중심 C를 닫힌형으로 추정한다.
+        ///
+        /// 원리:
+        ///   1단계 — β는 점 쌍을 잇는 벡터(v = p_last − p_first)의 회전 전후 방향 변화로
+        ///           중심과 무관하게 확정한다 (베이스라인이 길어 노이즈에 매우 강함).
+        ///   2단계 — 각 점의 이동 d = p′ − p 는 d = (R(β) − I)(p − C) 를 만족하므로
+        ///           C = p − A⁻¹d (A = R−I, AᵀA = (2−2cosβ)·I) 를 점별로 역산해 평균한다.
+        ///
+        /// 원 피팅(FitCircleCenter) 대비: 신호가 호의 새지타(∝θ², ±0.75°에서 ~0.6μm)가 아니라
+        /// 이동 현(∝θ, ~183μm)이므로 소각 회전에서도 조건수가 좋다. β 선행 확정 덕분에
+        /// 이동 현이 반평행(중심이 점 연결선 근처)이어도 퇴화하지 않는다.
+        /// </summary>
+        /// <param name="before">회전 전 점 목록 (2점 이상)</param>
+        /// <param name="after">회전 후 점 목록 (before와 같은 순서·개수)</param>
+        /// <returns>회전중심 C, 회전각 β[rad], 재구성 RMS 잔차(피팅 건전성 지표, 좌표 단위)</returns>
+        public static (Point2D center, double betaRad, double rmsResidual) FitRigidRotationCenter(
+            List<Point2D> before, List<Point2D> after)
+        {
+            if (before == null || after == null || before.Count < 2 || before.Count != after.Count)
+                throw new ArgumentException("강체 피팅에는 회전 전/후 대응점이 2쌍 이상 필요합니다.");
+
+            int n = before.Count;
+
+            // ── 1단계: β — 첫↔끝 점 쌍 벡터의 방향 변화 (중심 불필요) ──
+            double vx = before[n - 1].X - before[0].X, vy = before[n - 1].Y - before[0].Y;
+            double wx = after[n - 1].X - after[0].X,  wy = after[n - 1].Y - after[0].Y;
+            double beta = Math.Atan2(vx * wy - vy * wx, vx * wx + vy * wy);
+
+            // ── 2단계: C = 평균( p − A⁻¹·d ) ──
+            double c = Math.Cos(beta) - 1.0, s = Math.Sin(beta);
+            double det = c * c + s * s;                       // = 2 − 2cosβ = 4sin²(β/2)
+            if (det < 1e-12)
+                throw new InvalidOperationException(
+                    "회전각이 너무 작아 회전중심을 결정할 수 없습니다.");
+
+            double sumX = 0, sumY = 0;
+            for (int i = 0; i < n; i++)
+            {
+                double dx = after[i].X - before[i].X, dy = after[i].Y - before[i].Y;
+                double ax = (c * dx + s * dy) / det;          // A⁻¹·d
+                double ay = (-s * dx + c * dy) / det;
+                sumX += before[i].X - ax;
+                sumY += before[i].Y - ay;
+            }
+            var center = Point2D.of(sumX / n, sumY / n);
+
+            // ── 검산: 추정 C·β로 after를 재구성한 RMS 잔차 (≈ 비전 노이즈여야 정상) ──
+            double cb = Math.Cos(beta), sb = Math.Sin(beta), ss = 0;
+            for (int i = 0; i < n; i++)
+            {
+                double px = before[i].X - center.X, py = before[i].Y - center.Y;
+                double qx = center.X + cb * px - sb * py;
+                double qy = center.Y + sb * px + cb * py;
+                ss += (after[i].X - qx) * (after[i].X - qx)
+                    + (after[i].Y - qy) * (after[i].Y - qy);
+            }
+            double rms = Math.Sqrt(ss / (2.0 * n));
+
+            return (center, beta, rms);
+        }
+
+        /// <summary>
         /// 회전 좌표계 원점 HcRO = (HX(C), WY(C)) 계산.
         /// 회전 전/후 두 점 쌍으로부터 연립방정식을 풀어 회전 중심을 구한다.
         /// </summary>
