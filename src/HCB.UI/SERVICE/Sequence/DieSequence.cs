@@ -283,7 +283,7 @@ namespace HCB.UI
                     if (isDieRecipe)
                     {
                         // 3. 측정 θ(카메라 거리 기반 BLA→BRA)와 도면 θ의 차이만큼 W_T 회전 보정
-                        await BtmThetaCorrection(data, ct);
+                        //await BtmThetaCorrection(data, ct);
 
                         // 4. 보정 후 BTM DIE 재측정 (다운스트림 좌표통합에 보정된 값 반영)
                         sw.Restart();
