@@ -671,7 +671,6 @@ namespace HCB.UI
 
                 await Task.WhenAll(
                     _sequenceService.MotionsMove(XAxis, targetHX, ct),
-                    _sequenceService.MotionsMove(YAxis, targetWY, ct),
                     _sequenceService.MotionsMove(YAxis, targetWY, ct));
 
                 ScribeCenterStatus = $"시프트 완료 — Shank 목표=({targetHX:F4},{targetWY:F4})";
