@@ -92,6 +92,8 @@ namespace HCB.UI
             try { DieSizeY = RecipeService.FindByParamDouble("DieSizeY"); } catch { }
             try { GapX = RecipeService.FindByParamDouble("GapX"); } catch { }
             try { GapY = RecipeService.FindByParamDouble("GapY"); } catch { }
+            try { ScribeShiftX = RecipeService.FindByParamDouble("ScribeShiftX"); } catch { }
+            try { ScribeShiftY = RecipeService.FindByParamDouble("ScribeShiftY"); } catch { }
         }
 
         [RelayCommand]
@@ -104,6 +106,8 @@ namespace HCB.UI
             await SaveParam("DieSizeY", DieSizeY.ToString(), ValueType.Double, UnitType.mm);
             await SaveParam("GapX", GapX.ToString(), ValueType.Double, UnitType.mm);
             await SaveParam("GapY", GapY.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("ScribeShiftX", ScribeShiftX.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("ScribeShiftY", ScribeShiftY.ToString(), ValueType.Double, UnitType.mm);
 
             GenerateWaferMap();
         }
@@ -247,6 +251,20 @@ namespace HCB.UI
         [ObservableProperty] private double coarseCenterY;
 
         private int EdgeMeasuredCount => _edgePoints.Count(p => p != null);
+
+        // ── 2차: Scribeline 기반 중심/Theta 정렬 설정 ──
+        //  ScribeShiftX/Y : (Recipe) 대략 중심에서 기준 Scribe 측정 위치까지의 초기 Shift(mm)
+        //  ScribeSweepDies: (사용자) 기준 위치에서 양옆으로 스윕할 Die 수(편도)
+        //  ScribeStepDies : 스텝당 이동 Die 수(피치 배수)
+        //  ScribeConvergeIter: 한 Die에서 Theta 수렴까지 재측정 반복 상한(3~6단계 반복)
+        //  ScribeThetaMinDeg : 수렴 임계각(°, 미만이면 보정 생략)
+        [ObservableProperty] private double scribeShiftX;      // (Recipe) 초기 Shift X
+        [ObservableProperty] private double scribeShiftY;      // (Recipe) 초기 Shift Y
+        [ObservableProperty] private int scribeSweepDies = 2;  // 편도 스윕 Die 수
+        [ObservableProperty] private int scribeStepDies = 1;   // 스텝당 이동 Die 수
+        [ObservableProperty] private int scribeConvergeIter = 3; // Die당 Theta 수렴 반복 상한
+        [ObservableProperty] private double scribeThetaMinDeg = 0.01; // 수렴 임계각(°)
+        [ObservableProperty] private double scribeThetaAngleDeg;      // 마지막 측정 기울기(°)
 
         private CancellationTokenSource? _alignCts;
 
@@ -404,9 +422,18 @@ namespace HCB.UI
             finally { IsAligning = false; }
         }
 
-        // ── 2차: 저배율(HC_LOW) Scribeline(교차점) 측정 ──
-        //  카메라가 이미 Scribeline 위에 있다고 가정하고 현재 위치에서 1회 촬상.
-        //  HC_LOW는 피사계 심도가 커서 AF 불필요(Vision 회신 규약).
+        // ── 2차: 저배율(HC_LOW) Scribeline 기반 중심/Theta 정렬 ──
+        //  절차(사용자 요청):
+        //   (1) Recipe(ScribeShiftX/Y)만큼 H_X·W_Y를 기준 Scribe 위치로 Shift
+        //   (2) Scribeline 측정으로 검출 확인
+        //   (3) Scribeline을 비전 중심에 정렬(offset→0) 후 측정 = A
+        //   (4) DieSize(피치)만큼 H_X를 옆으로 Shift 후 측정 = B
+        //   (5) A·B로 Theta 산출 → W_T 보정
+        //   (6) (3)~(5)를 임계각 이내로 수렴할 때까지 반복
+        //   (7) ThetaCorrection처럼 기준 위치 양옆으로 스윕하며 (3)~(6) 반복
+        //  ※ Step3(Shank 시프트)이 저배율카메라↔Shank(ShankLowOffset)를 사용하므로
+        //    측정 카메라는 저배율(HC_LOW)로 유지한다. HC_LOW는 피사계 심도가 커서 AF 불필요.
+        //    (Vision v1.0: 저배 스크라이브는 검출률이 낮을 수 있음 — 실패 시 조명/모델/끝 Die 확인)
         [RelayCommand]
         private async Task FindCenterStep2()
         {
@@ -417,44 +444,199 @@ namespace HCB.UI
 
             try
             {
-                ScribeCenterStatus = "저배율 Scribeline 측정 중...";
-                _logger.Information("Wafer 중심 2차 — HC_LOW Scribeline 측정 시작");
-
-                var r = await _communication.RequestVisionMarkPosition(MarkType.DIE_CENTER_BOTTOM, CameraType.HC_LOW, "");
-                if (r == null || r.Result == Result.NG)
+                double pitch = (DieSizeX + GapX) * Math.Max(1, ScribeStepDies); // 옆 Die까지 거리
+                if (pitch <= 0)
                 {
-                    HasScribeMeasure = false;
-                    ScribeCenterStatus = "Scribeline 측정 실패(NG)";
-                    _logger.Warning("HC_LOW Scribeline 측정 NG");
+                    ScribeCenterStatus = "DieSize/Gap 값이 유효하지 않습니다.";
                     return;
                 }
 
-                double curHX = await _sequenceService.GetCurrentPosition(XAxis, ct);
-                double curWY = await _sequenceService.GetCurrentPosition(YAxis, ct);
-                double curWT = await _sequenceService.GetCurrentPosition(TAxis, ct);
+                // (1) Recipe 값만큼 기준 위치로 초기 Shift
+                if (Math.Abs(ScribeShiftX) > 1e-9 || Math.Abs(ScribeShiftY) > 1e-9)
+                {
+                    ScribeCenterStatus = $"기준 위치로 Shift 중... ({ScribeShiftX:F3}, {ScribeShiftY:F3})";
+                    _logger.Information("Wafer 중심 2차 — Recipe Shift ({X:F4},{Y:F4})", ScribeShiftX, ScribeShiftY);
+                    if (Math.Abs(ScribeShiftX) > 1e-9) await _sequenceService.RelativeMotionsMove(XAxis, ScribeShiftX, ct);
+                    if (Math.Abs(ScribeShiftY) > 1e-9) await _sequenceService.RelativeMotionsMove(YAxis, ScribeShiftY, ct);
+                }
 
-                // 스크라이브 교차점 절대좌표 = 현재 스테이지 − 카메라→교차점 오프셋
-                ScribeAbsX = curHX - r.X;
-                ScribeAbsY = curWY - r.Y;
-                ScribeAbsT = curWY - r.Theta;
-                ScribeOffsetXUm = r.X * 1000.0;
-                ScribeOffsetYUm = r.Y * 1000.0;
+                // (2)+(3)~(6) 기준 Die에서 Theta 수렴
+                ScribeCenterStatus = "기준 Die Scribeline 정렬/Theta 수렴 중...";
+                var startAbs = await ConvergeThetaAtDieAsync(pitch, "기준", ct);
+                if (startAbs == null)
+                {
+                    HasScribeMeasure = false;
+                    ScribeCenterStatus = "기준 Scribeline 검출 실패(NG) — 위치/조명/모델 확인";
+                    _logger.Warning("Wafer 중심 2차 — 기준 Scribeline 미검출");
+                    return;
+                }
+                double startHX = await _sequenceService.GetCurrentPosition(XAxis, ct);
+                double startWY = await _sequenceService.GetCurrentPosition(YAxis, ct);
+
+                int steps = Math.Max(0, ScribeSweepDies);
+
+                // (7) 기준 위치 양옆으로 스윕 — 각 패스 시작 전 기준 위치로 복귀
+                await RunScribeThetaSweepAsync(+1, pitch, steps, "정방향", ct);
+                await _sequenceService.MotionsMove(XAxis, startHX, ct);
+                await _sequenceService.MotionsMove(YAxis, startWY, ct);
+
+                await RunScribeThetaSweepAsync(-1, pitch, steps, "역방향", ct);
+                await _sequenceService.MotionsMove(XAxis, startHX, ct);
+                await _sequenceService.MotionsMove(YAxis, startWY, ct);
+
+                // 최종: 기준 Scribe를 다시 비전 중심에 정렬하고 절대좌표 기록(Step3용)
+                var finalAbs = await CenterScribeAsync(ct);
+                if (finalAbs == null)
+                {
+                    HasScribeMeasure = false;
+                    ScribeCenterStatus = "정렬 후 기준 Scribeline 재검출 실패(NG)";
+                    return;
+                }
+
+                ScribeAbsX = finalAbs.X;
+                ScribeAbsY = finalAbs.Y;
+                ScribeAbsT = await _sequenceService.GetCurrentPosition(TAxis, ct);
                 HasScribeMeasure = true;
 
                 ScribeCenterStatus =
-                    $"측정 완료 — 오프셋=({ScribeOffsetXUm:F1},{ScribeOffsetYUm:F1})μm, " +
-                    $"교차점=({ScribeAbsX:F4},{ScribeAbsY:F4})";
-                _logger.Information(
-                    "HC_LOW Scribeline 측정 완료 — offset=({X:F4},{Y:F4}), abs=({AX:F4},{AY:F4})",
-                    r.X, r.Y, ScribeAbsX, ScribeAbsY);
+                    $"2차 완료 — 교차점=({ScribeAbsX:F4},{ScribeAbsY:F4}), 최종 기울기 {ScribeThetaAngleDeg:F4}°";
+                _logger.Information("Wafer 중심 2차 완료 — abs=({AX:F4},{AY:F4}), theta={A:F4}°",
+                    ScribeAbsX, ScribeAbsY, ScribeThetaAngleDeg);
             }
-            catch (OperationCanceledException) { ScribeCenterStatus = "측정 중단됨"; }
+            catch (OperationCanceledException) { ScribeCenterStatus = "2차 중단됨"; }
             catch (Exception e)
             {
-                _logger.Error(e, "Scribeline 측정 오류");
+                _logger.Error(e, "Scribeline 정렬 오류");
                 ScribeCenterStatus = $"오류: {e.Message}";
             }
             finally { IsAligning = false; }
+        }
+
+        /// <summary>저배율(HC_LOW) Scribeline 1회 측정. 검출 실패(NG) 시 null.</summary>
+        private async Task<ScribeLineResponse?> MeasureScribeAsync(CancellationToken ct)
+        {
+            var r = await _communication.RequestScribeLine(LowCam, ct);
+            if (r == null || r.Result == Result.NG) return null;
+            return r;
+        }
+
+        /// <summary>Scribe 1회 측정 후 교차점 절대(스테이지) 좌표 반환. 실패 시 null.</summary>
+        private async Task<Point2D?> MeasureScribeAbsAsync(CancellationToken ct)
+        {
+            var r = await MeasureScribeAsync(ct);
+            if (r == null) return null;
+            double curHX = await _sequenceService.GetCurrentPosition(XAxis, ct);
+            double curWY = await _sequenceService.GetCurrentPosition(YAxis, ct);
+            return Point2D.of(curHX - r.X, curWY - r.Y);
+        }
+
+        /// <summary>
+        /// Scribeline을 비전 중심(offset≈0)에 정렬하고 정렬된 교차점의 절대(스테이지) 좌표를 반환한다.
+        /// 매 반복마다 측정 offset(r.X,r.Y)만큼 H_X·W_Y를 역이동(−offset)해 교차점을 카메라 중심으로 끌어온다.
+        /// tolMm 이내로 들어오거나 maxIter 소진 시 종료. 검출 실패 시 null.
+        /// (절대좌표 = 현재 스테이지 − 카메라→교차점 오프셋, FindCenterStep 공통 규약)
+        /// </summary>
+        private async Task<Point2D?> CenterScribeAsync(CancellationToken ct, int maxIter = 4, double tolMm = 0.003)
+        {
+            for (int i = 0; i < maxIter; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                var r = await MeasureScribeAsync(ct);
+                if (r == null) return null;
+
+                ScribeOffsetXUm = r.X * 1000.0;
+                ScribeOffsetYUm = r.Y * 1000.0;
+
+                double curHX = await _sequenceService.GetCurrentPosition(XAxis, ct);
+                double curWY = await _sequenceService.GetCurrentPosition(YAxis, ct);
+                var abs = Point2D.of(curHX - r.X, curWY - r.Y);
+
+                if (Math.Abs(r.X) <= tolMm && Math.Abs(r.Y) <= tolMm)
+                    return abs; // 이미 비전 중심
+
+                // 교차점을 카메라 중심으로 이동: 현재 → 절대(=현재−offset)
+                await _sequenceService.RelativeMotionsMove(XAxis, -r.X, ct);
+                await _sequenceService.RelativeMotionsMove(YAxis, -r.Y, ct);
+            }
+
+            return await MeasureScribeAbsAsync(ct); // 마지막 상태의 절대좌표
+        }
+
+        /// <summary>
+        /// 한 Die에서 (3)~(6)을 수행한다.
+        ///  (3) Scribe를 비전 중심에 정렬 = A → (4) 옆 Die로 pitch 이동 후 측정 = B → 기준(A)으로 복귀
+        ///  (5) A·B 기울기(atan2)로 W_T 보정 → (6) 임계각 이내로 수렴할 때까지 반복.
+        /// 반환: 수렴/정상 종료된 기준점 A의 절대좌표. 초기 정렬 실패 시 null(끝 Die/미검출).
+        /// </summary>
+        private async Task<Point2D?> ConvergeThetaAtDieAsync(double pitch, string pass, CancellationToken ct)
+        {
+            int iter = Math.Max(1, ScribeConvergeIter);
+            Point2D? aAbs = null;
+
+            for (int k = 0; k < iter; k++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                // (3) 기준 Scribe를 비전 중심에 정렬 = A
+                aAbs = await CenterScribeAsync(ct);
+                if (aAbs == null) return null;
+
+                // (4) 옆 Die로 pitch 이동 후 측정 = B, 이후 기준 위치(A)로 복귀
+                await _sequenceService.RelativeMotionsMove(XAxis, pitch, ct);
+                var bAbs = await MeasureScribeAbsAsync(ct);
+                await _sequenceService.RelativeMotionsMove(XAxis, -pitch, ct);
+
+                if (bAbs == null)
+                    return aAbs; // 옆 Die 미검출 → 이 Die는 보정 없이 종료
+
+                // (5) A·B 기울기 → W_T 보정 (±90° 정규화)
+                double angleDeg = Math.Atan2(bAbs.Y - aAbs.Y, bAbs.X - aAbs.X) * (180.0 / Math.PI);
+                if (angleDeg > 90) angleDeg -= 180;
+                else if (angleDeg < -90) angleDeg += 180;
+                ScribeThetaAngleDeg = angleDeg;
+
+                if (Math.Abs(angleDeg) < ScribeThetaMinDeg)
+                {
+                    ScribeCenterStatus = $"{pass} — 기울기 {angleDeg:F4}° (수렴)";
+                    return aAbs; // (6) 수렴
+                }
+
+                double corr = ThetaSign * angleDeg;
+                ScribeCenterStatus = $"{pass} — 기울기 {angleDeg:F4}° → W_T {-corr:F4}° 보정 ({k + 1}/{iter})";
+                _logger.Information("Wafer 중심 2차 — {Pass} 기울기={A:F4}°, W_T 보정={C:F4}° (iter {K})",
+                    pass, angleDeg, -corr, k + 1);
+                await _sequenceService.RelativeMotionsMove(TAxis, -corr, ct);
+                // (6) 반복 — 다음 루프에서 A 재정렬
+            }
+
+            return aAbs;
+        }
+
+        /// <summary>
+        /// (7) 한 방향(dir=+1:+X, −1:−X)으로 기준 위치에서 pitch씩 이동하며 매 Die에서 ConvergeThetaAtDieAsync 수행.
+        /// steps(편도 Die 수)만큼 진행하되, Scribe 미검출(웨이퍼 끝)이면 직전 이동을 되돌리고 조기 종료한다.
+        /// </summary>
+        private async Task RunScribeThetaSweepAsync(int dir, double pitch, int steps, string pass, CancellationToken ct)
+        {
+            for (int s = 0; s < steps; s++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                double shift = dir * pitch;
+                ScribeCenterStatus = $"{pass} 스윕 — X {shift:+0.000;-0.000}mm 이동 ({s + 1}/{steps})...";
+                await _sequenceService.RelativeMotionsMove(XAxis, shift, ct);
+
+                var a = await ConvergeThetaAtDieAsync(pitch, pass, ct);
+                if (a == null)
+                {
+                    // 끝 Die(미검출) — 직전 이동 되돌리고 종료
+                    await _sequenceService.RelativeMotionsMove(XAxis, -shift, ct);
+                    ScribeCenterStatus = $"{pass} 스윕 — 끝 Die 도달(미검출), {s} 스텝 완료";
+                    _logger.Information("Wafer 중심 2차 — {Pass} 끝 Die 도달(step {S})", pass, s);
+                    return;
+                }
+            }
+            ScribeCenterStatus = $"{pass} 스윕 — {steps} 스텝 완료 (기울기 {ScribeThetaAngleDeg:F4}°)";
         }
 
         // ── 3차: (2차 측정 + 저배율카메라↔Shank 상대거리)만큼 Shank를 중심으로 시프트 ──
