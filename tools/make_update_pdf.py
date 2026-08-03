@@ -41,13 +41,16 @@ updates = [
     ("2026-07-31", [
         ("Btm 정렬", [
             "BTM θ 보정 시퀀스 추가 (RECIPE=DIE 전용, BtmHighAlign) — 수행 순서: 카메라 거리 측정 → BTM Die 측정 → θ 보정 → BTM Die 재측정",
-            "카메라 거리(Hc2Offset) 기반으로 BLA(HC1)·BRA(HC2) 얼라인마크를 통합해 상대 각도 계산",
-            "BLA→BRA 상대거리(X,Y)를 레시피에 저장, 계산한 θ만큼 W_T 회전 보정",
+            "카메라 거리(Hc2Offset) 기반으로 BLA(HC1)·BRA(HC2) 얼라인마크를 통합해 측정 θ 계산",
+            "측정 θ와 도면상 BLA→BRA 상대거리(BTM_ALIGN_REF)의 θ가 다를 때, 그 차이만큼 W_T 회전 보정",
             "회전 부호·데드밴드를 EC 파라미터(BtmThetaSign / BtmThetaMinDeg)로 조정 가능",
         ]),
         ("Wafer 정렬", [
             "Theta 보정 스윕 — Die 수·Step 수로 이동 범위를 사전 제한해 웨이퍼(화면) 밖 이탈 방지 (실제 스텝 = min(최대 스텝, 경계까지 남은 Die÷ShiftDies))",
             "동작 취소 버튼 추가 — 진행 중인 중심 찾기·Theta 보정·본딩을 통합 취소 (실행 중일 때만 활성화)",
+        ]),
+        ("Head 안전", [
+            "Init_Head — 고배율 정렬 전 H_Z·h_z 축을 항상 SAFETY 위치로 이동하도록 변경 (기존: 안전 위치보다 아래인 축만 후퇴)",
         ]),
     ]),
     ("2026-07-30", [
