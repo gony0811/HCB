@@ -236,6 +236,18 @@ namespace HCB.UI
         [ObservableProperty] private double scribeAbsT;
         [ObservableProperty] private bool hasScribeMeasure;    // 2차 측정 완료 여부(3차 활성화용)
 
+        // ── 1차: 저배율 3점(12/4/7시) 웨이퍼 엣지 절대좌표 ──
+        //  operator가 저배율 카메라를 각 시계 위치로 조그한 뒤 해당 버튼으로 1점씩 측정.
+        //  3점이 모두 채워지면 FindCenterStep1이 원 피팅으로 대략 중심을 산출·이동한다.
+        private readonly Point2D?[] _edgePoints = new Point2D?[3]; // [0]=12시, [1]=4시, [2]=7시
+        [ObservableProperty] private string edgePoint12Text = "-";
+        [ObservableProperty] private string edgePoint04Text = "-";
+        [ObservableProperty] private string edgePoint07Text = "-";
+        [ObservableProperty] private double coarseCenterX;     // 1차 원 피팅 대략 중심(스테이지 절대)
+        [ObservableProperty] private double coarseCenterY;
+
+        private int EdgeMeasuredCount => _edgePoints.Count(p => p != null);
+
         private CancellationTokenSource? _alignCts;
 
         private void OnInterlockActivated()
@@ -263,12 +275,133 @@ namespace HCB.UI
 
         private bool CanCancelOperation() => IsAligning || IsBonding;
 
-        // ── 1차: 저배율 3점 측정 (미구현 — 측정 방법 미정이라 스킵) ──
-        [RelayCommand]
-        private void FindCenterStep1()
+        // ── 1차: 저배율(HC_LOW) 3점(12/4/7시) 웨이퍼 엣지로 대략 중심 산출 ──
+        //  Vision v1.0 회신: 저배율은 화소당 ~45µm라 스크라이브 신뢰도가 낮으므로,
+        //  대략 중심은 웨이퍼 "엣지(원호)"를 3점 잡아 최소자승 원 피팅으로 구한다.
+        //  저배율 FOV(≈110mm)에 3점 동시 촬상이 불가하므로, operator가 카메라를
+        //  12→4→7시(≈120° 간격)로 조그해 각 위치에서 아래 버튼으로 1점씩 측정한다.
+
+        /// <summary>12/4/7시 시계 위치 → _edgePoints 인덱스.</summary>
+        private static int EdgeIndex(WaferClock clock) => clock switch
         {
-            ScribeCenterStatus = "1차(저배율 3점) 측정 방법 미정 — 스킵";
-            _logger.Information("Wafer 중심 1차(저배율 3점) 스킵 — 측정 방법 미구현");
+            WaferClock.H12 => 0,
+            WaferClock.H04 => 1,
+            WaferClock.H07 => 2,
+            _ => 0
+        };
+
+        private void SetEdgeText(int idx, string text)
+        {
+            switch (idx)
+            {
+                case 0: EdgePoint12Text = text; break;
+                case 1: EdgePoint04Text = text; break;
+                case 2: EdgePoint07Text = text; break;
+            }
+        }
+
+        // ── 1차-측정: 현재 위치에서 저배율 웨이퍼 엣지 1점 측정(12/4/7시 개별 버튼) ──
+        //  카메라가 해당 시계 위치의 엣지 위에 있다고 가정하고 1회 촬상.
+        //  엣지 절대좌표 = 현재 스테이지 − 카메라→엣지 오프셋 (FindCenterStep2와 동일 부호 규약).
+        [RelayCommand]
+        private async Task MeasureEdgePoint(WaferClock clock)
+        {
+            if (IsAligning) return;
+            IsAligning = true;
+            _alignCts = new CancellationTokenSource();
+            var ct = _alignCts.Token;
+
+            try
+            {
+                int idx = EdgeIndex(clock);
+                ScribeCenterStatus = $"저배율 웨이퍼 엣지 측정 중... ({(int)clock}시)";
+                _logger.Information("Wafer 중심 1차 — HC_LOW 엣지 측정 시작 ({Clock}시)", (int)clock);
+
+                var r = await _communication.RequestWaferEdge(clock, ct);
+                if (r == null || r.Result == Result.NG)
+                {
+                    ScribeCenterStatus = $"엣지 측정 실패(NG) — {(int)clock}시";
+                    _logger.Warning("HC_LOW 엣지 측정 NG ({Clock}시)", (int)clock);
+                    return;
+                }
+
+                double curHX = await _sequenceService.GetCurrentPosition(XAxis, ct);
+                double curWY = await _sequenceService.GetCurrentPosition(YAxis, ct);
+
+                var pt = Point2D.of(curHX - r.X, curWY - r.Y);
+                _edgePoints[idx] = pt;
+                SetEdgeText(idx, $"({pt.X:F4}, {pt.Y:F4})");
+
+                ScribeCenterStatus =
+                    $"{(int)clock}시 엣지 측정 완료 — ({pt.X:F4},{pt.Y:F4}) [{EdgeMeasuredCount}/3]";
+                _logger.Information("HC_LOW 엣지 측정 완료 ({Clock}시) — abs=({X:F4},{Y:F4})",
+                    (int)clock, pt.X, pt.Y);
+            }
+            catch (OperationCanceledException) { ScribeCenterStatus = "엣지 측정 중단됨"; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "웨이퍼 엣지 측정 오류");
+                ScribeCenterStatus = $"오류: {e.Message}";
+            }
+            finally { IsAligning = false; }
+        }
+
+        // ── 1차-측정값 초기화 ──
+        [RelayCommand]
+        private void ResetEdgePoints()
+        {
+            for (int i = 0; i < _edgePoints.Length; i++) _edgePoints[i] = null;
+            EdgePoint12Text = EdgePoint04Text = EdgePoint07Text = "-";
+            ScribeCenterStatus = "엣지 3점 초기화됨";
+        }
+
+        // ── 1차: 3점 원 피팅 → 대략 중심 산출 후 저배율 카메라를 중심으로 이동 ──
+        [RelayCommand]
+        private async Task FindCenterStep1()
+        {
+            if (IsAligning) return;
+            if (_edgePoints.Any(p => p == null))
+            {
+                ScribeCenterStatus = $"3점(12/4/7시) 엣지 측정을 모두 완료하세요. [{EdgeMeasuredCount}/3]";
+                return;
+            }
+
+            IsAligning = true;
+            _alignCts = new CancellationTokenSource();
+            var ct = _alignCts.Token;
+
+            try
+            {
+                var pts = _edgePoints.Select(p => p!).ToList();
+                var center = CalibrationMath.FitCircleCenter(pts);
+
+                CoarseCenterX = center.X;
+                CoarseCenterY = center.Y;
+
+                ScribeCenterStatus = "1차 대략 중심으로 저배율 카메라 이동 중...";
+                _logger.Information("Wafer 중심 1차 — 원 피팅 중심=({X:F4},{Y:F4})",
+                    center.X, center.Y);
+
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(XAxis, center.X, ct),
+                    _sequenceService.MotionsMove(YAxis, center.Y, ct));
+
+                ScribeCenterStatus = $"1차 완료 — 대략 중심=({center.X:F4},{center.Y:F4})로 이동";
+                _logger.Information("Wafer 중심 1차 완료 — 중심 이동 ({X:F4},{Y:F4})", center.X, center.Y);
+            }
+            catch (OperationCanceledException) { ScribeCenterStatus = "1차 이동 중단됨"; }
+            catch (InvalidOperationException e)
+            {
+                // 3점이 일직선(원 피팅 불가) — 시계 위치를 더 벌려 재측정 안내
+                _logger.Warning(e, "Wafer 중심 1차 — 원 피팅 실패(점이 일직선)");
+                ScribeCenterStatus = "1차 실패 — 3점이 일직선입니다. 12/4/7시로 더 벌려 재측정하세요.";
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Wafer 중심 1차 오류");
+                ScribeCenterStatus = $"오류: {e.Message}";
+            }
+            finally { IsAligning = false; }
         }
 
         // ── 2차: 저배율(HC_LOW) Scribeline(교차점) 측정 ──
