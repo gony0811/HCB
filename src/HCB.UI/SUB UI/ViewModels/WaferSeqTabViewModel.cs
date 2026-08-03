@@ -661,17 +661,18 @@ namespace HCB.UI
 
                 // Shank 중심을 스크라이브 교차점(웨이퍼 중심)으로:
                 //   절대목표 = 교차점 절대좌표 + (저배율카메라 ↔ Shank 상대거리)
-                double targetHX = ScribeAbsX + shankLowX;
-                double targetWY = ScribeAbsY + shankLowY;
-
+                //double targetHX = ScribeAbsX + shankLowX;
+                //double targetWY = ScribeAbsY + shankLowY;
+                double targetHX = shankLowX;
+                double targetWY = shankLowY;
                 ScribeCenterStatus = "Shank를 중심으로 시프트 중...";
                 _logger.Information(
                     "Wafer 중심 3차 시프트 — target=({X:F4},{Y:F4}), shankLowOffset=({SX:F4},{SY:F4})",
                     targetHX, targetWY, shankLowX, shankLowY);
 
                 await Task.WhenAll(
-                    _sequenceService.MotionsMove(XAxis, targetHX, ct),
-                    _sequenceService.MotionsMove(YAxis, targetWY, ct));
+                    _sequenceService.RelativeMotionsMove(XAxis, targetHX, ct),
+                    _sequenceService.RelativeMotionsMove(YAxis, targetWY, ct));
 
                 ScribeCenterStatus = $"시프트 완료 — Shank 목표=({targetHX:F4},{targetWY:F4})";
                 _logger.Information("Wafer 중심 3차 시프트 완료");

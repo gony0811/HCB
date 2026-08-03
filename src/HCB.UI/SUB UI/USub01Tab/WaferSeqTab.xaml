@@ -435,7 +435,7 @@
                             <Border Background="#0A1628" CornerRadius="6" Padding="14" Margin="0,0,0,8"
                                     BorderBrush="#1C3A52" BorderThickness="1">
                                 <StackPanel>
-                                    <TextBlock Text="1차 · 저배율 3점(12/4/7시) 엣지 측정"
+                                    <TextBlock Text="1차 · 저배율 3점(11/4/7시) 엣지 측정"
                                                Foreground="#5E8BAA" FontSize="12" Margin="0,0,0,8"/>
 
                                     <!-- 3점 개별 측정 버튼 -->
@@ -447,7 +447,7 @@
                                             <ColumnDefinition Width="6"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Button Grid.Column="0" Content="12시 측정"
+                                        <Button Grid.Column="0" Content="11시 측정"
                                             Command="{Binding MeasureEdgePointCommand}"
                                             CommandParameter="{x:Static local:WaferClock.H12}"
                                             IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
@@ -475,7 +475,7 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="12시"
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="11시"
                                                    Foreground="#5E8BAA" FontSize="12" Margin="0,0,16,4"/>
                                         <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding EdgePoint12Text}"
                                                    Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" Margin="0,0,0,4"/>
