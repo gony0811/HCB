@@ -153,6 +153,23 @@
                                     Visibility="{Binding IsBonding, Converter={StaticResource BoolToVis}}"/>
                             </Grid>
 
+                            <!-- 선택 Die를 저배/고배 카메라로 보기 (해당 Die 위치로 이동) -->
+                            <Grid DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="저배율로 보기"
+                                    Command="{Binding ViewDieLowMagCommand}"
+                                    IsEnabled="{Binding IsBonding, Converter={StaticResource InverseBoolConverter}}"
+                                    Height="38" FontSize="13"/>
+                                <Button Grid.Column="2" Content="고배율로 보기"
+                                    Command="{Binding ViewDieHighMagCommand}"
+                                    IsEnabled="{Binding IsBonding, Converter={StaticResource InverseBoolConverter}}"
+                                    Height="38" FontSize="13"/>
+                            </Grid>
+
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
                                     <!-- SELECTED DIE -->
@@ -401,6 +418,8 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="상태"
@@ -420,52 +439,46 @@
                                     </StackPanel>
 
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="교차점 (X,Y)"
-                                               Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,0"/>
-                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+                                               Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
                                         <TextBlock Text="{Binding ScribeAbsX, StringFormat=F4}"
                                                    Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
                                         <TextBlock Text=", " Foreground="#5E8BAA" FontSize="13"/>
                                         <TextBlock Text="{Binding ScribeAbsY, StringFormat=F4}"
                                                    Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
                                     </StackPanel>
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="저배 센터 (X,Y)"
+                                               Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
+                                    <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="{Binding CenterX, StringFormat=F4}"
+                                                   Foreground="#3498DB" FontSize="13" FontFamily="Consolas"/>
+                                        <TextBlock Text=", " Foreground="#5E8BAA" FontSize="13"/>
+                                        <TextBlock Text="{Binding CenterY, StringFormat=F4}"
+                                                   Foreground="#3498DB" FontSize="13" FontFamily="Consolas"/>
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="고배 센터 (X,Y)"
+                                               Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,0"/>
+                                    <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal">
+                                        <TextBlock Text="{Binding HighCenterX, StringFormat=F4}"
+                                                   Foreground="#2ECC71" FontSize="13" FontFamily="Consolas"/>
+                                        <TextBlock Text=", " Foreground="#5E8BAA" FontSize="13"/>
+                                        <TextBlock Text="{Binding HighCenterY, StringFormat=F4}"
+                                                   Foreground="#2ECC71" FontSize="13" FontFamily="Consolas"/>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
 
-                            <!-- 1차: 저배율 3점(12/4/7시) 엣지 측정 -->
+                            <!-- 1차: 저배율 3점(WAFER_ALIGN_1/2/3) 엣지 자동 측정 결과 -->
                             <Border Background="#0A1628" CornerRadius="6" Padding="14" Margin="0,0,0,8"
                                     BorderBrush="#1C3A52" BorderThickness="1">
                                 <StackPanel>
-                                    <TextBlock Text="1차 · 저배율 3점(11/4/7시) 엣지 측정"
+                                    <TextBlock Text="1차 · 저배율 3점(WAFER_ALIGN_1/2/3) 엣지 측정"
                                                Foreground="#5E8BAA" FontSize="12" Margin="0,0,0,8"/>
 
-                                    <!-- 3점 개별 측정 버튼 -->
+                                    <!-- 3점 측정값 표시 (1차 버튼 실행 시 자동 이동·측정) -->
                                     <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Button Grid.Column="0" Content="11시 측정"
-                                            Command="{Binding MeasureEdgePointCommand}"
-                                            CommandParameter="{x:Static local:WaferClock.H12}"
-                                            IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
-                                            Height="34" FontSize="12" FontWeight="Bold"/>
-                                        <Button Grid.Column="2" Content="4시 측정"
-                                            Command="{Binding MeasureEdgePointCommand}"
-                                            CommandParameter="{x:Static local:WaferClock.H04}"
-                                            IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
-                                            Height="34" FontSize="12" FontWeight="Bold"/>
-                                        <Button Grid.Column="4" Content="7시 측정"
-                                            Command="{Binding MeasureEdgePointCommand}"
-                                            CommandParameter="{x:Static local:WaferClock.H07}"
-                                            IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
-                                            Height="34" FontSize="12" FontWeight="Bold"/>
-                                    </Grid>
-
-                                    <!-- 3점 측정값 표시 -->
-                                    <Grid Margin="0,8,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -475,25 +488,19 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="11시"
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="ALIGN_1"
                                                    Foreground="#5E8BAA" FontSize="12" Margin="0,0,16,4"/>
                                         <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding EdgePoint12Text}"
                                                    Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" Margin="0,0,0,4"/>
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="4시"
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="ALIGN_2"
                                                    Foreground="#5E8BAA" FontSize="12" Margin="0,0,16,4"/>
                                         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding EdgePoint04Text}"
                                                    Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" Margin="0,0,0,4"/>
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="7시"
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="ALIGN_3"
                                                    Foreground="#5E8BAA" FontSize="12" Margin="0,0,16,0"/>
                                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding EdgePoint07Text}"
                                                    Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas"/>
                                     </Grid>
-
-                                    <Button Content="3점 초기화"
-                                        Command="{Binding ResetEdgePointsCommand}"
-                                        IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
-                                        HorizontalAlignment="Right" Padding="10,0"
-                                        Height="28" FontSize="11" Margin="0,8,0,0"/>
                                 </StackPanel>
                             </Border>
 
@@ -514,7 +521,6 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="초기 Shift X (mm)"
@@ -529,28 +535,22 @@
                                         <TextBox Grid.Row="1" Grid.Column="1"
                                                  Text="{Binding ScribeShiftY}" Margin="0,0,0,8"/>
 
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="편도 스윕 Die 수"
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="스텝당 Die 수"
                                                    Foreground="#5E8BAA" FontSize="13"
                                                    VerticalAlignment="Center" Margin="0,0,16,8"/>
                                         <TextBox Grid.Row="2" Grid.Column="1"
-                                                 Text="{Binding ScribeSweepDies}" Margin="0,0,0,8"/>
+                                                 Text="{Binding ScribeStepDies}" Margin="0,0,0,8"/>
 
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="스텝당 Die 수"
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Die당 수렴 반복"
                                                    Foreground="#5E8BAA" FontSize="13"
                                                    VerticalAlignment="Center" Margin="0,0,16,8"/>
                                         <TextBox Grid.Row="3" Grid.Column="1"
-                                                 Text="{Binding ScribeStepDies}" Margin="0,0,0,8"/>
-
-                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Die당 수렴 반복"
-                                                   Foreground="#5E8BAA" FontSize="13"
-                                                   VerticalAlignment="Center" Margin="0,0,16,8"/>
-                                        <TextBox Grid.Row="4" Grid.Column="1"
                                                  Text="{Binding ScribeConvergeIter}" Margin="0,0,0,8"/>
 
-                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="수렴 임계각 (°)"
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="수렴 임계각 (°)"
                                                    Foreground="#5E8BAA" FontSize="13"
                                                    VerticalAlignment="Center" Margin="0,0,16,0"/>
-                                        <TextBox Grid.Row="5" Grid.Column="1"
+                                        <TextBox Grid.Row="4" Grid.Column="1"
                                                  Text="{Binding ScribeThetaMinDeg}"/>
                                     </Grid>
 
@@ -568,7 +568,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- 3단계 실행 버튼 -->
+                            <!-- 4단계 실행 버튼 (1: 저배 3점 중심 / 2: 저배 Scribe Theta / 3: 고배 전환 / 4: 고배 Theta) -->
                             <Grid Margin="0,4,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -576,20 +576,39 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="6"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Content="1차 (중심계산)"
+                                <Button Grid.Column="0" Content="1차 (저배 중심)"
                                     Command="{Binding FindCenterStep1Command}"
                                     IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
                                     Height="40" FontSize="12" FontWeight="Bold"/>
-                                <Button Grid.Column="2" Content="2차 (Scribe 측정)"
+                                <Button Grid.Column="2" Content="2차 (저배 Theta)"
                                     Command="{Binding FindCenterStep2Command}"
                                     IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
                                     Height="40" FontSize="12" FontWeight="Bold"/>
-                                <Button Grid.Column="4" Content="3차 (Shift)"
+                                <Button Grid.Column="4" Content="3차 (고배 전환)"
                                     Command="{Binding FindCenterStep3Command}"
                                     IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
                                     Height="40" FontSize="12" FontWeight="Bold"/>
+                                <Button Grid.Column="6" Content="4차 (고배 Theta)"
+                                    Command="{Binding FindCenterStep4Command}"
+                                    IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
+                                    Height="40" FontSize="12" FontWeight="Bold"/>
                             </Grid>
+
+                            <!-- 전체 시퀀스 (1차→2차→3차→4차 자동 실행) -->
+                            <Button Content="전체 시퀀스 실행 (1~4)"
+                                Command="{Binding RunFullSequenceCommand}"
+                                IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
+                                Background="#1F6F43" Foreground="White"
+                                Height="40" FontSize="13" FontWeight="Bold" Margin="0,6,0,0"/>
+
+                            <!-- 현재 중심 기준 전체 Die 위치 계산 (1/2차 완료 후 자동 수행, 수동 재계산용) -->
+                            <Button Content="Die 위치 전체 계산 (현재 중심 기준)"
+                                Command="{Binding ComputeDiePositionsCommand}"
+                                IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
+                                Height="34" FontSize="12" Margin="0,6,0,0"/>
 
                             <!-- ═══════════ WAFER THETA 보정 (HC1 AlignMark) ═══════════ -->
                             <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
@@ -611,7 +630,6 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="쉬프트 Die 수"
@@ -620,28 +638,22 @@
                                     <TextBox Grid.Row="0" Grid.Column="1"
                                              Text="{Binding ThetaShiftDies}" Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="패스 최대 스텝"
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="수렴 임계각 (°)"
                                                Foreground="#5E8BAA" FontSize="13"
                                                VerticalAlignment="Center" Margin="0,0,16,8"/>
                                     <TextBox Grid.Row="1" Grid.Column="1"
-                                             Text="{Binding ThetaMaxIter}" Margin="0,0,0,8"/>
+                                             Text="{Binding ThetaMinDeg}" Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="수렴 임계각 (°)"
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Y 탐색 스텝 (mm)"
                                                Foreground="#5E8BAA" FontSize="13"
                                                VerticalAlignment="Center" Margin="0,0,16,8"/>
                                     <TextBox Grid.Row="2" Grid.Column="1"
-                                             Text="{Binding ThetaMinDeg}" Margin="0,0,0,8"/>
-
-                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Y 탐색 스텝 (mm)"
-                                               Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
-                                    <TextBox Grid.Row="3" Grid.Column="1"
                                              Text="{Binding ThetaSearchStepMm}" Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Y 탐색 범위 (±mm)"
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Y 탐색 범위 (±mm)"
                                                Foreground="#5E8BAA" FontSize="13"
                                                VerticalAlignment="Center" Margin="0,0,16,0"/>
-                                    <TextBox Grid.Row="4" Grid.Column="1"
+                                    <TextBox Grid.Row="3" Grid.Column="1"
                                              Text="{Binding ThetaSearchRangeMm}"/>
                                 </Grid>
                             </Border>

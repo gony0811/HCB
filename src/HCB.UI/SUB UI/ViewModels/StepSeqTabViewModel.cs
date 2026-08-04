@@ -715,7 +715,13 @@ namespace HCB.UI
         // ═════════════════════════════════════════════════════
 
         [RelayCommand]
-        public async Task TopRunFullSequence()
+        public async Task TopRunFullSequence() => await RunTopFullSequence(null);
+
+        // Wafer 본딩: BtmHighAlign 시 PLACE_CENTER 대신 클릭한 Die의 Center(고배 절대좌표)로 이동.
+        // 그 외 단계는 TopRunFullSequence와 동일하게 진행한다.
+        public async Task WaferBonding(Point2D dieCenter) => await RunTopFullSequence(dieCenter);
+
+        private async Task RunTopFullSequence(Point2D placeCenter)
         {
             ResetCts();
             var ct = _cts.Token;
@@ -738,9 +744,9 @@ namespace HCB.UI
                 UpdateTopMarks();
                 TopHighAlignState = StepState.Completed;
 
-                // 4. 고배율 측정 (Btm)
+                // 4. 고배율 측정 (Btm) — placeCenter != null 이면 클릭한 Die Center로 이동
                 BtmHighAlignState = StepState.InProgress;
-                hcbData = await _sequenceService.BtmHighAlign(hcbData, ct);
+                hcbData = await _sequenceService.BtmHighAlign(hcbData, ct, placeCenter);
                 _sequenceService.ProcessMeasurement(hcbData, 3);
                 UpdateBtmMarks();
                 BtmHighAlignState = StepState.Completed;

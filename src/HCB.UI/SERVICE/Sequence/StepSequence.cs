@@ -253,21 +253,36 @@ namespace HCB.UI
         }
 
 
-        public async Task TopDieSet(CancellationToken ct)
+        // placeCenter == null : 기존 동작(PLACE_CENTER + HcCenterError 로 이동)
+        // placeCenter != null : Wafer 본딩 등에서 지정한 Die Center(고배 절대좌표, HcCenterError 이미 포함)로 절대 이동
+        public async Task TopDieSet(CancellationToken ct, Point2D placeCenter = null)
         {
             try
             {
                 double topDieThickness = await GetRecipe("TopDieThickness");
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
-                double HcCenterErrorX = await GetRecipe("HcCenterErrorX");
-                double HcCenterErrorY = await GetRecipe("HcCenterErrorY");
 
                 await Init_Head(ct);
-                await Task.WhenAll(
-                    MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", HcCenterErrorX, ct),
-                    MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", HcCenterErrorY, ct)
-                );
+
+                if (placeCenter != null)
+                {
+                    // 클릭한 Die의 Center(고배 절대좌표)로 이동
+                    await Task.WhenAll(
+                        MotionsMove(MotionExtensions.H_X, placeCenter.X, ct),
+                        MotionsMove(MotionExtensions.W_Y, placeCenter.Y, ct)
+                    );
+                }
+                else
+                {
+                    double HcCenterErrorX = await GetRecipe("HcCenterErrorX");
+                    double HcCenterErrorY = await GetRecipe("HcCenterErrorY");
+                    await Task.WhenAll(
+                        MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", HcCenterErrorX, ct),
+                        MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", HcCenterErrorY, ct)
+                    );
+                }
+
                 await MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
             }
             catch (Exception e)

@@ -295,10 +295,11 @@ namespace HCB.UI
             return response;
         }
 
-        // ─── Wafer Edge 검출 (HC 저배율, 시계 위치 12/4/7시) ───────────────
+        // ─── Wafer Edge 검출 (HC 저배율, 시계 위치 11/4/7시) ───────────────
         // 현재 카메라 FOV 안의 웨이퍼 엣지를 찾아 카메라 중심 대비 오프셋(mm)을 반환.
-        // 저배율은 FOV(≈110mm) 안에 3점 동시 촬상이 불가하므로 EQP가 12→4→7시로
+        // 저배율은 FOV(≈110mm) 안에 3점 동시 촬상이 불가하므로 EQP가 11→4→7시로
         // 이동하며 각 위치마다 1회 요청한다. clock은 검출 ROI/엣지 방향 힌트.
+        // (11시 위치는 비전 프로토콜 코드 12로 전송된다 — WaferClock.H11 = 12)
         // ※ Vision 회신 v1.0(§5): 스크라이브(패턴매칭)와 알고리즘(원호 에지)이 달라
         //    REQUEST_WAFER_EDGE는 아직 Vision 미구현. 일정 별도 협의 예정 — EQP측 스텁 유지.
         public async Task<VisionMarkPositionResponse> RequestWaferEdge(WaferClock clock, CancellationToken ct = default)

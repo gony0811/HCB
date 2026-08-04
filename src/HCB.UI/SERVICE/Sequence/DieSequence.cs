@@ -232,8 +232,9 @@ namespace HCB.UI
 
         #region Btm Die 고배율 측정
 
+        // placeCenter != null : TopDieSet에서 PLACE_CENTER 대신 지정 Die Center(고배 절대좌표)로 이동
         public async Task<AlignData> BtmHighAlign(
-            AlignData data, CancellationToken ct)
+            AlignData data, CancellationToken ct, Point2D placeCenter = null)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
@@ -249,7 +250,7 @@ namespace HCB.UI
                     await WTable2DMappingOn();
                 }
 
-                await TopDieSet(ct);
+                await TopDieSet(ct, placeCenter);
                 double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
 
                 // RECIPE가 DIE일 때만 Btm θ 보정(카메라 거리 → BLA/BRA 각도 → W_T)을 수행한다.
