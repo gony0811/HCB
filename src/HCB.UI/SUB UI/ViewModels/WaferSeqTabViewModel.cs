@@ -612,9 +612,24 @@ namespace HCB.UI
                     return;
                 }
 
+                // 저배 Center는 1차(또는 이전 2차)에서 산출되어 있어야 한다
+                if (!HasCoarseCenter && !HasScribeMeasure)
+                {
+                    ScribeCenterStatus = "저배 Center 미산출 — 1차를 먼저 실행하세요.";
+                    _logger.Warning("Wafer 중심 2차 — 저배 Center 미산출(1차 미완료)");
+                    return;
+                }
+
                 // 규칙1: 저배 측정 전 Z 이동(h_z 먼저)
                 ScribeCenterStatus = "저배 Z 이동 중...";
                 await MoveZForLowMagAsync(ct);
+
+                // (0) 저배 Center로 이동 후 Theta 보정 시작
+                ScribeCenterStatus = $"저배 Center로 이동 중... ({CenterX:F4},{CenterY:F4})";
+                _logger.Information("Wafer 중심 2차 — 저배 Center 이동 ({X:F4},{Y:F4})", CenterX, CenterY);
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(XAxis, CenterX, ct),
+                    _sequenceService.MotionsMove(YAxis, CenterY, ct));
 
                 // (1) Recipe 값만큼 기준 위치로 초기 Shift
                 if (Math.Abs(ScribeShiftX) > 1e-9 || Math.Abs(ScribeShiftY) > 1e-9)
