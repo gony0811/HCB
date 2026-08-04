@@ -387,8 +387,8 @@ namespace HCB.UI
         /// <summary>저배율 측정 Z 위치로 이동. h_z(SAFTY) → H_Z(저배율 측정) 순.</summary>
         private async Task MoveZForLowMagAsync(CancellationToken ct)
         {
-            await _sequenceService.MotionsMove(MotionExtensions.h_z, "SAFTY", ct);        // h_z 먼저
-            await _sequenceService.MotionsMove(MotionExtensions.H_Z, "저배율 측정", ct);
+            await _sequenceService.MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, ct);        // h_z 먼저
+            await _sequenceService.MotionsMove(MotionExtensions.H_Z, "저배확인", ct);
         }
 
         /// <summary>고배율 측정 Z 위치로 이동. h_z → H_Z 순(레시피/파라미터 기반 절대 이동).</summary>
@@ -397,8 +397,8 @@ namespace HCB.UI
             double fidAlignGap = RecipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
 
             // h_z 먼저
-            double safty = await _sequenceService.GetRecipe("SAFTY");
-            await _sequenceService.MotionsMove(MotionExtensions.h_z, safty - fidAlignGap, ct);
+            //double safty = await _sequenceService.GetRecipe("SAFTY");
+            await _sequenceService.MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, -fidAlignGap, ct);
 
             // H_Z
             double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
