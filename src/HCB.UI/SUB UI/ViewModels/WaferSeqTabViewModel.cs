@@ -957,13 +957,20 @@ namespace HCB.UI
                 ScribeCenterStatus = "고배 Z 이동 중...";
                 await MoveZForHighMagAsync(ct);
 
-                // 고배 AlignMark Theta 보정 (Shift 없음, 정/역 교대 자동 스윕)
-                ScribeCenterStatus = "고배 AlignMark Theta 보정 중...";
-                if (!await RunThetaAlternatingSweepAsync(pitchStep, stepDies, ct))
+                // 기준 Die AlignMark Theta 수렴 (2차와 동일 방식 — 각 Die에서 A/B 측정·보정 반복)
+                ScribeCenterStatus = "고배 기준 Die AlignMark 정렬/Theta 수렴 중...";
+                var startAbs = await ConvergeThetaAtDieAlignAsync(pitchStep, "고배 기준", ct);
+                if (startAbs == null)
                 {
                     ScribeCenterStatus = "4차 중단 — 시작 AlignMark 미검출(수동 조정 후 재실행)";
                     return;
                 }
+
+                // 양옆 자동 스윕 (WaferSize 경계 기반, 2차처럼 좌우 번갈아 확장)
+                int maxPlus = MaxStepsWithinWafer(startAbs, +1, stepDies);
+                int maxMinus = MaxStepsWithinWafer(startAbs, -1, stepDies);
+                _logger.Information("Wafer 중심 4차 — 자동 스윕 범위: +{P} / -{M} 스텝(WaferSize={W})", maxPlus, maxMinus, WaferSize);
+                await RunAlignThetaAlternatingSweepAsync(pitchStep, maxPlus, maxMinus, ct);
 
                 ScribeCenterStatus = $"4차 완료 — 고배 AlignMark Theta 보정, 최종 기울기 {ThetaAngleDeg:F4}°";
                 _logger.Information("Wafer 중심 4차 완료 — 고배 AlignMark Theta, 기울기={A:F4}°", ThetaAngleDeg);
@@ -979,6 +986,97 @@ namespace HCB.UI
                 ScribeCenterStatus = $"오류: {e.Message}";
             }
             finally { IsAligning = false; }
+        }
+
+        // ── 4차 전용: 한 Die에서 AlignMark A/B 측정으로 Theta 수렴 (2차 ConvergeThetaAtDieAsync의 AlignMark판) ──
+        //  A = 현재 Die AlignMark 절대좌표, B = 옆 Die(+pitch) AlignMark. A·B 기울기로 W_T 보정을 임계각 이내까지 반복.
+        //  스크라이브 비전중심 정렬 대신 AlignMark 절대측정을 사용(FOV 이탈 시 Y 탐색). 반환: 기준점 A(초기 미검출 시 null).
+        private async Task<Point2D?> ConvergeThetaAtDieAlignAsync(double pitch, string pass, CancellationToken ct)
+        {
+            int iter = Math.Max(1, ScribeConvergeIter);
+            Point2D? aAbs = null;
+
+            for (int k = 0; k < iter; k++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                // A = 현재 Die AlignMark (FOV 이탈 시 Y 탐색)
+                aAbs = await MeasureHc1AlignAbsAsync(ct) ?? await SearchAlignByYAsync(ct);
+                if (aAbs == null) return null;
+
+                // B = 옆 Die로 pitch 이동 후 측정, 이후 기준(A)으로 복귀
+                await _sequenceService.RelativeMotionsMove(XAxis, pitch, ct);
+                var bAbs = await MeasureHc1AlignAbsAsync(ct) ?? await SearchAlignByYAsync(ct);
+                await _sequenceService.RelativeMotionsMove(XAxis, -pitch, ct);
+
+                if (bAbs == null)
+                    return aAbs; // 옆 Die 미검출(끝 Die 등) → 이 Die는 보정 없이 종료
+
+                // A·B 기울기 → W_T 보정 (±90° 정규화)
+                double angleDeg = Math.Atan2(bAbs.Y - aAbs.Y, bAbs.X - aAbs.X) * (180.0 / Math.PI);
+                if (angleDeg > 90) angleDeg -= 180;
+                else if (angleDeg < -90) angleDeg += 180;
+                ThetaAngleDeg = angleDeg;
+
+                if (Math.Abs(angleDeg) < ThetaMinDeg)
+                {
+                    ThetaStatus = $"{pass} — 기울기 {angleDeg:F4}° (수렴)";
+                    return aAbs;
+                }
+
+                double corr = ThetaSign * angleDeg;
+                ThetaStatus = $"{pass} — 기울기 {angleDeg:F4}° → W_T {-corr:F4}° 보정 ({k + 1}/{iter})";
+                _logger.Information("Wafer 중심 4차 — {Pass} 기울기={A:F4}°, W_T 보정={C:F4}° (iter {K})",
+                    pass, angleDeg, -corr, k + 1);
+                await _sequenceService.RelativeMotionsMove(ThetaAxis, -corr, ct);
+            }
+
+            return aAbs;
+        }
+
+        // ── 4차 전용: 기준 위치에서 정/역방향을 번갈아(+1,−1,+2,−2,…) 확장하며 매 Die에서
+        //    ConvergeThetaAtDieAlignAsync 수행 (2차 RunScribeThetaAlternatingSweepAsync의 AlignMark판) ──
+        private async Task RunAlignThetaAlternatingSweepAsync(double pitch, int maxPlus, int maxMinus, CancellationToken ct)
+        {
+            int steps = Math.Max(maxPlus, maxMinus);
+            int curOffset = 0;                                   // 현재 위치(피치 스텝 단위, 중심=0)
+            bool plusEnd = maxPlus <= 0, minusEnd = maxMinus <= 0;
+
+            for (int k = 1; k <= steps && !(plusEnd && minusEnd); k++)
+            {
+                foreach (int dir in new[] { +1, -1 })
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (dir > 0 && (plusEnd || k > maxPlus)) { if (k > maxPlus) plusEnd = true; continue; }
+                    if (dir < 0 && (minusEnd || k > maxMinus)) { if (k > maxMinus) minusEnd = true; continue; }
+
+                    int prevOffset = curOffset;
+                    int target = dir * k;
+                    double move = (target - prevOffset) * pitch;
+                    string pass = dir > 0 ? $"정방향 {k}" : $"역방향 {k}";
+
+                    ThetaStatus = $"{pass} 스윕 — X {move:+0.000;-0.000}mm 이동...";
+                    await _sequenceService.RelativeMotionsMove(XAxis, move, ct);
+                    curOffset = target;
+
+                    var a = await ConvergeThetaAtDieAlignAsync(pitch, pass, ct);
+                    if (a == null)
+                    {
+                        // 끝 Die(미검출) — 직전 위치로 되돌리고 이 방향만 종료
+                        await _sequenceService.RelativeMotionsMove(XAxis, -move, ct);
+                        curOffset = prevOffset;
+                        if (dir > 0) plusEnd = true; else minusEnd = true;
+                        ThetaStatus = $"{pass} 스윕 — 끝 Die 도달(미검출), 이 방향 종료";
+                        _logger.Information("Wafer 중심 4차 — {Pass} 끝 Die 도달", pass);
+                    }
+                }
+            }
+
+            // 중심(기준 Die)으로 복귀
+            if (curOffset != 0)
+                await _sequenceService.RelativeMotionsMove(XAxis, (0 - curOffset) * pitch, ct);
+
+            ThetaStatus = $"고배 교대 스윕 완료 (기울기 {ThetaAngleDeg:F4}°)";
         }
 
         // ── 전체 시퀀스: 1차 → 2차 → 3차 → 4차 순차 실행 ──
