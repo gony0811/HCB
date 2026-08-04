@@ -396,12 +396,12 @@ namespace HCB.UI
             {
                 // 고배 → 저배: H_Z 먼저 이동
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, "저배확인", ct);
-                await _sequenceService.MotionsMove(MotionExtensions.h_z, "SAFTY", ct);
+                await _sequenceService.MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, ct);
             }
             else
             {
                 // 기본: h_z 먼저 이동
-                await _sequenceService.MotionsMove(MotionExtensions.h_z, "SAFTY", ct);
+                await _sequenceService.MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, ct);
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, "저배확인", ct);
             }
             _zAtHighMag = false;
