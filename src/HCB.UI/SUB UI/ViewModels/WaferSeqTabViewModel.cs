@@ -383,12 +383,28 @@ namespace HCB.UI
         private const string YAxis = MotionExtensions.W_Y;   // 웨이퍼 테이블 Y
         private const string TAxis = MotionExtensions.W_T;   // 웨이퍼 테이블 Y
 
-        // ── 규칙1: 저배/고배 측정 전 Z축 이동 (항상 h_z를 먼저 이동) ──
-        /// <summary>저배율 측정 Z 위치로 이동. h_z(SAFTY) → H_Z(저배율 측정) 순.</summary>
+        // 현재 Z가 고배율 위치에 있는지 여부. 고배→저배 전환 시 H_Z를 먼저 이동하기 위해 추적.
+        private bool _zAtHighMag;
+
+        // ── Z축 이동 규칙 ──
+        //  · 기본(저배/신규): h_z 먼저 → H_Z
+        //  · 고배 → 저배 전환: H_Z 먼저 → h_z
+        /// <summary>저배율 측정 Z 위치로 이동. h_z(SAFTY) / H_Z(저배율 측정).</summary>
         private async Task MoveZForLowMagAsync(CancellationToken ct)
         {
-            await _sequenceService.MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, ct);        // h_z 먼저
-            await _sequenceService.MotionsMove(MotionExtensions.H_Z, "저배확인", ct);
+            if (_zAtHighMag)
+            {
+                // 고배 → 저배: H_Z 먼저 이동
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "저배확인", ct);
+                await _sequenceService.MotionsMove(MotionExtensions.h_z, "SAFTY", ct);
+            }
+            else
+            {
+                // 기본: h_z 먼저 이동
+                await _sequenceService.MotionsMove(MotionExtensions.h_z, "SAFTY", ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, "저배확인", ct);
+            }
+            _zAtHighMag = false;
         }
 
         /// <summary>고배율 측정 Z 위치로 이동. h_z → H_Z 순(레시피/파라미터 기반 절대 이동).</summary>
@@ -406,6 +422,8 @@ namespace HCB.UI
             double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
             await _sequenceService.MotionsMove(MotionExtensions.H_Z,
                 shankToWaferOffset - topDieThickness - btmDieThickness + fidAlignGap - 0.1, ct);
+
+            _zAtHighMag = true;
         }
 
         [ObservableProperty]
@@ -859,16 +877,17 @@ namespace HCB.UI
             ScribeCenterStatus = $"교대 스윕 완료 (기울기 {ScribeThetaAngleDeg:F4}°)";
         }
 
-        // ── 3차: 고배율 Center로 전환 (저배→고배 오프셋 이동 + 고배 Z) ──
-        //  저배→고배 센터 오프셋 = ShankLowOffset + HcCenterError.
+        // ── 3차: 저배 Center → 고배율 Center로 전환 ──
+        //  Scribe 측정 위치가 아니라 웨이퍼의 저배 Center(CenterX/Y)를 기준으로,
+        //  저배→고배 센터 오프셋(ShankLowOffset + HcCenterError)을 더한 절대좌표로 이동한다.
         //  규칙1에 따라 Z(h_z→H_Z)를 먼저 고배 위치로 이동한 뒤 X/Y를 이동한다.
         [RelayCommand]
         private async Task FindCenterStep3()
         {
             if (IsAligning) return;
-            if (!HasScribeMeasure)
+            if (!HasCoarseCenter && !HasScribeMeasure)
             {
-                ScribeCenterStatus = "먼저 2차(저배 Scribe)를 수행하세요.";
+                ScribeCenterStatus = "저배 Center 미산출 — 1차(또는 2차)를 먼저 수행하세요.";
                 return;
             }
 
@@ -882,21 +901,24 @@ namespace HCB.UI
                 double shankLowY = _ecParamService.GetDouble("ShankLowOffsetY");
                 double hcErrX = await GetRecipeSafe("HcCenterErrorX");
                 double hcErrY = await GetRecipeSafe("HcCenterErrorY");
-                double offX = shankLowX + hcErrX;   // 저배→고배 센터 오프셋
-                double offY = shankLowY + hcErrY;
+
+                // 저배 Center 기준 고배 Center 절대좌표 (= 저배 Center + ShankLowOffset + HcCenterError)
+                double targetHX = CenterX + shankLowX + hcErrX;
+                double targetWY = CenterY + shankLowY + hcErrY;
 
                 // 규칙1: Z 먼저(h_z→H_Z) 고배 위치로
                 ScribeCenterStatus = "고배 Z 이동 중...";
                 await MoveZForHighMagAsync(ct);
 
-                // 고배율 카메라를 웨이퍼 중심으로 (X/Y 전환)
-                ScribeCenterStatus = "고배율 Center로 전환 중...";
-                _logger.Information("Wafer 중심 3차 — 고배 전환 offset=({X:F4},{Y:F4})", offX, offY);
+                // 저배 Center → 고배 Center 절대 이동 (X/Y 전환)
+                ScribeCenterStatus = $"저배 Center에서 고배 Center로 전환 중... ({targetHX:F4},{targetWY:F4})";
+                _logger.Information("Wafer 중심 3차 — 저배 Center=({CX:F4},{CY:F4}) → 고배 Center=({TX:F4},{TY:F4})",
+                    CenterX, CenterY, targetHX, targetWY);
                 await Task.WhenAll(
-                    _sequenceService.RelativeMotionsMove(XAxis, offX, ct),
-                    _sequenceService.RelativeMotionsMove(YAxis, offY, ct));
+                    _sequenceService.MotionsMove(XAxis, targetHX, ct),
+                    _sequenceService.MotionsMove(YAxis, targetWY, ct));
 
-                ScribeCenterStatus = $"3차 완료 — 고배율 Center 전환 (offset=({offX:F4},{offY:F4}))";
+                ScribeCenterStatus = $"3차 완료 — 고배율 Center 전환 ({targetHX:F4},{targetWY:F4})";
                 _logger.Information("Wafer 중심 3차 — 고배 전환 완료");
             }
             catch (OperationCanceledException) { ScribeCenterStatus = "고배 전환 중단됨"; }
