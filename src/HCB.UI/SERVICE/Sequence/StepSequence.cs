@@ -340,6 +340,9 @@ namespace HCB.UI
                     _logger.Warning("STATUS_COMPLETE가 0으로 초기화되지 않음: {Status}", preStatus);
 
                 // 파라미터 설정 + 시작
+                await device.SendCommand("Y029=1");
+                await Task.Delay(300);
+                await device.SendCommand("Y029=0");
                 await device.SendCommand(MotionExtensions.BONDING_ACC_TIME + $"={step.AccTime}");
                 await device.SendCommand(MotionExtensions.BONDING_ACC_TIME2 + $"={step.AccTime2}");
                 await device.SendCommand(MotionExtensions.BONDING_CONT_TIME + $"={step.ContTime}");
