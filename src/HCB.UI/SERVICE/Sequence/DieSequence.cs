@@ -251,7 +251,8 @@ namespace HCB.UI
                 await MappingOff();
                 if (data.TracingMode == TracingMode.Manual)
                 {
-                    if (data.Use2DMapping) await WTable2DMappingOn();
+                    bool isDieRecipe = _recipeService.UseRecipe?.Component == HCB.Data.Entity.Type.ComponentType.DIE;
+                    if (isDieRecipe && data.Use2DMapping) await WTable2DMappingOn();
 
                     await TopDieSet(ct);
                     double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
