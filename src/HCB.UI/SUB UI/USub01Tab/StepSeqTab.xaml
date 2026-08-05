@@ -283,7 +283,7 @@
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,8,0,8">
                         <StackPanel  Margin="0,8,0,8">
 
-                            <!-- Step 1 : 저배율 보정 + PICK UP -->
+                            <!-- Step 1 : 회전중심·카메라 거리 측정 + 저배율 보정 + PICK UP -->
                             <Border Background="#0A1628" CornerRadius="6" Margin="16,6,16,6">
                                 <Grid Margin="14,10,14,10">
                                     <Grid.ColumnDefinitions>
@@ -301,11 +301,11 @@
                                                 State="{Binding TopLowAlignState}" Margin="0,0,10,0"/>
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="저배율 보정 + PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                            <TextBlock Text="회전중심·카메라 거리 측정 + 저배율 보정 + PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
                                             <TextBlock Text="{Binding TopLowAlignElapsed}" Foreground="#F39C12" FontSize="13"
                                                        FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <TextBlock Text="Low Calibration &amp; Die Pick Up" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                        <TextBlock Text="HcRO/Cam Dist Measure &amp; Low Calibration &amp; Die Pick Up" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                                     </StackPanel>
                                     <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
                                         Command="{Binding TopAlignPickupCommand}">

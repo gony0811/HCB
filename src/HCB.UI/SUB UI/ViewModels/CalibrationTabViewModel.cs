@@ -331,6 +331,11 @@ namespace HCB.UI
 
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
+                // 실제 측정 위치와 동일하게 h_z/H_Z를 FID_ALIGN_GAP만큼 이동 (align/fid 측정 갭)
+                double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
+
                 double theta = await GetAngle(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, ct);
                 Theta1Rad = theta;
                 Theta1Deg = theta * (180.0 / Math.PI);
@@ -381,6 +386,11 @@ namespace HCB.UI
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
+
+                // 실제 측정 위치와 동일하게 h_z/H_Z를 FID_ALIGN_GAP만큼 이동 (align/fid 측정 갭)
+                double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
 
                 double theta = await GetAngle(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, ct);
                 Theta2Rad = theta;
@@ -435,6 +445,11 @@ namespace HCB.UI
 
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z,
                     shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
+
+                // 실제 측정 위치와 동일하게 h_z/H_Z를 FID_ALIGN_GAP만큼 이동 (align/fid 측정 갭)
+                double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
 
                 // Hc1 센터링
                 CalibStatus = "Hc1 센터링 중...";

@@ -559,6 +559,8 @@ namespace HCB.UI
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
                 TopLowAlignState = StepState.InProgress;
+                // 회전중심 + 카메라 거리 측정 (Pickup 이전)
+                hcbData = await _sequenceService.MeasureCamDistAndHcro(NewAlignData(), _cts.Token);
                 VisionTopLowAlign = await _sequenceService.TopLowMeasure(TopDie, MarkType.DIE_CENTER_TOP, _cts.Token);
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, _cts.Token));
                 TopLowAlignState = StepState.Completed;
@@ -575,7 +577,7 @@ namespace HCB.UI
             try
             {
                 TopHighAlignState = StepState.InProgress;
-                hcbData = await _sequenceService.TopHighAlign(NewAlignData(), _cts.Token);
+                hcbData = await _sequenceService.TopHighAlign(hcbData ?? NewAlignData(), _cts.Token);
                 UpdateTopMarks();
                 TopHighAlignState = StepState.Completed;
             }
@@ -662,19 +664,20 @@ namespace HCB.UI
             var ct = _cts.Token;
             try
             {
-                // 1. 저배율 보정 + Pickup
+                // 1. 회전중심 + 카메라 거리 측정 (Pickup 이전, 1회) + 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
+                hcbData = await _sequenceService.MeasureCamDistAndHcro(NewAlignData(), ct);
                 VisionTopLowAlign = await _sequenceService.TopLowMeasure(TopDie, MarkType.DIE_CENTER_TOP, ct);
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
                 TopLowAlignState = StepState.Completed;
 
-                // 2~4 반복
+                // 2~4 반복 — 0단계 캘리브레이션 값 보존을 위해 hcbData 재사용
                 for (int i = 0; i < 3000; i++)
                 {
                     ct.ThrowIfCancellationRequested();
 
                     TopHighAlignState = StepState.InProgress;
-                    hcbData = await _sequenceService.TopHighAlign(NewAlignData(), ct);
+                    hcbData = await _sequenceService.TopHighAlign(hcbData, ct);
                     _sequenceService.ProcessMeasurement(hcbData, 1);
                     UpdateTopMarks();
                     TopHighAlignState = StepState.Completed;
@@ -731,15 +734,16 @@ namespace HCB.UI
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); TrackStep("TopFull", StepState.Idle); TrackStep("TopFullExMeasure", StepState.Idle); return; }
 
-                // 1. 저배율 보정 + Pickup
+                // 1. 회전중심 + 카메라 거리 측정 (Pickup 이전) + 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
+                hcbData = await _sequenceService.MeasureCamDistAndHcro(NewAlignData(), ct);
                 VisionTopLowAlign = await _sequenceService.TopLowMeasure(TopDie, MarkType.DIE_CENTER_TOP, ct);
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
                 TopLowAlignState = StepState.Completed;
 
-                // 2. 고배율 측정 (Top)
+                // 2. 고배율 측정 (Top) — 0단계에서 측정한 캘리브레이션 값 보존을 위해 hcbData 재사용
                 TopHighAlignState = StepState.InProgress;
-                hcbData = await _sequenceService.TopHighAlign(NewAlignData(), ct);
+                hcbData = await _sequenceService.TopHighAlign(hcbData, ct);
                 _sequenceService.ProcessMeasurement(hcbData, 1);
                 UpdateTopMarks();
                 TopHighAlignState = StepState.Completed;
