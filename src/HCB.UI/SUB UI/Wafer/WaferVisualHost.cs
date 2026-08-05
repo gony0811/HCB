@@ -32,6 +32,16 @@ namespace HCB.UI
 
         public WaferVisualHost() => _children = new VisualCollection(this);
 
+        // 화면 표시는 위아래 반전 — Row 0이 아래쪽에 그려진다(웨이퍼 실물 방향과 일치).
+        // 반전 기준은 웨이퍼 원 중심이므로 (gridSize-1-Row)로 계산한다.
+        private int _gridSize;
+
+        private Rect DieRect(DieData die) => new Rect(
+            die.Col * (DieSize + Gap),
+            (_gridSize - 1 - die.Row) * (DieSize + Gap),
+            DieSize,
+            DieSize);
+
         public void RenderWafer()
         {
             _children.Clear();
@@ -44,6 +54,7 @@ namespace HCB.UI
                 int maxRow = DieList.Max(d => d.Row);
                 int maxCol = DieList.Max(d => d.Col);
                 int gridSize = Math.Max(maxRow, maxCol) + 1;
+                _gridSize = gridSize;
 
                 double totalSize = gridSize * (DieSize + Gap) - Gap;
                 var center = new Point(totalSize / 2, totalSize / 2);
@@ -52,15 +63,7 @@ namespace HCB.UI
                 dc.DrawEllipse(WaferBg, WaferOutline, center, radius, radius);
 
                 foreach (var die in DieList)
-                {
-                    Rect rect = new Rect(
-                        die.Col * (DieSize + Gap),
-                        die.Row * (DieSize + Gap),
-                        DieSize,
-                        DieSize);
-
-                    dc.DrawRectangle(die.DieBrush, null, rect);
-                }
+                    dc.DrawRectangle(die.DieBrush, null, DieRect(die));
             }
             _children.Add(baseVisual);
 
@@ -78,14 +81,7 @@ namespace HCB.UI
             if (die != null)
             {
                 using (DrawingContext dc = _selectionVisual.RenderOpen())
-                {
-                    Rect rect = new Rect(
-                        die.Col * (DieSize + Gap),
-                        die.Row * (DieSize + Gap),
-                        DieSize,
-                        DieSize);
-                    dc.DrawRectangle(brush, null, rect);
-                }
+                    dc.DrawRectangle(brush, null, DieRect(die));
             }
 
             _children.Add(_selectionVisual);
@@ -93,9 +89,10 @@ namespace HCB.UI
 
         public DieData GetDieAtPoint(Point p)
         {
-            if (DieList == null) return null;
-            int col = (int)(p.X / (DieSize + Gap));
-            int row = (int)(p.Y / (DieSize + Gap));
+            if (DieList == null || _gridSize <= 0) return null;
+            double pitch = DieSize + Gap;
+            int col = (int)Math.Floor(p.X / pitch);
+            int row = _gridSize - 1 - (int)Math.Floor(p.Y / pitch);   // 표시가 위아래 반전되어 있음
             return DieList.Find(d => d.Row == row && d.Col == col);
         }
 

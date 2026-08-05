@@ -140,11 +140,11 @@
 
                             <!-- Bottom: Buttons -->
                             <Grid DockPanel.Dock="Bottom" Margin="0,16,0,0">
-                                <!-- BONDING 버튼 (기본 표시, 진행 중 숨김) -->
+                                <!-- BONDING 버튼 (기본 표시, 진행 중 숨김 — CANCEL과 겹치지 않도록 Collapsed) -->
                                 <Button Content="BONDING"
                                     Command="{Binding BondingCommand}"
-                                    IsEnabled="{Binding IsBonding, Converter={StaticResource InverseBoolConverter}}"
-                                    Height="48" FontSize="16" FontWeight="Bold"/>
+                                    Height="48" FontSize="16" FontWeight="Bold"
+                                    Visibility="{Binding IsNotBonding, Converter={StaticResource BoolToVis}}"/>
                                 <!-- CANCEL 버튼 (진행 중에만 표시) -->
                                 <Button Content="CANCEL"
                                     Command="{Binding CancelBondingCommand}"
@@ -153,22 +153,63 @@
                                     Visibility="{Binding IsBonding, Converter={StaticResource BoolToVis}}"/>
                             </Grid>
 
-                            <!-- 선택 Die를 저배/고배 카메라로 보기 (해당 Die 위치로 이동) -->
+                            <!-- 선택 Die를 저배/고배 카메라로 보기 (해당 Die 위치로 이동 후 측정) -->
                             <Grid DockPanel.Dock="Bottom" Margin="0,8,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Content="저배율로 보기"
+                                <!-- 이동 + 측정을 수행하므로 본딩·정렬 진행 중에는 비활성(IsBusy) -->
+                                <Button Grid.Column="0" Content="저배율로 보기 + 측정"
                                     Command="{Binding ViewDieLowMagCommand}"
-                                    IsEnabled="{Binding IsBonding, Converter={StaticResource InverseBoolConverter}}"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
                                     Height="38" FontSize="13"/>
-                                <Button Grid.Column="2" Content="고배율로 보기"
+                                <Button Grid.Column="2" Content="고배율로 보기 + 측정"
                                     Command="{Binding ViewDieHighMagCommand}"
-                                    IsEnabled="{Binding IsBonding, Converter={StaticResource InverseBoolConverter}}"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
                                     Height="38" FontSize="13"/>
                             </Grid>
+
+                            <!-- 보기 버튼 실행 시 측정 결과 (카메라 중심 → AlignMark 오프셋, mm) -->
+                            <Border DockPanel.Dock="Bottom" Background="#0A1628" CornerRadius="6" Padding="12,8"
+                                    BorderBrush="#1C3A52" BorderThickness="1" Margin="0,12,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="측정 결과 (mm)"
+                                               Foreground="#5E8BAA" FontSize="12" Margin="0,0,0,6"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="HC_LOW"
+                                               Foreground="#5E8BAA" FontSize="12" Margin="0,0,16,4"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LowMeasureText}"
+                                               Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" Margin="0,0,0,4"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="HC1"
+                                               Foreground="#5E8BAA" FontSize="12" Margin="0,0,16,4"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Hc1MeasureText}"
+                                               Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" Margin="0,0,0,4"/>
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="HC2"
+                                               Foreground="#5E8BAA" FontSize="12" Margin="0,0,16,0"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Hc2MeasureText}"
+                                               Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- 이동/측정 상태 -->
+                            <TextBlock DockPanel.Dock="Bottom" Text="{Binding ScribeCenterStatus}"
+                                       TextWrapping="Wrap" Foreground="#F39C12" FontSize="12"
+                                       Margin="0,12,0,0"/>
 
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
@@ -567,6 +608,80 @@
                                     </Grid>
                                 </StackPanel>
                             </Border>
+                            <!-- ═══════════ WAFER THETA 보정 (HC1 AlignMark) ═══════════ -->
+                            <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
+        HorizontalAlignment="Left" Margin="0,20,0,12">
+                                <TextBlock Text="WAFER THETA 보정 (HC1 AlignMark)" Foreground="#3498DB"
+               FontSize="12" FontWeight="Bold"/>
+                            </Border>
+
+                            <!-- 옵션 -->
+                            <Border Background="#0A1628" CornerRadius="6" Padding="14" Margin="0,0,0,12"
+        BorderBrush="#1C3A52" BorderThickness="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="쉬프트 Die 수"
+                   Foreground="#5E8BAA" FontSize="13"
+                   VerticalAlignment="Center" Margin="0,0,16,8"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1"
+                 Text="{Binding ThetaShiftDies}" Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="수렴 임계각 (°)"
+                   Foreground="#5E8BAA" FontSize="13"
+                   VerticalAlignment="Center" Margin="0,0,16,8"/>
+                                    <TextBox Grid.Row="1" Grid.Column="1"
+                 Text="{Binding ThetaMinDeg}" Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Y 탐색 스텝 (mm)"
+                   Foreground="#5E8BAA" FontSize="13"
+                   VerticalAlignment="Center" Margin="0,0,16,8"/>
+                                    <TextBox Grid.Row="2" Grid.Column="1"
+                 Text="{Binding ThetaSearchStepMm}" Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Y 탐색 범위 (±mm)"
+                   Foreground="#5E8BAA" FontSize="13"
+                   VerticalAlignment="Center" Margin="0,0,16,0"/>
+                                    <TextBox Grid.Row="3" Grid.Column="1"
+                 Text="{Binding ThetaSearchRangeMm}"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- 결과 -->
+                            <Border Background="#0A1628" CornerRadius="6" Padding="14" Margin="0,0,0,12"
+        BorderBrush="#1C3A52" BorderThickness="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="상태"
+                   Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1"
+                   Text="{Binding ThetaStatus}" TextWrapping="Wrap"
+                   Foreground="#F39C12" FontSize="13" Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="기울기 (°)"
+                   Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,0"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1"
+                   Text="{Binding ThetaAngleDeg, StringFormat=F4}"
+                   Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
+                                </Grid>
+                            </Border>
 
                             <!-- 4단계 실행 버튼 (1: 저배 3점 중심 / 2: 저배 Scribe Theta / 3: 고배 전환 / 4: 고배 Theta) -->
                             <Grid Margin="0,4,0,0">
@@ -603,93 +718,6 @@
                                 IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
                                 Background="#1F6F43" Foreground="White"
                                 Height="40" FontSize="13" FontWeight="Bold" Margin="0,6,0,0"/>
-
-                            <!-- 현재 중심 기준 전체 Die 위치 계산 (1/2차 완료 후 자동 수행, 수동 재계산용) -->
-                            <Button Content="Die 위치 전체 계산 (현재 중심 기준)"
-                                Command="{Binding ComputeDiePositionsCommand}"
-                                IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
-                                Height="34" FontSize="12" Margin="0,6,0,0"/>
-
-                            <!-- ═══════════ WAFER THETA 보정 (HC1 AlignMark) ═══════════ -->
-                            <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
-                                    HorizontalAlignment="Left" Margin="0,20,0,12">
-                                <TextBlock Text="WAFER THETA 보정 (HC1 AlignMark)" Foreground="#3498DB"
-                                           FontSize="12" FontWeight="Bold"/>
-                            </Border>
-
-                            <!-- 옵션 -->
-                            <Border Background="#0A1628" CornerRadius="6" Padding="14" Margin="0,0,0,12"
-                                    BorderBrush="#1C3A52" BorderThickness="1">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="쉬프트 Die 수"
-                                               Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
-                                    <TextBox Grid.Row="0" Grid.Column="1"
-                                             Text="{Binding ThetaShiftDies}" Margin="0,0,0,8"/>
-
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="수렴 임계각 (°)"
-                                               Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
-                                    <TextBox Grid.Row="1" Grid.Column="1"
-                                             Text="{Binding ThetaMinDeg}" Margin="0,0,0,8"/>
-
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Y 탐색 스텝 (mm)"
-                                               Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
-                                    <TextBox Grid.Row="2" Grid.Column="1"
-                                             Text="{Binding ThetaSearchStepMm}" Margin="0,0,0,8"/>
-
-                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Y 탐색 범위 (±mm)"
-                                               Foreground="#5E8BAA" FontSize="13"
-                                               VerticalAlignment="Center" Margin="0,0,16,0"/>
-                                    <TextBox Grid.Row="3" Grid.Column="1"
-                                             Text="{Binding ThetaSearchRangeMm}"/>
-                                </Grid>
-                            </Border>
-
-                            <!-- 결과 -->
-                            <Border Background="#0A1628" CornerRadius="6" Padding="14" Margin="0,0,0,12"
-                                    BorderBrush="#1C3A52" BorderThickness="1">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="상태"
-                                               Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1"
-                                               Text="{Binding ThetaStatus}" TextWrapping="Wrap"
-                                               Foreground="#F39C12" FontSize="13" Margin="0,0,0,8"/>
-
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="기울기 (°)"
-                                               Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,0"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1"
-                                               Text="{Binding ThetaAngleDeg, StringFormat=F4}"
-                                               Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
-                                </Grid>
-                            </Border>
-
-                            <!-- 실행 버튼 -->
-                            <Button Content="THETA 보정"
-                                Command="{Binding ThetaCorrectionCommand}"
-                                IsEnabled="{Binding IsAligning, Converter={StaticResource InverseBoolConverter}}"
-                                Height="44" FontSize="15" FontWeight="Bold" Margin="0,4,0,0"/>
 
                             <!-- 동작 취소: 진행 중(중심 찾기 · Theta 보정 · 본딩)일 때만 활성화 -->
                             <Button Content="동작 취소"

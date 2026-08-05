@@ -64,7 +64,15 @@ namespace HCB.UI
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(CancelOperationCommand))]
+        [NotifyPropertyChangedFor(nameof(IsBusy))]
+        [NotifyPropertyChangedFor(nameof(IsNotBonding))]
         private bool isBonding;
+
+        /// <summary>본딩·정렬 등 장비 동작 진행 중 여부 (버튼 비활성 조건).</summary>
+        public bool IsBusy => IsAligning || IsBonding;
+
+        /// <summary>본딩 진행 중이 아님 (BONDING 버튼 표시 조건 — CANCEL과 자리를 바꿔 표시).</summary>
+        public bool IsNotBonding => !IsBonding;
 
         public WaferSeqTabViewModel(
             RecipeService recipeService,
@@ -231,8 +239,10 @@ namespace HCB.UI
 
             if (HasScribeMeasure)
             {
-                cx = ScribeAbsX - ScribeShiftX;   // 기준 Scribe → Wafer 중심 (초기 Shift 되돌림)
-                cy = ScribeAbsY - ScribeShiftY;
+                // 기준 Scribe → Wafer 중심 (2차에서 실제 적용된 Shift 되돌림.
+                // X는 십자마크가 있는 선으로 스냅되므로 Recipe의 ScribeShiftX와 다를 수 있다)
+                cx = ScribeAbsX - _refScribeOffsetX;
+                cy = ScribeAbsY - _refScribeOffsetY;
                 src = "2차 정밀 중심";
             }
             else if (HasCoarseCenter)
@@ -311,7 +321,12 @@ namespace HCB.UI
             _logger.Information("Wafer Bonding 취소");
         }
 
-        // ── 선택 Die를 저배/고배 카메라로 보기 (해당 Die 위치로 모션 이동) ──
+        // ── 선택 Die를 저배/고배 카메라로 보기 (해당 Die 위치로 모션 이동 후 그 카메라로 측정) ──
+        //  측정 결과(카메라 중심 → AlignMark 오프셋, mm)는 Low/Hc1/Hc2MeasureText에 표시된다.
+        [ObservableProperty] private string lowMeasureText = "-";   // HC_LOW 측정 결과
+        [ObservableProperty] private string hc1MeasureText = "-";   // HC1 고배 측정 결과
+        [ObservableProperty] private string hc2MeasureText = "-";   // HC2 고배 측정 결과
+
         [RelayCommand]
         private Task ViewDieLowMag() => MoveToSelectedDie(highMag: false);
 
@@ -319,7 +334,7 @@ namespace HCB.UI
         private Task ViewDieHighMag() => MoveToSelectedDie(highMag: true);
 
         // highMag=false: 저배 카메라 위치(Die 저배 좌표), true: 고배 카메라 위치(Die 고배 좌표)로 이동.
-        // 규칙1에 따라 Z(h_z→H_Z)를 먼저 이동한 뒤 X/Y를 이동한다.
+        // 규칙1에 따라 Z(h_z→H_Z)를 먼저 이동한 뒤 X/Y를 이동하고, 마지막에 해당 카메라로 측정한다.
         private async Task MoveToSelectedDie(bool highMag)
         {
             if (SelectedDie == null) return;
@@ -353,17 +368,80 @@ namespace HCB.UI
                     _sequenceService.MotionsMove(XAxis, tx, ct),
                     _sequenceService.MotionsMove(YAxis, ty, ct));
 
-                ScribeCenterStatus = $"Die({SelectedDie.Row},{SelectedDie.Col}) {mag} 위치 이동 완료 — ({tx:F4},{ty:F4})";
                 _logger.Information("Die({Row},{Col}) {Mag} 이동 — ({X:F4},{Y:F4})",
                     SelectedDie.Row, SelectedDie.Col, mag, tx, ty);
+
+                // 이동 완료 후 해당 카메라로 AlignMark 측정 (고배는 HC1/HC2 모두)
+                string measured = highMag
+                    ? await MeasureHighMagAsync(ct)
+                    : await MeasureLowMagAsync(ct);
+
+                ScribeCenterStatus =
+                    $"Die({SelectedDie.Row},{SelectedDie.Col}) {mag} 이동 완료 — ({tx:F4},{ty:F4}) / 측정 {measured}";
             }
             catch (OperationCanceledException) { ScribeCenterStatus = "Die 이동 중단됨"; }
             catch (Exception e)
             {
-                _logger.Error(e, "Die 이동 오류");
+                _logger.Error(e, "Die 이동/측정 오류");
                 ScribeCenterStatus = $"오류: {e.Message}";
             }
             finally { IsAligning = false; }
+        }
+
+        /// <summary>
+        /// 저배율(HC_LOW)로 현재 위치의 AlignMark를 측정한다.
+        /// HC_LOW는 피사계 심도가 커서 AF는 수행하지 않는다.
+        /// </summary>
+        private async Task<string> MeasureLowMagAsync(CancellationToken ct)
+        {
+            Hc1MeasureText = Hc2MeasureText = "-";
+            ScribeCenterStatus = "저배(HC_LOW) 측정 중...";
+            LowMeasureText = await MeasureMarkTextAsync(LowCam, "", af: false, ct);
+            _logger.Information("Die 저배 측정 — HC_LOW={R}", LowMeasureText);
+            return $"HC_LOW={LowMeasureText}";
+        }
+
+        /// <summary>
+        /// 고배율 HC1(LEFT)·HC2(RIGHT)로 현재 위치의 AlignMark를 각각 AF 후 측정한다.
+        /// 비전 통신은 단일 채널이므로 순차 실행한다.
+        /// </summary>
+        private async Task<string> MeasureHighMagAsync(CancellationToken ct)
+        {
+            LowMeasureText = "-";
+
+            ScribeCenterStatus = "고배 HC1 측정 중...";
+            Hc1MeasureText = await MeasureMarkTextAsync(Hc1Cam, DirectType.LEFT.ToString(), af: true, ct);
+
+            ct.ThrowIfCancellationRequested();
+
+            ScribeCenterStatus = "고배 HC2 측정 중...";
+            Hc2MeasureText = await MeasureMarkTextAsync(Hc2Cam, DirectType.RIGHT.ToString(), af: true, ct);
+
+            _logger.Information("Die 고배 측정 — HC1={R1}, HC2={R2}", Hc1MeasureText, Hc2MeasureText);
+            return $"HC1={Hc1MeasureText}, HC2={Hc2MeasureText}";
+        }
+
+        /// <summary>
+        /// 지정 카메라로 AlignMark를 1회 측정하고 표시용 문자열(카메라 중심 → 마크 오프셋, mm)을 반환한다.
+        /// 검출 실패(NG)·예외는 모션을 멈추지 않고 문자열로만 보고한다.
+        /// </summary>
+        private async Task<string> MeasureMarkTextAsync(CameraType cam, string direct, bool af, CancellationToken ct)
+        {
+            try
+            {
+                if (af) await _communication.RequestAFStart(cam, AlignMark, ct);
+
+                var r = await _communication.RequestVisionMarkPosition(AlignMark, cam, direct);
+                if (r == null || r.Result == Result.NG) return "NG";
+
+                return $"({r.X:F4}, {r.Y:F4})";
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                _logger.Warning(e, "{Cam} AlignMark 측정 예외", cam);
+                return $"오류({e.Message})";
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -428,6 +506,7 @@ namespace HCB.UI
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(CancelOperationCommand))]
+        [NotifyPropertyChangedFor(nameof(IsBusy))]
         private bool isAligning;          // 측정/시프트 진행 중 busy 플래그
         [ObservableProperty] private string scribeCenterStatus = "-";
         [ObservableProperty] private double scribeOffsetXUm;   // 카메라 중심 → 스크라이브 교차점 오프셋(μm)
@@ -601,9 +680,83 @@ namespace HCB.UI
             finally { IsAligning = false; }
         }
 
+        // ═══════ Scribeline 격자 (십자마크 유효 범위 산출) ═══════
+        //  십자(+)마크는 네 Die (r,c)·(r,c+1)·(r+1,c)·(r+1,c+1)이 모두 있는 "내부" 교차점에만 생긴다.
+        //  웨이퍼 최외곽 경계선은 한쪽에 Die가 없어 십자가 아니므로(ㅜ/ㅏ 모양) 측정할 수 없다.
+        //
+        //   · 세로선 인덱스 c = 왼쪽 Die의 Col → 중심 기준 X 오프셋 = (c − half + 0.5) × pitchX
+        //   · 가로선 인덱스 r = 위쪽 Die의 Row → 중심 기준 Y 오프셋 = −(r − half + 0.5) × pitchY
+        //     (GenerateWaferMap의 posX/posY 규칙과 동일 부호, half = (WaferSize−1)/2)
+        //
+        //  WaferSize 짝수 → 오프셋이 피치의 정수배   → 웨이퍼 중심에 Scribeline이 있다
+        //  WaferSize 홀수 → 오프셋이 피치의 반정수배 → 중심에는 Die가 있고 선은 ±pitch/2에 있다
+        //   ⇒ "중심에 선이 있다"고 가정하면 홀수에서 반 피치가 통째로 어긋난다.
+        //  또 원형 웨이퍼라 Row마다 Die 수가 달라, 기준 선 좌/우의 측정 가능한 선 수가 서로 다르다(비대칭).
+        private double DiePitchX => DieSizeX + GapX;
+        private double DiePitchY => DieSizeY + GapY;
+        private double HalfIndex => (WaferSize - 1) / 2.0;
+
+        /// <summary>세로 Scribeline c의 중심(CenterX) 기준 X 오프셋(mm).</summary>
+        private double ScribeLineOffsetX(int c) => (c - HalfIndex + 0.5) * DiePitchX;
+
+        /// <summary>가로 Scribeline r의 중심(CenterY) 기준 Y 오프셋(mm).</summary>
+        private double ScribeLineOffsetY(int r) => -(r - HalfIndex + 0.5) * DiePitchY;
+
+        /// <summary>절대(스테이지) X에서 가장 가까운 세로 Scribeline 인덱스. (ScribeLineOffsetX 역산)</summary>
+        private int ScribeLineIndexAtX(double absX) => DiePitchX > 0
+            ? (int)Math.Round((absX - CenterX) / DiePitchX + HalfIndex - 0.5, MidpointRounding.AwayFromZero)
+            : 0;
+
+        /// <summary>절대(스테이지) Y에서 가장 가까운 가로 Scribeline 인덱스. (ScribeLineOffsetY 역산)</summary>
+        private int ScribeLineIndexAtY(double absY) => DiePitchY > 0
+            ? (int)Math.Round(HalfIndex - 0.5 - (absY - CenterY) / DiePitchY, MidpointRounding.AwayFromZero)
+            : 0;
+
+        /// <summary>
+        /// 가로선 r 위에서 십자마크가 존재하는 세로선 인덱스 범위 [first, last]를 구한다.
+        /// 교차점 (r,c)가 십자이려면 네 Die (r,c)·(r,c+1)·(r+1,c)·(r+1,c+1)이 모두 있어야 한다.
+        /// 십자가 하나도 없으면(웨이퍼 밖·Die 부족) null.
+        /// </summary>
+        private (int first, int last)? ScribeLineRange(int r)
+        {
+            if (DieList == null || DieList.Count == 0) return null;
+
+            var upper = DieList.Where(d => d.Row == r).Select(d => d.Col).ToHashSet();
+            var lower = DieList.Where(d => d.Row == r + 1).Select(d => d.Col).ToHashSet();
+            upper.IntersectWith(lower);                                   // 위·아래 Row에 모두 Die가 있는 Col
+            var cross = upper.Where(c => upper.Contains(c + 1)).ToList(); // c·c+1이 모두 있어야 십자
+            if (cross.Count == 0) return null;
+
+            return (cross.Min(), cross.Max());
+        }
+
+        /// <summary>
+        /// 요청한 가로선(preferredRow)에서 시작해 십자마크가 존재하는 가장 가까운 가로선을 찾는다.
+        /// (요청 위치가 웨이퍼 최외곽이라 십자가 없으면 안쪽으로 한 줄씩 옮겨 탐색)
+        /// </summary>
+        private (int row, int first, int last)? FindScribeCrossRow(int preferredRow)
+        {
+            for (int d = 0; d <= WaferSize; d++)
+            {
+                foreach (int r in d == 0 ? new[] { preferredRow } : new[] { preferredRow - d, preferredRow + d })
+                {
+                    var range = ScribeLineRange(r);
+                    if (range != null) return (r, range.Value.first, range.Value.last);
+                }
+            }
+            return null;
+        }
+
+        // 2차에서 실제 적용된 기준 Scribe 오프셋(저배 Center → 기준 교차점, mm).
+        // 십자마크가 있는 선으로 스냅되므로 Recipe의 ScribeShiftX/Y와 다를 수 있다.
+        // 측정한 Scribe 절대좌표에서 Wafer 중심을 역산할 때 반드시 이 값을 되돌려야 한다.
+        private double _refScribeOffsetX;
+        private double _refScribeOffsetY;
+
         // ── 2차: 저배율(HC_LOW) Scribeline 기반 중심/Theta 정렬 ──
         //  절차(사용자 요청):
-        //   (1) Recipe(ScribeShiftX/Y)만큼 H_X·W_Y를 기준 Scribe 위치로 Shift
+        //   (1) Recipe(ScribeShiftX/Y)에서 가장 가까운 "십자마크가 있는" Scribeline으로 이동
+        //       (Y는 Recipe 값 그대로 Row를 선택, X는 유효 선으로 스냅 — 최외곽 선은 십자가 아니라 제외)
         //   (2) Scribeline 측정으로 검출 확인
         //   (3) Scribeline을 비전 중심에 정렬(offset→0) 후 측정 = A
         //   (4) DieSize(피치)만큼 H_X를 옆으로 Shift 후 측정 = B
@@ -623,7 +776,8 @@ namespace HCB.UI
 
             try
             {
-                double pitch = (DieSizeX + GapX) * Math.Max(1, ScribeStepDies); // 옆 Die까지 거리
+                int stepDies = Math.Max(1, ScribeStepDies);
+                double pitch = DiePitchX * stepDies;            // 옆 측정 선까지 거리
                 if (pitch <= 0)
                 {
                     ScribeCenterStatus = "DieSize/Gap 값이 유효하지 않습니다.";
@@ -638,29 +792,44 @@ namespace HCB.UI
                     return;
                 }
 
+                // (1) 기준 교차점 결정 — Recipe Shift(ScribeShiftX/Y)에서 가장 가까운
+                //     "십자마크가 있는" 교차점으로 스냅한다. 최외곽 선은 십자가 아니라 제외되고,
+                //     WaferSize가 홀수면 중심에 Die가 있어 선이 ±pitch/2에 놓인다.
+                var cross = FindScribeCrossRow(ScribeLineIndexAtY(CenterY + ScribeShiftY));
+                if (cross == null)
+                {
+                    ScribeCenterStatus = "십자마크 Scribeline이 없습니다 — WaferSize/DieSize/중심값을 확인하세요.";
+                    _logger.Warning("Wafer 중심 2차 — 십자마크 교차점 없음(WaferSize={W}, Die {N}개)",
+                        WaferSize, DieList?.Count ?? 0);
+                    return;
+                }
+                var (refR, firstC, lastC) = cross.Value;
+
+                int refC = Math.Clamp(ScribeLineIndexAtX(CenterX + ScribeShiftX), firstC, lastC);
+                _refScribeOffsetX = ScribeLineOffsetX(refC);
+                _refScribeOffsetY = ScribeLineOffsetY(refR);
+                double refX = CenterX + _refScribeOffsetX;
+                double refY = CenterY + _refScribeOffsetY;
+
+                _logger.Information(
+                    "Wafer 중심 2차 — 기준 교차점: 가로선={R}, 세로선={C} (십자 유효 세로선 {F}~{L}, WaferSize={W}), " +
+                    "Recipe Shift=({SX:F4},{SY:F4}) → 스냅 오프셋=({OX:F4},{OY:F4})",
+                    refR, refC, firstC, lastC, WaferSize, ScribeShiftX, ScribeShiftY,
+                    _refScribeOffsetX, _refScribeOffsetY);
+
                 // 규칙1: 저배 측정 전 Z 이동(h_z 먼저)
                 ScribeCenterStatus = "저배 Z 이동 중...";
                 await MoveZForLowMagAsync(ct);
 
-                // (0) 저배 Center로 이동 후 Theta 보정 시작
-                ScribeCenterStatus = $"저배 Center로 이동 중... ({CenterX:F4},{CenterY:F4})";
-                _logger.Information("Wafer 중심 2차 — 저배 Center 이동 ({X:F4},{Y:F4})", CenterX, CenterY);
+                // 기준 교차점으로 절대 이동
+                ScribeCenterStatus = $"기준 십자마크(가로선 {refR}, 세로선 {refC})로 이동 중... ({refX:F4},{refY:F4})";
                 await Task.WhenAll(
-                    _sequenceService.MotionsMove(XAxis, CenterX, ct),
-                    _sequenceService.MotionsMove(YAxis, CenterY, ct));
+                    _sequenceService.MotionsMove(XAxis, refX, ct),
+                    _sequenceService.MotionsMove(YAxis, refY, ct));
 
-                // (1) Recipe 값만큼 기준 위치로 초기 Shift
-                if (Math.Abs(ScribeShiftX) > 1e-9 || Math.Abs(ScribeShiftY) > 1e-9)
-                {
-                    ScribeCenterStatus = $"기준 위치로 Shift 중... ({ScribeShiftX:F3}, {ScribeShiftY:F3})";
-                    _logger.Information("Wafer 중심 2차 — Recipe Shift ({X:F4},{Y:F4})", ScribeShiftX, ScribeShiftY);
-                    if (Math.Abs(ScribeShiftX) > 1e-9) await _sequenceService.RelativeMotionsMove(XAxis, ScribeShiftX, ct);
-                    if (Math.Abs(ScribeShiftY) > 1e-9) await _sequenceService.RelativeMotionsMove(YAxis, ScribeShiftY, ct);
-                }
-
-                // (2)+(3)~(6) 기준 Die에서 Theta 수렴
-                ScribeCenterStatus = "기준 Die Scribeline 정렬/Theta 수렴 중...";
-                var startAbs = await ConvergeThetaAtDieAsync(pitch, "기준", ct);
+                // (2)+(3)~(6) 기준 선에서 Theta 수렴
+                ScribeCenterStatus = "기준 Scribeline 정렬/Theta 수렴 중...";
+                var startAbs = await ConvergeThetaAtDieAsync(pitch, refC, firstC, lastC, stepDies, "기준", ct);
                 if (startAbs == null)
                 {
                     HasScribeMeasure = false;
@@ -669,13 +838,24 @@ namespace HCB.UI
                     return;
                 }
 
-                // (7) WaferSize·기준 위치로 정/역방향 측정 가능 Die 수를 자동 산출하여,
-                //     기준 위치에서 정방향/역방향을 번갈아(+1,−1,+2,−2,…) Shift·보정하며 스윕.
-                //     스윕 종료 후 중심(기준 Die)으로 복귀한다.
-                var (maxPlus, maxMinus) = ScribeSweepRange(pitch);
-                _logger.Information("Wafer 중심 2차 — 자동 스윕 범위: +{P} / -{M} Die (WaferSize={W})",
-                    maxPlus, maxMinus, WaferSize);
-                await RunScribeThetaAlternatingSweepAsync(pitch, maxPlus, maxMinus, ct);
+                // 정렬 후 실제로 잡힌 교차점을 절대좌표에서 역산 — 이후 스윕 범위를 이 인덱스 기준으로 잡는다
+                // (비전이 의도한 것과 다른 교차점을 잡았어도 스윕 범위·중심 역산이 어긋나지 않도록)
+                int startC = Math.Clamp(ScribeLineIndexAtX(startAbs.X), firstC, lastC);
+                int startR = ScribeLineIndexAtY(startAbs.Y);
+                _refScribeOffsetX = ScribeLineOffsetX(startC);
+                _refScribeOffsetY = ScribeLineOffsetY(startR);
+                if (startC != refC || startR != refR)
+                    _logger.Information("Wafer 중심 2차 — 정렬된 교차점이 기준과 다름: ({RR},{RC}) → ({AR},{AC})",
+                        refR, refC, startR, startC);
+
+                // (7) 십자마크가 있는 선 범위 [firstC,lastC] 안에서 정/역방향 측정 가능 스텝 수를 산출.
+                //     WaferSize가 홀수이거나 기준이 치우치면 좌/우 값이 다르다(비대칭).
+                //     기준에서 정방향/역방향을 번갈아(+1,−1,+2,−2,…) Shift·보정하며 스윕 후 기준으로 복귀.
+                var (maxPlus, maxMinus) = ScribeSweepRange(startC, firstC, lastC, stepDies);
+                _logger.Information(
+                    "Wafer 중심 2차 — 자동 스윕 범위: +{P} / -{M} 스텝 (기준 선={C}, 유효 {F}~{L}, 스텝당 {S} Die)",
+                    maxPlus, maxMinus, startC, firstC, lastC, stepDies);
+                await RunScribeThetaAlternatingSweepAsync(pitch, startC, firstC, lastC, stepDies, maxPlus, maxMinus, ct);
 
                 // 최종: 기준 Scribe를 다시 비전 중심에 정렬하고 절대좌표 기록(Step3용)
                 var finalAbs = await CenterScribeAsync(ct);
@@ -691,9 +871,10 @@ namespace HCB.UI
                 ScribeAbsT = await _sequenceService.GetCurrentPosition(TAxis, ct);
                 HasScribeMeasure = true;
 
-                // 정밀 중심(기준 Scribe에서 초기 Shift 되돌림, 저배) 기준으로 Die 위치 전부 계산 (고배 센터도 함께 산출)
-                double waferCenterX = ScribeAbsX - ScribeShiftX;
-                double waferCenterY = ScribeAbsY - ScribeShiftY;
+                // 정밀 중심(기준 Scribe에서 실제 적용된 Shift 되돌림, 저배) 기준으로 Die 위치 전부 계산
+                // (X는 십자마크 선으로 스냅됐으므로 ScribeShiftX가 아니라 _refScribeOffsetX를 되돌린다)
+                double waferCenterX = ScribeAbsX - _refScribeOffsetX;
+                double waferCenterY = ScribeAbsY - _refScribeOffsetY;
                 await ApplyWaferCenter(waferCenterX, waferCenterY);
 
                 ScribeCenterStatus =
@@ -761,13 +942,22 @@ namespace HCB.UI
         }
 
         /// <summary>
-        /// 한 Die에서 (3)~(6)을 수행한다.
-        ///  (3) Scribe를 비전 중심에 정렬 = A → (4) 옆 Die로 pitch 이동 후 측정 = B → 기준(A)으로 복귀
+        /// 한 Scribeline(curC)에서 (3)~(6)을 수행한다.
+        ///  (3) Scribe를 비전 중심에 정렬 = A → (4) 옆 선으로 pitch 이동 후 측정 = B → 기준(A)으로 복귀
         ///  (5) A·B 기울기(atan2)로 W_T 보정 → (6) 임계각 이내로 수렴할 때까지 반복.
-        /// 반환: 수렴/정상 종료된 기준점 A의 절대좌표. 초기 정렬 실패 시 null(끝 Die/미검출).
+        /// B는 십자마크가 있는 선([firstC,lastC]) 쪽으로만 잡는다. 오른쪽(+X)이 최외곽 선이면 왼쪽(−X)에서 잡으며,
+        /// 기울기를 ±90°로 정규화하므로 B가 어느 쪽이든 보정 부호는 동일하다.
+        /// 양쪽 모두 유효 범위를 벗어나면(측정 가능한 선이 1개뿐) 보정 없이 A만 반환한다.
+        /// 반환: 수렴/정상 종료된 기준점 A의 절대좌표. 초기 정렬 실패 시 null(미검출).
         /// </summary>
-        private async Task<Point2D?> ConvergeThetaAtDieAsync(double pitch, string pass, CancellationToken ct)
+        private async Task<Point2D?> ConvergeThetaAtDieAsync(
+            double pitch, int curC, int firstC, int lastC, int stepDies, string pass, CancellationToken ct)
         {
+            // B를 잡을 방향 — 오른쪽 우선, 최외곽(십자마크 없음)이면 왼쪽, 둘 다 불가면 0(보정 생략)
+            int bDir = curC + stepDies <= lastC ? +1
+                     : curC - stepDies >= firstC ? -1
+                     : 0;
+
             int iter = Math.Max(1, ScribeConvergeIter);
             Point2D? aAbs = null;
 
@@ -779,13 +969,23 @@ namespace HCB.UI
                 aAbs = await CenterScribeAsync(ct);
                 if (aAbs == null) return null;
 
-                // (4) 옆 Die로 pitch 이동 후 측정 = B, 이후 기준 위치(A)로 복귀
-                await _sequenceService.RelativeMotionsMove(XAxis, pitch, ct);
+                if (bDir == 0)
+                {
+                    // 양옆이 모두 최외곽 선 — 십자마크가 없어 기울기를 낼 수 없다
+                    ScribeCenterStatus = $"{pass} — 옆에 십자마크 선이 없어 보정 생략";
+                    _logger.Information("Wafer 중심 2차 — {Pass} 선 {C}: 양옆이 유효 범위({F}~{L}) 밖, 보정 생략",
+                        pass, curC, firstC, lastC);
+                    return aAbs;
+                }
+
+                // (4) 옆 선(십자마크가 있는 쪽)으로 pitch 이동 후 측정 = B, 이후 기준 위치(A)로 복귀
+                double bMove = bDir * pitch;
+                await _sequenceService.RelativeMotionsMove(XAxis, bMove, ct);
                 var bAbs = await MeasureScribeAbsAsync(ct);
-                await _sequenceService.RelativeMotionsMove(XAxis, -pitch, ct);
+                await _sequenceService.RelativeMotionsMove(XAxis, -bMove, ct);
 
                 if (bAbs == null)
-                    return aAbs; // 옆 Die 미검출 → 이 Die는 보정 없이 종료
+                    return aAbs; // 옆 선 미검출 → 이 선은 보정 없이 종료
 
                 // (5) A·B 기울기 → W_T 보정 (±90° 정규화)
                 double angleDeg = Math.Atan2(bAbs.Y - aAbs.Y, bAbs.X - aAbs.X) * (180.0 / Math.PI);
@@ -811,30 +1011,25 @@ namespace HCB.UI
         }
 
         /// <summary>
-        /// WaferSize와 기준 위치(초기 Shift)로 정방향(+X)/역방향(−X) 각각 측정 가능한 Scribe 스텝 수를 산출한다.
-        /// 웨이퍼 최외곽 끝라인(j=0, j=N)은 측정 불가이므로 내부 교차점(j=1..N−1)만 사용하고,
-        /// 옆 Die B(j+1)까지 내부여야 하므로 기준점 A의 유효 범위는 j∈[1, N−2]이다.
-        /// 기준 교차점 인덱스 j_ref = round(N/2 + ScribeShiftX/pitch) → WaferSize가 홀수면 모서리로 치우쳐
-        /// 정/역방향 측정 가능 수가 달라진다(비대칭). 스텝 단위(ScribeStepDies)로 환산해 반환.
+        /// 기준 선(refC)에서 정방향(+X)/역방향(−X)으로 측정 가능한 스텝 수를 산출한다.
+        /// 십자마크가 있는 선은 [firstC, lastC](= Row의 내부 경계)뿐이므로 그 범위 안에서만 이동하며,
+        /// WaferSize가 홀수이거나 기준이 중심에서 치우치면 좌/우 값이 서로 다르다(비대칭).
+        /// 스텝 단위(ScribeStepDies)로 환산(내림)해 반환.
         /// </summary>
-        private (int plus, int minus) ScribeSweepRange(double pitch)
+        private (int plus, int minus) ScribeSweepRange(int refC, int firstC, int lastC, int stepDies)
         {
-            int n = Math.Max(1, WaferSize);
-            int stepDies = Math.Max(1, ScribeStepDies);
-            double refPitch = pitch > 0 ? ScribeShiftX / pitch : 0; // 기준의 중심 대비 오프셋(피치 단위)
-            int jRef = (int)Math.Round(n / 2.0 + refPitch);         // 기준 교차점 인덱스
-            int plusDies = Math.Max(0, (n - 2) - jRef);             // 정방향(+X) 측정 가능 Die 수
-            int minusDies = Math.Max(0, jRef - 1);                  // 역방향(−X) 측정 가능 Die 수
-            return (plusDies / stepDies, minusDies / stepDies);     // 스텝 단위(내림)
+            int step = Math.Max(1, stepDies);
+            return (Math.Max(0, lastC - refC) / step, Math.Max(0, refC - firstC) / step);
         }
 
         /// <summary>
-        /// (7) 기준 위치에서 정방향(+X)/역방향(−X)을 번갈아 확장(+1,−1,+2,−2,…)하며,
-        /// 매 도착 Die에서 ConvergeThetaAtDieAsync로 Shift 후 Theta 보정을 수행한다.
-        /// 각 방향은 자동 산출된 최대 스텝(maxPlus/maxMinus)까지 진행하되, 그 전에 Scribe 미검출(웨이퍼 끝)이면
-        /// 그 방향만 조기 종료하고 반대 방향은 계속 진행한다. 스윕 종료 후 중심(기준 Die)으로 복귀한다.
+        /// (7) 기준 선에서 정방향(+X)/역방향(−X)을 번갈아 확장(+1,−1,+2,−2,…)하며,
+        /// 매 도착 선에서 ConvergeThetaAtDieAsync로 Theta 보정을 수행한다.
+        /// 각 방향은 십자마크 유효 범위에서 산출한 최대 스텝(maxPlus/maxMinus)까지 진행하되, 그 전에
+        /// Scribe 미검출이면 그 방향만 조기 종료하고 반대 방향은 계속 진행한다. 스윕 종료 후 기준 선으로 복귀한다.
         /// </summary>
-        private async Task RunScribeThetaAlternatingSweepAsync(double pitch, int maxPlus, int maxMinus, CancellationToken ct)
+        private async Task RunScribeThetaAlternatingSweepAsync(
+            double pitch, int refC, int firstC, int lastC, int stepDies, int maxPlus, int maxMinus, CancellationToken ct)
         {
             int steps = Math.Max(maxPlus, maxMinus);
             int curOffset = 0;                                   // 현재 위치(피치 스텝 단위, 중심=0)
@@ -851,21 +1046,22 @@ namespace HCB.UI
                     int prevOffset = curOffset;
                     int target = dir * k;
                     double move = (target - prevOffset) * pitch;
+                    int curC = refC + target * stepDies;         // 도착할 Scribeline 인덱스
                     string pass = dir > 0 ? $"정방향 {k}" : $"역방향 {k}";
 
-                    ScribeCenterStatus = $"{pass} 스윕 — X {move:+0.000;-0.000}mm 이동...";
+                    ScribeCenterStatus = $"{pass} 스윕 — 선 {curC}로 X {move:+0.000;-0.000}mm 이동...";
                     await _sequenceService.RelativeMotionsMove(XAxis, move, ct);
                     curOffset = target;
 
-                    var a = await ConvergeThetaAtDieAsync(pitch, pass, ct);
+                    var a = await ConvergeThetaAtDieAsync(pitch, curC, firstC, lastC, stepDies, pass, ct);
                     if (a == null)
                     {
-                        // 끝 Die(미검출) — 직전 위치로 되돌리고 이 방향만 종료
+                        // 미검출 — 직전 위치로 되돌리고 이 방향만 종료
                         await _sequenceService.RelativeMotionsMove(XAxis, -move, ct);
                         curOffset = prevOffset;
                         if (dir > 0) plusEnd = true; else minusEnd = true;
-                        ScribeCenterStatus = $"{pass} 스윕 — 끝 Die 도달(미검출), 이 방향 종료";
-                        _logger.Information("Wafer 중심 2차 — {Pass} 끝 Die 도달", pass);
+                        ScribeCenterStatus = $"{pass} 스윕 — 선 {curC} 미검출, 이 방향 종료";
+                        _logger.Information("Wafer 중심 2차 — {Pass} 선 {C} 미검출으로 종료", pass, curC);
                     }
                 }
             }
@@ -1144,7 +1340,8 @@ namespace HCB.UI
 
         #region Wafer Theta 보정 (HC1 AlignMark)
 
-        private const CameraType Hc1Cam = CameraType.HC1_HIGH;
+        private const CameraType Hc1Cam = CameraType.HC1_HIGH;   // W-Table 좌측
+        private const CameraType Hc2Cam = CameraType.HC2_HIGH;   // W-Table 우측
         private const MarkType AlignMark = MarkType.ALIGN_MARK;
         private const string ThetaAxis = MotionExtensions.W_T;   // 웨이퍼 테타 축
         // W_T 회전 부호 (하드웨어 방향과 반대면 +1로 뒤집기)
