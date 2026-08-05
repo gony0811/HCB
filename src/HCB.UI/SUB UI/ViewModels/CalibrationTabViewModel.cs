@@ -603,11 +603,6 @@ namespace HCB.UI
                 double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
-                // 실제 측정 위치와 동일하게 h_z/H_Z를 FID_ALIGN_GAP만큼 이동 (align/fid 측정 갭)
-                double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
-                await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
-                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
-
                 var hc2XParam = _ecParamService.FindByName(MotionExtensions.HC2_X).Value;
                 var hc2YParam = _ecParamService.FindByName(MotionExtensions.HC2_Y).Value;
                 var hc2XOffset = double.TryParse(hc2XParam, out double xOffset) ? xOffset : 0.0;
