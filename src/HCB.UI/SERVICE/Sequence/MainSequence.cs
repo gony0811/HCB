@@ -846,7 +846,14 @@ namespace HCB.UI
                 data.PcTRad = ParseDouble(pcT.Value);
                 data.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
                 data.PcHcro = Point2D.of(ParseDouble(pcHcroXParam.Value), ParseDouble(pcHcroYParam.Value));
-                data.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
+
+                // Manual 트레이싱(또는 DIE 레시피)에서는 카메라 거리(Hc2Offset)를 Pickup 이전 CameraDist로
+                // 직접 측정하므로, 그 측정값을 DB 캘리브레이션 값으로 덮지 않는다.
+                // Auto/None(비-DIE)에서는 DB 캘리브레이션의 Hc2Offset를 로드한다.
+                bool isDieRecipe = _recipeService.UseRecipe?.Component == HCB.Data.Entity.Type.ComponentType.DIE;
+                bool camDistMeasured = (data.TracingMode == TracingMode.Manual || isDieRecipe) && data.Hc2Offset != null;
+                if (!camDistMeasured)
+                    data.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
             }
             else
             {

@@ -230,6 +230,58 @@ namespace HCB.UI
 
         #endregion
 
+        #region 회전중심 + 카메라 거리 측정 (Pickup 이전)
+
+        /// <summary>
+        /// 회전중심(HcRO)과 카메라 거리(Hc2Offset)를 측정한다.
+        /// 종전에는 <see cref="BtmHighAlign"/> 내부에서 수행하던 캘리브레이션 측정을 Pickup 이전 단계로 분리한 것.
+        ///  · <see cref="CameraDist"/>       → data.Hc2Offset       (Manual 트레이싱 또는 DIE 레시피)
+        ///  · <see cref="MeasureHcroPoints"/> → data.Hc1RoRaw/Hc2RoRaw (Manual 트레이싱, 이후 ComputeHcroCenter에서 소비)
+        ///
+        /// 측정 결과는 <paramref name="data"/>에 누적되며, 동일 객체가 Pickup→TopHighAlign→BtmHighAlign→
+        /// CoordinateSystemIntegration까지 공유되어야 캘리브레이션 값이 좌표계 통합에 반영된다.
+        /// </summary>
+        public async Task<AlignData> MeasureCamDistAndHcro(AlignData data, CancellationToken ct)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
+            var total = Stopwatch.StartNew();
+            try
+            {
+                await MappingOff();
+                if (data.TracingMode == TracingMode.Manual)
+                {
+                    if (data.Use2DMapping) await WTable2DMappingOn();
+
+                    await TopDieSet(ct);
+                    double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
+                    await RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
+                    await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
+                    await CameraDist(data, ct);
+                    await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap, ct);
+                    await RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);                    
+                    (data.Hc1RoRaw, data.Hc2RoRaw) = await MeasureHcroPoints(data, ct);
+
+                }
+
+                _logger.Information("MeasureCamDistAndHcro — 총 소요: {Elapsed}ms", total.ElapsedMilliseconds);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "MeasureCamDistAndHcro 실패");
+                throw;
+            }
+            finally
+            {
+                if (data.Use2DMapping) await MappingOff();
+            }
+
+            return data;
+        }
+
+        #endregion
+
         #region Btm Die 고배율 측정
 
         public async Task<AlignData> BtmHighAlign(
@@ -262,11 +314,7 @@ namespace HCB.UI
                     await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
                     double btmAlignZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
 
-                    // 1. 카메라 거리 측정 (Manual 트레이싱 또는 DIE 레시피 θ보정용 Hc2Offset 확보)
-                    if (data.TracingMode == TracingMode.Manual || isDieRecipe)
-                    {
-                        await CameraDist(data, ct);
-                    }
+                    // 카메라 거리(Hc2Offset)·회전중심(HcRO) 측정은 Pickup 이전 단계(MeasureCamDistAndHcro)로 분리됨
 
                     // 2. BTM DIE 측정 (BLA=Left/HC1, BRA=Right/HC2 얼라인마크)
                     sw.Restart();
@@ -296,10 +344,10 @@ namespace HCB.UI
 
                     double btmFidZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);
 
-                    await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap-0.2, ct);                    
-                    //await RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);                    
-                    await MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, ct);
-                    await RelativeMotionsMove(MotionExtensions.H_Z, 0.2, ct);
+                    await RelativeMotionsMove(MotionExtensions.H_Z, -fidAlignGap, ct);                    
+                    await RelativeMotionsMove(MotionExtensions.h_z, fidAlignGap, ct);
+                    //await MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, ct);
+                    //await RelativeMotionsMove(MotionExtensions.H_Z, 0.2, ct);
                     
                     var rFid = await BtmDieVisionRightFid(data.AvgMove, ct);
                     data.BtmRightFidRaw = Point2D.of(rFid.DxCamToMark, rFid.DyCamToMark);
@@ -310,11 +358,7 @@ namespace HCB.UI
                     data.BtmLeftFidRaw = Point2D.of(lFid.DxCamToMark , lFid.DyCamToMark);
                     _logger.Information("BtmHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
-
-                    if (data.TracingMode == TracingMode.Manual)
-                    {
-                        (data.Hc1RoRaw, data.Hc2RoRaw) = await MeasureHcroPoints(data, ct);
-                    }
+                    // 회전중심(HcRO) raw 측정은 Pickup 이전 단계(MeasureCamDistAndHcro)로 분리됨
 
                     data.BtmDz = btmAlignZ - btmFidZ;
                 }
