@@ -112,6 +112,8 @@ namespace HCB.UI
         public const string HCRO_Y = "HCRO_Y";
 
         public const string HCRO_PC_X = "HCRO_PC_X";
+        public const string HCRO_FIT_MODE = "HCRO_FIT_MODE";   // 회전중심 피팅 방식: rigid | circle (미설정 시 rigid)
+        public const string HCRO_REPEAT_N = "HCRO_REPEAT_N";   // 강체 피팅 반복 측정 횟수 (미설정 시 1)
         public const string HCRO_PC_Y = "HCRO_PC_Y";
         public const string BOND_DELAY = "BOND_DELAY";
 

@@ -846,7 +846,14 @@ namespace HCB.UI
                 data.PcTRad = ParseDouble(pcT.Value);
                 data.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
                 data.PcHcro = Point2D.of(ParseDouble(pcHcroXParam.Value), ParseDouble(pcHcroYParam.Value));
-                data.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
+
+                // Manual 트레이싱(또는 DIE 레시피)에서는 카메라 거리(Hc2Offset)를 Pickup 이전 CameraDist로
+                // 직접 측정하므로, 그 측정값을 DB 캘리브레이션 값으로 덮지 않는다.
+                // Auto/None(비-DIE)에서는 DB 캘리브레이션의 Hc2Offset를 로드한다.
+                bool isDieRecipe = _recipeService.UseRecipe?.Component == HCB.Data.Entity.Type.ComponentType.DIE;
+                bool camDistMeasured = (data.TracingMode == TracingMode.Manual || isDieRecipe) && data.Hc2Offset != null;
+                if (!camDistMeasured)
+                    data.Hc2Offset = Point2D.of(ParseDouble(hc2XParam.Value), ParseDouble(hc2YParam.Value));
             }
             else
             {
@@ -1038,60 +1045,73 @@ namespace HCB.UI
         }
 
         /// <summary>
-        /// H_T를 0°/±0.75°로 회전시키며 HC1/HC2 피듀셜을 측정하고, 피듀셜 위치 보정만 적용한
-        /// raw 측정 점을 HC1/HC2로 나누어 반환한다. 좌표계 통합(부호 반전, Hc2Offset 적용)은
-        /// <see cref="ComputeHcroCenter"/>에서 수행한다.
+        /// H_T를 [0°, −0.75°, +0.75°] 순으로 회전시키며 HC1/HC2 피듀셜을 측정한다.
+        /// EC 파라미터 HCRO_REPEAT_N(기본 1)만큼 전체 사이클을 반복하며, 매 반복마다 0°를
+        /// 재측정한다(강체 피팅의 회전 전/후 대칭 확보). 점 순서 규약은
+        /// <see cref="ComputeHcroCenter"/>의 3점 묶음 처리와 일치해야 한다.
+        /// 좌표계 통합(부호 반전, Hc2Offset 적용)은 <see cref="ComputeHcroCenter"/>에서 수행한다.
         /// </summary>
         private async Task<(List<Point2D> hc1Raw, List<Point2D> hc2Raw)>
             MeasureHcroPoints(AlignData d, CancellationToken ct)
         {
+            var hc1Raw = new List<Point2D>();
+            var hc2Raw = new List<Point2D>();
+
+            // 반복 횟수: EC 파라미터 HCRO_REPEAT_N (미설정 시 1)
+            // 강체 피팅 불확도 ≈ σ/(2sin(β/2)·√rep) — rep=5면 1회 대비 √5배 개선
+            int repeatN = 1;
             try
             {
-                var hc1Raw = new List<Point2D>();
-                var hc2Raw = new List<Point2D>();
+                var repParam = _paramService.FindByName(MotionExtensions.HCRO_REPEAT_N);
+                if (repParam != null && repParam.Id != 0 && !string.IsNullOrWhiteSpace(repParam.Value))
+                    repeatN = Math.Max(1, (int)double.Parse(repParam.Value));
+            }
+            catch { /* 파라미터 미존재 시 기본값 1 */ }
 
-                // 0도: 이미 측정된 BtmLeftFidRaw(HC1), BtmRightFidRaw(HC2) 사용
-                hc1Raw.Add(Point2D.of(d.BtmLeftFidRaw.X, d.BtmLeftFidRaw.Y));
-                hc2Raw.Add(Point2D.of(d.BtmRightFidRaw.X, d.BtmRightFidRaw.Y));
+            // 점 순서 규약: [0°, −0.75°, +0.75°] × repeatN — ComputeHcroCenter의 3점 묶음과 일치해야 함
+            double[] angles = { 0.0, -0.75, 0.75 };
 
-                // -0.75도, +0.75도: 회전 후 측정
-                double[] angles = { -0.75, 0.75 };
-                for (int i = 0; i < angles.Length; i++)
+            try
+            {
+                for (int rep = 0; rep < repeatN; rep++)
                 {
-                    // Hc1X: 0.00361, Hc1Y: -0.00112, Hc2X: 0.00807, Hc2Y: -0.00269
+                    foreach (var angle in angles)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        await MotionsMove(MotionExtensions.H_T, angle, ct);
 
-                    ct.ThrowIfCancellationRequested();
-                    await MotionsMove(MotionExtensions.H_T, angles[i], ct);
+                        await communicationService.RequestAFStart(CameraType.HC1_HIGH, MarkType.FIDUCIAL, ct);
+                        var v1 = await communicationService.RequestVisionMarkPosition(
+                            MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
+                        if (v1.Result == Result.NG)
+                            throw new Exception($"Hc1 rep{rep} {angle}° 피듀셜 측정 실패");
 
-                    await communicationService.RequestAFStart(CameraType.HC1_HIGH, MarkType.FIDUCIAL, ct);
-                    var v1 = await communicationService.RequestVisionMarkPosition(
-                        MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
-                    if (v1.Result == Result.NG)
-                        throw new Exception($"Hc1 {angles[i]}° 피듀셜 측정 실패");
-                    v1.X = v1.X;
-                    v1.Y = v1.Y;
+                        await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
+                        var v2 = await communicationService.RequestVisionMarkPosition(
+                            MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
+                        if (v2.Result == Result.NG)
+                            throw new Exception($"Hc2 rep{rep} {angle}° 피듀셜 측정 실패");
 
-                    await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
-                    var v2 = await communicationService.RequestVisionMarkPosition(
-                        MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
-                    if (v2.Result == Result.NG)
-                        throw new Exception($"Hc2 {angles[i]}° 피듀셜 측정 실패");
-                    v2.X = v2.X;
-                    v2.Y = v2.Y;
-                    hc1Raw.Add(Point2D.of(v1.X, v1.Y));
-                    hc2Raw.Add(Point2D.of(v2.X, v2.Y));
+                        hc1Raw.Add(Point2D.of(v1.X, v1.Y));
+                        hc2Raw.Add(Point2D.of(v2.X, v2.Y));
+
+                        _logger.Information(
+                            "MeasureHcroPoints — rep={Rep} H_T={Angle:F2}° Hc1=({H1x:F5},{H1y:F5}) Hc2=({H2x:F5},{H2y:F5})",
+                            rep, angle, v1.X, v1.Y, v2.X, v2.Y);
+                    }
                 }
 
                 // H_T 복귀
                 await MotionsMove(MotionExtensions.H_T, 0, ct);
 
-                _logger.Information("MeasureHcroPoints — Hc1={Hc1Count}, Hc2={Hc2Count}",
-                    hc1Raw.Count, hc2Raw.Count);
+                _logger.Information("MeasureHcroPoints — reps={Reps}, Hc1={Hc1Count}, Hc2={Hc2Count}",
+                    repeatN, hc1Raw.Count, hc2Raw.Count);
                 return (hc1Raw, hc2Raw);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception e)
             {
+                try { await MotionsMove(MotionExtensions.H_T, 0, CancellationToken.None); } catch { }
                 _logger.Error(e, "MeasureHcroPoints 실패");
                 throw;
             }
@@ -1099,7 +1119,10 @@ namespace HCB.UI
 
         /// <summary>
         /// <see cref="MeasureHcroPoints"/>가 반환한 raw 측정 점을 통합 좌표계로 변환(HC1 부호 반전,
-        /// HC2에 Hc2Offset 적용)한 뒤 원 피팅하여 회전 중심(Hcro)을 계산하고 <paramref name="d"/>에 저장한다.
+        /// HC2에 Hc2Offset 적용)한 뒤 회전 중심(Hcro)을 계산하고 <paramref name="d"/>에 저장한다.
+        /// 원 피팅(기존)과 강체 피팅(신규)을 병행 산출·로그하며, 적용 값은 EC 파라미터
+        /// HCRO_FIT_MODE(rigid|circle, 기본 rigid)로 선택한다. 강체 피팅 로그의 βmeas/βcmd
+        /// 비율은 H_T 실행 각도 검증을 겸한다.
         /// <paramref name="hc1Tilt"/>/<paramref name="hc2Tilt"/>가 주어지면 각 측정 점에 카메라별
         /// H_Z 수직도 보정량을 더해 Fid/Align을 동일 평면으로 맞춘 뒤 피팅한다(미지정 시 0).
         /// </summary>
@@ -1110,7 +1133,7 @@ namespace HCB.UI
             Point2D hc1Tilt = null,
             Point2D hc2Tilt = null)
         {
-            if (hc1Raw == null || hc2Raw == null || hc1Raw.Count == 0 || hc2Raw.Count == 0)
+            if (hc1Raw == null || hc2Raw == null || hc1Raw.Count == 0 || hc1Raw.Count != hc2Raw.Count)
                 throw new Exception("회전 중심 계산용 측정 점이 없습니다");
 
             var hc2XOffset = d.Hc2Offset.X;
@@ -1120,17 +1143,93 @@ namespace HCB.UI
             double h1tx = hc1Tilt?.X ?? 0.0, h1ty = hc1Tilt?.Y ?? 0.0;
             double h2tx = hc2Tilt?.X ?? 0.0, h2ty = hc2Tilt?.Y ?? 0.0;
 
-            var allPoints = new System.Collections.Generic.List<Point2D>();
-            foreach (var p in hc1Raw)
-                allPoints.Add(Point2D.of(-(p.X + h1tx), -(p.Y + h1ty)));
-            foreach (var p in hc2Raw)
-                allPoints.Add(Point2D.of(hc2XOffset - (p.X + h2tx), hc2YOffset - (p.Y + h2ty)));
+            // ── 통합 좌표계 변환 (기존 규약: HC1 부호 반전, HC2는 Hc2Offset − 측정값) ──
+            var u1 = new List<Point2D>();   // 좌측 피듀셜 (HC1)
+            var u2 = new List<Point2D>();   // 우측 피듀셜 (HC2)
+            for (int i = 0; i < hc1Raw.Count; i++)
+            {
+                u1.Add(Point2D.of(-(hc1Raw[i].X + h1tx), -(hc1Raw[i].Y + h1ty)));
+                u2.Add(Point2D.of(hc2XOffset - (hc2Raw[i].X + h2tx), hc2YOffset - (hc2Raw[i].Y + h2ty)));
+            }
 
-            var hcRO = CalibrationMath.FitCircleCenter(allPoints);
-            d.Hcro = Point2D.of(hcRO.X, hcRO.Y);
+            // ── (A) 원 피팅 — 기존 방법, 비교·검증용으로 병행 산출 ──
+            Point2D circleCenter = null;
+            try
+            {
+                var allPoints = new List<Point2D>();
+                allPoints.AddRange(u1);
+                allPoints.AddRange(u2);
+                circleCenter = CalibrationMath.FitCircleCenter(allPoints);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning("HcRO 원 피팅 실패(비교용): {Msg}", ex.Message);
+            }
 
-            _logger.Information("ComputeHcroCenter — Hc2Offset=({Hc2X:F4}, {Hc2Y:F4}), tilt(HC1={H1x:F5},{H1y:F5} / HC2={H2x:F5},{H2y:F5}), HcRO=({RoX:F4}, {RoY:F4}), Points={Count}",
-                hc2XOffset, hc2YOffset, h1tx, h1ty, h2tx, h2ty, hcRO.X, hcRO.Y, allPoints.Count);
+            // ── (B) 강체 피팅 — 3점 묶음(0°, −0.75°, +0.75°) × 반복 ──
+            // 점 순서 규약: MeasureHcroPoints가 [0°, −0.75°, +0.75°]를 반복(rep) 단위로 적재
+            const int chunk = 3;
+            int reps = u1.Count / chunk;
+            var pairs = new (int a, int b, double cmdDeg)[] { (0, 1, -0.75), (0, 2, 0.75), (1, 2, 1.5) };
+
+            double sumWx = 0, sumWy = 0, sumW = 0;
+            for (int r = 0; r < reps; r++)
+            {
+                foreach (var (a, b, cmdDeg) in pairs)
+                {
+                    int ia = r * chunk + a, ib = r * chunk + b;
+                    var before = new List<Point2D> { u1[ia], u2[ia] };
+                    var after = new List<Point2D> { u1[ib], u2[ib] };
+                    try
+                    {
+                        var (c0, betaRad, rms) = CalibrationMath.FitRigidRotationCenter(before, after);
+                        double betaDeg = CalibrationMath.ToDegree(betaRad);
+                        double w = 4.0 * Math.Pow(Math.Sin(betaRad / 2.0), 2);   // 분산 역수 비례 가중
+                        sumWx += w * c0.X; sumWy += w * c0.Y; sumW += w;
+
+                        // βmeas/βcmd 비율은 H_T 실행 각도 검증을 겸한다 (1.000에서 벗어나면 H_T 스케일 이상)
+                        _logger.Information(
+                            "HcRO 강체 피팅 — rep={Rep} pair={A}→{B} βcmd={Cmd:F3}° βmeas={Meas:F5}° " +
+                            "ratio={Ratio:F5} C=({Cx:F5},{Cy:F5}) rms={Rms:F4}um",
+                            r, a, b, cmdDeg, betaDeg,
+                            Math.Abs(cmdDeg) > 1e-9 ? betaDeg / cmdDeg : 0.0,
+                            c0.X, c0.Y, rms * 1000.0);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning("HcRO 강체 피팅 실패 rep={Rep} pair={A}→{B}: {Msg}", r, a, b, ex.Message);
+                    }
+                }
+            }
+            Point2D rigidCenter = sumW > 0 ? Point2D.of(sumWx / sumW, sumWy / sumW) : null;
+
+            // ── 결과 선택: EC 파라미터 HCRO_FIT_MODE (rigid | circle), 미설정 시 rigid ──
+            string fitMode = "rigid";
+            try
+            {
+                var modeParam = _paramService.FindByName(MotionExtensions.HCRO_FIT_MODE);
+                if (modeParam != null && modeParam.Id != 0 && !string.IsNullOrWhiteSpace(modeParam.Value))
+                    fitMode = modeParam.Value.Trim().ToLowerInvariant();
+            }
+            catch { /* 파라미터 미존재 시 기본값(rigid) 사용 */ }
+
+            Point2D selected = fitMode == "circle"
+                ? (circleCenter ?? rigidCenter)
+                : (rigidCenter ?? circleCenter);
+            if (selected == null)
+                throw new Exception("HcRO 계산 실패: 원 피팅·강체 피팅 모두 실패");
+
+            d.Hcro = Point2D.of(selected.X, selected.Y);
+
+            _logger.Information(
+                "ComputeHcroCenter — mode={Mode} 적용 HcRO=({Sx:F5},{Sy:F5}) | " +
+                "circle=({CcX},{CcY}) rigid=({RcX},{RcY}) diff(rigid−circle)=({Dx},{Dy})mm | " +
+                "Hc2Offset=({OffX:F4},{OffY:F4}) tilt(HC1={H1x:F5},{H1y:F5}/HC2={H2x:F5},{H2y:F5}) points={Count} reps={Reps}",
+                fitMode, selected.X, selected.Y,
+                circleCenter?.X, circleCenter?.Y, rigidCenter?.X, rigidCenter?.Y,
+                (circleCenter != null && rigidCenter != null) ? (object)(rigidCenter.X - circleCenter.X) : null,
+                (circleCenter != null && rigidCenter != null) ? (object)(rigidCenter.Y - circleCenter.Y) : null,
+                hc2XOffset, hc2YOffset, h1tx, h1ty, h2tx, h2ty, u1.Count + u2.Count, reps);
         }
 
         // ═══════════════════════════════════════════════════
