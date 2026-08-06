@@ -293,10 +293,22 @@ namespace HCB.UI
             // 클릭한 Die의 Center(고배 절대좌표) — BtmHighAlign에서 PLACE_CENTER 대신 여기로 이동
             var dieCenter = Point2D.of(SelectedDie.HighPositionX, SelectedDie.HighPositionY);
 
-            _logger.Information("Wafer Bonding 시작 — Die({Row},{Col}), 고배 Center=({X:F4},{Y:F4})",
-                SelectedDie.Row, SelectedDie.Col, dieCenter.X, dieCenter.Y);
+            // 카메라 거리·회전중심(MeasureCamDistAndHcro) 측정을 WaferCenter(고배 위치)에서 수행하도록 지정.
+            // (StepSeqTab 자체 본딩에 누수되지 않도록 본딩 직후 finally에서 원복)
+            var waferCenter = Point2D.of(HighCenterX, HighCenterY);
+            _sequenceService.CamHcroCenterOverride = waferCenter;
 
-            await StepSeqTab.WaferBonding(dieCenter);
+            _logger.Information("Wafer Bonding 시작 — Die({Row},{Col}), 고배 Center=({X:F4},{Y:F4}), Cam/HCRO 측정 위치=WaferCenter({WX:F4},{WY:F4})",
+                SelectedDie.Row, SelectedDie.Col, dieCenter.X, dieCenter.Y, waferCenter.X, waferCenter.Y);
+
+            try
+            {
+                await StepSeqTab.WaferBonding(dieCenter);
+            }
+            finally
+            {
+                _sequenceService.CamHcroCenterOverride = null;
+            }
 
             if (StepSeqTab.TopBondingState == StepState.Completed)
             {
@@ -530,15 +542,14 @@ namespace HCB.UI
 
         // ── 2차: Scribeline 기반 중심/Theta 정렬 설정 ──
         //  ScribeShiftX/Y : (Recipe) 대략 중심에서 기준 Scribe 측정 위치까지의 초기 Shift(mm)
-        //  ScribeStepDies : 스텝당 이동 Die 수(피치 배수)
-        //  ScribeConvergeIter: 한 Die에서 Theta 수렴까지 재측정 반복 상한(3~6단계 반복)
-        //  ScribeThetaMinDeg : 수렴 임계각(°, 미만이면 보정 생략)
-        //  ※ 양옆 스윕 Die 수는 WaferSize·기준 위치로 자동 산출한다(ScribeSweepRange).
+        //  ScribeStepDies : 좌우 대칭 쌍의 확장 단위(선 인덱스 간격 = Die 수)
+        //  ScribeThetaMinDeg : θ 보정 임계각(°, 미만이면 보정 생략)
+        //  ※ θ 보정은 중심 대칭 쌍을 안쪽→바깥으로 확장해, 검출되는 "가장 바깥"(긴 baseline) 쌍에서 1회 수행한다
+        //    (CorrectThetaBySymmetricPairAsync). 좌우 유효 확장 배수는 중심 기준 십자마크 범위[firstC,lastC]에서 자동 산출.
         [ObservableProperty] private double scribeShiftX;      // (Recipe) 초기 Shift X
         [ObservableProperty] private double scribeShiftY;      // (Recipe) 초기 Shift Y
-        [ObservableProperty] private int scribeStepDies = 1;   // 스텝당 이동 Die 수
-        [ObservableProperty] private int scribeConvergeIter = 3; // Die당 Theta 수렴 반복 상한
-        [ObservableProperty] private double scribeThetaMinDeg = 0.01; // 수렴 임계각(°)
+        [ObservableProperty] private int scribeStepDies = 1;   // 대칭 쌍 확장 단위(Die 수)
+        [ObservableProperty] private double scribeThetaMinDeg = 0.01; // θ 보정 임계각(°)
         [ObservableProperty] private double scribeThetaAngleDeg;      // 마지막 측정 기울기(°)
 
         private CancellationTokenSource? _alignCts;
@@ -778,8 +789,7 @@ namespace HCB.UI
             try
             {
                 int stepDies = Math.Max(1, ScribeStepDies);
-                double pitch = DiePitchX * stepDies;            // 옆 측정 선까지 거리
-                if (pitch <= 0)
+                if (DiePitchX <= 0)
                 {
                     ScribeCenterStatus = "DieSize/Gap 값이 유효하지 않습니다.";
                     return;
@@ -828,10 +838,10 @@ namespace HCB.UI
                     _sequenceService.MotionsMove(XAxis, refX, ct),
                     _sequenceService.MotionsMove(YAxis, refY, ct));
 
-                // (2)+(3)~(6) 기준 선에서 Theta 수렴
-                ScribeCenterStatus = "기준 Scribeline 정렬/Theta 수렴 중...";
-                var startAbs = await ConvergeThetaAtDieAsync(pitch, refC, firstC, lastC, stepDies, "기준", ct);
-                if (startAbs == null)
+                // (2) 기준(중심) 교차점을 비전 중심에 정렬 → 중심 절대좌표 확정
+                ScribeCenterStatus = "기준 교차점 정렬 중...";
+                var centerAbs = await CenterScribeAsync(ct);
+                if (centerAbs == null)
                 {
                     HasScribeMeasure = false;
                     ScribeCenterStatus = "기준 Scribeline 검출 실패(NG) — 위치/조명/모델 확인";
@@ -839,26 +849,25 @@ namespace HCB.UI
                     return;
                 }
 
-                // 정렬 후 실제로 잡힌 교차점을 절대좌표에서 역산 — 이후 스윕 범위를 이 인덱스 기준으로 잡는다
-                // (비전이 의도한 것과 다른 교차점을 잡았어도 스윕 범위·중심 역산이 어긋나지 않도록)
-                int startC = Math.Clamp(ScribeLineIndexAtX(startAbs.X), firstC, lastC);
-                int startR = ScribeLineIndexAtY(startAbs.Y);
+                // 정렬 후 실제로 잡힌 교차점을 절대좌표에서 역산(중심 오프셋 확정)
+                int startC = Math.Clamp(ScribeLineIndexAtX(centerAbs.X), firstC, lastC);
+                int startR = ScribeLineIndexAtY(centerAbs.Y);
                 _refScribeOffsetX = ScribeLineOffsetX(startC);
                 _refScribeOffsetY = ScribeLineOffsetY(startR);
                 if (startC != refC || startR != refR)
                     _logger.Information("Wafer 중심 2차 — 정렬된 교차점이 기준과 다름: ({RR},{RC}) → ({AR},{AC})",
                         refR, refC, startR, startC);
 
-                // (7) 십자마크가 있는 선 범위 [firstC,lastC] 안에서 정/역방향 측정 가능 스텝 수를 산출.
-                //     WaferSize가 홀수이거나 기준이 치우치면 좌/우 값이 다르다(비대칭).
-                //     기준에서 정방향/역방향을 번갈아(+1,−1,+2,−2,…) Shift·보정하며 스윕 후 기준으로 복귀.
-                var (maxPlus, maxMinus) = ScribeSweepRange(startC, firstC, lastC, stepDies);
-                _logger.Information(
-                    "Wafer 중심 2차 — 자동 스윕 범위: +{P} / -{M} 스텝 (기준 선={C}, 유효 {F}~{L}, 스텝당 {S} Die)",
-                    maxPlus, maxMinus, startC, firstC, lastC, stepDies);
-                await RunScribeThetaAlternatingSweepAsync(pitch, startC, firstC, lastC, stepDies, maxPlus, maxMinus, ct);
+                // (3) θ 보정 — 중심 기준 좌우 대칭 쌍 중 "가장 바깥"(긴 baseline)에서 1회 측정·보정.
+                //     인접 선 비교(짧은 baseline)가 아니라, 중심을 피벗으로 좌 −m·우 +m 대칭점을 잡아
+                //     두 점 사이 긴 baseline으로 기울기를 산출한다(바깥일수록 각도 정밀도↑).
+                //     W_T를 -기울기만큼 1회 회전하면 행 기울기가 0이 되고(피벗 오프셋은 위치만 이동),
+                //     회전 후 (4)에서 중심을 재정렬하므로 중심 위치도 정확히 복원된다.
+                ScribeCenterStatus = "θ 측정 — 좌우 대칭 쌍 확장 중...";
+                await CorrectThetaBySymmetricPairAsync(startC, firstC, lastC, stepDies, ct);
 
-                // 최종: 기준 Scribe를 다시 비전 중심에 정렬하고 절대좌표 기록(Step3용)
+                // (4) 회전 후 중심 교차점 재정렬 → 최종 중심 절대좌표 기록(Step3용)
+                ScribeCenterStatus = "θ 보정 후 중심 재정렬 중...";
                 var finalAbs = await CenterScribeAsync(ct);
                 if (finalAbs == null)
                 {
@@ -943,135 +952,102 @@ namespace HCB.UI
         }
 
         /// <summary>
-        /// 한 Scribeline(curC)에서 (3)~(6)을 수행한다.
-        ///  (3) Scribe를 비전 중심에 정렬 = A → (4) 옆 선으로 pitch 이동 후 측정 = B → 기준(A)으로 복귀
-        ///  (5) A·B 기울기(atan2)로 W_T 보정 → (6) 임계각 이내로 수렴할 때까지 반복.
-        /// B는 십자마크가 있는 선([firstC,lastC]) 쪽으로만 잡는다. 오른쪽(+X)이 최외곽 선이면 왼쪽(−X)에서 잡으며,
-        /// 기울기를 ±90°로 정규화하므로 B가 어느 쪽이든 보정 부호는 동일하다.
-        /// 양쪽 모두 유효 범위를 벗어나면(측정 가능한 선이 1개뿐) 보정 없이 A만 반환한다.
-        /// 반환: 수렴/정상 종료된 기준점 A의 절대좌표. 초기 정렬 실패 시 null(미검출).
+        /// 저배 Scribeline θ 보정 — 중심(refC) 십자마크를 피벗으로, 좌우 대칭 쌍으로 기울기를 측정·보정한다.
+        /// 유효한(양옆에 십자마크가 있는) 최대 확장 배수 mMax를 구해 공용 코어에 위임한다.
+        /// (검색은 안쪽→바깥, 보정은 검출되는 가장 바깥=최장 baseline에서 1회)
         /// </summary>
-        private async Task<Point2D?> ConvergeThetaAtDieAsync(
-            double pitch, int curC, int firstC, int lastC, int stepDies, string pass, CancellationToken ct)
-        {
-            // B를 잡을 방향 — 오른쪽 우선, 최외곽(십자마크 없음)이면 왼쪽, 둘 다 불가면 0(보정 생략)
-            int bDir = curC + stepDies <= lastC ? +1
-                     : curC - stepDies >= firstC ? -1
-                     : 0;
-
-            int iter = Math.Max(1, ScribeConvergeIter);
-            Point2D? aAbs = null;
-
-            for (int k = 0; k < iter; k++)
-            {
-                ct.ThrowIfCancellationRequested();
-
-                // (3) 기준 Scribe를 비전 중심에 정렬 = A
-                aAbs = await CenterScribeAsync(ct);
-                if (aAbs == null) return null;
-
-                if (bDir == 0)
-                {
-                    // 양옆이 모두 최외곽 선 — 십자마크가 없어 기울기를 낼 수 없다
-                    ScribeCenterStatus = $"{pass} — 옆에 십자마크 선이 없어 보정 생략";
-                    _logger.Information("Wafer 중심 2차 — {Pass} 선 {C}: 양옆이 유효 범위({F}~{L}) 밖, 보정 생략",
-                        pass, curC, firstC, lastC);
-                    return aAbs;
-                }
-
-                // (4) 옆 선(십자마크가 있는 쪽)으로 pitch 이동 후 측정 = B, 이후 기준 위치(A)로 복귀
-                double bMove = bDir * pitch;
-                await _sequenceService.RelativeMotionsMove(XAxis, bMove, ct);
-                var bAbs = await MeasureScribeAbsAsync(ct);
-                await _sequenceService.RelativeMotionsMove(XAxis, -bMove, ct);
-
-                if (bAbs == null)
-                    return aAbs; // 옆 선 미검출 → 이 선은 보정 없이 종료
-
-                // (5) A·B 기울기 → W_T 보정 (±90° 정규화)
-                double angleDeg = Math.Atan2(bAbs.Y - aAbs.Y, bAbs.X - aAbs.X) * (180.0 / Math.PI);
-                if (angleDeg > 90) angleDeg -= 180;
-                else if (angleDeg < -90) angleDeg += 180;
-                ScribeThetaAngleDeg = angleDeg;
-
-                if (Math.Abs(angleDeg) < ScribeThetaMinDeg)
-                {
-                    ScribeCenterStatus = $"{pass} — 기울기 {angleDeg:F4}° (수렴)";
-                    return aAbs; // (6) 수렴
-                }
-
-                double corr = ThetaSign * angleDeg;
-                ScribeCenterStatus = $"{pass} — 기울기 {angleDeg:F4}° → W_T {-corr:F4}° 보정 ({k + 1}/{iter})";
-                _logger.Information("Wafer 중심 2차 — {Pass} 기울기={A:F4}°, W_T 보정={C:F4}° (iter {K})",
-                    pass, angleDeg, -corr, k + 1);
-                await _sequenceService.RelativeMotionsMove(TAxis, -corr, ct);
-                // (6) 반복 — 다음 루프에서 A 재정렬
-            }
-
-            return aAbs;
-        }
-
-        /// <summary>
-        /// 기준 선(refC)에서 정방향(+X)/역방향(−X)으로 측정 가능한 스텝 수를 산출한다.
-        /// 십자마크가 있는 선은 [firstC, lastC](= Row의 내부 경계)뿐이므로 그 범위 안에서만 이동하며,
-        /// WaferSize가 홀수이거나 기준이 중심에서 치우치면 좌/우 값이 서로 다르다(비대칭).
-        /// 스텝 단위(ScribeStepDies)로 환산(내림)해 반환.
-        /// </summary>
-        private (int plus, int minus) ScribeSweepRange(int refC, int firstC, int lastC, int stepDies)
+        private async Task<bool> CorrectThetaBySymmetricPairAsync(
+            int refC, int firstC, int lastC, int stepDies, CancellationToken ct)
         {
             int step = Math.Max(1, stepDies);
-            return (Math.Max(0, lastC - refC) / step, Math.Max(0, refC - firstC) / step);
+            int mMax = Math.Min(refC - firstC, lastC - refC) / step;   // 좌우 모두 유효한 최대 확장 배수
+            if (mMax < 1)
+            {
+                ScribeCenterStatus = "중심 좌우 대칭 십자마크 쌍이 없어 θ 보정 생략";
+                _logger.Warning("Wafer 중심 2차 — 대칭 쌍 없음(refC={C}, 유효 {F}~{L})", refC, firstC, lastC);
+                return false;
+            }
+
+            return await CorrectThetaBySymmetricSweepAsync(
+                mMax, step * DiePitchX, ScribeThetaMinDeg,
+                MeasureScribeAbsAsync,
+                s => ScribeCenterStatus = s, a => ScribeThetaAngleDeg = a,
+                "2차 θ", ct);
         }
 
         /// <summary>
-        /// (7) 기준 선에서 정방향(+X)/역방향(−X)을 번갈아 확장(+1,−1,+2,−2,…)하며,
-        /// 매 도착 선에서 ConvergeThetaAtDieAsync로 Theta 보정을 수행한다.
-        /// 각 방향은 십자마크 유효 범위에서 산출한 최대 스텝(maxPlus/maxMinus)까지 진행하되, 그 전에
-        /// Scribe 미검출이면 그 방향만 조기 종료하고 반대 방향은 계속 진행한다. 스윕 종료 후 기준 선으로 복귀한다.
+        /// 대칭 쌍 θ 보정 공용 코어 (저배 Scribe · 고배 AlignMark 공통).
+        /// 현재 위치를 피벗(offset 0)으로, 좌 −m·우 +m 대칭 쌍을 "안쪽(m=1)→바깥(m=mMax)"으로 확장하며
+        /// 매 단계 두 점을 measureAbs로 측정한다. 한쪽이라도 미검출이면 그 지점을 웨이퍼 끝으로 보고
+        /// 확장을 멈추고, 그때까지 성공한 "가장 바깥(넓은)" 쌍의 긴 baseline으로 기울기를 1회 산출한다.
+        /// |기울기| ≥ minDeg 이면 W_T를 −기울기만큼 1회 회전 보정한다(회전 피벗이 중심과 달라도 각도는 0이 됨).
+        /// 측정·보정 후 X는 피벗으로 복귀한 상태로 끝난다.
+        /// 반환: 유효 쌍을 하나라도 찾았으면 true(보정 또는 임계 미만 생략), 전무하면 false.
         /// </summary>
-        private async Task RunScribeThetaAlternatingSweepAsync(
-            double pitch, int refC, int firstC, int lastC, int stepDies, int maxPlus, int maxMinus, CancellationToken ct)
+        private async Task<bool> CorrectThetaBySymmetricSweepAsync(
+            int mMax, double pitchStep, double minDeg,
+            Func<CancellationToken, Task<Point2D?>> measureAbs,
+            Action<string> setStatus, Action<double> setAngle,
+            string tag, CancellationToken ct)
         {
-            int steps = Math.Max(maxPlus, maxMinus);
-            int curOffset = 0;                                   // 현재 위치(피치 스텝 단위, 중심=0)
-            bool plusEnd = maxPlus <= 0, minusEnd = maxMinus <= 0; // 각 방향 종료 여부
+            Point2D? bestL = null, bestR = null;
+            int bestM = 0;
+            double bestBase = 0;
 
-            for (int k = 1; k <= steps && !(plusEnd && minusEnd); k++)
+            for (int m = 1; m <= mMax; m++)
             {
-                foreach (int dir in new[] { +1, -1 })
+                ct.ThrowIfCancellationRequested();
+                double off = m * pitchStep;
+
+                // 좌측(−m) 측정
+                setStatus($"{tag} — 대칭 쌍 ±{m} 좌측 측정 (baseline {2 * off:F1}mm)...");
+                await _sequenceService.RelativeMotionsMove(XAxis, -off, ct);
+                var l = await measureAbs(ct);
+
+                // 우측(+m) 측정
+                setStatus($"{tag} — 대칭 쌍 ±{m} 우측 측정 (baseline {2 * off:F1}mm)...");
+                await _sequenceService.RelativeMotionsMove(XAxis, 2 * off, ct);
+                var r = await measureAbs(ct);
+
+                // 피벗(중심)으로 복귀
+                await _sequenceService.RelativeMotionsMove(XAxis, -off, ct);
+
+                if (l == null || r == null)
                 {
-                    ct.ThrowIfCancellationRequested();
-                    if (dir > 0 && (plusEnd || k > maxPlus)) { if (k > maxPlus) plusEnd = true; continue; }
-                    if (dir < 0 && (minusEnd || k > maxMinus)) { if (k > maxMinus) minusEnd = true; continue; }
-
-                    int prevOffset = curOffset;
-                    int target = dir * k;
-                    double move = (target - prevOffset) * pitch;
-                    int curC = refC + target * stepDies;         // 도착할 Scribeline 인덱스
-                    string pass = dir > 0 ? $"정방향 {k}" : $"역방향 {k}";
-
-                    ScribeCenterStatus = $"{pass} 스윕 — 선 {curC}로 X {move:+0.000;-0.000}mm 이동...";
-                    await _sequenceService.RelativeMotionsMove(XAxis, move, ct);
-                    curOffset = target;
-
-                    var a = await ConvergeThetaAtDieAsync(pitch, curC, firstC, lastC, stepDies, pass, ct);
-                    if (a == null)
-                    {
-                        // 미검출 — 직전 위치로 되돌리고 이 방향만 종료
-                        await _sequenceService.RelativeMotionsMove(XAxis, -move, ct);
-                        curOffset = prevOffset;
-                        if (dir > 0) plusEnd = true; else minusEnd = true;
-                        ScribeCenterStatus = $"{pass} 스윕 — 선 {curC} 미검출, 이 방향 종료";
-                        _logger.Information("Wafer 중심 2차 — {Pass} 선 {C} 미검출으로 종료", pass, curC);
-                    }
+                    _logger.Information("{Tag} — 대칭 쌍 ±{M} 한쪽 미검출(웨이퍼 끝), 확장 종료", tag, m);
+                    break;   // 끝 도달 → 지금까지 가장 넓은 쌍 사용
                 }
+
+                bestL = l; bestR = r; bestM = m; bestBase = 2 * off;
             }
 
-            // 중심(기준 Die)으로 복귀
-            if (curOffset != 0)
-                await _sequenceService.RelativeMotionsMove(XAxis, (0 - curOffset) * pitch, ct);
+            if (bestM == 0 || bestL == null || bestR == null)
+            {
+                setStatus($"{tag} — 유효 대칭 쌍 없음, θ 보정 생략");
+                _logger.Warning("{Tag} — 유효 대칭 쌍 없음(mMax={M})", tag, mMax);
+                return false;
+            }
 
-            ScribeCenterStatus = $"교대 스윕 완료 (기울기 {ScribeThetaAngleDeg:F4}°)";
+            // 최장 baseline 기울기 (±90° 정규화)
+            double angleDeg = Math.Atan2(bestR.Y - bestL.Y, bestR.X - bestL.X) * (180.0 / Math.PI);
+            if (angleDeg > 90) angleDeg -= 180;
+            else if (angleDeg < -90) angleDeg += 180;
+            setAngle(angleDeg);
+
+            if (Math.Abs(angleDeg) < minDeg)
+            {
+                setStatus($"{tag} — 기울기 {angleDeg:F4}° < 임계 {minDeg:F4}°, 보정 생략 (baseline {bestBase:F1}mm, ±{bestM})");
+                _logger.Information("{Tag} — 기울기 {A:F4}° 임계 미만, 보정 생략 (baseline {B:F2}mm, ±{M})",
+                    tag, angleDeg, bestBase, bestM);
+                return true;
+            }
+
+            double corr = ThetaSign * angleDeg;
+            setStatus($"{tag} — 기울기 {angleDeg:F4}° → W_T {-corr:F4}° 회전 (baseline {bestBase:F1}mm, ±{bestM})");
+            _logger.Information("{Tag} — θ 1회 보정: 기울기={A:F4}°, W_T={C:F4}°, baseline={B:F2}mm, ±{M}",
+                tag, angleDeg, -corr, bestBase, bestM);
+            await _sequenceService.RelativeMotionsMove(ThetaAxis, -corr, ct);
+            return true;
         }
 
         // ── 3차: 저배 Center → 고배율 Center로 전환 ──
@@ -1154,23 +1130,30 @@ namespace HCB.UI
                 ScribeCenterStatus = "고배 Z 이동 중...";
                 await MoveZForHighMagAsync(ct);
 
-                // 기준 Die AlignMark Theta 수렴 (2차와 동일 방식 — 각 Die에서 A/B 측정·보정 반복)
-                ScribeCenterStatus = "고배 기준 Die AlignMark 정렬/Theta 수렴 중...";
-                var startAbs = await ConvergeThetaAtDieAlignAsync(pitchStep, "고배 기준", ct);
+                // 시작 AlignMark 측정(피벗 = 현재=중심) — 좌우 확장 범위 산출용
+                ScribeCenterStatus = "고배 시작 AlignMark 측정 중...";
+                var startAbs = await MeasureHc1AlignAbsAsync(ct) ?? await SearchAlignByYAsync(ct);
                 if (startAbs == null)
                 {
                     ScribeCenterStatus = "4차 중단 — 시작 AlignMark 미검출(수동 조정 후 재실행)";
                     return;
                 }
 
-                // 양옆 자동 스윕 (WaferSize 경계 기반, 2차처럼 좌우 번갈아 확장)
-                int maxPlus = MaxStepsWithinWafer(startAbs, +1, stepDies);
-                int maxMinus = MaxStepsWithinWafer(startAbs, -1, stepDies);
-                _logger.Information("Wafer 중심 4차 — 자동 스윕 범위: +{P} / -{M} 스텝(WaferSize={W})", maxPlus, maxMinus, WaferSize);
-                await RunAlignThetaAlternatingSweepAsync(pitchStep, maxPlus, maxMinus, ct);
+                // 좌우 대칭 확장 가능한 최대 배수(WaferSize·기준 위치 기반, 양쪽 중 작은 값)
+                int mMax = Math.Min(
+                    MaxStepsWithinWafer(startAbs, +1, stepDies),
+                    MaxStepsWithinWafer(startAbs, -1, stepDies));
+                _logger.Information("Wafer 중심 4차 — 대칭 확장 최대 ±{M} 스텝(WaferSize={W})", mMax, WaferSize);
 
-                ScribeCenterStatus = $"4차 완료 — 고배 AlignMark Theta 보정, 최종 기울기 {ThetaAngleDeg:F4}°";
-                _logger.Information("Wafer 중심 4차 완료 — 고배 AlignMark Theta, 기울기={A:F4}°", ThetaAngleDeg);
+                // 대칭 쌍 θ 보정 — 안쪽→바깥 확장, 검출되는 가장 바깥(최장 baseline)에서 1회 보정
+                await CorrectThetaBySymmetricSweepAsync(
+                    mMax, pitchStep, ThetaMinDeg,
+                    async c => await MeasureHc1AlignAbsAsync(c) ?? await SearchAlignByYAsync(c),
+                    s => ThetaStatus = s, a => ThetaAngleDeg = a,
+                    "4차 θ", ct);
+
+                ScribeCenterStatus = $"4차 완료 — 고배 AlignMark θ 보정, 최종 기울기 {ThetaAngleDeg:F4}°";
+                _logger.Information("Wafer 중심 4차 완료 — 고배 AlignMark θ, 기울기={A:F4}°", ThetaAngleDeg);
 
                 // 4차(및 전체 시퀀스) 완료 → Die 위치 전체 자동 재계산
                 if (HasScribeMeasure || HasCoarseCenter)
@@ -1183,97 +1166,6 @@ namespace HCB.UI
                 ScribeCenterStatus = $"오류: {e.Message}";
             }
             finally { IsAligning = false; }
-        }
-
-        // ── 4차 전용: 한 Die에서 AlignMark A/B 측정으로 Theta 수렴 (2차 ConvergeThetaAtDieAsync의 AlignMark판) ──
-        //  A = 현재 Die AlignMark 절대좌표, B = 옆 Die(+pitch) AlignMark. A·B 기울기로 W_T 보정을 임계각 이내까지 반복.
-        //  스크라이브 비전중심 정렬 대신 AlignMark 절대측정을 사용(FOV 이탈 시 Y 탐색). 반환: 기준점 A(초기 미검출 시 null).
-        private async Task<Point2D?> ConvergeThetaAtDieAlignAsync(double pitch, string pass, CancellationToken ct)
-        {
-            int iter = Math.Max(1, ScribeConvergeIter);
-            Point2D? aAbs = null;
-
-            for (int k = 0; k < iter; k++)
-            {
-                ct.ThrowIfCancellationRequested();
-
-                // A = 현재 Die AlignMark (FOV 이탈 시 Y 탐색)
-                aAbs = await MeasureHc1AlignAbsAsync(ct) ?? await SearchAlignByYAsync(ct);
-                if (aAbs == null) return null;
-
-                // B = 옆 Die로 pitch 이동 후 측정, 이후 기준(A)으로 복귀
-                await _sequenceService.RelativeMotionsMove(XAxis, pitch, ct);
-                var bAbs = await MeasureHc1AlignAbsAsync(ct) ?? await SearchAlignByYAsync(ct);
-                await _sequenceService.RelativeMotionsMove(XAxis, -pitch, ct);
-
-                if (bAbs == null)
-                    return aAbs; // 옆 Die 미검출(끝 Die 등) → 이 Die는 보정 없이 종료
-
-                // A·B 기울기 → W_T 보정 (±90° 정규화)
-                double angleDeg = Math.Atan2(bAbs.Y - aAbs.Y, bAbs.X - aAbs.X) * (180.0 / Math.PI);
-                if (angleDeg > 90) angleDeg -= 180;
-                else if (angleDeg < -90) angleDeg += 180;
-                ThetaAngleDeg = angleDeg;
-
-                if (Math.Abs(angleDeg) < ThetaMinDeg)
-                {
-                    ThetaStatus = $"{pass} — 기울기 {angleDeg:F4}° (수렴)";
-                    return aAbs;
-                }
-
-                double corr = ThetaSign * angleDeg;
-                ThetaStatus = $"{pass} — 기울기 {angleDeg:F4}° → W_T {-corr:F4}° 보정 ({k + 1}/{iter})";
-                _logger.Information("Wafer 중심 4차 — {Pass} 기울기={A:F4}°, W_T 보정={C:F4}° (iter {K})",
-                    pass, angleDeg, -corr, k + 1);
-                await _sequenceService.RelativeMotionsMove(ThetaAxis, -corr, ct);
-            }
-
-            return aAbs;
-        }
-
-        // ── 4차 전용: 기준 위치에서 정/역방향을 번갈아(+1,−1,+2,−2,…) 확장하며 매 Die에서
-        //    ConvergeThetaAtDieAlignAsync 수행 (2차 RunScribeThetaAlternatingSweepAsync의 AlignMark판) ──
-        private async Task RunAlignThetaAlternatingSweepAsync(double pitch, int maxPlus, int maxMinus, CancellationToken ct)
-        {
-            int steps = Math.Max(maxPlus, maxMinus);
-            int curOffset = 0;                                   // 현재 위치(피치 스텝 단위, 중심=0)
-            bool plusEnd = maxPlus <= 0, minusEnd = maxMinus <= 0;
-
-            for (int k = 1; k <= steps && !(plusEnd && minusEnd); k++)
-            {
-                foreach (int dir in new[] { +1, -1 })
-                {
-                    ct.ThrowIfCancellationRequested();
-                    if (dir > 0 && (plusEnd || k > maxPlus)) { if (k > maxPlus) plusEnd = true; continue; }
-                    if (dir < 0 && (minusEnd || k > maxMinus)) { if (k > maxMinus) minusEnd = true; continue; }
-
-                    int prevOffset = curOffset;
-                    int target = dir * k;
-                    double move = (target - prevOffset) * pitch;
-                    string pass = dir > 0 ? $"정방향 {k}" : $"역방향 {k}";
-
-                    ThetaStatus = $"{pass} 스윕 — X {move:+0.000;-0.000}mm 이동...";
-                    await _sequenceService.RelativeMotionsMove(XAxis, move, ct);
-                    curOffset = target;
-
-                    var a = await ConvergeThetaAtDieAlignAsync(pitch, pass, ct);
-                    if (a == null)
-                    {
-                        // 끝 Die(미검출) — 직전 위치로 되돌리고 이 방향만 종료
-                        await _sequenceService.RelativeMotionsMove(XAxis, -move, ct);
-                        curOffset = prevOffset;
-                        if (dir > 0) plusEnd = true; else minusEnd = true;
-                        ThetaStatus = $"{pass} 스윕 — 끝 Die 도달(미검출), 이 방향 종료";
-                        _logger.Information("Wafer 중심 4차 — {Pass} 끝 Die 도달", pass);
-                    }
-                }
-            }
-
-            // 중심(기준 Die)으로 복귀
-            if (curOffset != 0)
-                await _sequenceService.RelativeMotionsMove(XAxis, (0 - curOffset) * pitch, ct);
-
-            ThetaStatus = $"고배 교대 스윕 완료 (기울기 {ThetaAngleDeg:F4}°)";
         }
 
         // ── 전체 시퀀스: 1차 → 2차 → 3차 → 4차 순차 실행 ──
@@ -1367,7 +1259,6 @@ namespace HCB.UI
 
             try
             {
-                // 스텝(=피치×스텝Die)과 편도 스텝 수 산출
                 double pitch = DieSizeX + GapX;                    // X 방향 Die 피치
                 int stepDies = Math.Max(1, ThetaShiftDies);        // 스텝당 이동 Die 수
                 double pitchStep = pitch * stepDies;
@@ -1376,12 +1267,36 @@ namespace HCB.UI
                     ThetaStatus = "DieSize/Gap 값이 유효하지 않습니다.";
                     return;
                 }
-                // 정방향(+X)/역방향(-X)을 번갈아(+1,−1,+2,−2,…) Shift·보정하며 스윕
-                // (편도 최대 스텝은 WaferSize·기준 위치로 각 방향 자동 산출)
-                if (!await RunThetaAlternatingSweepAsync(pitchStep, stepDies, ct)) return;
 
-                ThetaStatus = $"Theta 보정 완료 — 교대 스윕, 최종 기울기 {ThetaAngleDeg:F4}°";
-                _logger.Information("Theta 보정 완료 — 교대 스윕, 최종 기울기={A:F4}°", ThetaAngleDeg);
+                // 시작 AlignMark 측정(피벗 = 현재 위치) — 좌우 확장 범위 산출용
+                ThetaStatus = "시작 AlignMark 측정 중...";
+                var startAbs = await MeasureHc1AlignAbsAsync(ct) ?? await SearchAlignByYAsync(ct);
+                if (startAbs == null)
+                {
+                    ThetaStatus = "시작 AlignMark 미검출 — H_X/W_Y/W_T로 마크가 보이는 위치로 이동 후 다시 실행하세요.";
+                    _logger.Warning("Theta 보정 — 시작 AlignMark 미검출(수동 조정 필요)");
+                    return;
+                }
+
+                // 좌우 대칭 확장 가능한 최대 배수(양쪽 중 작은 값)
+                int mMax = Math.Min(
+                    MaxStepsWithinWafer(startAbs, +1, stepDies),
+                    MaxStepsWithinWafer(startAbs, -1, stepDies));
+
+                // 대칭 쌍 θ 보정 — 안쪽→바깥 확장, 검출되는 가장 바깥(최장 baseline)에서 1회 보정
+                bool ok = await CorrectThetaBySymmetricSweepAsync(
+                    mMax, pitchStep, ThetaMinDeg,
+                    async c => await MeasureHc1AlignAbsAsync(c) ?? await SearchAlignByYAsync(c),
+                    s => ThetaStatus = s, a => ThetaAngleDeg = a,
+                    "θ 보정", ct);
+                if (!ok)
+                {
+                    ThetaStatus = "유효 대칭 쌍 없음 — 중심 부근에 마크가 보이는 위치로 이동 후 다시 실행하세요.";
+                    return;
+                }
+
+                ThetaStatus = $"Theta 보정 완료 — 대칭 쌍(최장 baseline), 최종 기울기 {ThetaAngleDeg:F4}°";
+                _logger.Information("Theta 보정 완료 — 대칭 쌍 1회, 최종 기울기={A:F4}°", ThetaAngleDeg);
             }
             catch (OperationCanceledException) { ThetaStatus = "Theta 보정 중단됨"; }
             catch (Exception e)
@@ -1390,104 +1305,6 @@ namespace HCB.UI
                 ThetaStatus = $"오류: {e.Message}";
             }
             finally { IsAligning = false; }
-        }
-
-        /// <summary>
-        /// 기준 Die에서 정방향(+X)/역방향(-X)을 번갈아 확장(+1,−1,+2,−2,…)하며,
-        /// 직전 측정점(prev)과 현재 도착점(cur)의 AlignMark 기울기가 0이 되도록 매 스텝 W_T를 점진 보정한다.
-        /// 각 방향은 웨이퍼 경계(MaxStepsWithinWafer) 또는 마크 소실(끝 Die)에서 그 방향만 종료하고,
-        /// 반대 방향은 계속 진행한다. 스윕 종료 후 중심(기준 Die)으로 복귀한다.
-        /// (기울기는 ±90° 정규화 → 정/역방향·양측 baseline 모두 동일 부호로 수렴)
-        /// 반환: 시작 마크 검출에 성공해 스윕을 진행했으면 true, 초기 미검출이면 false.
-        /// </summary>
-        private async Task<bool> RunThetaAlternatingSweepAsync(double pitchStep, int stepDies, CancellationToken ct)
-        {
-            // 시작점(기준 Die) 측정 — FOV 이탈 시 Y 탐색으로 보강
-            ThetaStatus = "스윕 — 시작 AlignMark 측정 중...";
-            var prev = await MeasureHc1AlignAbsAsync(ct) ?? await SearchAlignByYAsync(ct);
-            if (prev == null)
-            {
-                ThetaStatus = "시작 AlignMark 미검출 — H_X/W_Y/W_T로 마크가 보이는 위치로 이동 후 다시 실행하세요.";
-                _logger.Warning("Theta 보정 — 시작 AlignMark 미검출(수동 조정 필요)");
-                return false;
-            }
-
-            // 각 방향으로 웨이퍼 경계까지 가능한 최대 스텝을 WaferSize·기준 위치로 자동 산출(끝 Die 밖 이탈 방지)
-            int maxPlus = MaxStepsWithinWafer(prev, +1, stepDies);
-            int maxMinus = MaxStepsWithinWafer(prev, -1, stepDies);
-            _logger.Information("Theta 보정 — 자동 스윕 범위: +{P} / -{M} 스텝(WaferSize={W})", maxPlus, maxMinus, WaferSize);
-
-            int steps = Math.Max(maxPlus, maxMinus);
-            int curOffset = 0;                       // 현재 위치(피치 스텝 단위, 중심=0)
-            bool plusEnd = maxPlus <= 0, minusEnd = maxMinus <= 0;
-
-            for (int k = 1; k <= steps && !(plusEnd && minusEnd); k++)
-            {
-                foreach (int dir in new[] { +1, -1 })
-                {
-                    ct.ThrowIfCancellationRequested();
-                    if (dir > 0 && (plusEnd || k > maxPlus)) { if (k > maxPlus) plusEnd = true; continue; }
-                    if (dir < 0 && (minusEnd || k > maxMinus)) { if (k > maxMinus) minusEnd = true; continue; }
-
-                    string pass = dir > 0 ? "정방향" : "역방향";
-                    int prevOffset = curOffset;
-                    int target = dir * k;
-                    double move = (target - prevOffset) * pitchStep;
-
-                    // 목표 Die로 X 쉬프트 후 측정 (FOV 이탈 시 Y 탐색)
-                    ThetaStatus = $"{pass} 스윕 — X {move:+0.000;-0.000}mm 이동 후 측정({k})...";
-                    await _sequenceService.RelativeMotionsMove(XAxis, move, ct);
-                    curOffset = target;
-
-                    var cur = await MeasureHc1AlignAbsAsync(ct);
-                    if (cur == null)
-                    {
-                        _logger.Warning("Theta 보정 — {Pass} AlignMark FOV 이탈, Y 탐색 시작(k {K})", pass, k);
-                        cur = await SearchAlignByYAsync(ct);
-                    }
-                    if (cur == null)
-                    {
-                        // 회복 불가 → 끝 Die 도달로 간주. 직전 위치로 되돌리고 이 방향만 종료.
-                        await _sequenceService.RelativeMotionsMove(XAxis, -move, ct);
-                        curOffset = prevOffset;
-                        if (dir > 0) plusEnd = true; else minusEnd = true;
-                        ThetaStatus = $"{pass} 스윕 — 끝 Die 도달(마크 소실), 이 방향 종료";
-                        _logger.Information("Theta 보정 — {Pass} 끝 Die 도달(k {K})", pass, k);
-                        continue;
-                    }
-
-                    // 두 점 기울기(수평 대비, ±90° 정규화 — 양측 baseline 동일 부호로 수렴)
-                    double angleDeg = Math.Atan2(cur.Y - prev.Y, cur.X - prev.X) * (180.0 / Math.PI);
-                    if (angleDeg > 90) angleDeg -= 180;
-                    else if (angleDeg < -90) angleDeg += 180;
-                    ThetaAngleDeg = angleDeg;
-
-                    if (Math.Abs(angleDeg) >= ThetaMinDeg)
-                    {
-                        // 기울기를 상쇄하도록 W_T 회전
-                        double corr = ThetaSign * angleDeg;
-                        ThetaStatus = $"{pass} 스윕 — 기울기 {angleDeg:F4}° → W_T {-corr:F4}° 회전({k})...";
-                        _logger.Information("Theta 보정 — {Pass} 기울기={A:F4}°, W_T 회전={C:F4}° (k {K})",
-                            pass, angleDeg, -corr, k);
-                        await _sequenceService.RelativeMotionsMove(ThetaAxis, -corr, ct);
-
-                        // 회전으로 현재 마크가 이동 → 다음 세그먼트 기준점 재측정
-                        prev = await MeasureHc1AlignAbsAsync(ct) ?? cur;
-                    }
-                    else
-                    {
-                        prev = cur;
-                    }
-                }
-            }
-
-            // 중심(기준 Die)으로 복귀
-            if (curOffset != 0)
-                await _sequenceService.RelativeMotionsMove(XAxis, (0 - curOffset) * pitchStep, ct);
-
-            ThetaStatus = $"교대 스윕 완료 (기울기 {ThetaAngleDeg:F4}°)";
-            _logger.Information("Theta 보정 — 교대 스윕 완료, 기울기={A:F4}°", ThetaAngleDeg);
-            return true;
         }
 
         /// <summary>
