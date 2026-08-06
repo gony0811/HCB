@@ -293,13 +293,12 @@ namespace HCB.UI
             // 클릭한 Die의 Center(고배 절대좌표) — BtmHighAlign에서 PLACE_CENTER 대신 여기로 이동
             var dieCenter = Point2D.of(SelectedDie.HighPositionX, SelectedDie.HighPositionY);
 
-            // 카메라 거리·회전중심(MeasureCamDistAndHcro) 측정을 WaferCenter(고배 위치)에서 수행하도록 지정.
+            // 카메라 거리·회전중심(MeasureCamDistAndHcro) 측정도 클릭한 Die 위치에서 수행하도록 지정.
             // (StepSeqTab 자체 본딩에 누수되지 않도록 본딩 직후 finally에서 원복)
-            var waferCenter = Point2D.of(HighCenterX, HighCenterY);
-            _sequenceService.CamHcroCenterOverride = waferCenter;
+            _sequenceService.CamHcroCenterOverride = dieCenter;
 
-            _logger.Information("Wafer Bonding 시작 — Die({Row},{Col}), 고배 Center=({X:F4},{Y:F4}), Cam/HCRO 측정 위치=WaferCenter({WX:F4},{WY:F4})",
-                SelectedDie.Row, SelectedDie.Col, dieCenter.X, dieCenter.Y, waferCenter.X, waferCenter.Y);
+            _logger.Information("Wafer Bonding 시작 — Die({Row},{Col}), 고배 Center=({X:F4},{Y:F4}), Cam/HCRO 측정 위치=클릭 Die",
+                SelectedDie.Row, SelectedDie.Col, dieCenter.X, dieCenter.Y);
 
             try
             {
