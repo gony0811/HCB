@@ -76,8 +76,7 @@ namespace HCB.UI
 
                 await Task.WhenAll(
                     MotionsMove(MotionExtensions.H_X, $"DIE_BTM", ct),
-                    MotionsMove(MotionExtensions.D_Y, $"DIE_ROW_{vacNum}", ct),
-                    MotionsMove(MotionExtensions.W_T, 0, ct)
+                    MotionsMove(MotionExtensions.D_Y, $"DIE_ROW_{vacNum}", ct)
                 );
                 await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);
 
@@ -122,8 +121,7 @@ namespace HCB.UI
 
                 await Task.WhenAll(
                     MotionsMove(MotionExtensions.H_X, $"DIE_TOP", ct),
-                    MotionsMove(MotionExtensions.D_Y, $"DIE_ROW_{vacNum}", ct),
-                    MotionsMove(MotionExtensions.W_T, 0, ct)
+                    MotionsMove(MotionExtensions.D_Y, $"DIE_ROW_{vacNum}", ct)
                 );
 
                 await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);

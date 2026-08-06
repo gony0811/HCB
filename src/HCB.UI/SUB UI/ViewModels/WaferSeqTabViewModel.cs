@@ -396,9 +396,10 @@ namespace HCB.UI
         {
             Hc1MeasureText = Hc2MeasureText = "-";
             ScribeCenterStatus = "저배(HC_LOW) 측정 중...";
-            LowMeasureText = await MeasureMarkTextAsync(LowCam, "", af: false, ct);
-            _logger.Information("Die 저배 측정 — HC_LOW={R}", LowMeasureText);
-            return $"HC_LOW={LowMeasureText}";
+            await _communication.RequestVisionMarkPosition(MarkType.DIE_CENTER_BOTTOM, CameraType.HC_LOW, "", true);
+            //= await MeasureMarkTextAsync(LowCam, "", af: false, ct);
+            _logger.Information("Die 저배 측정 완료");
+            return "WAFER 저배 측정 완료";
         }
 
         /// <summary>
@@ -410,15 +411,15 @@ namespace HCB.UI
             LowMeasureText = "-";
 
             ScribeCenterStatus = "고배 HC1 측정 중...";
-            Hc1MeasureText = await MeasureMarkTextAsync(Hc1Cam, DirectType.LEFT.ToString(), af: true, ct);
+            await MeasureMarkTextAsync(Hc1Cam, DirectType.LEFT.ToString(), af: true, ct);
 
             ct.ThrowIfCancellationRequested();
 
             ScribeCenterStatus = "고배 HC2 측정 중...";
-            Hc2MeasureText = await MeasureMarkTextAsync(Hc2Cam, DirectType.RIGHT.ToString(), af: true, ct);
+            await MeasureMarkTextAsync(Hc2Cam, DirectType.RIGHT.ToString(), af: true, ct);
 
-            _logger.Information("Die 고배 측정 — HC1={R1}, HC2={R2}", Hc1MeasureText, Hc2MeasureText);
-            return $"HC1={Hc1MeasureText}, HC2={Hc2MeasureText}";
+            _logger.Information("Die 고배 측정 완료");
+            return "WAFER 고배 측정 완료";
         }
 
         /// <summary>

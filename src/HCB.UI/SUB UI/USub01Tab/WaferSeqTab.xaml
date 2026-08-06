@@ -161,50 +161,16 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <!-- 이동 + 측정을 수행하므로 본딩·정렬 진행 중에는 비활성(IsBusy) -->
-                                <Button Grid.Column="0" Content="저배율로 보기 + 측정"
+                                <Button Grid.Column="0" Content="저배율로 보기"
                                     Command="{Binding ViewDieLowMagCommand}"
                                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
                                     Height="38" FontSize="13"/>
-                                <Button Grid.Column="2" Content="고배율로 보기 + 측정"
+                                <Button Grid.Column="2" Content="고배율로 보기"
                                     Command="{Binding ViewDieHighMagCommand}"
                                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
                                     Height="38" FontSize="13"/>
                             </Grid>
 
-                            <!-- 보기 버튼 실행 시 측정 결과 (카메라 중심 → AlignMark 오프셋, mm) -->
-                            <Border DockPanel.Dock="Bottom" Background="#0A1628" CornerRadius="6" Padding="12,8"
-                                    BorderBrush="#1C3A52" BorderThickness="1" Margin="0,12,0,0">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="측정 결과 (mm)"
-                                               Foreground="#5E8BAA" FontSize="12" Margin="0,0,0,6"/>
-
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="HC_LOW"
-                                               Foreground="#5E8BAA" FontSize="12" Margin="0,0,16,4"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LowMeasureText}"
-                                               Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" Margin="0,0,0,4"/>
-
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="HC1"
-                                               Foreground="#5E8BAA" FontSize="12" Margin="0,0,16,4"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Hc1MeasureText}"
-                                               Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas" Margin="0,0,0,4"/>
-
-                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="HC2"
-                                               Foreground="#5E8BAA" FontSize="12" Margin="0,0,16,0"/>
-                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Hc2MeasureText}"
-                                               Foreground="#ECF0F1" FontSize="12" FontFamily="Consolas"/>
-                                </Grid>
-                            </Border>
 
                             <!-- 이동/측정 상태 -->
                             <TextBlock DockPanel.Dock="Bottom" Text="{Binding ScribeCenterStatus}"
