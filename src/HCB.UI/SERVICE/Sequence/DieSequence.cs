@@ -241,6 +241,13 @@ namespace HCB.UI
         /// 측정 결과는 <paramref name="data"/>에 누적되며, 동일 객체가 Pickup→TopHighAlign→BtmHighAlign→
         /// CoordinateSystemIntegration까지 공유되어야 캘리브레이션 값이 좌표계 통합에 반영된다.
         /// </summary>
+        // Wafer 본딩 전용: 카메라 거리·회전중심(MeasureCamDistAndHcro) 측정을 수행할 위치(고배 절대좌표) 오버라이드.
+        //  · null  → 기존 동작(PLACE_CENTER + HcCenterError 로 이동)
+        //  · 지정  → 해당 절대좌표(예: WaferCenter의 고배 위치)로 이동해 측정
+        // WaferSeqTabViewModel이 본딩 직전 WaferCenter로 설정하고 본딩 후 null로 되돌린다.
+        // (StepSeqTab 자체 본딩은 이 값을 설정하지 않으므로 영향 없음)
+        public Point2D CamHcroCenterOverride { get; set; }
+
         public async Task<AlignData> MeasureCamDistAndHcro(AlignData data, CancellationToken ct)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
@@ -254,7 +261,8 @@ namespace HCB.UI
                     bool isDieRecipe = _recipeService.UseRecipe?.Component == HCB.Data.Entity.Type.ComponentType.DIE;
                     if (isDieRecipe && data.Use2DMapping) await WTable2DMappingOn();
 
-                    await TopDieSet(ct);
+                    // 측정 위치: 오버라이드(WaferCenter)가 있으면 그 위치, 없으면 기존 PLACE_CENTER
+                    await TopDieSet(ct, CamHcroCenterOverride);
                     double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
                     await RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
                     await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
