@@ -1141,8 +1141,8 @@ namespace HCB.UI
 
                 // 좌우 대칭 확장 가능한 최대 배수(WaferSize·기준 위치 기반, 양쪽 중 작은 값)
                 int mMax = Math.Min(
-                    MaxStepsWithinWafer(startAbs, +1, stepDies),
-                    MaxStepsWithinWafer(startAbs, -1, stepDies));
+                    MaxStepsWithinWafer(startAbs, +1, stepDies, true),
+                    MaxStepsWithinWafer(startAbs, -1, stepDies, true));
                 _logger.Information("Wafer 중심 4차 — 대칭 확장 최대 ±{M} 스텝(WaferSize={W})", mMax, WaferSize);
 
                 // 대칭 쌍 θ 보정 — 안쪽→바깥 확장, 검출되는 가장 바깥(최장 baseline)에서 1회 보정
@@ -1280,8 +1280,8 @@ namespace HCB.UI
 
                 // 좌우 대칭 확장 가능한 최대 배수(양쪽 중 작은 값)
                 int mMax = Math.Min(
-                    MaxStepsWithinWafer(startAbs, +1, stepDies),
-                    MaxStepsWithinWafer(startAbs, -1, stepDies));
+                    MaxStepsWithinWafer(startAbs, +1, stepDies, true),
+                    MaxStepsWithinWafer(startAbs, -1, stepDies, true));
 
                 // 대칭 쌍 θ 보정 — 안쪽→바깥 확장, 검출되는 가장 바깥(최장 baseline)에서 1회 보정
                 bool ok = await CorrectThetaBySymmetricSweepAsync(
@@ -1313,13 +1313,15 @@ namespace HCB.UI
         /// 최대 스텝 수를 계산한다. DieList(웨이퍼 맵)가 있으면 해당 Row의 Col 범위로 정확히,
         /// 없으면 웨이퍼 반경(Die 단위)으로 근사한다.
         /// </summary>
-        private int MaxStepsWithinWafer(Point2D startAbs, int dir, int stepDies)
+        private int MaxStepsWithinWafer(Point2D startAbs, int dir, int stepDies,
+                                 bool highMag = false)
         {
             double pitchX = DieSizeX + GapX;
             if (pitchX <= 0) return 0;
 
             double halfCol = (WaferSize - 1) / 2.0;
-            int startCol = (int)Math.Round((startAbs.X - CenterX) / pitchX + halfCol);
+            double absX = highMag ? startAbs.X - _highOffsetX : startAbs.X;
+            int startCol = (int)Math.Round((absX - CenterX) / pitchX + halfCol);
 
             // 반경(Die 단위) 기반 근사 — DieList/센터 정보가 없을 때의 안전 상한
             int radiusDies = (int)Math.Floor((WaferSize + 1) / 2.0);
@@ -1329,8 +1331,9 @@ namespace HCB.UI
             {
                 double pitchY = DieSizeY + GapY;
                 double halfRow = (WaferSize - 1) / 2.0;
+                double absY = highMag ? startAbs.Y - _highOffsetY : startAbs.Y;
                 int startRow = pitchY > 0
-                    ? (int)Math.Round(halfRow - (startAbs.Y - CenterY) / pitchY)
+                    ? (int)Math.Round(halfRow - (absY - CenterY) / pitchY)
                     : (int)Math.Round(halfRow);
 
                 var cols = DieList.Where(d => d.Row == startRow).Select(d => d.Col).ToList();
