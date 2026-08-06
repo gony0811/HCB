@@ -456,8 +456,8 @@ namespace HCB.UI
 
                 // ── STEP 2: Btm Die 좌표 통합 + Top 위치 생성 ──
                 // Btm: Stage 기준 X:-, Y:- → DxCam 부호 반전
-                Point2D camOffset = data.Hc2Offset;
-                
+                // Point2D camOffset = data.Hc2Offset;   // Btm Align을 Fid 상대거리로 통합하면서 미사용(우측 br이 bfr 기준으로 합쳐짐)
+
                 // Hc1X: 0.00361, Hc1Y: -0.00112, Hc2X: 0.00807, Hc2Y: -0.00269
                 // X: +, Y: -   1.7 um
                 // X: +, Y: +   0.2 um
@@ -476,21 +476,19 @@ namespace HCB.UI
                 Point2D tr = Point2D.of(tl.X - topRel.X, tl.Y - topRel.Y);
                 //Point2D tr = Point2D.of(bfr.X - rDist.X, bfr.Y - rDist.Y);
 
-                //var blDist = Point2D.of(data.BtmLeftAlignRaw.X - data.BtmLeftFidRaw.X, data.BtmLeftAlignRaw.Y - data.BtmLeftFidRaw.Y);
-                //var brDist = Point2D.of(data.BtmRightAlignRaw.X - data.BtmRightFidRaw.X, data.BtmRightAlignRaw.Y - data.BtmRightFidRaw.Y);
+                // Btm Align도 자신의 Fiducial 기준 상대거리(Align−Fid)로 계산한 뒤, P-Table Fiducial
+                // 간격으로 세운 기준(bfl·bfr)에 맞춰 합친다.
+                //  · Align·Fid를 같은 카메라(좌=HC1, 우=HC2)로 측정하므로 상대거리는 카메라 위치·거리(Hc2Offset) 오차에 불변
+                //  · 좌측(bl)은 bfl=HC1 Fid가 앵커라 결과가 기존과 동일, 우측(br)은 Hc2Offset 대신 bfr 기준으로 합쳐짐
+                var blDist = Point2D.of(
+                    data.BtmLeftAlignRaw.X - data.BtmLeftFidRaw.X,
+                    data.BtmLeftAlignRaw.Y - data.BtmLeftFidRaw.Y);
+                var brDist = Point2D.of(
+                    data.BtmRightAlignRaw.X - data.BtmRightFidRaw.X,
+                    data.BtmRightAlignRaw.Y - data.BtmRightFidRaw.Y);
 
-                //Point2D bl = Point2D.of(
-                //    bfl.X - blDist.X,
-                //    bfl.Y - blDist.Y);
-                //Point2D br = Point2D.of(
-                //    bfr.X - brDist.X,
-                //    bfr.Y - brDist.Y);
-                Point2D bl = Point2D.of(
-                    -data.BtmLeftAlignRaw.X,
-                    -data.BtmLeftAlignRaw.Y);
-                Point2D br = Point2D.of(
-                    camOffset.X - data.BtmRightAlignRaw.X,
-                    camOffset.Y - data.BtmRightAlignRaw.Y);
+                Point2D bl = Point2D.of(bfl.X - blDist.X, bfl.Y - blDist.Y);
+                Point2D br = Point2D.of(bfr.X - brDist.X, bfr.Y - brDist.Y);
 
                 // ── STEP 3: 회전중심(HCRO) 기준으로 좌표 이동 ──
                 Point2D hcro = data.Hcro;
