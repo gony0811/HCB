@@ -649,6 +649,17 @@ namespace HCB.UI
         public async Task TInit(CancellationToken ct = default)
         {
             var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+            // W_T, H_T 위상(Encpha) 확인 — 이미 위상이 잡혀 있으면(≠0) 재실행하지 않는다.
+            bool phased = await device.SendCommand<bool>("Encpha");
+            if (phased)
+            {
+                _logger.Information("[TInit] Encpha≠0 (위상 완료) — enable plc 9 스킵");
+                return;
+            }
+
+            // Encpha=0 (위상 미완료) → enable plc 9 실행 후 위상 완료까지 대기
+            _logger.Information("[TInit] Encpha=0 (위상 미완료) — enable plc 9 실행");
             await device.SendCommand("enable plc 9");
 
             var timeout = TimeSpan.FromSeconds(300);
