@@ -274,7 +274,7 @@ namespace HCB.UI
         }
 
 
-        public async Task<VernierResponse> RequestVernier(CameraType cameraType, DirectType direct)
+        public async Task<VernierResponse> RequestVernier(CameraType cameraType, DirectType direct, CancellationToken ct = default)
         {
             var request = MessageFactory.Create(
                 messageName: "REQUEST_VISIONMARK_POSITION_V",
@@ -282,7 +282,7 @@ namespace HCB.UI
                 content: $"<CAMERATYPE>{cameraType}</CAMERATYPE><DIRECT>{direct}</DIRECT>"
             );
 
-            var result = await _server.RequestAsync(request, timeout: TimeSpan.FromSeconds(10));
+            var result = await _server.RequestAsync(request, timeout: TimeSpan.FromSeconds(10), ct: ct);
 
             if (!result.Success)
             {

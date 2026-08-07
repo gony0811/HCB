@@ -89,11 +89,25 @@ namespace HCB.UI
             {
                 this._logger.Debug("전체 서보온");
                 var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                var motionList = motionDevice.MotionList;
-                var tasks = motionList.Select(item => item.ServoOn());
-                var results = await Task.WhenAll(tasks);
+                var motionList = motionDevice.MotionList.ToList();
+
+                // 축별로 서보온 결과를 개별 판정하여 어떤 축이 실패했는지 구분한다.
+                var results = await Task.WhenAll(motionList.Select(item => item.ServoOn()));
                 await Task.Delay(100);
-                return results.All(r => r == true);
+
+                for (int i = 0; i < motionList.Count; i++)
+                {
+                    if (results[i])
+                        this._logger.Debug($"[ServoOn] {motionList[i].Name} 서보온 성공");
+                    else
+                        this._logger.Error($"[ServoOn] {motionList[i].Name} 서보온 실패");
+                }
+
+                var failed = motionList.Where((_, i) => !results[i]).Select(m => m.Name).ToList();
+                if (failed.Count > 0)
+                    this._logger.Error($"[ServoOn] 서보온 실패 축: {string.Join(", ", failed)}");
+
+                return failed.Count == 0;
             }
             catch(Exception e)
             {
@@ -387,10 +401,10 @@ namespace HCB.UI
         }
 
 
-        public async Task<VernierResponse> MeasureVeriner(CameraType cameraType, DirectType directType)
+        public async Task<VernierResponse> MeasureVeriner(CameraType cameraType, DirectType directType, CancellationToken ct = default)
         {
-            await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.VERNIER);
-            var result = await communicationService.RequestVernier(cameraType, directType);
+            await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.VERNIER, ct);
+            var result = await communicationService.RequestVernier(cameraType, directType, ct);
             //if (result.Result == Result.NG) return new VernierResponse { Value_1 = 0, Value_3 = 0 };
             return result;
         }
@@ -417,26 +431,30 @@ namespace HCB.UI
 
             foreach (var pt in points)
             {
+                ct.ThrowIfCancellationRequested();
+
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, pt.X, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, pt.Y, ct)
                 );
 
-                var d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1);
+                var d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1, ct);
                 for (int retry = 0; retry < 3 && d1.Value_1 == 0 && d1.Value_3 == 0; retry++)
                 {
+                    ct.ThrowIfCancellationRequested();
                     _logger.Warning($"[Vernier] d1 측정값이 0입니다. 재측정 ({retry + 1}/3)");
-                    d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1);
+                    d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1, ct);
                 }
 
                 int a = pt.Dir1 == DirectType.Vertical ? 1 : -1;
                 await RelativeMotionsMove(MotionExtensions.W_Y, 0.3 * a, ct);
 
-                var d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2);
+                var d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2, ct);
                 for (int retry = 0; retry < 3 && d2.Value_1 == 0 && d2.Value_3 == 0; retry++)
                 {
+                    ct.ThrowIfCancellationRequested();
                     _logger.Warning($"[Vernier] d2 측정값이 0입니다. 재측정 ({retry + 1}/3)");
-                    d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2);
+                    d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2, ct);
                 }
 
                 // Dir1: Vertical → Y에 저장, Horizontal → X에 저장
@@ -562,15 +580,14 @@ namespace HCB.UI
 
                 _sequenceServiceVM.HXHome = StepState.InProgress;
                 _sequenceServiceVM.HTHome = StepState.InProgress;
-                var hxtResult = await MotionExtensions.HomeAsync(_sequenceHelper, xt, ct);
-                if (!hxtResult)
+                var hxtResult = await MotionExtensions.HomeEachAsync(_sequenceHelper, xt, ct);
+                _sequenceServiceVM.HXHome = hxtResult[hx] ? StepState.Completed : StepState.Failed;
+                _sequenceServiceVM.HTHome = hxtResult[ht] ? StepState.Completed : StepState.Failed;
+                if (hxtResult.Values.Any(ok => !ok))
                 {
-                    _sequenceServiceVM.HXHome = StepState.Failed;
-                    _sequenceServiceVM.HTHome = StepState.Failed;
-                    throw new Exception("[Initialize] Header X,T가 홈에 도착하지 않았습니다");
+                    var failed = hxtResult.Where(kv => !kv.Value).Select(kv => kv.Key.Name);
+                    throw new Exception($"[Initialize] Header 홈 실패 축: {string.Join(", ", failed)}");
                 }
-                _sequenceServiceVM.HXHome = StepState.Completed;
-                _sequenceServiceVM.HTHome = StepState.Completed;
 
                 _sequenceServiceVM.InitializeProgress = 85;
 
@@ -585,19 +602,16 @@ namespace HCB.UI
                 _sequenceServiceVM.PYHome = StepState.InProgress;
                 _sequenceServiceVM.WYHome = StepState.InProgress;
                 _sequenceServiceVM.WTHome = StepState.InProgress;
-                var yResult = await MotionExtensions.HomeAsync(_sequenceHelper, yAxis, ct);
-                if (!yResult)
+                var yResult = await MotionExtensions.HomeEachAsync(_sequenceHelper, yAxis, ct);
+                _sequenceServiceVM.DYHome = yResult[dy] ? StepState.Completed : StepState.Failed;
+                _sequenceServiceVM.PYHome = yResult[py] ? StepState.Completed : StepState.Failed;
+                _sequenceServiceVM.WYHome = yResult[wy] ? StepState.Completed : StepState.Failed;
+                _sequenceServiceVM.WTHome = yResult[wt] ? StepState.Completed : StepState.Failed;
+                if (yResult.Values.Any(ok => !ok))
                 {
-                    _sequenceServiceVM.DYHome = StepState.Failed;
-                    _sequenceServiceVM.PYHome = StepState.Failed;
-                    _sequenceServiceVM.WYHome = StepState.Failed;
-                    _sequenceServiceVM.WTHome = StepState.Failed;
-                    throw new Exception("[Initialize] Header X,T가 홈에 도착하지 않았습니다");
+                    var failed = yResult.Where(kv => !kv.Value).Select(kv => kv.Key.Name);
+                    throw new Exception($"[Initialize] Y축 홈 실패 축: {string.Join(", ", failed)}");
                 }
-                _sequenceServiceVM.DYHome = StepState.Completed;
-                _sequenceServiceVM.PYHome = StepState.Completed;
-                _sequenceServiceVM.WYHome = StepState.Completed;
-                _sequenceServiceVM.WTHome = StepState.Completed;
                 _sequenceServiceVM.InitializeProgress = 100;
             }
             catch (OperationCanceledException)
