@@ -534,11 +534,14 @@ namespace HCB.UI
                 data.ResultY = shiftY + data.OffsetXY.Y;
                 data.ResultT = thetaF + data.OffsetT;
 
+                // 샹크 기울기 기반 본딩 슬립 사전 보정 (ResultX/ResultY 가산)
+                ApplyShankTiltSlip(data);
+
             }catch(Exception e)
             {
                 throw;
             }
-           
+
         }
 
 
@@ -614,6 +617,9 @@ namespace HCB.UI
             data.ResultX = shiftX + data.OffsetXY.X;
             data.ResultY = shiftY + data.OffsetXY.Y;
             data.ResultT = thetaF + data.OffsetT;
+
+            // 샹크 기울기 기반 본딩 슬립 사전 보정 (ResultX/ResultY 가산)
+            ApplyShankTiltSlip(data);
         }
         #endregion
 
@@ -912,6 +918,69 @@ namespace HCB.UI
                 "BtmFidTilt R({RDx:F5},{RDy:F5})/L({LDx:F5},{LDy:F5})",
                 data.TopRightDz, data.TopLeftDz, data.BtmDz,
                 rFidTilt.X, rFidTilt.Y, lFidTilt.X, lFidTilt.Y);
+        }
+
+        /// <summary>
+        /// 샹크 기울기(Shank Tilt) → 본딩 슬립(Slip) 사전 보정.
+        ///   TopHighAlign에서 측정한 Left/Right Fiducial 초점 높이차 ΔZ_LR(= data.ShankTiltDz = rightFidZ − leftFidZ)로
+        ///   샹크의 좌우 기울기를 추적한다. 기울어진 채 가압하면 Die가 낮은 쪽으로 미끄러지는(슬립) 횡변위가 발생하므로,
+        ///   슬립량이 ΔZ_LR 에 선형 비례한다고 보고 최종 보정치 ResultX/ResultY 에 사전 보정량을 가산한다.
+        ///       slipX = SHANK_SLIP_KX × ΔZ_LR ,  slipY = SHANK_SLIP_KY × ΔZ_LR
+        ///   (부호·크기는 계수에 흡수 — 기존 PC_/HC_HZ_TILT 계수 규약과 동일)
+        /// ResultX/ResultY 확정 직후 호출한다. 파라미터는 관용적으로 읽어 미설정 시 0(기능 Off) → 기존 레시피 무영향.
+        /// </summary>
+        private void ApplyShankTiltSlip(AlignData data)
+        {
+            if (data == null) return;
+
+            bool enabled = TryGetRecipeDouble(MotionExtensions.USE_SHANK_SLIP_COMP, 0.0) != 0.0;
+            if (!enabled)
+            {
+                data.ShankSlipX = 0.0;
+                data.ShankSlipY = 0.0;
+                return;
+            }
+
+            double kx = TryGetRecipeDouble(MotionExtensions.SHANK_SLIP_KX, 0.0);
+            double ky = TryGetRecipeDouble(MotionExtensions.SHANK_SLIP_KY, 0.0);
+            double dz = data.ShankTiltDz;   // = rightFidZ − leftFidZ
+
+            // 기울기 각도(로깅/모니터링용): 측정된 Left↔Right Fiducial 간격을 baseline으로 사용,
+            // 없으면 레시피 SHANK_FID_BASELINE 값. baseline은 각도 표기에만 쓰이고 슬립 보정량에는 영향 없음.
+            double baseline = TryGetRecipeDouble(MotionExtensions.SHANK_FID_BASELINE, 0.0);
+            if (baseline <= 0.0 && data.TopLeftFidRaw != null && data.TopRightFidRaw != null)
+            {
+                double bx = data.TopRightFidRaw.CenterX - data.TopLeftFidRaw.CenterX;
+                double by = data.TopRightFidRaw.CenterY - data.TopLeftFidRaw.CenterY;
+                baseline = Math.Sqrt(bx * bx + by * by);
+            }
+            data.ShankTiltRad = baseline > 0.0 ? Math.Atan2(dz, baseline) : 0.0;
+
+            double slipX = kx * dz;
+            double slipY = ky * dz;
+            data.ShankSlipX = slipX;
+            data.ShankSlipY = slipY;
+
+            data.ResultX += slipX;
+            data.ResultY += slipY;
+
+            _logger.Information(
+                "ShankTiltSlip — ΔZ_LR={Dz:F4}mm, tilt={Deg:F4}° (baseline={Base:F3}mm), " +
+                "slip(X={Sx:F5},Y={Sy:F5})mm → ResultX={Rx:F5}, ResultY={Ry:F5}",
+                dz, CalibrationMath.ToDegree(data.ShankTiltRad), baseline,
+                slipX, slipY, data.ResultX, data.ResultY);
+        }
+
+        /// <summary>레시피 파라미터를 관용적으로 읽는다(미설정·파싱 실패 시 기본값 반환, 예외 없음).</summary>
+        private double TryGetRecipeDouble(string name, double defaultValue)
+        {
+            try
+            {
+                var p = _recipeService.UseRecipe?.ParamList?.FirstOrDefault(x => x.Name.Equals(name));
+                if (p == null) return defaultValue;
+                return double.TryParse(p.Value, out var v) ? v : defaultValue;
+            }
+            catch { return defaultValue; }
         }
 
         /// <summary>

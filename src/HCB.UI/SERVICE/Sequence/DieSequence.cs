@@ -186,6 +186,7 @@ namespace HCB.UI
                 // ── Right: Fid → Align 측정 (Fid/Align은 서로 다른 H_Z 높이에서 촬상) ──
                 data.TopRightFidRaw = await TopDieVisionRightFid(data.AvgMove, ct);
                 double rightFidZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);   // Fid 촬상 Z
+                data.TopRightFidZ = rightFidZ;                                            // 샹크 기울기 추적용
                 _logger.Information("TopHighAlign — RightFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 sw.Restart();
@@ -205,6 +206,7 @@ namespace HCB.UI
                 // ── Left: Fid → Align 측정 ──
                 data.TopLeftFidRaw = await TopDieVisionLeftFid(data.AvgMove, ct);
                 double leftFidZ = await GetCurrentPosition(MotionExtensions.H_Z, ct);    // Fid 촬상 Z
+                data.TopLeftFidZ = leftFidZ;                                             // 샹크 기울기 추적용
                 _logger.Information("TopHighAlign — LeftFid: {Elapsed}ms", sw.ElapsedMilliseconds);
 
                 sw.Restart();
@@ -214,6 +216,11 @@ namespace HCB.UI
 
                 // 측정만: ΔZ만 기록.
                 data.TopLeftDz = leftFidZ - leftAlignZ;
+
+                // 샹크 기울기 지표: Left/Right Fiducial 초점 높이차. 슬립 보정은 CoordinateSystemIntegration에서 수행.
+                data.ShankTiltDz = rightFidZ - leftFidZ;
+                _logger.Information("TopHighAlign — ShankTilt ΔZ_LR={Dz:F4} (Rz={Rz:F4}, Lz={Lz:F4})",
+                    data.ShankTiltDz, rightFidZ, leftFidZ);
             }
             catch (ErrorException e)
             {

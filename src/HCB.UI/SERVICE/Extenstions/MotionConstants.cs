@@ -106,6 +106,15 @@ namespace HCB.UI
         public const string HC2_HZ_TILT_X = "HC2_HZ_TILT_X";
         public const string HC2_HZ_TILT_Y = "HC2_HZ_TILT_Y";
 
+        // ── 샹크 기울기(Shank Tilt) → 본딩 슬립(Slip) 보정 ──
+        //   TopDie Fiducial 촬상 시 Left/Right 각각의 H_Z 초점 높이 차(ΔZ_LR = rightFidZ − leftFidZ)로
+        //   샹크의 좌우 기울기를 추적하고, 본딩 가압 시 발생하는 횡방향 슬립을 선형 계수로 사전 보정한다.
+        //   (기존 PC_/HC_HZ_TILT 와 동일하게 계수 × ΔZ 방식. 미설정 시 0 → 기능 Off, 기존 레시피 무영향)
+        public const string USE_SHANK_SLIP_COMP = "USE_SHANK_SLIP_COMP"; // 0: Off(기본), 1: On
+        public const string SHANK_SLIP_KX = "SHANK_SLIP_KX";            // ΔZ_LR(mm) → ResultX 슬립 보정(mm) 계수
+        public const string SHANK_SLIP_KY = "SHANK_SLIP_KY";            // ΔZ_LR(mm) → ResultY 슬립 보정(mm) 계수
+        public const string SHANK_FID_BASELINE = "SHANK_FID_BASELINE";  // 각도 로깅용 Left↔Right Fiducial 기준거리(mm). 미설정 시 측정 Fiducial 간격 사용
+
         public const string PC_T = "PC_T";
 
         public const string HCRO_X = "HCRO_X";

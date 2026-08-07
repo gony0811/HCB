@@ -180,6 +180,16 @@ namespace HCB.UI
         public double TopRightDz { get; set; }   // = rightFidZ - rightAlignZ
         public double TopLeftDz { get; set; }    // = leftFidZ - leftAlignZ
         public double BtmDz { get; set; }        // = btmAlignZ - btmFidZ
+
+        // ── 샹크 기울기(Shank Tilt) 추적 → 본딩 슬립(Slip) 보정 ──
+        //   TopDie Fiducial 촬상 시 Left/Right 각각의 H_Z 초점 높이. 측정만 하고 슬립 계산은
+        //   CoordinateSystemIntegration(ApplyShankTiltSlip)에서 수행한다.
+        public double TopLeftFidZ { get; set; }   // Left  Fiducial 촬상 H_Z (초점 높이)
+        public double TopRightFidZ { get; set; }  // Right Fiducial 촬상 H_Z (초점 높이)
+        public double ShankTiltDz { get; set; }   // = rightFidZ - leftFidZ (좌우 초점 높이차, 샹크 기울기 지표)
+        public double ShankTiltRad { get; set; }  // atan2(ΔZ_LR, baseline) — 좌우 기울기 각도(로깅용, rad)
+        public double ShankSlipX { get; set; }    // ResultX에 가산된 슬립 보정량(mm)
+        public double ShankSlipY { get; set; }    // ResultY에 가산된 슬립 보정량(mm)
         //   HcRO 회전중심 계산용 raw 측정점(0°/±0.75°). 계산은 ComputeHcroCenter에서.
         public System.Collections.Generic.List<Point2D> Hc1RoRaw { get; set; }
         public System.Collections.Generic.List<Point2D> Hc2RoRaw { get; set; }
