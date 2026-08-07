@@ -149,6 +149,38 @@ namespace HCB.UI
             }
         }
 
+        /// <summary>
+        /// 여러 축을 동시에 홈으로 보내되, 한 축이 실패(타임아웃)해도 나머지 축은 계속 판정하여
+        /// 축별 성공/실패 결과를 개별적으로 반환한다. (어떤 축이 정상/실패했는지 구분용)
+        /// </summary>
+        public static async Task<Dictionary<IAxis, bool>> HomeEachAsync(this ISequenceHelper helper, List<IAxis> axes, CancellationToken ct)
+        {
+            if (axes == null || axes.Count == 0) throw new ArgumentException("axes is null/empty");
+
+            if (helper.IsSimulation)
+            {
+                foreach (var a in axes)
+                    helper.Log(LogLevel.Information, $"[Simulation] Homing axis {a.Name}.");
+                return axes.ToDictionary(a => a, _ => true);
+            }
+
+            // 1. 홈 명령은 모든 축에 전송
+            await Task.WhenAll(axes.Select(a => a.Home())).ConfigureAwait(false);
+            await helper.DelayAsync(100, ct).ConfigureAwait(false);
+
+            // 2. 축별로 완료를 대기 — 한 축이 타임아웃되어도 나머지는 계속 판정 (취소는 전파)
+            var waits = axes.Select(async a =>
+            {
+                bool ok = await helper
+                    .WaitUntilAsync(() => a.IsHomeDone, 60000, ct, $"Axis {a.Name} Homing Timeout")
+                    .ConfigureAwait(false);
+                return (axis: a, ok);
+            });
+
+            var results = await Task.WhenAll(waits).ConfigureAwait(false);
+            return results.ToDictionary(r => r.axis, r => r.ok);
+        }
+
         public static async Task MoveAsync(this ISequenceHelper helper, int motorNo, string positionName, CancellationToken ct)
         {
             var axis = helper.DeviceManager.GetDevice<PowerPmacDevice>(PowerPmacDeviceName).FindMotionByMotorIndex(motorNo);
