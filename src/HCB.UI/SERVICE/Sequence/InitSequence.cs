@@ -387,10 +387,10 @@ namespace HCB.UI
         }
 
 
-        public async Task<VernierResponse> MeasureVeriner(CameraType cameraType, DirectType directType)
+        public async Task<VernierResponse> MeasureVeriner(CameraType cameraType, DirectType directType, CancellationToken ct = default)
         {
-            await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.VERNIER);
-            var result = await communicationService.RequestVernier(cameraType, directType);
+            await communicationService.RequestAFStart(CameraType.HC2_HIGH, MarkType.VERNIER, ct);
+            var result = await communicationService.RequestVernier(cameraType, directType, ct);
             //if (result.Result == Result.NG) return new VernierResponse { Value_1 = 0, Value_3 = 0 };
             return result;
         }
@@ -417,26 +417,30 @@ namespace HCB.UI
 
             foreach (var pt in points)
             {
+                ct.ThrowIfCancellationRequested();
+
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, pt.X, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, pt.Y, ct)
                 );
 
-                var d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1);
+                var d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1, ct);
                 for (int retry = 0; retry < 3 && d1.Value_1 == 0 && d1.Value_3 == 0; retry++)
                 {
+                    ct.ThrowIfCancellationRequested();
                     _logger.Warning($"[Vernier] d1 측정값이 0입니다. 재측정 ({retry + 1}/3)");
-                    d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1);
+                    d1 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir1, ct);
                 }
 
                 int a = pt.Dir1 == DirectType.Vertical ? 1 : -1;
                 await RelativeMotionsMove(MotionExtensions.W_Y, 0.3 * a, ct);
 
-                var d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2);
+                var d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2, ct);
                 for (int retry = 0; retry < 3 && d2.Value_1 == 0 && d2.Value_3 == 0; retry++)
                 {
+                    ct.ThrowIfCancellationRequested();
                     _logger.Warning($"[Vernier] d2 측정값이 0입니다. 재측정 ({retry + 1}/3)");
-                    d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2);
+                    d2 = await MeasureVeriner(CameraType.HC2_HIGH, pt.Dir2, ct);
                 }
 
                 // Dir1: Vertical → Y에 저장, Horizontal → X에 저장

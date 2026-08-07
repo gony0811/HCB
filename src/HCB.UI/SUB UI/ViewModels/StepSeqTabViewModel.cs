@@ -856,6 +856,7 @@ namespace HCB.UI
                 ExportHighResult();
                 _logger.Information("Vernier 측정 완료 — {Count}포인트", result.v1.Count);
             }
+            catch (OperationCanceledException) { _logger.Information("Vernier 측정 정지됨"); }
             catch (Exception e) { _logger.Error(e, "Vernier 측정 실패"); }
         }
 
