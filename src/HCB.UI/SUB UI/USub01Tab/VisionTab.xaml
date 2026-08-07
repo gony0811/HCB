@@ -484,6 +484,141 @@
                             </telerik:RadGridView.Columns>
                         </telerik:RadGridView>
 
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,8"/>
+
+                        <!-- ═══ 5. 슬립 테스트 ═══ -->
+                        <TextBlock Text="5. 슬립 테스트 (본딩 전/후 상대거리 비교)" Foreground="#E74C3C"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Margin="16,12,16,4"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="16,0,16,10">
+                            TopDie 픽업 → Top Align L/R 측정(PC, 상대거리 기준) → PlaceCenter 이동·본딩 →
+                            HC1/HC2 Align L/R 측정(상대거리) → 두 상대거리를 비교합니다. 결과는 CSV로 저장됩니다.
+                            (주의: 본딩은 실제 die를 소모합니다)
+                        </TextBlock>
+
+                        <!-- 입력 -->
+                        <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource ZTrackLabelStyle}" Text="TopDie 번호"/>
+                                <TextBox Grid.Column="1"
+                                         Style="{StaticResource ZTrackInputStyle}"
+                                         Text="{Binding SlipTestDie, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="8,0,12,0"/>
+                                <CheckBox Grid.Column="2" Content="픽업" IsChecked="{Binding SlipDoPickup}"
+                                          Foreground="#ECF0F1" FontSize="13" VerticalAlignment="Center"
+                                          Margin="0,0,12,0"/>
+                                <CheckBox Grid.Column="3" Content="본딩" IsChecked="{Binding SlipDoBond}"
+                                          Foreground="#ECF0F1" FontSize="13" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 실행 버튼 -->
+                        <Button Style="{StaticResource VisionBtnStyle}"
+                                Content="슬립 테스트 시작"
+                                Command="{Binding RunSlipTestCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Background="#5A1A2A" BorderBrush="#8A2A4A"
+                                Margin="16,0,16,8"/>
+
+                        <!-- 진행 상태 -->
+                        <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,8">
+                            <TextBlock Text="{Binding SlipStatus}"
+                                       Foreground="#E74C3C" FontSize="13"
+                                       TextWrapping="Wrap"/>
+                        </Border>
+
+                        <!-- 결과 요약 -->
+                        <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,10"
+                                Visibility="{Binding HasSlipResult, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- 헤더 -->
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="X (μm)" Style="{StaticResource ValueLabelStyle}" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Y (μm)" Style="{StaticResource ValueLabelStyle}" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Row="0" Grid.Column="3" Text="Dist / θ" Style="{StaticResource ValueLabelStyle}" HorizontalAlignment="Right"/>
+
+                                <!-- Top(기준) -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Top(PC)" Style="{StaticResource ValueLabelStyle}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding SlipTopRelX, StringFormat='{}{0:F4}'}" Margin="6,2"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding SlipTopRelY, StringFormat='{}{0:F4}'}" Margin="6,2"/>
+                                <TextBlock Grid.Row="1" Grid.Column="3" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding SlipTopRelDist, StringFormat='{}{0:F4}'}" Margin="6,2"/>
+
+                                <!-- Btm -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Btm(HC)" Style="{StaticResource ValueLabelStyle}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding SlipBtmRelX, StringFormat='{}{0:F4}'}" Margin="6,2"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding SlipBtmRelY, StringFormat='{}{0:F4}'}" Margin="6,2"/>
+                                <TextBlock Grid.Row="2" Grid.Column="3" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding SlipBtmRelDist, StringFormat='{}{0:F4}'}" Margin="6,2"/>
+
+                                <!-- 차이(슬립) -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Δ 슬립" Style="{StaticResource ValueLabelStyle}" Foreground="#E74C3C"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Foreground="#E74C3C"
+                                           Text="{Binding SlipDiffXUm, StringFormat='{}{0:+0.00;-0.00;0.00}'}" Margin="6,2"/>
+                                <TextBlock Grid.Row="4" Grid.Column="2" Style="{StaticResource ValueTextStyle}" Foreground="#E74C3C"
+                                           Text="{Binding SlipDiffYUm, StringFormat='{}{0:+0.00;-0.00;0.00}'}" Margin="6,2"/>
+                                <TextBlock Grid.Row="4" Grid.Column="3" Style="{StaticResource ValueTextStyle}" Foreground="#E74C3C"
+                                           Text="{Binding SlipDiffAngleDeg, StringFormat='{}{0:F4}°'}" Margin="6,2"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 원시 측정값 테이블 -->
+                        <telerik:RadGridView ItemsSource="{Binding SlipMarks}"
+                                             AutoGenerateColumns="False"
+                                             IsReadOnly="True"
+                                             ShowGroupPanel="False"
+                                             RowIndicatorVisibility="Collapsed"
+                                             CanUserFreezeColumns="False"
+                                             Margin="16,0,16,12"
+                                             MaxHeight="220"
+                                             FontSize="12"
+                                             FontFamily="Consolas"
+                                             Visibility="{Binding HasSlipResult, Converter={StaticResource BoolToVis}}">
+                            <telerik:RadGridView.Columns>
+                                <telerik:GridViewDataColumn Header="Mark"
+                                    DataMemberBinding="{Binding Label}" Width="140"/>
+                                <telerik:GridViewDataColumn Header="StageX"
+                                    DataMemberBinding="{Binding StageX, StringFormat=F4}" Width="110"/>
+                                <telerik:GridViewDataColumn Header="StageY"
+                                    DataMemberBinding="{Binding StageY, StringFormat=F4}" Width="110"/>
+                                <telerik:GridViewDataColumn Header="DxCam"
+                                    DataMemberBinding="{Binding DxCam, StringFormat=F4}" Width="110"/>
+                                <telerik:GridViewDataColumn Header="DyCam"
+                                    DataMemberBinding="{Binding DyCam, StringFormat=F4}" Width="110"/>
+                                <telerik:GridViewDataColumn Header="CenterX"
+                                    DataMemberBinding="{Binding CenterX, StringFormat=F4}" Width="110"/>
+                                <telerik:GridViewDataColumn Header="CenterY"
+                                    DataMemberBinding="{Binding CenterY, StringFormat=F4}" Width="110"/>
+                            </telerik:RadGridView.Columns>
+                        </telerik:RadGridView>
+
                     </StackPanel>
                 </ScrollViewer>
 

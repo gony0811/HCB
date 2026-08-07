@@ -10,6 +10,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
 {
@@ -18,6 +19,8 @@ namespace HCB.UI
     {
         private readonly EqpCommunicationService _communication;
         private readonly SequenceService _sequenceService;
+        private readonly RecipeService _recipeService;
+        private readonly ECParamService _ecParamService;
         private readonly ILogger _logger;
 
         private IAxis? _hxAxis;
@@ -77,10 +80,14 @@ namespace HCB.UI
             DeviceManager deviceManager,
             EqpCommunicationService communication,
             SequenceService sequenceService,
+            RecipeService recipeService,
+            ECParamService ecParamService,
             ILogger logger)
         {
             _communication = communication;
             _sequenceService = sequenceService;
+            _recipeService = recipeService;
+            _ecParamService = ecParamService;
             _logger = logger.ForContext<VisionTabViewModel>();
             var device = deviceManager.GetDevice<PowerPmacDevice>("PMAC");
             _hxAxis = device.FindMotionByName(MotionExtensions.H_X);
@@ -441,6 +448,211 @@ namespace HCB.UI
                 _logger.Warning(e, "Z트래킹 CSV 저장 실패");
             }
         }
+
+        // ══════════════════════════════════════════════
+        //  5. 슬립 테스트
+        //     TopDie 픽업 → Top Align L/R 측정(PC) → 상대거리(REF)
+        //     → PlaceCenter 이동 → 본딩 → HC1/HC2 Align L/R 측정 → 상대거리
+        //     → 두 상대거리를 비교(길이·성분·각도차 = 슬립 지표)
+        // ══════════════════════════════════════════════
+
+        [ObservableProperty] private int slipTestDie = 1;     // 픽업할 TopDie 번호
+        [ObservableProperty] private bool slipDoPickup = true; // 픽업 수행 여부
+        [ObservableProperty] private bool slipDoBond = true;   // 본딩 수행 여부
+        [ObservableProperty] private string slipStatus = "-";
+        [ObservableProperty] private bool hasSlipResult;
+
+        // Top(PC) 상대거리 R−L (본딩 전, 기준)
+        [ObservableProperty] private double slipTopRelX;
+        [ObservableProperty] private double slipTopRelY;
+        [ObservableProperty] private double slipTopRelDist;
+        [ObservableProperty] private double slipTopAngleDeg;
+
+        // Btm(HC1/HC2) 상대거리 R−L (본딩 후)
+        [ObservableProperty] private double slipBtmRelX;
+        [ObservableProperty] private double slipBtmRelY;
+        [ObservableProperty] private double slipBtmRelDist;
+        [ObservableProperty] private double slipBtmAngleDeg;
+
+        // 차이 (Btm − Top) = 슬립 지표
+        [ObservableProperty] private double slipDiffX;
+        [ObservableProperty] private double slipDiffY;
+        [ObservableProperty] private double slipDiffDist;      // 선분 길이 변화 (BtmDist − TopDist)
+        [ObservableProperty] private double slipDiffAngleDeg;  // 각도 변화
+
+        // um 표시용
+        public double SlipDiffXUm => SlipDiffX * 1000.0;
+        public double SlipDiffYUm => SlipDiffY * 1000.0;
+        public double SlipDiffDistUm => SlipDiffDist * 1000.0;
+        partial void OnSlipDiffXChanged(double value) => OnPropertyChanged(nameof(SlipDiffXUm));
+        partial void OnSlipDiffYChanged(double value) => OnPropertyChanged(nameof(SlipDiffYUm));
+        partial void OnSlipDiffDistChanged(double value) => OnPropertyChanged(nameof(SlipDiffDistUm));
+
+        // 원시 측정값 테이블 (Top L/R, Btm L/R)
+        public ObservableCollection<SlipMarkRow> SlipMarks { get; } = new();
+
+        [RelayCommand]
+        public async Task RunSlipTest()
+        {
+            if (!IsNotBusy) return;
+            IsNotBusy = false;
+            HasSlipResult = false;
+            SlipMarks.Clear();
+            var ct = GetToken();
+
+            try
+            {
+                const bool avg = false;   // 슬립 테스트는 단일 측정
+                string size = _recipeService.FindByParam("TOP_DIE_SIZE").Value;
+
+                // ── 1) TopDie 픽업 ──
+                if (SlipDoPickup)
+                {
+                    SlipStatus = $"TopDie({SlipTestDie}) 저배율 측정·픽업 중...";
+                    var correction = await _sequenceService.TopLowMeasure(
+                        SlipTestDie, MarkType.DIE_CENTER_TOP, ct);
+                    await _sequenceService.DTablePickup(DieType.TOP, SlipTestDie, correction, ct);
+                }
+
+                // ── 2) Top Align Mark Left/Right 측정 (PC_HIGH) → 상대거리(기준) ──
+                //   모션(StageX/Y) + 비전(DxCam/DyCam)을 결합한 절대좌표 CenterX/CenterY 사용.
+                //   Left/Right가 서로 다른 스테이지 위치에서 측정되므로 CenterX/Y로 통합해야 정확.
+                SlipStatus = "Top Align 우측(PC) 측정 중...";
+                var topR = await _sequenceService.TopDieVisionRightAlign(avg, size, ct);
+                SlipStatus = "Top Align 좌측(PC) 측정 중...";
+                var topL = await _sequenceService.TopDieVisionLeftAlign(avg, size, ct);
+
+                SlipTopRelX = topR.CenterX - topL.CenterX;
+                SlipTopRelY = topR.CenterY - topL.CenterY;
+                SlipTopRelDist = Math.Sqrt(SlipTopRelX * SlipTopRelX + SlipTopRelY * SlipTopRelY);
+                SlipTopAngleDeg = Math.Atan2(SlipTopRelY, SlipTopRelX) * 180.0 / Math.PI;
+
+                // ── 3) W-Table PlaceCenter 이동 + 본딩 ──
+                SlipStatus = "PlaceCenter 이동 중...";
+                await _sequenceService.TopDieSet(ct);     // PLACE_CENTER + Z 하강
+                if (SlipDoBond)
+                {
+                    SlipStatus = "본딩 중...";
+                    var bondHist = new ObservableCollection<BondingDataPoint>();
+                    await _sequenceService.BondingPress(bondHist, ct);
+                    // 본딩된 die를 HC 카메라로 측정하기 위해 Head 상승
+                    await _sequenceService.Init_Head(ct);
+                }
+
+                // ── 4) Hc1/Hc2 Align Mark 측정 → 상대거리 ──
+                //   HC1(Left)/HC2(Right)는 스테이지 이동 없이 동시 촬상하므로,
+                //   두 카메라 간 거리(Hc2Offset = HC2_X/HC2_Y)를 반영해야 실제 마크 간격이 된다.
+                //   좌표 규약은 CoordinateSystemIntegration의 bfl/bfr과 동일:
+                //     Labs = (−Dx_L, −Dy_L),  Rabs = (Hc2X − Dx_R, Hc2Y − Dy_R)
+                SlipStatus = "HC1/HC2 Align 측정 중...";
+                var btmR = await _sequenceService.BtmDieVisionRightAlign(avg, ct);  // HC2
+                var btmL = await _sequenceService.BtmDieVisionLeftAlign(avg, ct);   // HC1
+
+                double hc2x = _ecParamService.GetDouble(MotionExtensions.HC2_X);
+                double hc2y = _ecParamService.GetDouble(MotionExtensions.HC2_Y);
+
+                SlipBtmRelX = (hc2x - btmR.DxCamToMark) - (-btmL.DxCamToMark);
+                SlipBtmRelY = (hc2y - btmR.DyCamToMark) - (-btmL.DyCamToMark);
+                SlipBtmRelDist = Math.Sqrt(SlipBtmRelX * SlipBtmRelX + SlipBtmRelY * SlipBtmRelY);
+                SlipBtmAngleDeg = Math.Atan2(SlipBtmRelY, SlipBtmRelX) * 180.0 / Math.PI;
+
+                // ── 5) 비교 (슬립 지표) ──
+                SlipDiffX = SlipBtmRelX - SlipTopRelX;
+                SlipDiffY = SlipBtmRelY - SlipTopRelY;
+                SlipDiffDist = SlipBtmRelDist - SlipTopRelDist;
+                SlipDiffAngleDeg = NormalizeDeg(SlipBtmAngleDeg - SlipTopAngleDeg);
+
+                AddSlipRow("Top-Left (PC)", topL);
+                AddSlipRow("Top-Right (PC)", topR);
+                AddSlipRow("Btm-Left (HC1)", btmL);
+                AddSlipRow("Btm-Right (HC2)", btmR);
+
+                HasSlipResult = true;
+                SlipStatus = $"완료 — 길이차 {SlipDiffDist * 1000:F2}μm, 각도차 {SlipDiffAngleDeg:F4}°";
+                ResultSummary =
+                    $"슬립: TopDist={SlipTopRelDist * 1000:F1}μm, BtmDist={SlipBtmRelDist * 1000:F1}μm, " +
+                    $"Δ길이={SlipDiffDist * 1000:F2}μm, Δθ={SlipDiffAngleDeg:F4}°";
+
+                await SaveSlipCsv(ct);
+
+                _logger.Information(
+                    "슬립테스트 | TopRel({TX:F5},{TY:F5}) d={TD:F5} θ={TA:F4} | " +
+                    "BtmRel({BX:F5},{BY:F5}) d={BD:F5} θ={BA:F4} | Δ(x={DX:F5},y={DY:F5},d={DD:F5},θ={DA:F4})",
+                    SlipTopRelX, SlipTopRelY, SlipTopRelDist, SlipTopAngleDeg,
+                    SlipBtmRelX, SlipBtmRelY, SlipBtmRelDist, SlipBtmAngleDeg,
+                    SlipDiffX, SlipDiffY, SlipDiffDist, SlipDiffAngleDeg);
+            }
+            catch (OperationCanceledException) { SlipStatus = "취소됨"; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "슬립 테스트 실패");
+                SlipStatus = $"오류: {e.Message}";
+            }
+            finally { IsNotBusy = true; }
+        }
+
+        private static double NormalizeDeg(double d)
+        {
+            while (d > 180.0) d -= 360.0;
+            while (d < -180.0) d += 360.0;
+            return d;
+        }
+
+        private void AddSlipRow(string label, VisionMarkResult m)
+        {
+            SlipMarks.Add(new SlipMarkRow
+            {
+                Label = label,
+                StageX = m.StageX,
+                StageY = m.StageY,
+                DxCam = m.DxCamToMark,
+                DyCam = m.DyCamToMark,
+                CenterX = m.CenterX,
+                CenterY = m.CenterY,
+            });
+        }
+
+        private async Task SaveSlipCsv(CancellationToken ct)
+        {
+            try
+            {
+                string folder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    "HCB", "슬립 데이터");
+                Directory.CreateDirectory(folder);
+
+                string path = Path.Combine(folder, "SlipTest.csv");
+                bool exists = File.Exists(path);
+                var line =
+                    $"{DateTime.Now:yyyy-MM-dd HH:mm:ss},{SlipTestDie}," +
+                    $"{SlipTopRelX:F6},{SlipTopRelY:F6},{SlipTopRelDist:F6},{SlipTopAngleDeg:F5}," +
+                    $"{SlipBtmRelX:F6},{SlipBtmRelY:F6},{SlipBtmRelDist:F6},{SlipBtmAngleDeg:F5}," +
+                    $"{SlipDiffX:F6},{SlipDiffY:F6},{SlipDiffDist:F6},{SlipDiffAngleDeg:F5}";
+
+                if (!exists)
+                    await File.WriteAllTextAsync(path,
+                        "Timestamp,Die,TopRelX,TopRelY,TopRelDist,TopAngleDeg," +
+                        "BtmRelX,BtmRelY,BtmRelDist,BtmAngleDeg," +
+                        "DiffX,DiffY,DiffDist,DiffAngleDeg\n" + line + "\n", ct);
+                else
+                    await File.AppendAllTextAsync(path, line + "\n", ct);
+            }
+            catch (Exception e)
+            {
+                _logger.Warning(e, "슬립 CSV 저장 실패");
+            }
+        }
+    }
+
+    public class SlipMarkRow
+    {
+        public string Label { get; set; } = "";
+        public double StageX { get; set; }
+        public double StageY { get; set; }
+        public double DxCam { get; set; }
+        public double DyCam { get; set; }
+        public double CenterX { get; set; }
+        public double CenterY { get; set; }
     }
 
     public class FiducialZTrackPoint
