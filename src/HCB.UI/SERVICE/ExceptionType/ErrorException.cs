@@ -71,10 +71,11 @@ namespace HCB.UI
 
     public static class PmacErrorCode
     {
-        public static string SERVO_OFF = "E0031"; 
+        public static string SERVO_OFF = "E0031";
         public static string RUNNING = "E0032";
         public static string IO_EXCEPTION = "E0033";
         public static string HEAD_VAC= "E0034";
+        public static string HT_POSITION_ERROR = "E0036"; // H_T 회전 보정 위치 오차(1% 초과)
     }
 
     public static class DBErrorCode

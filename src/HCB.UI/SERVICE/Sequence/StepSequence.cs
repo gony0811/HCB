@@ -310,6 +310,9 @@ namespace HCB.UI
                     RelativeMotionsMove(MotionExtensions.H_T, data.ResultT, ct)
                 );
 
+                // H_T 회전 보정 InPosition 후 목표/실제 위치 검증 (1% 초과 시 알람 + 중단)
+                await VerifyHtRotationAsync(ct);
+
                 await MotionsMove(MotionExtensions.H_Z,
                     shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
 
@@ -324,6 +327,43 @@ namespace HCB.UI
             {
                 _logger.Error(e, "BondingAlign 실패");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// H_T 회전 보정 후 InPosition 시점의 명령 목표 위치(CommandPosition) 대비
+        /// 실제 측정 위치(CurrentPosition)를 로그로 남기고, 오차율이 1%를 초과하면
+        /// 전용 알람(E0036)을 발생시키고 예외를 던져 본딩을 중단한다.
+        /// </summary>
+        private async Task VerifyHtRotationAsync(CancellationToken ct)
+        {
+            var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            var ht = motionDevice?.FindMotionByName(MotionExtensions.H_T);
+            if (ht == null)
+                throw new DBException(DBErrorCode.NOT_FOUND, $"[Motion Error] '{MotionExtensions.H_T}' 축을 찾을 수 없습니다.");
+
+            double commanded = ht.CommandPosition;   // 명령 목표 위치 (DesPos)
+            double actual = ht.CurrentPosition;      // 실제 측정 위치 (ActPos)
+            double diff = actual - commanded;
+            // 명령 목표 위치 기준 오차율. 목표각이 0 근처면 분모가 0에 수렴하므로 가드.
+            double errorRatio = Math.Abs(commanded) > 1e-6 ? Math.Abs(diff) / Math.Abs(commanded) : 0.0;
+
+            _logger.Information(
+                "H_T 회전 보정 검증 | 목표(Command)={Cmd:F6}, 실제(Current)={Act:F6}, 오차={Diff:F6}, 오차율={Ratio:P3}",
+                commanded, actual, diff, errorRatio);
+
+            if (Math.Abs(commanded) > 1e-6 && errorRatio > 0.01)
+            {
+                _logger.Error(
+                    "H_T 위치 오차 {Ratio:P3} 가 허용치(1%)를 초과 | 목표={Cmd:F6}, 실제={Act:F6}",
+                    errorRatio, commanded, actual);
+
+                // 호출부(StepSeqTabViewModel)가 ErrorException→SetAlarm 브리지를 거치지 않으므로 직접 발생시킨다.
+                await _alarmService.SetAlarm(PmacErrorCode.HT_POSITION_ERROR);
+
+                throw new PmacException(
+                    PmacErrorCode.HT_POSITION_ERROR,
+                    $"[H_T 회전 보정 오차] 목표={commanded:F6}, 실제={actual:F6}, 오차율={errorRatio:P3} (허용 1%)");
             }
         }
 
