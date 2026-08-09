@@ -974,7 +974,8 @@ namespace HCB.UI
             Use2DMapping = Settings.Use2DMapping,
             TracingMode = Settings.TracingMode,
             UseBtmIndividualMeasure = Settings.BtmIndividualMeasure,
-            UseFiducialTracking = Settings.FiducialTracing
+            UseFiducialTracking = Settings.FiducialTracing,
+            UseRightFidSimilarity = Settings.RightFidSimilarity
         };
 
         private void UpdateTopMarks()

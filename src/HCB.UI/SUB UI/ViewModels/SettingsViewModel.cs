@@ -15,6 +15,7 @@ namespace HCB.UI
         [ObservableProperty] private TracingMode tracingMode = TracingMode.Manual;
         [ObservableProperty] private bool fiducialTracing = true;
         [ObservableProperty] private bool btmIndividualMeasure = true;
+        [ObservableProperty] private bool rightFidSimilarity = false;   // 우측 피듀셜 닮음변환 보정
 
         // ── CSV 저장 설정 ─────────────────────────────────────
         [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
@@ -47,6 +48,9 @@ namespace HCB.UI
 
         [RelayCommand]
         public void ChangeFiducialTracking() => FiducialTracing = !FiducialTracing;
+
+        [RelayCommand]
+        public void ChangeRightFidSimilarity() => RightFidSimilarity = !RightFidSimilarity;
 
         [RelayCommand]
         private void BrowseVernierDir()

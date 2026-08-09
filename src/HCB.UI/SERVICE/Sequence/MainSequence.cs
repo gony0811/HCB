@@ -417,7 +417,7 @@ namespace HCB.UI
                 // ── STEP 0: 측정2→3 Theta 변화량을 Top 마크에 반영 ──
                 Point2D topLF, topRF, topLA, topRA;
 
-                if (data.M2FidTheta != 0 && data.M3FidTheta != 0)
+                if (data.M2FidTheta != 0 && data.M3FidTheta != 0 && !data.UseRightFidSimilarity)
                 {
                     double deltaTheta = -(data.M3FidTheta - data.M2FidTheta);
                     double deltaThetaRad = CalibrationMath.ToRadian(deltaTheta);
@@ -475,6 +475,42 @@ namespace HCB.UI
                 Point2D tl = Point2D.of(bfl.X - lDist.X, bfl.Y - lDist.Y);
                 Point2D tr = Point2D.of(tl.X - topRel.X, tl.Y - topRel.Y);
                 //Point2D tr = Point2D.of(bfr.X - rDist.X, bfr.Y - rDist.Y);
+
+                // ── STEP 2.5: 우측 피듀셜 P-TABLE↔W-TABLE 닮음변환 보정 (옵션) ──
+                //  좌측 피듀셜(bfl)을 고정점으로, P-TABLE 우측 피듀셜(bfr) → W-TABLE 실측 우측 피듀셜로
+                //  매핑하는 닮음변환(회전+균일 스케일)을 구해 Top 얼라인 마크(tl·tr)에 적용하고
+                //  우측 피듀셜을 실측값으로 교체한다. (각도는 이 변환에 포함 → STEP 0 회전은 스킵)
+                if (data.UseRightFidSimilarity)
+                {
+                    // 실측 W-TABLE 우측 피듀셜 (기존 주석 대안)
+                    Point2D bfrMeasured = Point2D.of(
+                        data.Hc2Offset.X - data.BtmRightFidRaw.X,
+                        data.Hc2Offset.Y - data.BtmRightFidRaw.Y);
+
+                    double distP = CalibrationMath.Dist(bfl, bfr);            // |v_p|
+                    double distW = CalibrationMath.Dist(bfl, bfrMeasured);    // |v_w|
+
+                    if (distP > 1e-9)
+                    {
+                        double thetaSim = CalibrationMath.ComputeAlignAngle(bfl, bfr, bfl, bfrMeasured); // v_p→v_w (rad)
+                        double scaleSim = distW / distP;
+
+                        tl = CalibrationMath.ScaleRotateAroundPivot(tl, bfl, thetaSim, scaleSim);
+                        tr = CalibrationMath.ScaleRotateAroundPivot(tr, bfl, thetaSim, scaleSim);
+                        bfr = bfrMeasured;   // 우측 피듀셜을 실측으로 교체 → br = bfr - brDist 도 실측 기준
+
+                        data.RightFidSimTheta = CalibrationMath.ToDegree(thetaSim);
+                        data.RightFidSimScale = scaleSim;
+
+                        _logger.Information(
+                            "우측피듀셜 닮음변환 — θ={T:F4}°, scale={S:F6}, bfr=({X:F6},{Y:F6})",
+                            data.RightFidSimTheta, scaleSim, bfr.X, bfr.Y);
+                    }
+                    else
+                    {
+                        _logger.Warning("우측피듀셜 닮음변환 스킵 — P-TABLE 피듀셜 간격이 0에 수렴");
+                    }
+                }
 
                 // Btm Align도 자신의 Fiducial 기준 상대거리(Align−Fid)로 계산한 뒤, P-Table Fiducial
                 // 간격으로 세운 기준(bfl·bfr)에 맞춰 합친다.

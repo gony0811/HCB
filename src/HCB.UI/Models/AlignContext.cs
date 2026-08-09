@@ -161,6 +161,11 @@ namespace HCB.UI
         public TracingMode TracingMode { get; set; } = TracingMode.Auto;
         public bool UseBtmIndividualMeasure { get; set; } = false;
         public bool UseFiducialTracking { get; set; } = false;
+        public bool UseRightFidSimilarity { get; set; } = false;   // 우측 피듀셜 P-TABLE↔W-TABLE 닮음변환 보정 ON/OFF
+
+        // 우측 피듀셜 닮음변환 진단/로그용 (계산 결과 저장)
+        public double RightFidSimTheta { get; set; }   // 닮음변환 회전각 (deg)
+        public double RightFidSimScale { get; set; }   // 닮음변환 스케일 (≈1.0 기대)
 
         // 피듀셜 트래킹 결과
         public Point2D Hc1FidCurrent { get; set; } = Point2D.Zero;

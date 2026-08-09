@@ -228,6 +228,38 @@
             </Button.Style>
         </Button>
 
+        <!-- 우측 피듀셜 닮음변환 보정 (RightFidSimilarity) -->
+        <Button Margin="0,0,0,8" Height="38" Cursor="Hand"
+                Command="{Binding Settings.ChangeRightFidSimilarityCommand}">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd" Background="#1A2332" BorderBrush="#2A3A4A"
+                                        BorderThickness="1" CornerRadius="6" Padding="10,4">
+                                    <TextBlock x:Name="Txt" Text="우측Fid 닮음변환 OFF" Foreground="#8899AA"
+                                               FontSize="13" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Settings.RightFidSimilarity}" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#0F6E56"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#1D9E75"/>
+                                        <Setter TargetName="Txt" Property="Text" Value="우측Fid 닮음변환 ON"/>
+                                        <Setter TargetName="Txt" Property="Foreground" Value="#E1F5EE"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Button.Style>
+        </Button>
+
         <!-- 결과 측정 (MeasureVernier) -->
         <Button Margin="0,0,0,14" Height="38" Cursor="Hand"
                 Command="{Binding Settings.ChangeMeasureVernierCommand}">

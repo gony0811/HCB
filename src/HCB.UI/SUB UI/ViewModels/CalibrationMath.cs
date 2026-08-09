@@ -274,6 +274,18 @@ namespace HCB.UI
             return Point2D.of(rotated.X + pivot.X, rotated.Y + pivot.Y);
         }
 
+        /// <summary>
+        /// 기준점을 중심으로 점을 회전 + 균일 스케일한다 (닮음변환).
+        /// result = pivot + scale · R(Θ)·(point - pivot)
+        /// </summary>
+        public static Point2D ScaleRotateAroundPivot(Point2D point, Point2D pivot, double thetaRad, double scale)
+        {
+            double dx = point.X - pivot.X;
+            double dy = point.Y - pivot.Y;
+            var rotated = ApplyRotation(Point2D.of(dx, dy), thetaRad);
+            return Point2D.of(rotated.X * scale + pivot.X, rotated.Y * scale + pivot.Y);
+        }
+
 
         // ═══════════════════════════════════════════════════════════════════
         //  5. 각도 계산 (atan2 기반)
