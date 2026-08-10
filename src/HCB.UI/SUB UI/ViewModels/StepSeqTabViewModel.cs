@@ -1114,7 +1114,8 @@ namespace HCB.UI
                     "W_HC_Fid_L_X", "W_HC_Fid_L_Y", "W_HC_Fid_R_X", "W_HC_Fid_R_Y",
                     "W_HC_Fid_DX", "W_HC_Fid_DY", "W_HC_Fid_Dist", "W_HC_Fid_Theta",
                     "W_HC_Align_L_X", "W_HC_Align_L_Y", "W_HC_Align_R_X", "W_HC_Align_R_Y",
-                    "W_HC_Align_DX", "W_HC_Align_DY", "W_HC_Align_Dist", "W_HC_Align_Theta"));
+                    "W_HC_Align_DX", "W_HC_Align_DY", "W_HC_Align_Dist", "W_HC_Align_Theta",
+                    "RightFidSimTheta", "RightFidSimScale"));
             }
 
             sb.AppendLine(string.Join(",",
@@ -1153,7 +1154,8 @@ namespace HCB.UI
                 hcbData != null ? Pt(hcbData.Hc2FidRef) : NullPt(),
                 hcbData != null ? Pt(hcbData.Hc2FidDrift) : NullPt(),
                 F(hcbData?.FidCurrentDist),
-                CsvMeasurementData()));
+                CsvMeasurementData(),
+                F(hcbData?.RightFidSimTheta), F(hcbData?.RightFidSimScale)));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
 
