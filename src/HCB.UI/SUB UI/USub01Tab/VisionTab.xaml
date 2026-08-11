@@ -199,6 +199,33 @@
                                   ItemsSource="{Binding Source={local:EnumValues {x:Type local:DirectType}}}"
                                   SelectedItem="{Binding SelectedDirect}"/>
 
+                        <!-- ═══ 모션 정보 (실시간) ═══ -->
+                        <TextBlock Text="모션 정보 (실시간)" Foreground="#5E8BAA"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Margin="16,4,16,6"/>
+                        <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource ValueLabelStyle}" Text="H_X"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding HxAxis.CurrentPosition, StringFormat='{}{0:F4} mm'}" Margin="12,2"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource ValueLabelStyle}"
+                                           Text="{Binding MotionYName}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Text="{Binding MotionYAxis.CurrentPosition, StringFormat='{}{0:F4} mm'}" Margin="12,2"/>
+                            </Grid>
+                        </Border>
+
                         <Rectangle Height="1" Fill="#1C3A52" Margin="16,4"/>
 
                         <!-- ═══ 1단계: 측정 ═══ -->
@@ -252,6 +279,33 @@
                                 <TextBlock Grid.Row="2" Grid.Column="2" Style="{StaticResource ValueTextStyle}"
                                            Foreground="#E67E22"
                                            Text="{Binding MeasuredDistUm, StringFormat='({0:+0.0;-0.0;0.0} um)'}"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 측정 시점 모션 스냅샷 -->
+                        <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,8"
+                                Visibility="{Binding HasMotionSnapshot, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource ValueLabelStyle}" Text="측정 H_X"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Foreground="#5DADE2"
+                                           Text="{Binding MotionHx, StringFormat='{}{0:F4} mm'}" Margin="12,2"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource ValueLabelStyle}"
+                                           Text="{Binding MotionYName, StringFormat='측정 {0}'}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueTextStyle}"
+                                           Foreground="#5DADE2"
+                                           Text="{Binding MotionY, StringFormat='{}{0:F4} mm'}" Margin="12,2"/>
                             </Grid>
                         </Border>
 
@@ -365,6 +419,23 @@
                                        Foreground="#E67E22" FontSize="14"
                                        TextWrapping="Wrap"/>
                         </Border>
+
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,8"/>
+
+                        <!-- ═══ Bonding ═══ -->
+                        <TextBlock Text="Bonding (가압)" Foreground="#E74C3C"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Margin="16,4,16,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="16,0,16,8">
+                            현재 위치에서 본딩(가압) 시퀀스를 실행합니다.
+                        </TextBlock>
+                        <Button Style="{StaticResource VisionBtnStyle}"
+                                Content="Bonding"
+                                Command="{Binding BondingCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Background="#5A1A1A" BorderBrush="#8A2A2A"
+                                Margin="16,0,16,8"/>
 
                         <Rectangle Height="1" Fill="#1C3A52" Margin="16,8"/>
 

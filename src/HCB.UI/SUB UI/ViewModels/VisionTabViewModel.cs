@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+    using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Entity.Type;
 using HCB.IoC;
@@ -18,11 +18,19 @@ namespace HCB.UI
     {
         private readonly EqpCommunicationService _communication;
         private readonly SequenceService _sequenceService;
+        private readonly RecipeService _recipeService;
         private readonly ILogger _logger;
 
         private IAxis? _hxAxis;
         private IAxis? _wyAxis;
         private IAxis? _pyAxis;
+
+        // 모션 정보 표시용 (XAML에서 CurrentPosition을 실시간 바인딩)
+        public IAxis? HxAxis => _hxAxis;
+        public IAxis? WyAxis => _wyAxis;
+        public IAxis? PyAxis => _pyAxis;
+        // 카메라에 따른 Y축: PC → P_Y, HC → W_Y
+        public IAxis? MotionYAxis => IsPc ? _pyAxis : _wyAxis;
 
         private CancellationTokenSource? _cts;
 
@@ -30,6 +38,12 @@ namespace HCB.UI
         [ObservableProperty] private CameraType selectedCamera = CameraType.HC1_HIGH;
         [ObservableProperty] private MarkType selectedMark = MarkType.ALIGN_MARK;
         [ObservableProperty] private DirectType selectedDirect = DirectType.LEFT;
+
+        // 측정 시점 모션 스냅샷
+        [ObservableProperty] private double motionHx;
+        [ObservableProperty] private double motionY;
+        [ObservableProperty] private string motionYName = "W_Y";
+        [ObservableProperty] private bool hasMotionSnapshot;
 
         // UI 상태
         [ObservableProperty] private bool isNotBusy = true;
@@ -77,10 +91,12 @@ namespace HCB.UI
             DeviceManager deviceManager,
             EqpCommunicationService communication,
             SequenceService sequenceService,
+            RecipeService recipeService,
             ILogger logger)
         {
             _communication = communication;
             _sequenceService = sequenceService;
+            _recipeService = recipeService;
             _logger = logger.ForContext<VisionTabViewModel>();
             var device = deviceManager.GetDevice<PowerPmacDevice>("PMAC");
             _hxAxis = device.FindMotionByName(MotionExtensions.H_X);
@@ -105,13 +121,75 @@ namespace HCB.UI
         private string YAxisName => SelectedCamera is CameraType.PC_HIGH or CameraType.PC_LOW
             ? MotionExtensions.P_Y : MotionExtensions.W_Y;
 
-        private bool IsPc => SelectedCamera is CameraType.PC_HIGH or CameraType.PC_LOW;
+        // PC 카메라: H_X / P_Y,  HC 카메라: H_X / W_Y
+        public bool IsPc => SelectedCamera is CameraType.PC_HIGH or CameraType.PC_LOW;
+
+        // HC1/HC2 Align Mark 측정 시 H_Z, h_z 축을 FID_ALIGN_GAP 만큼 이동해야 초점이 맞는다.
+        private bool NeedAlignZMove => !IsPc && SelectedMark == MarkType.ALIGN_MARK;
+
+        partial void OnSelectedCameraChanged(CameraType value)
+        {
+            OnPropertyChanged(nameof(IsPc));
+            OnPropertyChanged(nameof(MotionYAxis));
+            MotionYName = IsPc ? MotionExtensions.P_Y : MotionExtensions.W_Y;
+        }
 
         [RelayCommand]
         public void Stop()
         {
             _cts?.Cancel();
             StatusText = "중지 요청됨...";
+        }
+
+        // ══════════════════════════════════════════════
+        //  공용 측정 루틴
+        //  · HC1/HC2 Align Mark: H_Z/h_z를 FID_ALIGN_GAP만큼 이동 후 촬상, 측정 후 복귀
+        //    (StepSeqTabViewModel.BtmHighAlign → DieSequence.BtmHighAlign 참고)
+        //  · 측정 시점의 H_X / (P_Y|W_Y) 모션 위치를 스냅샷으로 기록
+        // ══════════════════════════════════════════════
+        private async Task<VisionMarkPositionResponse?> MeasureMark(CancellationToken ct)
+        {
+            bool zMove = NeedAlignZMove;
+            double gap = 0;
+
+            if (zMove)
+            {
+                gap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
+                StatusText = $"Align 초점 이동 중... (H_Z/h_z ±{gap:F4}mm)";
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, -gap, ct);
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, gap, ct);
+            }
+
+            try
+            {
+                await _communication.RequestAFStart(SelectedCamera, SelectedMark, ct);
+                var result = await _communication.RequestVisionMarkPosition(
+                    SelectedMark, SelectedCamera, SelectedDirect.ToString());
+
+                CaptureMotionSnapshot();
+                return result;
+            }
+            finally
+            {
+                if (zMove)
+                {
+                    // 측정 성공/실패와 무관하게 Fid 초점 높이로 복귀
+                    try
+                    {
+                        await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, -gap, ct);
+                        await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, gap, ct);
+                    }
+                    catch (Exception e) { _logger.Warning(e, "Align Z 복귀 실패"); }
+                }
+            }
+        }
+
+        private void CaptureMotionSnapshot()
+        {
+            MotionHx = _hxAxis?.CurrentPosition ?? 0;
+            MotionY = (IsPc ? _pyAxis : _wyAxis)?.CurrentPosition ?? 0;
+            MotionYName = IsPc ? MotionExtensions.P_Y : MotionExtensions.W_Y;
+            HasMotionSnapshot = true;
         }
 
         // ══════════════════════════════════════════════
@@ -130,9 +208,7 @@ namespace HCB.UI
             {
                 StatusText = "비전 측정 중...";
 
-                await _communication.RequestAFStart(SelectedCamera, SelectedMark, ct);
-                var result = await _communication.RequestVisionMarkPosition(
-                    SelectedMark, SelectedCamera, SelectedDirect.ToString());
+                var result = await MeasureMark(ct);
 
                 if (result == null) throw new Exception("비전 응답 null");
                 if (result.Result == Result.NG) throw new Exception("비전 측정 실패");
@@ -215,9 +291,7 @@ namespace HCB.UI
             {
                 StatusText = "재측정 중...";
 
-                await _communication.RequestAFStart(SelectedCamera, SelectedMark, ct);
-                var result = await _communication.RequestVisionMarkPosition(
-                    SelectedMark, SelectedCamera, SelectedDirect.ToString());
+                var result = await MeasureMark(ct);
 
                 if (result == null) throw new Exception("재측정 응답 null");
                 if (result.Result == Result.NG) throw new Exception("재측정 실패");
@@ -273,6 +347,33 @@ namespace HCB.UI
             {
                 _logger.Warning(e, "정밀도 CSV 저장 실패");
             }
+        }
+
+        // ══════════════════════════════════════════════
+        //  Bonding (현재 위치에서 가압 시퀀스 실행)
+        // ══════════════════════════════════════════════
+
+        [RelayCommand]
+        public async Task Bonding()
+        {
+            if (!IsNotBusy) return;
+            IsNotBusy = false;
+            var ct = GetToken();
+            try
+            {
+                StatusText = "본딩(가압) 진행 중...";
+                var history = new ObservableCollection<BondingDataPoint>();
+                await _sequenceService.BondingPress(history, ct);
+                StatusText = $"본딩 완료 — {history.Count}개 포인트 수집";
+                _logger.Information("VisionTab 본딩 완료 — {Count}개 포인트", history.Count);
+            }
+            catch (OperationCanceledException) { StatusText = "취소됨"; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Bonding failed");
+                StatusText = $"오류: {e.Message}";
+            }
+            finally { IsNotBusy = true; }
         }
 
         // ══════════════════════════════════════════════
