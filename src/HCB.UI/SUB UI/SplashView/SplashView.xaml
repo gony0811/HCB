@@ -15,7 +15,7 @@
 
             <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <telerik:HighlightTextBlock Text="HCB SYSTEM" FontSize="32" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
-                <telerik:HighlightTextBlock Text="Hybrid Chip Bonding Machine" FontSize="16" Foreground="#B3FFFFFF" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                <telerik:HighlightTextBlock Text="Hybrid Copper B3onding Machine" FontSize="16" Foreground="#B3FFFFFF" HorizontalAlignment="Center" Margin="0,5,0,0"/>
             </StackPanel>
 
             <telerik:HighlightTextBlock Grid.Row="1" 
