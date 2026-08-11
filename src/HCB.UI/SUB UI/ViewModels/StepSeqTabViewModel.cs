@@ -975,7 +975,8 @@ namespace HCB.UI
             TracingMode = Settings.TracingMode,
             UseBtmIndividualMeasure = Settings.BtmIndividualMeasure,
             UseFiducialTracking = Settings.FiducialTracing,
-            UseRightFidSimilarity = Settings.RightFidSimilarity
+            UseRightFidSimilarity = Settings.RightFidSimilarity,
+            UseFidCenterAlign = Settings.FidCenterAlign
         };
 
         private void UpdateTopMarks()
@@ -1115,7 +1116,8 @@ namespace HCB.UI
                     "W_HC_Fid_DX", "W_HC_Fid_DY", "W_HC_Fid_Dist", "W_HC_Fid_Theta",
                     "W_HC_Align_L_X", "W_HC_Align_L_Y", "W_HC_Align_R_X", "W_HC_Align_R_Y",
                     "W_HC_Align_DX", "W_HC_Align_DY", "W_HC_Align_Dist", "W_HC_Align_Theta",
-                    "RightFidSimTheta", "RightFidSimScale"));
+                    "RightFidSimTheta", "RightFidSimScale",
+                    "FidCenterDTheta", "FidCenterShiftX", "FidCenterShiftY"));
             }
 
             sb.AppendLine(string.Join(",",
@@ -1155,7 +1157,8 @@ namespace HCB.UI
                 hcbData != null ? Pt(hcbData.Hc2FidDrift) : NullPt(),
                 F(hcbData?.FidCurrentDist),
                 CsvMeasurementData(),
-                F(hcbData?.RightFidSimTheta), F(hcbData?.RightFidSimScale)));
+                F(hcbData?.RightFidSimTheta), F(hcbData?.RightFidSimScale),
+                F(hcbData?.FidCenterDTheta), F(hcbData?.FidCenterShiftX), F(hcbData?.FidCenterShiftY)));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
 

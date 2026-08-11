@@ -167,6 +167,13 @@ namespace HCB.UI
         public double RightFidSimTheta { get; set; }   // 닮음변환 회전각 (deg)
         public double RightFidSimScale { get; set; }   // 닮음변환 스케일 (≈1.0 기대)
 
+        public bool UseFidCenterAlign { get; set; } = false;       // 피듀셜 중심 기준 강체 정렬 ON/OFF
+
+        // 피듀셜 중심 강체 정렬 진단/로그용 (계산 결과 저장)
+        public double FidCenterDTheta { get; set; }    // P→W 피듀셜 각도 변화량 (deg)
+        public double FidCenterShiftX { get; set; }    // P→W 피듀셜 중심 이동량 X
+        public double FidCenterShiftY { get; set; }    // P→W 피듀셜 중심 이동량 Y
+
         // 피듀셜 트래킹 결과
         public Point2D Hc1FidCurrent { get; set; } = Point2D.Zero;
         public Point2D Hc2FidCurrent { get; set; } = Point2D.Zero;

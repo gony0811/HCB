@@ -286,6 +286,18 @@ namespace HCB.UI
             return Point2D.of(rotated.X * scale + pivot.X, rotated.Y * scale + pivot.Y);
         }
 
+        /// <summary>
+        /// 강체 프레임 매핑: source 프레임(중심 srcCenter) → dest 프레임(중심 dstCenter)으로 point를 옮긴다.
+        /// result = dstCenter + R(Θ)·(point - srcCenter). 스케일 없음(강체: 회전+평행이동).
+        /// </summary>
+        public static Point2D MapBetweenFrames(Point2D point, Point2D srcCenter, Point2D dstCenter, double thetaRad)
+        {
+            double dx = point.X - srcCenter.X;
+            double dy = point.Y - srcCenter.Y;
+            var rotated = ApplyRotation(Point2D.of(dx, dy), thetaRad);
+            return Point2D.of(rotated.X + dstCenter.X, rotated.Y + dstCenter.Y);
+        }
+
 
         // ═══════════════════════════════════════════════════════════════════
         //  5. 각도 계산 (atan2 기반)
