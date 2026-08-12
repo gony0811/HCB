@@ -470,6 +470,12 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="8"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <!-- Row 0: Top Die / H_T 회전 -->
@@ -488,36 +494,98 @@
                                 <TextBox   Grid.Row="2" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
                                            Text="{Binding SeqPcLeftPy, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <!-- Row 4: PC Right H_X / P_Y -->
-                                <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-R H_X"/>
+                                <!-- Row 4: PC Left H_Z (초점) -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-L H_Z"/>
                                 <TextBox   Grid.Row="4" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqPcRightHx, UpdateSourceTrigger=PropertyChanged}"/>
-                                <TextBlock Grid.Row="4" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-R P_Y"/>
+                                           Text="{Binding SeqPcLeftHz, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Grid.Row="4" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-R H_Z"/>
                                 <TextBox   Grid.Row="4" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqPcRightHz, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <!-- Row 6: PC Right H_X / P_Y -->
+                                <TextBlock Grid.Row="6" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-R H_X"/>
+                                <TextBox   Grid.Row="6" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqPcRightHx, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Grid.Row="6" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-R P_Y"/>
+                                <TextBox   Grid.Row="6" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
                                            Text="{Binding SeqPcRightPy, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <!-- Row 6: HC1 Left→Right ΔH_X / ΔW_Y -->
-                                <TextBlock Grid.Row="6" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ HC1 ΔH_X"/>
-                                <TextBox   Grid.Row="6" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
+                                <!-- Row 8: HC1 base H_Z / Align Z Gap 적용 -->
+                                <TextBlock Grid.Row="8" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ HC1 H_Z"/>
+                                <TextBox   Grid.Row="8" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqHc1Hz, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Grid.Row="8" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ Align Z보정"/>
+                                <CheckBox  Grid.Row="8" Grid.Column="4" VerticalAlignment="Center"
+                                           Foreground="#ECF0F1"
+                                           IsChecked="{Binding SeqApplyHcAlignZGap}"
+                                           Content="FID_ALIGN_GAP 적용"/>
+
+                                <!-- Row 10: HC1 Left→Right ΔH_X / ΔW_Y -->
+                                <TextBlock Grid.Row="10" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ HC1 ΔH_X"/>
+                                <TextBox   Grid.Row="10" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
                                            Text="{Binding SeqHc1DeltaHx, UpdateSourceTrigger=PropertyChanged}"/>
-                                <TextBlock Grid.Row="6" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ HC1 ΔW_Y"/>
-                                <TextBox   Grid.Row="6" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
+                                <TextBlock Grid.Row="10" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ HC1 ΔW_Y"/>
+                                <TextBox   Grid.Row="10" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
                                            Text="{Binding SeqHc1DeltaWy, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <!-- Row 8: 안내 -->
-                                <TextBlock Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="5"
+                                <!-- Row 12: ⑤ W-Table Offset X / Y -->
+                                <TextBlock Grid.Row="12" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="⑤ Offset X"/>
+                                <TextBox   Grid.Row="12" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding OffsetX, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Grid.Row="12" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="⑤ Offset Y"/>
+                                <TextBox   Grid.Row="12" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding OffsetY, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <!-- Row 14: 안내 -->
+                                <TextBlock Grid.Row="14" Grid.Column="0" Grid.ColumnSpan="5"
                                            Foreground="#3D5A72" FontSize="11" TextWrapping="Wrap"
-                                           Text="⑦ HC1은 현재(PLACE_CENTER) 위치에서 Left를 측정한 뒤, ΔH_X·ΔW_Y 만큼 상대 이동해 Right를 측정합니다."/>
+                                           Text="④ PC 측정은 XY 이동 후 H_Z를 해당 초점으로 하강해 측정합니다. ⑤ W-Table는 PLACE_CENTER + Offset X·Y 로 이동합니다. ⑦ HC1은 H_Z를 초점으로 이동 후 현재 위치에서 Left를 측정하고, ΔH_X·ΔW_Y 상대 이동 후 Right를 측정합니다. Align Z보정 체크 시 촬상 전 h_z/H_Z를 FID_ALIGN_GAP 만큼 이동합니다."/>
                             </Grid>
                         </Border>
 
-                        <!-- 실행 버튼 -->
-                        <Button Style="{StaticResource VisionBtnStyle}"
-                                Content="전체 시퀀스 실행"
-                                Command="{Binding RunFullSequenceCommand}"
-                                IsEnabled="{Binding IsNotBusy}"
-                                Background="#0E4D3C" BorderBrush="#1ABC9C"
-                                Margin="16,0,16,8"/>
+                        <!-- 단계별 실행 버튼 -->
+                        <TextBlock Text="단계별 실행" Foreground="#5E8BAA"
+                                   FontSize="12" FontWeight="SemiBold"
+                                   Margin="16,2,16,4"/>
+                        <UniformGrid Columns="4" Margin="14,0,14,4">
+                            <UniformGrid.Resources>
+                                <Style TargetType="Button" BasedOn="{StaticResource VisionBtnStyle}">
+                                    <Setter Property="Height" Value="38"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Margin" Value="2"/>
+                                    <Setter Property="Background" Value="#12354A"/>
+                                    <Setter Property="BorderBrush" Value="#1C7293"/>
+                                    <Setter Property="IsEnabled" Value="{Binding IsNotBusy}"/>
+                                </Style>
+                            </UniformGrid.Resources>
+                            <Button Content="① Pickup"    Command="{Binding SeqStep1PickupCommand}"/>
+                            <Button Content="② P-Table"   Command="{Binding SeqStep2PTableCommand}"/>
+                            <Button Content="③ H_T 회전"  Command="{Binding SeqStep3RotateCommand}"/>
+                            <Button Content="④ PC 측정"   Command="{Binding SeqStep4PcMeasureCommand}"/>
+                            <Button Content="⑤ W-Table"   Command="{Binding SeqStep5WTableCommand}"/>
+                            <Button Content="⑥ 본딩"      Command="{Binding SeqStep6BondingCommand}"/>
+                            <Button Content="⑦ HC1 측정"  Command="{Binding SeqStep7Hc1MeasureCommand}"/>
+                            <Button Content="⑧ CSV 저장"  Command="{Binding SeqStep8SaveCsvCommand}"/>
+                        </UniformGrid>
+
+                        <!-- 전체 실행 / 결과 초기화 -->
+                        <Grid Margin="16,4,16,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Style="{StaticResource VisionBtnStyle}"
+                                    Content="전체 시퀀스 실행"
+                                    Command="{Binding RunFullSequenceCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"
+                                    Background="#0E4D3C" BorderBrush="#1ABC9C"/>
+                            <Button Grid.Column="2" Style="{StaticResource VisionBtnStyle}"
+                                    Content="결과 초기화" Width="110"
+                                    Command="{Binding SeqClearResultsCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"
+                                    Background="#3A2A1A" BorderBrush="#6A4A2A"/>
+                        </Grid>
 
                         <!-- 진행 상태 -->
                         <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
@@ -546,6 +614,7 @@
                                 <telerik:GridViewDataColumn Header="H_X" DataMemberBinding="{Binding Hx, StringFormat=F4}" Width="90"/>
                                 <telerik:GridViewDataColumn Header="Y축" DataMemberBinding="{Binding YAxisName}" Width="60"/>
                                 <telerik:GridViewDataColumn Header="Y" DataMemberBinding="{Binding Y, StringFormat=F4}" Width="90"/>
+                                <telerik:GridViewDataColumn Header="H_Z" DataMemberBinding="{Binding Hz, StringFormat=F4}" Width="90"/>
                                 <telerik:GridViewDataColumn Header="Vis X (um)" DataMemberBinding="{Binding VisionXUm, StringFormat=F2}" Width="90"/>
                                 <telerik:GridViewDataColumn Header="Vis Y (um)" DataMemberBinding="{Binding VisionYUm, StringFormat=F2}" Width="90"/>
                                 <telerik:GridViewDataColumn Header="Result" DataMemberBinding="{Binding Result}" Width="70"/>

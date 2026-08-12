@@ -19,16 +19,19 @@ namespace HCB.UI
         private readonly EqpCommunicationService _communication;
         private readonly SequenceService _sequenceService;
         private readonly RecipeService _recipeService;
+        private readonly ECParamService _paramService;
         private readonly ILogger _logger;
 
         private IAxis? _hxAxis;
         private IAxis? _wyAxis;
         private IAxis? _pyAxis;
+        private IAxis? _hzAxis;
 
         // 모션 정보 표시용 (XAML에서 CurrentPosition을 실시간 바인딩)
         public IAxis? HxAxis => _hxAxis;
         public IAxis? WyAxis => _wyAxis;
         public IAxis? PyAxis => _pyAxis;
+        public IAxis? HzAxis => _hzAxis;
         // 카메라에 따른 Y축: PC → P_Y, HC → W_Y
         public IAxis? MotionYAxis => IsPc ? _pyAxis : _wyAxis;
 
@@ -92,10 +95,16 @@ namespace HCB.UI
         [ObservableProperty] private double seqHtRotation;        // 3) H_T 회전 값 (mm/deg, 축 단위)
         [ObservableProperty] private double seqPcLeftHx;          // 4) PC Left 측정 H_X
         [ObservableProperty] private double seqPcLeftPy;          // 4) PC Left 측정 P_Y
+        [ObservableProperty] private double seqPcLeftHz;          // 4) PC Left 측정 H_Z (초점)
         [ObservableProperty] private double seqPcRightHx;         // 4) PC Right 측정 H_X
         [ObservableProperty] private double seqPcRightPy;         // 4) PC Right 측정 P_Y
+        [ObservableProperty] private double seqPcRightHz;         // 4) PC Right 측정 H_Z (초점)
+        [ObservableProperty] private double seqHc1Hz;            // 7) HC1 측정 base H_Z (초점)
         [ObservableProperty] private double seqHc1DeltaHx;        // 7) HC1 Left→Right H_X 이동량
         [ObservableProperty] private double seqHc1DeltaWy;        // 7) HC1 Left→Right W_Y 이동량
+        [ObservableProperty] private bool seqApplyHcAlignZGap = true;  // 7) HC1 Align: FID_ALIGN_GAP 초점 이동 적용
+        [ObservableProperty] private double offsetX;             // 5) W-Table PLACE_CENTER Offset X
+        [ObservableProperty] private double offsetY;             // 5) W-Table PLACE_CENTER Offset Y
         [ObservableProperty] private string seqStatus = "-";
 
         // 전체 시퀀스 측정 결과
@@ -106,16 +115,19 @@ namespace HCB.UI
             EqpCommunicationService communication,
             SequenceService sequenceService,
             RecipeService recipeService,
+            ECParamService eCParamService,
             ILogger logger)
         {
             _communication = communication;
             _sequenceService = sequenceService;
             _recipeService = recipeService;
+            _paramService = eCParamService;
             _logger = logger.ForContext<VisionTabViewModel>();
             var device = deviceManager.GetDevice<PowerPmacDevice>("PMAC");
             _hxAxis = device.FindMotionByName(MotionExtensions.H_X);
             _wyAxis = device.FindMotionByName(MotionExtensions.W_Y);
             _pyAxis = device.FindMotionByName(MotionExtensions.P_Y);
+            _hzAxis = device.FindMotionByName(MotionExtensions.H_Z);
 
             _sequenceService.InterlockActivated += OnInterlockActivated;
         }
@@ -401,94 +413,204 @@ namespace HCB.UI
         //  8) 모션·비전 측정값 CSV 저장
         // ══════════════════════════════════════════════
 
-        [RelayCommand]
-        public async Task RunFullSequence()
+        // 개별 스텝을 IsNotBusy 가드 + 취소/예외 처리로 감싸 실행
+        private async Task RunSeqStep(string name, Func<CancellationToken, Task> body)
         {
             if (!IsNotBusy) return;
             IsNotBusy = false;
-            SeqResults.Clear();
             var ct = GetToken();
-            try
-            {
-                // 1) Top Die Pickup (저배 측정 → 픽업)
-                SeqStatus = $"1) Top Die #{SeqTopDie} 저배 측정...";
-                var lowAlign = await _sequenceService.TopLowMeasure(
-                    SeqTopDie, MarkType.DIE_CENTER_TOP, ct);
-                SeqStatus = "1) Top Die Pickup...";
-                await _sequenceService.DTablePickup(DieType.TOP, SeqTopDie, lowAlign, ct);
-
-                // 2) P-Table 이동 + 3) H_T 회전
-                SeqStatus = "2) P-Table 이동 · 3) H_T 회전...";
-                await _sequenceService.Init_Head(ct);
-                await _sequenceService.MotionsMove(MotionExtensions.H_T, SeqHtRotation, ct);
-
-                // 4) PC로 Top Align Mark 측정 (Left / Right)
-                SeqStatus = "4) PC Left 이동·측정...";
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, SeqPcLeftHx, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.P_Y, SeqPcLeftPy, ct));
-                var pcLeft = await MeasureAlign(CameraType.PC_HIGH, DirectType.LEFT, ct);
-                AddSeqResult("4.PC", CameraType.PC_HIGH, DirectType.LEFT, MotionExtensions.P_Y, _pyAxis, pcLeft);
-
-                SeqStatus = "4) PC Right 이동·측정...";
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, SeqPcRightHx, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.P_Y, SeqPcRightPy, ct));
-                var pcRight = await MeasureAlign(CameraType.PC_HIGH, DirectType.RIGHT, ct);
-                AddSeqResult("4.PC", CameraType.PC_HIGH, DirectType.RIGHT, MotionExtensions.P_Y, _pyAxis, pcRight);
-
-                // 5) W-Table(PLACE_CENTER) 이동
-                SeqStatus = "5) W-Table PLACE_CENTER 이동...";
-                await _sequenceService.Init_Head(ct);
-                await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", ct),
-                    _sequenceService.MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", ct));
-
-                // 6) 본딩 (Z 하강 → 가압)
-                SeqStatus = "6) 본딩(가압)...";
-                await _sequenceService.BondingCorr(new AlignData(), ct);   // 보정 0 + Z 하강
-                var history = new ObservableCollection<BondingDataPoint>();
-                await _sequenceService.BondingPress(history, ct);
-
-                // 7) HC1으로 Top Align Mark 측정 (Left → Right)
-                SeqStatus = "7) HC1 Left 측정...";
-                var hc1Left = await MeasureAlign(CameraType.HC1_HIGH, DirectType.LEFT, ct);
-                AddSeqResult("7.HC1", CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, _wyAxis, hc1Left);
-
-                SeqStatus = "7) HC1 Left→Right 이동·측정...";
-                await Task.WhenAll(
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, SeqHc1DeltaHx, ct),
-                    _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, SeqHc1DeltaWy, ct));
-                var hc1Right = await MeasureAlign(CameraType.HC1_HIGH, DirectType.RIGHT, ct);
-                AddSeqResult("7.HC1", CameraType.HC1_HIGH, DirectType.RIGHT, MotionExtensions.W_Y, _wyAxis, hc1Right);
-
-                // 8) CSV 저장
-                await SaveSequenceCsv(ct);
-                SeqStatus = $"완료 — {SeqResults.Count}개 측정, CSV 저장됨";
-                _logger.Information("전체 시퀀스 완료 — {Count}개 측정", SeqResults.Count);
-            }
-            catch (OperationCanceledException) { SeqStatus = "취소됨"; }
+            try { await body(ct); }
+            catch (OperationCanceledException) { SeqStatus = $"{name} — 취소됨"; }
             catch (Exception e)
             {
-                _logger.Error(e, "RunFullSequence 실패");
-                SeqStatus = $"오류: {e.Message}";
+                _logger.Error(e, "{Step} 실패", name);
+                SeqStatus = $"오류({name}): {e.Message}";
             }
             finally { IsNotBusy = true; }
         }
 
-        // 지정 카메라·방향으로 Align Mark 측정 (AF → Vision)
-        private async Task<VisionMarkPositionResponse?> MeasureAlign(
-            CameraType cam, DirectType dir, CancellationToken ct)
+        // ── 개별 스텝 커맨드 (단계별 실행) ──
+        [RelayCommand] public Task SeqStep1Pickup() => RunSeqStep("① Pickup", Step1PickupCore);
+        [RelayCommand] public Task SeqStep2PTable() => RunSeqStep("② P-Table 이동", Step2PTableCore);
+        [RelayCommand] public Task SeqStep3Rotate() => RunSeqStep("③ H_T 회전", Step3RotateCore);
+        [RelayCommand] public Task SeqStep4PcMeasure() => RunSeqStep("④ PC 측정", Step4PcMeasureCore);
+        [RelayCommand] public Task SeqStep5WTable() => RunSeqStep("⑤ W-Table 이동", Step5WTableCore);
+        [RelayCommand] public Task SeqStep6Bonding() => RunSeqStep("⑥ 본딩", Step6BondingCore);
+        [RelayCommand] public Task SeqStep7Hc1Measure() => RunSeqStep("⑦ HC1 측정", Step7Hc1MeasureCore);
+        [RelayCommand] public Task SeqStep8SaveCsv() => RunSeqStep("⑧ CSV 저장", Step8SaveCsvCore);
+
+        [RelayCommand]
+        public void SeqClearResults()
         {
-            await _communication.RequestAFStart(cam, MarkType.ALIGN_MARK, ct);
-            var r = await _communication.RequestVisionMarkPosition(
-                MarkType.ALIGN_MARK, cam, dir.ToString());
-            if (r == null) throw new Exception($"{cam} {dir} 비전 응답 null");
-            if (r.Result == Result.NG) throw new Exception($"{cam} {dir} 비전 측정 실패");
-            return r;
+            SeqResults.Clear();
+            SeqStatus = "측정 결과 초기화됨";
         }
 
-        // 측정 시점의 모션(H_X, Y축) + 비전 결과를 한 행으로 기록
+        // ── 전체 시퀀스 (①~⑧ 연속 실행) ──
+        [RelayCommand]
+        public Task RunFullSequence() => RunSeqStep("전체 시퀀스", async ct =>
+        {
+            SeqResults.Clear();
+            await Step1PickupCore(ct);
+            await Step2PTableCore(ct);
+            await Step3RotateCore(ct);
+            await Step4PcMeasureCore(ct);
+            await Step5WTableCore(ct);
+            await Step6BondingCore(ct);
+            await Step7Hc1MeasureCore(ct);
+            await Step8SaveCsvCore(ct);
+            SeqStatus = $"전체 완료 — {SeqResults.Count}개 측정, CSV 저장됨";
+            _logger.Information("전체 시퀀스 완료 — {Count}개 측정", SeqResults.Count);
+        });
+
+        // ══════════════════════════════════════════════
+        //  스텝 구현 (전체·개별 공용)
+        // ══════════════════════════════════════════════
+
+        // ① Top Die Pickup (저배 측정 → 픽업). 개별 실행 시 측정 결과 초기화.
+        private async Task Step1PickupCore(CancellationToken ct)
+        {
+            SeqResults.Clear();
+            SeqStatus = $"① Top Die #{SeqTopDie} 저배 측정...";
+            var lowAlign = await _sequenceService.TopLowMeasure(SeqTopDie, MarkType.DIE_CENTER_TOP, ct);
+            SeqStatus = "① Top Die Pickup...";
+            await _sequenceService.MotionsMove(MotionExtensions.H_T, 0, ct);
+            await _sequenceService.DTablePickup(DieType.TOP, SeqTopDie, lowAlign, ct);
+            SeqStatus = "① Pickup 완료";
+        }
+
+        // ② P-Table 이동 (Head 안전 위치 상승)
+        private async Task Step2PTableCore(CancellationToken ct)
+        {
+            SeqStatus = "② P-Table 이동(Head 안전 위치)...";
+            await _sequenceService.Init_Head(ct);
+            SeqStatus = "② P-Table 이동 완료";
+        }
+
+        // ③ H_T 회전 (사용자 설정)
+        private async Task Step3RotateCore(CancellationToken ct)
+        {
+            SeqStatus = $"③ H_T 회전 {SeqHtRotation:F4} ...";
+            await _sequenceService.MotionsMove(MotionExtensions.H_T, SeqHtRotation, ct);
+            SeqStatus = "③ H_T 회전 완료";
+        }
+
+        // ④ PC로 Top Align Mark 측정 (Left / Right). XY 이동 후 H_Z 초점 하강.
+        private async Task Step4PcMeasureCore(CancellationToken ct)
+        {
+            SeqStatus = "④ PC Left 이동·측정...";
+            await Task.WhenAll(
+                _sequenceService.MotionsMove(MotionExtensions.H_X, SeqPcLeftHx, ct),
+                _sequenceService.MotionsMove(MotionExtensions.P_Y, SeqPcLeftPy, ct));
+            await _sequenceService.MotionsMove(MotionExtensions.H_Z, SeqPcLeftHz, ct);
+            var pcLeft = await MeasureAlign(CameraType.PC_HIGH, DirectType.LEFT, false, ct);
+            AddSeqResult("4.PC", CameraType.PC_HIGH, DirectType.LEFT, MotionExtensions.P_Y, _pyAxis, pcLeft);
+
+            SeqStatus = "④ PC Right 이동·측정...";
+            await Task.WhenAll(
+                _sequenceService.MotionsMove(MotionExtensions.H_X, SeqPcRightHx, ct),
+                _sequenceService.MotionsMove(MotionExtensions.P_Y, SeqPcRightPy, ct));
+            await _sequenceService.MotionsMove(MotionExtensions.H_Z, SeqPcRightHz, ct);
+            var pcRight = await MeasureAlign(CameraType.PC_HIGH, DirectType.RIGHT, false, ct);
+            AddSeqResult("4.PC", CameraType.PC_HIGH, DirectType.RIGHT, MotionExtensions.P_Y, _pyAxis, pcRight);
+            SeqStatus = "④ PC 측정 완료";
+        }
+
+        // ⑤ W-Table(PLACE_CENTER) 이동 — OffsetX/Y 적용
+        private async Task Step5WTableCore(CancellationToken ct)
+        {
+            SeqStatus = "⑤ W-Table(PLACE_CENTER) 이동...";
+            await _sequenceService.Init_Head(ct);
+            await Task.WhenAll(
+                _sequenceService.MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", offsetX, ct),
+                _sequenceService.MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", offsetY, ct));
+            SeqStatus = $"⑤ W-Table 이동 완료 (Offset X:{offsetX:F4}, Y:{offsetY:F4})";
+        }
+
+        // ⑥ 본딩 (Z 하강 → 가압)
+        private async Task Step6BondingCore(CancellationToken ct)
+        {
+            SeqStatus = "⑥ 본딩 Z 하강...";
+            double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
+            double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
+            double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
+            double readyPosition = await _sequenceService.GetRecipe("READY_POSITION");
+            await _sequenceService.MotionsMove(MotionExtensions.H_Z,
+                shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
+
+            SeqStatus = "⑥ 본딩(가압)...";
+            var history = new ObservableCollection<BondingDataPoint>();
+            await _sequenceService.BondingPress(history, ct);
+            SeqStatus = $"⑥ 본딩 완료 — {history.Count}개 포인트";
+        }
+
+        // ⑦ HC1으로 Top Align Mark 측정 (Left → Right)
+        private async Task Step7Hc1MeasureCore(CancellationToken ct)
+        {
+            SeqStatus = "⑦ HC1 초점(H_Z) 이동...";
+            await _sequenceService.MotionsMove(MotionExtensions.H_Z, SeqHc1Hz, ct);
+
+            SeqStatus = "⑦ HC1 Left 측정...";
+            var hc1Left = await MeasureAlign(CameraType.HC1_HIGH, DirectType.LEFT, SeqApplyHcAlignZGap, ct);
+            AddSeqResult("7.HC1", CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, _wyAxis, hc1Left);
+
+            SeqStatus = "⑦ HC1 Left→Right 이동·측정...";
+            await Task.WhenAll(
+                _sequenceService.RelativeMotionsMove(MotionExtensions.H_X, SeqHc1DeltaHx, ct),
+                _sequenceService.RelativeMotionsMove(MotionExtensions.W_Y, SeqHc1DeltaWy, ct));
+            var hc1Right = await MeasureAlign(CameraType.HC1_HIGH, DirectType.RIGHT, SeqApplyHcAlignZGap, ct);
+            AddSeqResult("7.HC1", CameraType.HC1_HIGH, DirectType.RIGHT, MotionExtensions.W_Y, _wyAxis, hc1Right);
+            SeqStatus = "⑦ HC1 측정 완료";
+        }
+
+        // ⑧ 모션·비전 측정값 CSV 저장
+        private async Task Step8SaveCsvCore(CancellationToken ct)
+        {
+            await SaveSequenceCsv(ct);
+            SeqStatus = $"⑧ CSV 저장 완료 — {SeqResults.Count}개 측정";
+        }
+
+        // 지정 카메라·방향으로 Align Mark 측정 (AF → Vision)
+        //  · applyHcAlignZGap=true 이고 HC1/HC2 카메라이면 촬상 전 h_z/H_Z를
+        //    FID_ALIGN_GAP 만큼 이동해 Align 초점을 맞추고, 측정 후 복귀한다.
+        private async Task<VisionMarkPositionResponse?> MeasureAlign(
+            CameraType cam, DirectType dir, bool applyHcAlignZGap, CancellationToken ct)
+        {
+            bool zMove = applyHcAlignZGap &&
+                         cam is CameraType.HC1_HIGH or CameraType.HC2_HIGH;
+            double gap = 0;
+
+            if (zMove)
+            {
+                gap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, -gap, ct);
+                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, gap, ct);
+            }
+
+            try
+            {
+                await _communication.RequestAFStart(cam, MarkType.ALIGN_MARK, ct);
+                var r = await _communication.RequestVisionMarkPosition(
+                    MarkType.ALIGN_MARK, cam, dir.ToString());
+                if (r == null) throw new Exception($"{cam} {dir} 비전 응답 null");
+                if (r.Result == Result.NG) throw new Exception($"{cam} {dir} 비전 측정 실패");
+                return r;
+            }
+            finally
+            {
+                if (zMove)
+                {
+                    try
+                    {
+                        await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, -gap, ct);
+                        await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, gap, ct);
+                    }
+                    catch (Exception e) { _logger.Warning(e, "HC Align Z 복귀 실패"); }
+                }
+            }
+        }
+
+        // 측정 시점의 모션(H_X, Y축, H_Z) + 비전 결과를 한 행으로 기록
         private void AddSeqResult(string step, CameraType cam, DirectType dir,
             string yAxisName, IAxis? yAxis, VisionMarkPositionResponse? r)
         {
@@ -501,6 +623,7 @@ namespace HCB.UI
                 Hx = _hxAxis?.CurrentPosition ?? 0,
                 YAxisName = yAxisName,
                 Y = yAxis?.CurrentPosition ?? 0,
+                Hz = _hzAxis?.CurrentPosition ?? 0,
                 VisionX = r?.X ?? double.NaN,
                 VisionY = r?.Y ?? double.NaN,
                 Result = r?.Result.ToString() ?? "NULL",
@@ -519,12 +642,12 @@ namespace HCB.UI
                 string path = Path.Combine(folder, $"FullSequence_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
 
                 var sb = new StringBuilder();
-                sb.AppendLine("Timestamp,Step,Camera,Direction,HtRotation,H_X,YAxis,YValue,VisionX,VisionY,VisionX_um,VisionY_um,Result");
+                sb.AppendLine("Timestamp,Step,Camera,Direction,HtRotation,H_X,YAxis,YValue,H_Z,VisionX,VisionY,VisionX_um,VisionY_um,Result");
                 var ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 foreach (var p in SeqResults)
                 {
                     sb.AppendLine($"{ts},{p.Step},{p.Camera},{p.Direction}," +
-                                  $"{p.HtRotation:F6},{p.Hx:F6},{p.YAxisName},{p.Y:F6}," +
+                                  $"{p.HtRotation:F6},{p.Hx:F6},{p.YAxisName},{p.Y:F6},{p.Hz:F6}," +
                                   $"{p.VisionX:F6},{p.VisionY:F6}," +
                                   $"{p.VisionX * 1000.0:F2},{p.VisionY * 1000.0:F2},{p.Result}");
                 }
@@ -738,6 +861,7 @@ namespace HCB.UI
         public double Hx { get; set; }
         public string YAxisName { get; set; } = "";
         public double Y { get; set; }
+        public double Hz { get; set; }
         public double VisionX { get; set; }
         public double VisionY { get; set; }
         public string Result { get; set; } = "";
