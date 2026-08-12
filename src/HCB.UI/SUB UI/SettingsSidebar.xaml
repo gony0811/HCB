@@ -292,6 +292,38 @@
             </Button.Style>
         </Button>
 
+        <!-- 재측정 (ReMeasure — 보정 후 P-TABLE 복귀 재측정 + 재보정) -->
+        <Button Margin="0,0,0,14" Height="38" Cursor="Hand"
+                Command="{Binding Settings.ChangeReMeasureCommand}">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd" Background="#1A2332" BorderBrush="#2A3A4A"
+                                        BorderThickness="1" CornerRadius="6" Padding="10,4">
+                                    <TextBlock x:Name="Txt" Text="재측정 OFF" Foreground="#8899AA"
+                                               FontSize="13" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Settings.ReMeasureAfterCorr}" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#0F6E56"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#1D9E75"/>
+                                        <Setter TargetName="Txt" Property="Text" Value="재측정 ON"/>
+                                        <Setter TargetName="Txt" Property="Foreground" Value="#E1F5EE"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Button.Style>
+        </Button>
+
         <!-- ── CSV EXPORT SETTINGS ── -->
         <Rectangle Height="1" Fill="#1C3A52" Margin="0,0,0,14"/>
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">

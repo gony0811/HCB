@@ -148,6 +148,12 @@ namespace HCB.UI
         [ObservableProperty] private double fiducialHcAngle;
         [ObservableProperty] private double fiducialWaferAngle;
 
+        // ── 재측정(보정 후 P-TABLE 복귀) 잔차 결과 ────────────
+        //   값이 null 이면 이번 사이클에서 재측정을 수행하지 않은 것으로, CSV에는 빈 칸으로 기록된다.
+        [ObservableProperty] private double? reMeasureResultX;
+        [ObservableProperty] private double? reMeasureResultY;
+        [ObservableProperty] private double? reMeasureResultT;
+
         // ── CSV 저장 설정 ─────────────────────────────────────
         [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
         [ObservableProperty] private string csvVernierFileName = "버니어 측정 데이터_{date}.csv";
@@ -734,6 +740,9 @@ namespace HCB.UI
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); TrackStep("TopFull", StepState.Idle); TrackStep("TopFullExMeasure", StepState.Idle); return; }
 
+                // 이번 사이클 재측정 결과 초기화 (미수행 시 CSV 빈 칸)
+                ReMeasureResultX = ReMeasureResultY = ReMeasureResultT = null;
+
                 // 1. 회전중심 + 카메라 거리 측정 (Pickup 이전) + 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
                 hcbData = await _sequenceService.MeasureCamDistAndHcro(NewAlignData(), ct);
@@ -764,7 +773,12 @@ namespace HCB.UI
 
                 if (!ValidateAlignDistances())
                     throw new Exception("Top/Btm 선분 길이 오차가 허용 범위를 초과했습니다.");
-                // 6. 본딩    
+
+                // 5.5 재측정 (옵션) — 보정 직후 P-TABLE로 복귀해 재측정 → 잔차 기록 → 재보정
+                if (Settings.ReMeasureAfterCorr)
+                    await ReMeasure(placeCenter, ct);
+
+                // 6. 본딩
                 TopBondingState = StepState.InProgress;
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, ct));
@@ -825,6 +839,47 @@ namespace HCB.UI
             {
                 ExportHcbData();
             }
+        }
+
+        // ═════════════════════════════════════════════════════
+        //  재측정 (보정 후 P-TABLE 복귀 → 재측정 → 재보정)
+        // ═════════════════════════════════════════════════════
+
+        /// <summary>
+        /// 보정 완료 시점에 다시 P-TABLE로 복귀해 Top/Btm 고배율을 재측정하고,
+        /// 남은 잔차(ResultX/Y/T)를 계산해 CSV용 필드에 기록한 뒤 한 번 더 BondingCorr로 재보정한다.
+        /// 원본 측정 데이터(hcbData)는 훼손하지 않도록 복사본(reData)에서 수행한다.
+        /// </summary>
+        private async Task ReMeasure(Point2D placeCenter, CancellationToken ct)
+        {
+            // 캘리브레이션·모드 플래그를 그대로 이어받되 원본 마크는 보존
+            var reData = hcbData.Clone();
+
+            // Top 고배율 재측정 (P-TABLE 복귀)
+            TopHighAlignState = StepState.InProgress;
+            reData = await _sequenceService.TopHighAlign(reData, ct);
+            _sequenceService.ProcessMeasurement(reData, 1);
+            TopHighAlignState = StepState.Completed;
+
+            // Btm 고배율 재측정
+            BtmHighAlignState = StepState.InProgress;
+            reData = await _sequenceService.BtmHighAlign(reData, ct, placeCenter);
+            _sequenceService.ProcessMeasurement(reData, 3);
+            BtmHighAlignState = StepState.Completed;
+
+            // 좌표계 통합 → 잔차 계산
+            await _sequenceService.CoordinateSystemIntegration(reData, ct);
+            _sequenceService.ProcessMeasurement(reData, 2);
+
+            ReMeasureResultX = reData.ResultX;
+            ReMeasureResultY = reData.ResultY;
+            ReMeasureResultT = reData.ResultT;
+
+            _logger.Information("재측정 잔차 — X={X:F6}, Y={Y:F6}, T={T:F6}",
+                reData.ResultX, reData.ResultY, reData.ResultT);
+
+            // 재보정 — 잔차만큼 축 이동
+            await _sequenceService.BondingCorr(reData, ct);
         }
 
         // ═════════════════════════════════════════════════════
@@ -1115,7 +1170,8 @@ namespace HCB.UI
                     "W_HC_Fid_DX", "W_HC_Fid_DY", "W_HC_Fid_Dist", "W_HC_Fid_Theta",
                     "W_HC_Align_L_X", "W_HC_Align_L_Y", "W_HC_Align_R_X", "W_HC_Align_R_Y",
                     "W_HC_Align_DX", "W_HC_Align_DY", "W_HC_Align_Dist", "W_HC_Align_Theta",
-                    "RightFidSimTheta", "RightFidSimScale"));
+                    "RightFidSimTheta", "RightFidSimScale",
+                    "ReMeasure_ResultX", "ReMeasure_ResultY", "ReMeasure_ResultT"));
             }
 
             sb.AppendLine(string.Join(",",
@@ -1155,7 +1211,8 @@ namespace HCB.UI
                 hcbData != null ? Pt(hcbData.Hc2FidDrift) : NullPt(),
                 F(hcbData?.FidCurrentDist),
                 CsvMeasurementData(),
-                F(hcbData?.RightFidSimTheta), F(hcbData?.RightFidSimScale)));
+                F(hcbData?.RightFidSimTheta), F(hcbData?.RightFidSimScale),
+                F(ReMeasureResultX), F(ReMeasureResultY), F(ReMeasureResultT)));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
 

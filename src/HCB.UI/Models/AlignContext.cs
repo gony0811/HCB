@@ -188,6 +188,12 @@ namespace HCB.UI
         //   HcRO 회전중심 계산용 raw 측정점(0°/±0.75°). 계산은 ComputeHcroCenter에서.
         public System.Collections.Generic.List<Point2D> Hc1RoRaw { get; set; }
         public System.Collections.Generic.List<Point2D> Hc2RoRaw { get; set; }
+
+        /// <summary>
+        /// 얕은 복사본을 생성한다. 캘리브레이션(Hcro/Hc2Offset/Hc1RoRaw 등)과 모드 플래그를
+        /// 그대로 이어받아, 원본을 훼손하지 않고 재측정 등 별도 측정 패스를 수행할 때 사용한다.
+        /// </summary>
+        public AlignData Clone() => (AlignData)MemberwiseClone();
     }
 
     public class FiducialAngleResult

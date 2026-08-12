@@ -12,6 +12,7 @@ namespace HCB.UI
         [ObservableProperty] private bool avgMode = true;
         [ObservableProperty] private bool use2DMapping = true;
         [ObservableProperty] private bool measureVernierAfterBonding = false;
+        [ObservableProperty] private bool reMeasureAfterCorr = false;   // 보정 후 P-TABLE 재측정 + 재보정
         [ObservableProperty] private TracingMode tracingMode = TracingMode.Manual;
         [ObservableProperty] private bool fiducialTracing = true;
         [ObservableProperty] private bool btmIndividualMeasure = true;
@@ -31,6 +32,9 @@ namespace HCB.UI
 
         [RelayCommand]
         public void ChangeMeasureVernier() => MeasureVernierAfterBonding = !MeasureVernierAfterBonding;
+
+        [RelayCommand]
+        public void ChangeReMeasure() => ReMeasureAfterCorr = !ReMeasureAfterCorr;
 
         [RelayCommand]
         public void CycleTracingMode()
