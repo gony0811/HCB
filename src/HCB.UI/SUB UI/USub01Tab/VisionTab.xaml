@@ -439,6 +439,121 @@
 
                         <Rectangle Height="1" Fill="#1C3A52" Margin="16,8"/>
 
+                        <!-- ═══ 전체 시퀀스 ═══ -->
+                        <TextBlock Text="전체 시퀀스 (Pickup → PC측정 → 본딩 → HC1측정)" Foreground="#1ABC9C"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Margin="16,4,16,4"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap"
+                                   Margin="16,0,16,8">
+                            ① Top Die Pickup → ② P-Table 이동 → ③ H_T 회전 → ④ PC로 Top Align 측정(L/R)
+                            → ⑤ W-Table(PLACE_CENTER) → ⑥ 본딩 → ⑦ HC1으로 Top Align 측정(L→R) → ⑧ CSV 저장.
+                            아래 값은 모두 사용자가 지정합니다 (mm, 축 단위).
+                        </TextBlock>
+
+                        <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Row 0: Top Die / H_T 회전 -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="① Top Die"/>
+                                <TextBox   Grid.Row="0" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqTopDie, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Grid.Row="0" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="③ H_T 회전"/>
+                                <TextBox   Grid.Row="0" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqHtRotation, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <!-- Row 2: PC Left H_X / P_Y -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-L H_X"/>
+                                <TextBox   Grid.Row="2" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqPcLeftHx, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-L P_Y"/>
+                                <TextBox   Grid.Row="2" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqPcLeftPy, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <!-- Row 4: PC Right H_X / P_Y -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-R H_X"/>
+                                <TextBox   Grid.Row="4" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqPcRightHx, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Grid.Row="4" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-R P_Y"/>
+                                <TextBox   Grid.Row="4" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqPcRightPy, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <!-- Row 6: HC1 Left→Right ΔH_X / ΔW_Y -->
+                                <TextBlock Grid.Row="6" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ HC1 ΔH_X"/>
+                                <TextBox   Grid.Row="6" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqHc1DeltaHx, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Grid.Row="6" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ HC1 ΔW_Y"/>
+                                <TextBox   Grid.Row="6" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
+                                           Text="{Binding SeqHc1DeltaWy, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <!-- Row 8: 안내 -->
+                                <TextBlock Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="5"
+                                           Foreground="#3D5A72" FontSize="11" TextWrapping="Wrap"
+                                           Text="⑦ HC1은 현재(PLACE_CENTER) 위치에서 Left를 측정한 뒤, ΔH_X·ΔW_Y 만큼 상대 이동해 Right를 측정합니다."/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 실행 버튼 -->
+                        <Button Style="{StaticResource VisionBtnStyle}"
+                                Content="전체 시퀀스 실행"
+                                Command="{Binding RunFullSequenceCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Background="#0E4D3C" BorderBrush="#1ABC9C"
+                                Margin="16,0,16,8"/>
+
+                        <!-- 진행 상태 -->
+                        <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
+                                CornerRadius="6" Margin="16,0,16,8" Padding="14,8">
+                            <TextBlock Text="{Binding SeqStatus}"
+                                       Foreground="#1ABC9C" FontSize="13"
+                                       TextWrapping="Wrap"/>
+                        </Border>
+
+                        <!-- 결과 테이블 -->
+                        <telerik:RadGridView ItemsSource="{Binding SeqResults}"
+                                             AutoGenerateColumns="False"
+                                             IsReadOnly="True"
+                                             ShowGroupPanel="False"
+                                             RowIndicatorVisibility="Collapsed"
+                                             CanUserFreezeColumns="False"
+                                             Margin="16,0,16,12"
+                                             MaxHeight="260"
+                                             FontSize="12"
+                                             FontFamily="Consolas">
+                            <telerik:RadGridView.Columns>
+                                <telerik:GridViewDataColumn Header="Step" DataMemberBinding="{Binding Step}" Width="80"/>
+                                <telerik:GridViewDataColumn Header="Camera" DataMemberBinding="{Binding Camera}" Width="90"/>
+                                <telerik:GridViewDataColumn Header="Dir" DataMemberBinding="{Binding Direction}" Width="70"/>
+                                <telerik:GridViewDataColumn Header="H_T" DataMemberBinding="{Binding HtRotation, StringFormat=F4}" Width="80"/>
+                                <telerik:GridViewDataColumn Header="H_X" DataMemberBinding="{Binding Hx, StringFormat=F4}" Width="90"/>
+                                <telerik:GridViewDataColumn Header="Y축" DataMemberBinding="{Binding YAxisName}" Width="60"/>
+                                <telerik:GridViewDataColumn Header="Y" DataMemberBinding="{Binding Y, StringFormat=F4}" Width="90"/>
+                                <telerik:GridViewDataColumn Header="Vis X (um)" DataMemberBinding="{Binding VisionXUm, StringFormat=F2}" Width="90"/>
+                                <telerik:GridViewDataColumn Header="Vis Y (um)" DataMemberBinding="{Binding VisionYUm, StringFormat=F2}" Width="90"/>
+                                <telerik:GridViewDataColumn Header="Result" DataMemberBinding="{Binding Result}" Width="70"/>
+                            </telerik:RadGridView.Columns>
+                        </telerik:RadGridView>
+
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="16,8"/>
+
                         <!-- ═══ 4. Z축 피듀셜 트래킹 ═══ -->
                         <TextBlock Text="4. Z축 피듀셜 트래킹 (A/B 반복)" Foreground="#9B59B6"
                                    FontSize="14" FontWeight="SemiBold"
