@@ -9,16 +9,21 @@ namespace HCB.UI
         //  측정 처리 (거리 계산 + 로그)
         // ═════════════════════════════════════════════════════
 
-        public void ProcessMeasurement(AlignData data, int phase)
+        // measureTag: 측정 회차 구분용 접두어. null/빈문자면 1차(기존 "[측정N]"),
+        //   재측정 시 "2차"를 넘기면 로그가 "[2차][측정N]"으로 구분되어 수집된다.
+        public void ProcessMeasurement(AlignData data, int phase, string measureTag = null)
         {
             ComputeDistances(data);
             switch (phase)
             {
-                case 1: LogMeasurement1(data); break;
-                case 2: LogMeasurement2(data); break;
-                case 3: LogMeasurement3(data); break;
+                case 1: LogMeasurement1(data, measureTag); break;
+                case 2: LogMeasurement2(data, measureTag); break;
+                case 3: LogMeasurement3(data, measureTag); break;
             }
         }
+
+        private static string MeasureHeader(string measureTag, string baseHeader)
+            => string.IsNullOrEmpty(measureTag) ? baseHeader : $"[{measureTag}]{baseHeader}";
 
         public void ComputeDistances(AlignData data)
         {
@@ -91,10 +96,10 @@ namespace HCB.UI
                 prefix, camera, mark, dx, dy, dist, theta);
         }
 
-        private void LogMeasurement1(AlignData data)
+        private void LogMeasurement1(AlignData data, string measureTag = null)
         {
             if (data == null) return;
-            const string h = "[측정1] P_TABLE";
+            string h = MeasureHeader(measureTag, "[측정1] P_TABLE");
             const string cam = "PC_Camera";
 
             LogVisionMark(h, cam, "Fiducial", "Right", data.TopRightFidRaw);
@@ -118,10 +123,10 @@ namespace HCB.UI
             }
         }
 
-        private void LogMeasurement2(AlignData data)
+        private void LogMeasurement2(AlignData data, string measureTag = null)
         {
             if (data?.Hc2Offset == null) return;
-            const string h = "[측정2] P_TABLE";
+            string h = MeasureHeader(measureTag, "[측정2] P_TABLE");
             var offset = data.Hc2Offset;
 
             if (data.Hc1FidCurrent != null && data.Hc2FidCurrent != null)
@@ -155,10 +160,10 @@ namespace HCB.UI
             }
         }
 
-        private void LogMeasurement3(AlignData data)
+        private void LogMeasurement3(AlignData data, string measureTag = null)
         {
             if (data?.Hc2Offset == null) return;
-            const string h = "[측정3] W_TABLE";
+            string h = MeasureHeader(measureTag, "[측정3] W_TABLE");
             var offset = data.Hc2Offset;
 
             if (data.BtmLeftFidRaw != null && data.BtmRightFidRaw != null)

@@ -915,12 +915,12 @@
                                         </Grid.ColumnDefinitions>
                                         <Border Background="#0A1628" BorderBrush="#2A5A8C"
                                                 BorderThickness="1" CornerRadius="4">
-                                            <TextBox Text="{Binding CsvVernierDir, UpdateSourceTrigger=PropertyChanged}"
+                                            <TextBox Text="{Binding Settings.CsvVernierDir, UpdateSourceTrigger=PropertyChanged}"
                                                      Style="{StaticResource DarkTextBox}"/>
                                         </Border>
                                         <Button Grid.Column="1" Width="28" Height="26" Margin="4,0,0,0"
                                                 Background="#1A3A5C" BorderBrush="#2A5A8C" BorderThickness="1"
-                                                Cursor="Hand" Command="{Binding BrowseVernierDirCommand}">
+                                                Cursor="Hand" Command="{Binding Settings.BrowseVernierDirCommand}">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
                                                     <Border Background="{TemplateBinding Background}"
@@ -936,7 +936,7 @@
                                     <TextBlock Text="파일명 ({date} = 날짜)" Foreground="#5E8BAA" FontSize="13" Margin="0,4,0,4"/>
                                     <Border Background="#0A1628" BorderBrush="#2A5A8C"
                                             BorderThickness="1" CornerRadius="4">
-                                        <TextBox Text="{Binding CsvVernierFileName, UpdateSourceTrigger=PropertyChanged}"
+                                        <TextBox Text="{Binding Settings.CsvVernierFileName, UpdateSourceTrigger=PropertyChanged}"
                                                  Style="{StaticResource DarkTextBox}"/>
                                     </Border>
                                 </StackPanel>
@@ -957,12 +957,12 @@
                                         </Grid.ColumnDefinitions>
                                         <Border Background="#0A1628" BorderBrush="#2A5A8C"
                                                 BorderThickness="1" CornerRadius="4">
-                                            <TextBox Text="{Binding CsvDataDir, UpdateSourceTrigger=PropertyChanged}"
+                                            <TextBox Text="{Binding Settings.CsvDataDir, UpdateSourceTrigger=PropertyChanged}"
                                                      Style="{StaticResource DarkTextBox}"/>
                                         </Border>
                                         <Button Grid.Column="1" Width="28" Height="26" Margin="4,0,0,0"
                                                 Background="#1A3A5C" BorderBrush="#2A5A8C" BorderThickness="1"
-                                                Cursor="Hand" Command="{Binding BrowseDataDirCommand}">
+                                                Cursor="Hand" Command="{Binding Settings.BrowseDataDirCommand}">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
                                                     <Border Background="{TemplateBinding Background}"
@@ -978,7 +978,7 @@
                                     <TextBlock Text="파일명 ({date} = 날짜)" Foreground="#5E8BAA" FontSize="13" Margin="0,4,0,4"/>
                                     <Border Background="#0A1628" BorderBrush="#2A5A8C"
                                             BorderThickness="1" CornerRadius="4">
-                                        <TextBox Text="{Binding CsvDataFileName, UpdateSourceTrigger=PropertyChanged}"
+                                        <TextBox Text="{Binding Settings.CsvDataFileName, UpdateSourceTrigger=PropertyChanged}"
                                                  Style="{StaticResource DarkTextBox}"/>
                                     </Border>
                                 </StackPanel>

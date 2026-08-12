@@ -153,11 +153,9 @@ namespace HCB.UI
         //   본딩 데이터 CSV에 별도 행(Kind=ReMeasure)으로 함께 기록한다. null 이면 미수행.
         private AlignData _reMeasureData;
 
-        // ── CSV 저장 설정 ─────────────────────────────────────
-        [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
-        [ObservableProperty] private string csvVernierFileName = "버니어 측정 데이터_{date}.csv";
-        [ObservableProperty] private string csvDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "데이터");
-        [ObservableProperty] private string csvDataFileName = "bonding_hcb_{date}.csv";
+        // ── CSV 저장 설정은 SettingsViewModel(Settings.*)로 일원화 ──
+        //   과거 이 VM에 중복 존재하던 Csv* 프로퍼티는 Export가 읽는 Settings.*와 분리되어
+        //   "저장위치 수정이 반영되지 않는" 원인이 되었으므로 제거하고 Settings.*로 통일한다.
 
         public ObservableCollection<IAxis> JitterAxes { get; } = new();
         public PowerPmacDevice Pmac { get; private set; }
@@ -859,18 +857,18 @@ namespace HCB.UI
             // Top 고배율 재측정 (P-TABLE 복귀) — 보정으로 회전된 H_T 유지 (원복 생략)
             TopHighAlignState = StepState.InProgress;
             reData = await _sequenceService.TopHighAlign(reData, ct, resetHt: false);
-            _sequenceService.ProcessMeasurement(reData, 1);
+            _sequenceService.ProcessMeasurement(reData, 1, "2차");
             TopHighAlignState = StepState.Completed;
 
             // Btm 고배율 재측정
             BtmHighAlignState = StepState.InProgress;
             reData = await _sequenceService.BtmHighAlign(reData, ct, placeCenter);
-            _sequenceService.ProcessMeasurement(reData, 3);
+            _sequenceService.ProcessMeasurement(reData, 3, "2차");
             BtmHighAlignState = StepState.Completed;
 
             // 좌표계 통합 → 잔차 계산
             await _sequenceService.CoordinateSystemIntegration(reData, ct);
-            _sequenceService.ProcessMeasurement(reData, 2);
+            _sequenceService.ProcessMeasurement(reData, 2, "2차");
 
             // 재측정 측정 데이터 전체 보관 → CSV에 Kind=ReMeasure 행으로 기록
             _reMeasureData = reData;
