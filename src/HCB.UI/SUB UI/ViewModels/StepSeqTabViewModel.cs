@@ -148,11 +148,10 @@ namespace HCB.UI
         [ObservableProperty] private double fiducialHcAngle;
         [ObservableProperty] private double fiducialWaferAngle;
 
-        // ── 재측정(보정 후 P-TABLE 복귀) 잔차 결과 ────────────
-        //   값이 null 이면 이번 사이클에서 재측정을 수행하지 않은 것으로, CSV에는 빈 칸으로 기록된다.
-        [ObservableProperty] private double? reMeasureResultX;
-        [ObservableProperty] private double? reMeasureResultY;
-        [ObservableProperty] private double? reMeasureResultT;
+        // ── 재측정(보정 후 P-TABLE 복귀) 결과 ─────────────────
+        //   이번 사이클에서 재측정을 수행하면 그 측정 데이터 전체를 보관하고,
+        //   본딩 데이터 CSV에 별도 행(Kind=ReMeasure)으로 함께 기록한다. null 이면 미수행.
+        private AlignData _reMeasureData;
 
         // ── CSV 저장 설정 ─────────────────────────────────────
         [ObservableProperty] private string csvVernierDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "결과 데이터");
@@ -740,8 +739,8 @@ namespace HCB.UI
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); TrackStep("TopFull", StepState.Idle); TrackStep("TopFullExMeasure", StepState.Idle); return; }
 
-                // 이번 사이클 재측정 결과 초기화 (미수행 시 CSV 빈 칸)
-                ReMeasureResultX = ReMeasureResultY = ReMeasureResultT = null;
+                // 이번 사이클 재측정 결과 초기화 (미수행 시 ReMeasure 행 미기록)
+                _reMeasureData = null;
 
                 // 1. 회전중심 + 카메라 거리 측정 (Pickup 이전) + 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
@@ -837,7 +836,9 @@ namespace HCB.UI
                 _logger.Error(e, "TopRunFullSequence Failed");
             }finally
             {
-                ExportHcbData();
+                ExportHcbData(hcbData, "Bonding");
+                if (_reMeasureData != null)
+                    ExportHcbData(_reMeasureData, "ReMeasure");
             }
         }
 
@@ -871,9 +872,8 @@ namespace HCB.UI
             await _sequenceService.CoordinateSystemIntegration(reData, ct);
             _sequenceService.ProcessMeasurement(reData, 2);
 
-            ReMeasureResultX = reData.ResultX;
-            ReMeasureResultY = reData.ResultY;
-            ReMeasureResultT = reData.ResultT;
+            // 재측정 측정 데이터 전체 보관 → CSV에 Kind=ReMeasure 행으로 기록
+            _reMeasureData = reData;
 
             _logger.Information("재측정 잔차 — X={X:F6}, Y={Y:F6}, T={T:F6}",
                 reData.ResultX, reData.ResultY, reData.ResultT);
@@ -1120,12 +1120,17 @@ namespace HCB.UI
             _logger.Information("Vernier CSV 저장: {Path}", path);
         }
 
-        private void ExportHcbData()
+        private void ExportHcbData() => ExportHcbData(hcbData, "Bonding");
+
+        // kind: 행 구분 태그 ("Bonding" = 본딩 측정, "ReMeasure" = 보정 후 재측정)
+        private void ExportHcbData(AlignData data, string kind)
         {
+            if (data == null) return;
+
             Directory.CreateDirectory(Settings.CsvDataDir);
             var path = Settings.ResolveCsvPath(Settings.CsvDataDir, Settings.CsvDataFileName);
 
-            _sequenceService.ComputeDistances(hcbData);
+            _sequenceService.ComputeDistances(data);
 
             bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
             var sb = new StringBuilder();
@@ -1170,117 +1175,112 @@ namespace HCB.UI
                     "W_HC_Fid_DX", "W_HC_Fid_DY", "W_HC_Fid_Dist", "W_HC_Fid_Theta",
                     "W_HC_Align_L_X", "W_HC_Align_L_Y", "W_HC_Align_R_X", "W_HC_Align_R_Y",
                     "W_HC_Align_DX", "W_HC_Align_DY", "W_HC_Align_Dist", "W_HC_Align_Theta",
-                    "RightFidSimTheta", "RightFidSimScale",
-                    "ReMeasure_ResultX", "ReMeasure_ResultY", "ReMeasure_ResultT"));
+                    "RightFidSimTheta", "RightFidSimScale", "Kind"));
             }
 
             sb.AppendLine(string.Join(",",
                 DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                hcbData?.AvgMove ?? true,
-                hcbData != null ? MarkFields(hcbData.TopRightFidRaw) : NullMark(),
-                hcbData != null ? MarkFields(hcbData.TopRightAlignRaw) : NullMark(),
-                hcbData != null ? MarkFields(hcbData.TopLeftFidRaw) : NullMark(),
-                hcbData != null ? MarkFields(hcbData.TopLeftAlignRaw) : NullMark(),
-                hcbData != null ? PointAsMark(hcbData.BtmRightFidRaw) : NullMark(),
-                hcbData != null ? PointAsMark(hcbData.BtmRightAlignRaw) : NullMark(),
-                hcbData != null ? PointAsMark(hcbData.BtmLeftFidRaw) : NullMark(),
-                hcbData != null ? PointAsMark(hcbData.BtmLeftAlignRaw) : NullMark(),
-                F(hcbData?.PcTRad), F(hcbData?.Hc1Rad), F(hcbData?.Hc2Rad),
-                hcbData?.Hcro != null ? F(hcbData.Hcro.X) : "", hcbData?.Hcro != null ? F(hcbData.Hcro.Y) : "",
-                hcbData?.Hc2Offset != null ? F(hcbData.Hc2Offset.X) : "", hcbData?.Hc2Offset != null ? F(hcbData.Hc2Offset.Y) : "",
-                hcbData?.OffsetXY != null ? F(hcbData.OffsetXY.X) : "", hcbData?.OffsetXY != null ? F(hcbData.OffsetXY.Y) : "",
-                F(hcbData?.OffsetT),
-                hcbData != null ? Pt(hcbData.LDist) : NullPt(), hcbData != null ? Pt(hcbData.RDist) : NullPt(),
-                hcbData != null ? Pt(hcbData.BFL) : NullPt(), hcbData != null ? Pt(hcbData.BFR) : NullPt(),
-                hcbData != null ? Pt(hcbData.BL) : NullPt(), hcbData != null ? Pt(hcbData.BR) : NullPt(),
-                hcbData != null ? Pt(hcbData.TL) : NullPt(), hcbData != null ? Pt(hcbData.TR) : NullPt(),
-                F(hcbData?.SpecTheta), F(hcbData?.BTheta), F(hcbData?.TTheta),
-                F(hcbData?.ThetaF), F(hcbData?.ThetaFRad),
-                hcbData != null ? Pt(hcbData.TCenter) : NullPt(), hcbData != null ? Pt(hcbData.BCenter) : NullPt(),
-                F(hcbData?.ResultX), F(hcbData?.ResultY), F(hcbData?.ResultT),
-                F(hcbData?.BtmAlignDist), F(hcbData?.BtmAlignDistX), F(hcbData?.BtmAlignDistY),
-                F(hcbData?.TopAlignDist), F(hcbData?.TopAlignDistX), F(hcbData?.TopAlignDistY),
-                F(hcbData?.BtmFidDist), F(hcbData?.BtmFidDistX), F(hcbData?.BtmFidDistY),
-                F(hcbData?.TopFidDist), F(hcbData?.TopFidDistX), F(hcbData?.TopFidDistY),
+                data.AvgMove,
+                MarkFields(data.TopRightFidRaw),
+                MarkFields(data.TopRightAlignRaw),
+                MarkFields(data.TopLeftFidRaw),
+                MarkFields(data.TopLeftAlignRaw),
+                PointAsMark(data.BtmRightFidRaw),
+                PointAsMark(data.BtmRightAlignRaw),
+                PointAsMark(data.BtmLeftFidRaw),
+                PointAsMark(data.BtmLeftAlignRaw),
+                F(data.PcTRad), F(data.Hc1Rad), F(data.Hc2Rad),
+                data.Hcro != null ? F(data.Hcro.X) : "", data.Hcro != null ? F(data.Hcro.Y) : "",
+                data.Hc2Offset != null ? F(data.Hc2Offset.X) : "", data.Hc2Offset != null ? F(data.Hc2Offset.Y) : "",
+                data.OffsetXY != null ? F(data.OffsetXY.X) : "", data.OffsetXY != null ? F(data.OffsetXY.Y) : "",
+                F(data.OffsetT),
+                Pt(data.LDist), Pt(data.RDist),
+                Pt(data.BFL), Pt(data.BFR),
+                Pt(data.BL), Pt(data.BR),
+                Pt(data.TL), Pt(data.TR),
+                F(data.SpecTheta), F(data.BTheta), F(data.TTheta),
+                F(data.ThetaF), F(data.ThetaFRad),
+                Pt(data.TCenter), Pt(data.BCenter),
+                F(data.ResultX), F(data.ResultY), F(data.ResultT),
+                F(data.BtmAlignDist), F(data.BtmAlignDistX), F(data.BtmAlignDistY),
+                F(data.TopAlignDist), F(data.TopAlignDistX), F(data.TopAlignDistY),
+                F(data.BtmFidDist), F(data.BtmFidDistX), F(data.BtmFidDistY),
+                F(data.TopFidDist), F(data.TopFidDistX), F(data.TopFidDistY),
                 F(VernierResult?.OffsetX), F(VernierResult?.OffsetY), F(VernierResult?.OffsetT),
-                hcbData != null ? Pt(hcbData.Hc1FidCurrent) : NullPt(),
-                hcbData != null ? Pt(hcbData.Hc1FidRef) : NullPt(),
-                hcbData != null ? Pt(hcbData.Hc1FidDrift) : NullPt(),
-                hcbData != null ? Pt(hcbData.Hc2FidCurrent) : NullPt(),
-                hcbData != null ? Pt(hcbData.Hc2FidRef) : NullPt(),
-                hcbData != null ? Pt(hcbData.Hc2FidDrift) : NullPt(),
-                F(hcbData?.FidCurrentDist),
-                CsvMeasurementData(),
-                F(hcbData?.RightFidSimTheta), F(hcbData?.RightFidSimScale),
-                F(ReMeasureResultX), F(ReMeasureResultY), F(ReMeasureResultT)));
+                Pt(data.Hc1FidCurrent),
+                Pt(data.Hc1FidRef),
+                Pt(data.Hc1FidDrift),
+                Pt(data.Hc2FidCurrent),
+                Pt(data.Hc2FidRef),
+                Pt(data.Hc2FidDrift),
+                F(data.FidCurrentDist),
+                CsvMeasurementData(data),
+                F(data.RightFidSimTheta), F(data.RightFidSimScale), kind));
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
 
-            if (hcbData != null)
-            {
-                _logger.Information(
-                    "선분 길이 — BtmAlign: {BA:F4}mm, TopAlign: {TA:F4}mm, BtmFid: {BF:F4}mm, TopFid: {TF:F4}mm",
-                    hcbData.BtmAlignDist, hcbData.TopAlignDist,
-                    hcbData.BtmFidDist, hcbData.TopFidDist);
-            }
+            _logger.Information(
+                "선분 길이({Kind}) — BtmAlign: {BA:F4}mm, TopAlign: {TA:F4}mm, BtmFid: {BF:F4}mm, TopFid: {TF:F4}mm",
+                kind, data.BtmAlignDist, data.TopAlignDist,
+                data.BtmFidDist, data.TopFidDist);
 
-            _logger.Information("본딩 데이터 저장: {Path}", path);
+            _logger.Information("본딩 데이터 저장({Kind}): {Path}", kind, path);
         }
 
-        private string CsvMeasurementData()
+        private string CsvMeasurementData(AlignData data)
         {
             var vals = new List<string>(40);
-            var offset = hcbData?.Hc2Offset;
+            var offset = data?.Hc2Offset;
 
             // ── 측정1: P_TABLE PC_Camera ──
-            if (hcbData?.TopLeftFidRaw != null && hcbData?.TopRightFidRaw != null)
+            if (data?.TopLeftFidRaw != null && data?.TopRightFidRaw != null)
             {
-                var r = CalibrationMath.CalcRelative(hcbData.TopLeftFidRaw.CenterX, hcbData.TopLeftFidRaw.CenterY,
-                    hcbData.TopRightFidRaw.CenterX, hcbData.TopRightFidRaw.CenterY);
+                var r = CalibrationMath.CalcRelative(data.TopLeftFidRaw.CenterX, data.TopLeftFidRaw.CenterY,
+                    data.TopRightFidRaw.CenterX, data.TopRightFidRaw.CenterY);
                 vals.AddRange(new[] { F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
             }
             else vals.AddRange(new[] { "", "", "", "" });
 
-            if (hcbData?.TopLeftAlignRaw != null && hcbData?.TopRightAlignRaw != null)
+            if (data?.TopLeftAlignRaw != null && data?.TopRightAlignRaw != null)
             {
-                var r = CalibrationMath.CalcRelative(hcbData.TopLeftAlignRaw.CenterX, hcbData.TopLeftAlignRaw.CenterY,
-                    hcbData.TopRightAlignRaw.CenterX, hcbData.TopRightAlignRaw.CenterY);
+                var r = CalibrationMath.CalcRelative(data.TopLeftAlignRaw.CenterX, data.TopLeftAlignRaw.CenterY,
+                    data.TopRightAlignRaw.CenterX, data.TopRightAlignRaw.CenterY);
                 vals.AddRange(new[] { F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
             }
             else vals.AddRange(new[] { "", "", "", "" });
 
             // ── 측정2: P_TABLE HC1/HC2 ──
-            if (offset != null && hcbData?.Hc1FidCurrent != null && hcbData?.Hc2FidCurrent != null)
+            if (offset != null && data?.Hc1FidCurrent != null && data?.Hc2FidCurrent != null)
             {
-                double lx = -hcbData.Hc1FidCurrent.X, ly = -hcbData.Hc1FidCurrent.Y;
-                double rx = offset.X - hcbData.Hc2FidCurrent.X, ry = offset.Y - hcbData.Hc2FidCurrent.Y;
+                double lx = -data.Hc1FidCurrent.X, ly = -data.Hc1FidCurrent.Y;
+                double rx = offset.X - data.Hc2FidCurrent.X, ry = offset.Y - data.Hc2FidCurrent.Y;
                 var r = CalibrationMath.CalcRelative(lx, ly, rx, ry);
                 vals.AddRange(new[] { F(lx), F(ly), F(rx), F(ry), F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
             }
             else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
 
-            if (hcbData?.TL != null && hcbData?.TR != null)
+            if (data?.TL != null && data?.TR != null)
             {
-                var r = CalibrationMath.CalcRelative(hcbData.TL.X, hcbData.TL.Y, hcbData.TR.X, hcbData.TR.Y);
-                vals.AddRange(new[] { F(hcbData.TL.X), F(hcbData.TL.Y), F(hcbData.TR.X), F(hcbData.TR.Y),
+                var r = CalibrationMath.CalcRelative(data.TL.X, data.TL.Y, data.TR.X, data.TR.Y);
+                vals.AddRange(new[] { F(data.TL.X), F(data.TL.Y), F(data.TR.X), F(data.TR.Y),
                     F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
             }
             else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
 
             // ── 측정3: W_TABLE HC1/HC2 ──
-            if (offset != null && hcbData?.BtmLeftFidRaw != null && hcbData?.BtmRightFidRaw != null)
+            if (offset != null && data?.BtmLeftFidRaw != null && data?.BtmRightFidRaw != null)
             {
-                double lx = -hcbData.BtmLeftFidRaw.X, ly = -hcbData.BtmLeftFidRaw.Y;
-                double rx = offset.X - hcbData.BtmRightFidRaw.X, ry = offset.Y - hcbData.BtmRightFidRaw.Y;
+                double lx = -data.BtmLeftFidRaw.X, ly = -data.BtmLeftFidRaw.Y;
+                double rx = offset.X - data.BtmRightFidRaw.X, ry = offset.Y - data.BtmRightFidRaw.Y;
                 var r = CalibrationMath.CalcRelative(lx, ly, rx, ry);
                 vals.AddRange(new[] { F(lx), F(ly), F(rx), F(ry), F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
             }
             else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
 
-            if (offset != null && hcbData?.BtmLeftAlignRaw != null && hcbData?.BtmRightAlignRaw != null)
+            if (offset != null && data?.BtmLeftAlignRaw != null && data?.BtmRightAlignRaw != null)
             {
-                double lx = -hcbData.BtmLeftAlignRaw.X, ly = -hcbData.BtmLeftAlignRaw.Y;
-                double rx = offset.X - hcbData.BtmRightAlignRaw.X, ry = offset.Y - hcbData.BtmRightAlignRaw.Y;
+                double lx = -data.BtmLeftAlignRaw.X, ly = -data.BtmLeftAlignRaw.Y;
+                double rx = offset.X - data.BtmRightAlignRaw.X, ry = offset.Y - data.BtmRightAlignRaw.Y;
                 var r = CalibrationMath.CalcRelative(lx, ly, rx, ry);
                 vals.AddRange(new[] { F(lx), F(ly), F(rx), F(ry), F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
             }
