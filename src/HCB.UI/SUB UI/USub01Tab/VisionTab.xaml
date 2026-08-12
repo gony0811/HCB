@@ -451,7 +451,7 @@
                         </TextBlock>
 
                         <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
-                                CornerRadius="6" Margin="16,0,16,8" Padding="14,10">
+        CornerRadius="6" Margin="16,0,16,8" Padding="14,10">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -481,68 +481,67 @@
                                 <!-- Row 0: Top Die / H_T 회전 -->
                                 <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="① Top Die"/>
                                 <TextBox   Grid.Row="0" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqTopDie, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqTopDie, UpdateSourceTrigger=LostFocus}"/>
                                 <TextBlock Grid.Row="0" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="③ H_T 회전"/>
                                 <TextBox   Grid.Row="0" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqHtRotation, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqHtRotation, UpdateSourceTrigger=LostFocus}"/>
 
                                 <!-- Row 2: PC Left H_X / P_Y -->
                                 <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-L H_X"/>
                                 <TextBox   Grid.Row="2" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqPcLeftHx, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqPcLeftHx, UpdateSourceTrigger=LostFocus}"/>
                                 <TextBlock Grid.Row="2" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-L P_Y"/>
                                 <TextBox   Grid.Row="2" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqPcLeftPy, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqPcLeftPy, UpdateSourceTrigger=LostFocus}"/>
 
                                 <!-- Row 4: PC Left H_Z (초점) -->
                                 <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-L H_Z"/>
                                 <TextBox   Grid.Row="4" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqPcLeftHz, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqPcLeftHz, UpdateSourceTrigger=LostFocus}"/>
                                 <TextBlock Grid.Row="4" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-R H_Z"/>
                                 <TextBox   Grid.Row="4" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqPcRightHz, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqPcRightHz, UpdateSourceTrigger=LostFocus}"/>
 
                                 <!-- Row 6: PC Right H_X / P_Y -->
                                 <TextBlock Grid.Row="6" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-R H_X"/>
                                 <TextBox   Grid.Row="6" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqPcRightHx, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqPcRightHx, UpdateSourceTrigger=LostFocus}"/>
                                 <TextBlock Grid.Row="6" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="④ PC-R P_Y"/>
                                 <TextBox   Grid.Row="6" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqPcRightPy, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqPcRightPy, UpdateSourceTrigger=LostFocus}"/>
 
                                 <!-- Row 8: HC1 base H_Z / Align Z Gap 적용 -->
                                 <TextBlock Grid.Row="8" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ HC1 H_Z"/>
                                 <TextBox   Grid.Row="8" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqHc1Hz, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqHc1Hz, UpdateSourceTrigger=LostFocus}"/>
                                 <TextBlock Grid.Row="8" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ Align Z보정"/>
                                 <CheckBox  Grid.Row="8" Grid.Column="4" VerticalAlignment="Center"
-                                           Foreground="#ECF0F1"
-                                           IsChecked="{Binding SeqApplyHcAlignZGap}"
-                                           Content="FID_ALIGN_GAP 적용"/>
+                   Foreground="#ECF0F1"
+                   IsChecked="{Binding SeqApplyHcAlignZGap}"
+                   Content="FID_ALIGN_GAP 적용"/>
 
                                 <!-- Row 10: HC1 Left→Right ΔH_X / ΔW_Y -->
                                 <TextBlock Grid.Row="10" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ HC1 ΔH_X"/>
                                 <TextBox   Grid.Row="10" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqHc1DeltaHx, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqHc1DeltaHx, UpdateSourceTrigger=LostFocus}"/>
                                 <TextBlock Grid.Row="10" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="⑦ HC1 ΔW_Y"/>
                                 <TextBox   Grid.Row="10" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding SeqHc1DeltaWy, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SeqHc1DeltaWy, UpdateSourceTrigger=LostFocus}"/>
 
                                 <!-- Row 12: ⑤ W-Table Offset X / Y -->
                                 <TextBlock Grid.Row="12" Grid.Column="0" Style="{StaticResource ZTrackLabelStyle}" Text="⑤ Offset X"/>
                                 <TextBox   Grid.Row="12" Grid.Column="1" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding OffsetX, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding OffsetX, UpdateSourceTrigger=LostFocus}"/>
                                 <TextBlock Grid.Row="12" Grid.Column="3" Style="{StaticResource ZTrackLabelStyle}" Text="⑤ Offset Y"/>
                                 <TextBox   Grid.Row="12" Grid.Column="4" Style="{StaticResource ZTrackInputStyle}"
-                                           Text="{Binding OffsetY, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding OffsetY, UpdateSourceTrigger=LostFocus}"/>
 
                                 <!-- Row 14: 안내 -->
                                 <TextBlock Grid.Row="14" Grid.Column="0" Grid.ColumnSpan="5"
-                                           Foreground="#3D5A72" FontSize="11" TextWrapping="Wrap"
-                                           Text="④ PC 측정은 XY 이동 후 H_Z를 해당 초점으로 하강해 측정합니다. ⑤ W-Table는 PLACE_CENTER + Offset X·Y 로 이동합니다. ⑦ HC1은 H_Z를 초점으로 이동 후 현재 위치에서 Left를 측정하고, ΔH_X·ΔW_Y 상대 이동 후 Right를 측정합니다. Align Z보정 체크 시 촬상 전 h_z/H_Z를 FID_ALIGN_GAP 만큼 이동합니다."/>
+                   Foreground="#3D5A72" FontSize="11" TextWrapping="Wrap"
+                   Text="④ PC 측정은 XY 이동 후 H_Z를 해당 초점으로 하강해 측정합니다. ⑤ W-Table는 PLACE_CENTER + Offset X·Y 로 이동합니다. ⑦ HC1은 H_Z를 초점으로 이동 후 현재 위치에서 Left를 측정하고, ΔH_X·ΔW_Y 상대 이동 후 Right를 측정합니다. Align Z보정 체크 시 촬상 전 h_z/H_Z를 FID_ALIGN_GAP 만큼 이동합니다."/>
                             </Grid>
                         </Border>
-
                         <!-- 단계별 실행 버튼 -->
                         <TextBlock Text="단계별 실행" Foreground="#5E8BAA"
                                    FontSize="12" FontWeight="SemiBold"

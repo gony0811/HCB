@@ -522,9 +522,9 @@ namespace HCB.UI
             SeqStatus = "⑤ W-Table(PLACE_CENTER) 이동...";
             await _sequenceService.Init_Head(ct);
             await Task.WhenAll(
-                _sequenceService.MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", offsetX, ct),
-                _sequenceService.MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", offsetY, ct));
-            SeqStatus = $"⑤ W-Table 이동 완료 (Offset X:{offsetX:F4}, Y:{offsetY:F4})";
+                _sequenceService.MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", ct),
+                _sequenceService.MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", ct));
+            SeqStatus = $"⑤ W-Table 이동 완료 (Offset X:{OffsetX:F4}, Y:{OffsetY:F4})";
         }
 
         // ⑥ 본딩 (Z 하강 → 가압)
@@ -548,6 +548,10 @@ namespace HCB.UI
         private async Task Step7Hc1MeasureCore(CancellationToken ct)
         {
             SeqStatus = "⑦ HC1 초점(H_Z) 이동...";
+            await Task.WhenAll(
+                _sequenceService.MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", OffsetX, ct),
+                _sequenceService.MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", OffsetY, ct));
+            await _sequenceService.MotionsMove(MotionExtensions.h_z, 1.8, ct);
             await _sequenceService.MotionsMove(MotionExtensions.H_Z, SeqHc1Hz, ct);
 
             SeqStatus = "⑦ HC1 Left 측정...";
@@ -580,12 +584,12 @@ namespace HCB.UI
                          cam is CameraType.HC1_HIGH or CameraType.HC2_HIGH;
             double gap = 0;
 
-            if (zMove)
-            {
-                gap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
-                await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, -gap, ct);
-                await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, gap, ct);
-            }
+            //if (zMove)
+            //{
+            //    gap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
+            //    await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, -gap, ct);
+            //    await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, gap, ct);
+            //}
 
             try
             {
@@ -598,15 +602,15 @@ namespace HCB.UI
             }
             finally
             {
-                if (zMove)
-                {
-                    try
-                    {
-                        await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, -gap, ct);
-                        await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, gap, ct);
-                    }
-                    catch (Exception e) { _logger.Warning(e, "HC Align Z 복귀 실패"); }
-                }
+                //if (zMove)
+                //{
+                //    try
+                //    {
+                //        await _sequenceService.RelativeMotionsMove(MotionExtensions.H_Z, -gap, ct);
+                //        await _sequenceService.RelativeMotionsMove(MotionExtensions.h_z, gap, ct);
+                //    }
+                //    catch (Exception e) { _logger.Warning(e, "HC Align Z 복귀 실패"); }
+                //}
             }
         }
 
