@@ -154,8 +154,10 @@ namespace HCB.UI
 
         #region Top Die 고배율 측정
 
+        // resetHt: P-Table 이동 시 H_T를 ORIGIN(0)으로 원복할지 여부.
+        //   재측정에서는 보정으로 회전된 H_T를 유지해야 하므로 false로 호출한다.
         public async Task<AlignData> TopHighAlign(
-                AlignData data, CancellationToken ct)
+                AlignData data, CancellationToken ct, bool resetHt = true)
         {
             data ??= new AlignData();
             var total = Stopwatch.StartNew();
@@ -165,9 +167,9 @@ namespace HCB.UI
                 var sw = Stopwatch.StartNew();;
                 if (data.Use2DMapping) await PTable2DMappingOn();   // P-Table 2D Mapping On
                 await Init_Head(ct);    // Head Z축 안전 위치로 이동
-                // P-Table로 이동
+                // P-Table로 이동 (재측정 시 H_T 원복 생략 → 보정된 회전 유지)
                 await Task.WhenAll(
-                    MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct),
+                    resetHt ? MotionsMove(MotionExtensions.H_T, MotionExtensions.ORIGIN, ct) : Task.CompletedTask,
                     MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct),
                     MotionsMove(MotionExtensions.P_Y, MotionExtensions.P_RIGHT_FIDUCIAL_HIGH, ct)
                 );

@@ -855,9 +855,9 @@ namespace HCB.UI
             // 캘리브레이션·모드 플래그를 그대로 이어받되 원본 마크는 보존
             var reData = hcbData.Clone();
 
-            // Top 고배율 재측정 (P-TABLE 복귀)
+            // Top 고배율 재측정 (P-TABLE 복귀) — 보정으로 회전된 H_T 유지 (원복 생략)
             TopHighAlignState = StepState.InProgress;
-            reData = await _sequenceService.TopHighAlign(reData, ct);
+            reData = await _sequenceService.TopHighAlign(reData, ct, resetHt: false);
             _sequenceService.ProcessMeasurement(reData, 1);
             TopHighAlignState = StepState.Completed;
 
