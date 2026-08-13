@@ -447,6 +447,16 @@ namespace HCB.UI
             SeqStatus = "측정 결과 초기화됨";
         }
 
+        // Wafer Loading — Head 안전 위치 상승 후 W_Y 0 이동
+        [RelayCommand]
+        public Task WaferLoad() => RunSeqStep("Wafer Loading", async ct =>
+        {
+            SeqStatus = "Wafer Loading — Head 안전 위치 이동...";
+            await _sequenceService.Init_Head(ct);
+            await _sequenceService.MotionsMove(MotionExtensions.W_Y, 0, ct);
+            SeqStatus = "Wafer Loading 완료";
+        });
+
         // ── 전체 시퀀스 (①~⑧ 연속 실행) ──
         [RelayCommand]
         public Task RunFullSequence() => RunSeqStep("전체 시퀀스", async ct =>

@@ -586,6 +586,14 @@
                                     Background="#3A2A1A" BorderBrush="#6A4A2A"/>
                         </Grid>
 
+                        <!-- Wafer Loading -->
+                        <Button Style="{StaticResource VisionBtnStyle}"
+                                Content="Wafer Loading"
+                                Command="{Binding WaferLoadCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Background="#1A3A5C" BorderBrush="#2A5A8C"
+                                Margin="16,0,16,8"/>
+
                         <!-- 진행 상태 -->
                         <Border Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1"
                                 CornerRadius="6" Margin="16,0,16,8" Padding="14,8">
