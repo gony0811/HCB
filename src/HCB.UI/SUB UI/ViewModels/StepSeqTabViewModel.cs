@@ -1028,7 +1028,8 @@ namespace HCB.UI
             TracingMode = Settings.TracingMode,
             UseBtmIndividualMeasure = Settings.BtmIndividualMeasure,
             UseFiducialTracking = Settings.FiducialTracing,
-            UseRightFidSimilarity = Settings.RightFidSimilarity
+            UseRightFidSimilarity = Settings.RightFidSimilarity,
+            UseFidCenterAlign = Settings.FidCenterAlign
         };
 
         private void UpdateTopMarks()

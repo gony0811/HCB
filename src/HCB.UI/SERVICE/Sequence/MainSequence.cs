@@ -417,7 +417,7 @@ namespace HCB.UI
                 // ── STEP 0: 측정2→3 Theta 변화량을 Top 마크에 반영 ──
                 Point2D topLF, topRF, topLA, topRA;
 
-                if (data.M2FidTheta != 0 && data.M3FidTheta != 0 && !data.UseRightFidSimilarity)
+                if (data.M2FidTheta != 0 && data.M3FidTheta != 0 && !data.UseRightFidSimilarity && !data.UseFidCenterAlign)
                 {
                     double deltaTheta = -(data.M3FidTheta - data.M2FidTheta);
                     double deltaThetaRad = CalibrationMath.ToRadian(deltaTheta);
@@ -480,7 +480,39 @@ namespace HCB.UI
                 //  좌측 피듀셜(bfl)을 고정점으로, P-TABLE 우측 피듀셜(bfr) → W-TABLE 실측 우측 피듀셜로
                 //  매핑하는 닮음변환(회전+균일 스케일)을 구해 Top 얼라인 마크(tl·tr)에 적용하고
                 //  우측 피듀셜을 실측값으로 교체한다. (각도는 이 변환에 포함 → STEP 0 회전은 스킵)
-                if (data.UseRightFidSimilarity)
+                if (data.UseFidCenterAlign)
+                {
+                    // ── STEP 2.5(중심기준): 피듀셜 "중심+각도" 강체 정렬 ──
+                    //  Top 피듀셜 프레임(중심 Ct, 각도 θt) → Btm(W) 피듀셜 프레임(중심 Cw, 각도 θw)으로
+                    //  Top 얼라인 마크(tl·tr)를 강체(회전+평행이동) 매핑한다. 스케일 없음 → 다이 형상 보존.
+                    //  현재 구성상 Top 좌측 피듀셜=bfl, Top 우측 피듀셜=bfl-topFidRel(=기존 default bfr).
+                    Point2D bfrMeasured = Point2D.of(
+                        data.Hc2Offset.X - data.BtmRightFidRaw.X,
+                        data.Hc2Offset.Y - data.BtmRightFidRaw.Y);
+
+                    Point2D topFidL = bfl;                                          // Top 좌 피듀셜 (W 프레임)
+                    Point2D topFidR = Point2D.of(bfl.X - topFidRel.X, bfl.Y - topFidRel.Y); // Top 우 피듀셜
+                    Point2D Ct = Point2D.of((topFidL.X + topFidR.X) / 2.0, (topFidL.Y + topFidR.Y) / 2.0);
+                    Point2D Cw = Point2D.of((bfl.X + bfrMeasured.X) / 2.0, (bfl.Y + bfrMeasured.Y) / 2.0);
+
+                    double thetaT = CalibrationMath.ComputeLineAngle(topFidL, topFidR); // Top 피듀셜 선분 각도
+                    double thetaW = CalibrationMath.ComputeLineAngle(bfl, bfrMeasured); // W 피듀셜 선분 각도
+                    double dTheta = thetaW - thetaT;
+
+                    // Top 얼라인 마크를 Top 피듀셜 프레임 → W 피듀셜 프레임으로 강체 매핑
+                    tl = CalibrationMath.MapBetweenFrames(tl, Ct, Cw, dTheta);
+                    tr = CalibrationMath.MapBetweenFrames(tr, Ct, Cw, dTheta);
+                    bfr = bfrMeasured;   // 우측 피듀셜을 실측으로 교체 → br = bfr - brDist 도 실측 기준
+
+                    data.FidCenterDTheta = CalibrationMath.ToDegree(dTheta);
+                    data.FidCenterShiftX = Cw.X - Ct.X;
+                    data.FidCenterShiftY = Cw.Y - Ct.Y;
+
+                    _logger.Information(
+                        "피듀셜 중심 강체 정렬 — Δθ={T:F4}°, Δcenter=({DX:F6},{DY:F6}), Cw=({CX:F6},{CY:F6})",
+                        data.FidCenterDTheta, data.FidCenterShiftX, data.FidCenterShiftY, Cw.X, Cw.Y);
+                }
+                else if (data.UseRightFidSimilarity)
                 {
                     // 실측 W-TABLE 우측 피듀셜 (기존 주석 대안)
                     Point2D bfrMeasured = Point2D.of(
