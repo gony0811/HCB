@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -567,10 +568,10 @@ namespace HCB.UI
             SeqStatus = "⑦ HC1 측정 완료";
         }
 
-        // ⑧ 모션·비전 측정값 CSV 저장
+        // ⑧ 슬립 테스트 측정값을 한 행으로 직렬화하여 단일 CSV 파일에 누적 저장
         private async Task Step8SaveCsvCore(CancellationToken ct)
         {
-            await SaveSequenceCsv(ct);
+            await SaveSlipTestCsv(ct);
             SeqStatus = $"⑧ CSV 저장 완료 — {SeqResults.Count}개 측정";
         }
 
@@ -634,34 +635,88 @@ namespace HCB.UI
             });
         }
 
-        private async Task SaveSequenceCsv(CancellationToken ct)
+        // 슬립 테스트 1회 실행 결과(PC/HC1 Left·Right 4점)를 한 행으로 직렬화하여
+        // 단일 파일(SlipTest.csv)에 누적 저장한다.
+        //  · 각도            : H_T 회전 지령값(SeqHtRotation)
+        //  · 비전 측정치     : PC/HC Align Mark Left·Right 의 VisionX/Y
+        //  · 모션 측정치     : 각 측정 시점의 H_X / Y(P_Y|W_Y) / H_Z
+        //  · 얼라인 상대거리 : Left↔Right 마크 절대위치(모션+비전) 간 거리 (PC/HC 각각)
+        //  · THETA           : Left→Right 마크 라인의 각도(deg) (PC/HC 각각)
+        private async Task SaveSlipTestCsv(CancellationToken ct)
         {
             try
             {
+                SeqMeasurePoint? Find(string step, DirectType dir) =>
+                    SeqResults.FirstOrDefault(p => p.Step == step && p.Direction == dir.ToString());
+
+                var pcL = Find("4.PC", DirectType.LEFT);
+                var pcR = Find("4.PC", DirectType.RIGHT);
+                var hcL = Find("7.HC1", DirectType.LEFT);
+                var hcR = Find("7.HC1", DirectType.RIGHT);
+
+                // 얼라인 마크 절대 위치 = 모션 위치 + 비전 측정 오프셋(mm)
+                Point2D Mark(SeqMeasurePoint? p) => p == null
+                    ? Point2D.Zero
+                    : Point2D.of(p.Hx + p.VisionX, p.Y + p.VisionY);
+
+                // Left↔Right 상대거리(mm)와 Left→Right 각도(THETA, deg)
+                (double dist, double theta) LR(SeqMeasurePoint? l, SeqMeasurePoint? r)
+                {
+                    var lp = Mark(l);
+                    var rp = Mark(r);
+                    double dist = CalibrationMath.Distance(rp, lp);
+                    double theta = CalibrationMath.ToDegree(Math.Atan2(rp.Y - lp.Y, rp.X - lp.X));
+                    return (dist, theta);
+                }
+
+                var (pcDist, pcTheta) = LR(pcL, pcR);
+                var (hcDist, hcTheta) = LR(hcL, hcR);
+
                 string folder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                     "HCB", "시퀀스 데이터");
                 Directory.CreateDirectory(folder);
 
-                string path = Path.Combine(folder, $"FullSequence_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+                string path = Path.Combine(folder, "SlipTest.csv");
+                bool exists = File.Exists(path);
 
-                var sb = new StringBuilder();
-                sb.AppendLine("Timestamp,Step,Camera,Direction,HtRotation,H_X,YAxis,YValue,H_Z,VisionX,VisionY,VisionX_um,VisionY_um,Result");
+                const string header =
+                    "Timestamp,Angle," +
+                    "PC_ALIGN_L_X,PC_ALIGN_L_Y,PC_ALIGN_R_X,PC_ALIGN_R_Y," +
+                    "HC_ALIGN_L_X,HC_ALIGN_L_Y,HC_ALIGN_R_X,HC_ALIGN_R_Y," +
+                    "PC_L_Hx,PC_L_Y,PC_L_Hz,PC_R_Hx,PC_R_Y,PC_R_Hz," +
+                    "HC_L_Hx,HC_L_Y,HC_L_Hz,HC_R_Hx,HC_R_Y,HC_R_Hz," +
+                    "PC_RelDist,HC_RelDist,PC_Theta,HC_Theta";
+
+                string V(SeqMeasurePoint? p, bool x) =>
+                    p == null ? "" : (x ? p.VisionX : p.VisionY).ToString("F6");
+                string M(SeqMeasurePoint? p, char c) =>
+                    p == null ? "" : (c == 'x' ? p.Hx : c == 'y' ? p.Y : p.Hz).ToString("F6");
+
                 var ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                foreach (var p in SeqResults)
+                var line = string.Join(",", new[]
                 {
-                    sb.AppendLine($"{ts},{p.Step},{p.Camera},{p.Direction}," +
-                                  $"{p.HtRotation:F6},{p.Hx:F6},{p.YAxisName},{p.Y:F6},{p.Hz:F6}," +
-                                  $"{p.VisionX:F6},{p.VisionY:F6}," +
-                                  $"{p.VisionX * 1000.0:F2},{p.VisionY * 1000.0:F2},{p.Result}");
-                }
+                    ts,
+                    SeqHtRotation.ToString("F6"),
+                    V(pcL, true), V(pcL, false), V(pcR, true), V(pcR, false),
+                    V(hcL, true), V(hcL, false), V(hcR, true), V(hcR, false),
+                    M(pcL, 'x'), M(pcL, 'y'), M(pcL, 'z'), M(pcR, 'x'), M(pcR, 'y'), M(pcR, 'z'),
+                    M(hcL, 'x'), M(hcL, 'y'), M(hcL, 'z'), M(hcR, 'x'), M(hcR, 'y'), M(hcR, 'z'),
+                    pcDist.ToString("F6"), hcDist.ToString("F6"),
+                    pcTheta.ToString("F6"), hcTheta.ToString("F6"),
+                });
 
-                await File.WriteAllTextAsync(path, sb.ToString(), ct);
-                _logger.Information("전체 시퀀스 CSV 저장: {Path}", path);
+                if (!exists)
+                    await File.AppendAllTextAsync(path,
+                        header + Environment.NewLine + line + Environment.NewLine, ct);
+                else
+                    await File.AppendAllTextAsync(path, line + Environment.NewLine, ct);
+
+                _logger.Information("슬립 테스트 CSV 누적 저장: {Path}", path);
             }
             catch (Exception e)
             {
-                _logger.Warning(e, "전체 시퀀스 CSV 저장 실패");
+                _logger.Warning(e, "슬립 테스트 CSV 저장 실패");
             }
         }
 
