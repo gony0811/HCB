@@ -654,23 +654,25 @@ namespace HCB.UI
                 var hcL = Find("7.HC1", DirectType.LEFT);
                 var hcR = Find("7.HC1", DirectType.RIGHT);
 
-                // 얼라인 마크 절대 위치 = 모션 위치 + 비전 측정 오프셋(mm)
-                Point2D Mark(SeqMeasurePoint? p) => p == null
+                // 얼라인 마크 절대 위치 = 모션 위치 ± 비전 측정 오프셋(mm)
+                //  · PC : MotionX - VisionX, MotionY + VisionY
+                //  · HC : MotionX - VisionX, MotionY - VisionY
+                Point2D Mark(SeqMeasurePoint? p, bool isPc) => p == null
                     ? Point2D.Zero
-                    : Point2D.of(p.Hx + p.VisionX, p.Y + p.VisionY);
+                    : Point2D.of(p.Hx - p.VisionX, isPc ? p.Y + p.VisionY : p.Y - p.VisionY);
 
                 // Left↔Right 상대거리(mm)와 Left→Right 각도(THETA, deg)
-                (double dist, double theta) LR(SeqMeasurePoint? l, SeqMeasurePoint? r)
+                (double dist, double theta) LR(SeqMeasurePoint? l, SeqMeasurePoint? r, bool isPc)
                 {
-                    var lp = Mark(l);
-                    var rp = Mark(r);
+                    var lp = Mark(l, isPc);
+                    var rp = Mark(r, isPc);
                     double dist = CalibrationMath.Distance(rp, lp);
                     double theta = CalibrationMath.ToDegree(Math.Atan2(rp.Y - lp.Y, rp.X - lp.X));
                     return (dist, theta);
                 }
 
-                var (pcDist, pcTheta) = LR(pcL, pcR);
-                var (hcDist, hcTheta) = LR(hcL, hcR);
+                var (pcDist, pcTheta) = LR(pcL, pcR, true);
+                var (hcDist, hcTheta) = LR(hcL, hcR, false);
 
                 string folder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
