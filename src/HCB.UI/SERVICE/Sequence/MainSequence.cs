@@ -1090,7 +1090,7 @@ namespace HCB.UI
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, -12.5, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, 7,ct));
-
+                await Task.Delay(300);
                 var hc2 = await VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, ct);
                 d.Hc2Offset = Point2D.of(hc1.CenterX - hc2.CenterX, hc1.CenterY - hc2.CenterY);
 

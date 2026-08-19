@@ -436,9 +436,12 @@ namespace HCB.UI
                 CalibStatus = "카메라 거리측정 시작";
                 await _sequenceService.WTable2DMappingOn();
                 await _sequenceService.Init_Head(ct);
+                double hcCenterErrorX = await _sequenceService.GetRecipe("HcCenterErrorX");
+                double hcCenterErrorY= await _sequenceService.GetRecipe("HcCenterErrorY");
+
                 await Task.WhenAll(
-                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION, ct),
-                    _sequenceService.MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, ct));
+                    _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION,hcCenterErrorX, ct),
+                    _sequenceService.MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, hcCenterErrorY, ct));
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
                 double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
                 double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
