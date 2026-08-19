@@ -136,12 +136,6 @@ namespace HCB.UI
 
         [ObservableProperty] private VernierResult vernierResult;
         [ObservableProperty] private ObservableCollection<VernierRow> vernierRows = new();
-        [ObservableProperty] private bool avgMode = true;
-        [ObservableProperty] private bool use2DMapping = true;
-        [ObservableProperty] private bool measureVernierAfterBonding = false;
-        [ObservableProperty] private TracingMode tracingMode = TracingMode.Manual;
-        [ObservableProperty] private bool useBtmIndividualMeasure = true;
-        [ObservableProperty] private bool useFiducialTracking = true;
 
         // ── 피듀셜 각도 추적 결과 ────────────────────────────
         [ObservableProperty] private double fiducialPcAngle;
@@ -153,35 +147,8 @@ namespace HCB.UI
         //   본딩 데이터 CSV에 별도 행(Kind=ReMeasure)으로 함께 기록한다. null 이면 미수행.
         private AlignData _reMeasureData;
 
-        // ── CSV 저장 설정은 SettingsViewModel(Settings.*)로 일원화 ──
-        //   과거 이 VM에 중복 존재하던 Csv* 프로퍼티는 Export가 읽는 Settings.*와 분리되어
-        //   "저장위치 수정이 반영되지 않는" 원인이 되었으므로 제거하고 Settings.*로 통일한다.
-
         public ObservableCollection<IAxis> JitterAxes { get; } = new();
         public PowerPmacDevice Pmac { get; private set; }
-
-        [RelayCommand]
-        public void ChangeMeasureVernier() => MeasureVernierAfterBonding = !MeasureVernierAfterBonding;
-
-        [RelayCommand]
-        public void Change2DMapping() => Use2DMapping = !Use2DMapping;
-
-        [RelayCommand]
-        public void CycleTracingMode()
-        {
-            TracingMode = TracingMode switch
-            {
-                TracingMode.Auto => TracingMode.Manual,
-                TracingMode.Manual => TracingMode.None,
-                _ => TracingMode.Auto
-            };
-        }
-
-        [RelayCommand]
-        public void ChangeBtmMeasureMode() => UseBtmIndividualMeasure = !UseBtmIndividualMeasure;
-
-        [RelayCommand]
-        public void ChangeFiducialTracking() => UseFiducialTracking = !UseFiducialTracking;
 
         [RelayCommand]
         public async Task RunFiducialAngleTracking()
@@ -189,7 +156,7 @@ namespace HCB.UI
             ResetCts();
             try
             {
-                var result = await _sequenceService.FiducialAngleTracking(AvgMode, _cts.Token);
+                var result = await _sequenceService.FiducialAngleTracking(Settings.AvgMode, _cts.Token);
                 FiducialPcAngle = result.PcAngleDeg;
                 FiducialHcAngle = result.HcAngleDeg;
                 FiducialWaferAngle = result.WaferAngleDeg;
