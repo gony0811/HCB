@@ -1081,18 +1081,57 @@ namespace HCB.UI
         /// </summary>
         private async Task CameraDist(AlignData d, CancellationToken ct)
         {
+            // 카메라 거리 정밀 측정 파라미터 (CalibrationTabViewModel.CameraDistance와 동일 규약)
+            const double MeasureOffsetX = -12.5; // HC1 → HC2 이동량 (H_X)
+            const double MeasureOffsetY = 7.0;   // HC1 → HC2 이동량 (W_Y)
+            const double Tolerance = 0.0003;     // 센터링 허용 오차 (mm)
+            const int MaxRetry = 10;             // 센터링 반복 상한
+
             try
             {
                 double HcCenterErrorX = await GetRecipe("HcCenterErrorX");
                 double HcCenterErrorY = await GetRecipe("HcCenterErrorY");
 
-                var hc1 = await VisionResult(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
-                await Task.WhenAll(
-                    RelativeMotionsMove(MotionExtensions.H_X, -12.5, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, 7,ct));
+                // ── HC1 센터링 ──
+                // 단발 촬상 대신, 마크가 카메라 중심에 오도록 스테이지를 반복 서보한다.
+                // 마크를 FOV 중앙(왜곡 최소·재현성 최대)에서 잡은 뒤 스테이지 좌표를 읽어
+                // 카메라 거리를 계산하므로 단발 CenterX/Y 차이보다 정밀하다.
+                for (int i = 0; i < MaxRetry; i++)
+                {
+                    var v1 = await VisionResult(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
+                    if (Math.Abs(v1.DxCamToMark) <= Tolerance && Math.Abs(v1.DyCamToMark) <= Tolerance)
+                        break;
+                    await Task.WhenAll(
+                        RelativeMotionsMove(MotionExtensions.H_X, -v1.DxCamToMark, ct),
+                        RelativeMotionsMove(MotionExtensions.W_Y, -v1.DyCamToMark, ct));
+                    if (i == MaxRetry - 1)
+                        throw new Exception($"Hc1 센터링 실패: DxCam={v1.DxCamToMark:F4}, DyCam={v1.DyCamToMark:F4}");
+                }
+                double hc1StageX = await GetCurrentPosition(MotionExtensions.H_X, ct);
+                double hc1StageY = await GetCurrentPosition(MotionExtensions.W_Y, ct);
 
-                var hc2 = await VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, ct);
-                d.Hc2Offset = Point2D.of(hc1.CenterX - hc2.CenterX, hc1.CenterY - hc2.CenterY);
+                // ── HC2 위치로 이동 ──
+                await Task.WhenAll(
+                    RelativeMotionsMove(MotionExtensions.H_X, MeasureOffsetX, ct),
+                    RelativeMotionsMove(MotionExtensions.W_Y, MeasureOffsetY, ct));
+
+                // ── HC2 센터링 ──
+                for (int i = 0; i < MaxRetry; i++)
+                {
+                    var v2 = await VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, ct);
+                    if (Math.Abs(v2.DxCamToMark) <= Tolerance && Math.Abs(v2.DyCamToMark) <= Tolerance)
+                        break;
+                    await Task.WhenAll(
+                        RelativeMotionsMove(MotionExtensions.H_X, -v2.DxCamToMark, ct),
+                        RelativeMotionsMove(MotionExtensions.W_Y, -v2.DyCamToMark, ct));
+                    if (i == MaxRetry - 1)
+                        throw new Exception($"Hc2 센터링 실패: DxCam={v2.DxCamToMark:F4}, DyCam={v2.DyCamToMark:F4}");
+                }
+                double hc2StageX = await GetCurrentPosition(MotionExtensions.H_X, ct);
+                double hc2StageY = await GetCurrentPosition(MotionExtensions.W_Y, ct);
+
+                // 카메라 거리 = 동일 마크를 센터링한 두 스테이지 위치의 차이
+                d.Hc2Offset = Point2D.of(hc1StageX - hc2StageX, hc1StageY - hc2StageY);
 
                 await Task.WhenAll(
                     MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", HcCenterErrorX, ct),
@@ -1135,7 +1174,7 @@ namespace HCB.UI
             catch { /* 파라미터 미존재 시 기본값 1 */ }
 
             // 점 순서 규약: [0°, −0.75°, +0.75°] × repeatN — ComputeHcroCenter의 3점 묶음과 일치해야 함
-            double[] angles = { 0.0, -0.75, 0.75 };
+            double[] angles = { 0.0, -1.2, 1.2};
 
             try
             {
