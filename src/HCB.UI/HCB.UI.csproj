@@ -256,6 +256,8 @@
   <Compile Include="MAIN UI\VisionPage.xaml.cs" />
   <Compile Include="Models\AlignContext.cs" />
   <Compile Include="Models\AlignOffset.cs" />
+  <Compile Include="Models\BondingCsvExporter.cs" />
+  <Compile Include="Models\BondingRecordMapper.cs" />
   <Compile Include="Models\LabelValue.cs" />
   <Compile Include="Models\VernierResult.cs" />
   <Compile Include="SERVICE\CalibrationService.cs" />

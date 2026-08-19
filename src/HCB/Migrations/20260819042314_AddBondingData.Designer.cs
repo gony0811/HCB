@@ -3,6 +3,7 @@ using System;
 using HCB.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HCB.Migrations
 {
     [DbContext(typeof(AppDb))]
-    partial class AppDbModelSnapshot : ModelSnapshot
+    [Migration("20260819042314_AddBondingData")]
+    partial class AddBondingData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.11");
@@ -402,22 +405,6 @@ namespace HCB.Migrations
 
                     b.Property<DateTime>("Time")
                         .HasColumnType("TEXT");
-
-                    b.Property<string>("TracingMode")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("Use2DMapping")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("UseBtmIndividualMeasure")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("UseFiducialTracking")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("UseRightFidSimilarity")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

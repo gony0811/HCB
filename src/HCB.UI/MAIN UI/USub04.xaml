@@ -246,6 +246,107 @@
                 </Border>
             </TabItem>
 
+            <!-- ════════ 탭 3 : 본딩 정보 ════════ -->
+            <TabItem Header="본딩 정보">
+                <Grid Margin="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.85*"/>
+                        <ColumnDefinition Width="0.15*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ── 본딩 정보 그리드 ── -->
+                    <Border Grid.Column="0"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8" Margin="0,0,6,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="본딩 정보"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                            <DataGrid Grid.Row="1"
+                                      Style="{StaticResource LogDataGrid}"
+                                      ColumnHeaderStyle="{StaticResource LogColumnHeader}"
+                                      CellStyle="{StaticResource LogCell}"
+                                      ItemsSource="{Binding BondingList}"
+                                      Margin="8,6,8,4">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID"        Binding="{Binding Id}"                                              Width="Auto"/>
+                                    <DataGridTextColumn Header="시각"      Binding="{Binding Time, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}"   Width="*"/>
+                                    <DataGridTextColumn Header="종류"      Binding="{Binding Kind}"                                            Width="Auto"/>
+                                    <DataGridTextColumn Header="원본ID"    Binding="{Binding ParentRecordId}"                                  Width="Auto"/>
+                                    <DataGridTextColumn Header="평균이동"  Binding="{Binding AvgMode}"                                         Width="Auto"/>
+                                    <DataGridTextColumn Header="2D매핑"    Binding="{Binding Use2DMapping}"                                    Width="Auto"/>
+                                    <DataGridTextColumn Header="Tracing"   Binding="{Binding TracingMode}"                                     Width="Auto"/>
+                                    <DataGridTextColumn Header="Btm개별"   Binding="{Binding UseBtmIndividualMeasure}"                         Width="Auto"/>
+                                    <DataGridTextColumn Header="Fid추적"   Binding="{Binding UseFiducialTracking}"                             Width="Auto"/>
+                                    <DataGridTextColumn Header="R.Fid닮음" Binding="{Binding UseRightFidSimilarity}"                           Width="Auto"/>
+                                    <DataGridTextColumn Header="ResultX"   Binding="{Binding ResultX, StringFormat='{}{0:F4}'}"                Width="*"/>
+                                    <DataGridTextColumn Header="ResultY"   Binding="{Binding ResultY, StringFormat='{}{0:F4}'}"                Width="*"/>
+                                    <DataGridTextColumn Header="ResultT"   Binding="{Binding ResultT, StringFormat='{}{0:F4}'}"                Width="*"/>
+                                    <DataGridTextColumn Header="Vern.X"    Binding="{Binding VernierOffsetX, StringFormat='{}{0:F4}'}"         Width="*"/>
+                                    <DataGridTextColumn Header="Vern.Y"    Binding="{Binding VernierOffsetY, StringFormat='{}{0:F4}'}"         Width="*"/>
+                                    <DataGridTextColumn Header="Vern.T"    Binding="{Binding VernierOffsetT, StringFormat='{}{0:F4}'}"         Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- 페이저 (50개/페이지) -->
+                            <telerik:RadDataPager Grid.Row="2"
+                                                  Margin="8,0,8,8"
+                                                  DisplayMode="FirstLastPreviousNextNumeric"
+                                                  IsTotalItemCountFixed="False"
+                                                  PageSize="{Binding BondingPageSize}"
+                                                  ItemCount="{Binding BondingTotalCount}"
+                                                  PageIndex="{Binding BondingCurrentPageIndex, Mode=TwoWay}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── 우측 검색·출력 패널 ── -->
+                    <Border Grid.Column="1"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="검색 · 출력"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                            <StackPanel Grid.Row="1" Margin="12,10,12,12">
+                                <TextBlock Text="Begin" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker
+                                    SelectedValue="{Binding BondingStartDate, Mode=TwoWay}"
+                                    InputMode="DatePicker"
+                                    Margin="0,0,0,8"/>
+
+                                <TextBlock Text="End" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker
+                                    SelectedValue="{Binding BondingEndDate, Mode=TwoWay}"
+                                    InputMode="DatePicker"
+                                    Margin="0,0,0,12"/>
+
+                                <Button Content="검색"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding BondingSearchCommand}"
+                                        Margin="0,0,0,8"/>
+
+                                <Button Content="CSV 출력 (현재 페이지)"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding ExportBondingCsvCommand}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
         </TabControl>
     </Grid>
 </Page>

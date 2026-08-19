@@ -613,4 +613,115 @@ namespace HCB.Data
             e.HasIndex(x => x.Timestamp).IsDescending();
         }
     }
+
+    // ═══════════════════════════════════════════════════════════
+    //  본딩 데이터 (마스터 BondingRecord + 1:1 자식 6종)
+    //  자식은 PK = FK = BondingRecordId (공유키 1:1), 마스터 삭제 시 Cascade.
+    // ═══════════════════════════════════════════════════════════
+
+    public class BondingRecordConfig : IEntityTypeConfiguration<BondingRecord>
+    {
+        public void Configure(EntityTypeBuilder<BondingRecord> b)
+        {
+            b.ToTable("BondingRecord");
+            b.HasKey(x => x.Id);
+
+            b.Property(x => x.Id)
+             .ValueGeneratedOnAdd()
+             .HasAnnotation("Sqlite:Autoincrement", true);
+
+            b.Property(x => x.Kind)
+             .HasConversion<string>()
+             .IsRequired();
+
+            b.HasIndex(x => x.Time);
+            b.HasIndex(x => x.Kind);
+
+            // 재측정 링크 (self-reference). 원본 삭제 시 재측정 레코드는 보존(Restrict).
+            b.HasOne(x => x.Parent)
+             .WithMany(x => x.ReMeasures)
+             .HasForeignKey(x => x.ParentRecordId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasIndex(x => x.ParentRecordId);
+        }
+    }
+
+    public class BondingMeasurementConfig : IEntityTypeConfiguration<BondingMeasurement>
+    {
+        public void Configure(EntityTypeBuilder<BondingMeasurement> b)
+        {
+            b.ToTable("BondingMeasurement");
+            b.HasKey(x => x.BondingRecordId);
+            b.HasOne(x => x.BondingRecord)
+             .WithOne(r => r.Measurement)
+             .HasForeignKey<BondingMeasurement>(x => x.BondingRecordId)
+             .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class BondingEquipmentConfig : IEntityTypeConfiguration<BondingEquipment>
+    {
+        public void Configure(EntityTypeBuilder<BondingEquipment> b)
+        {
+            b.ToTable("BondingEquipment");
+            b.HasKey(x => x.BondingRecordId);
+            b.HasOne(x => x.BondingRecord)
+             .WithOne(r => r.Equipment)
+             .HasForeignKey<BondingEquipment>(x => x.BondingRecordId)
+             .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class BondingSettingConfig : IEntityTypeConfiguration<BondingSetting>
+    {
+        public void Configure(EntityTypeBuilder<BondingSetting> b)
+        {
+            b.ToTable("BondingSetting");
+            b.HasKey(x => x.BondingRecordId);
+            b.HasOne(x => x.BondingRecord)
+             .WithOne(r => r.Setting)
+             .HasForeignKey<BondingSetting>(x => x.BondingRecordId)
+             .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class BondingAnalysisConfig : IEntityTypeConfiguration<BondingAnalysis>
+    {
+        public void Configure(EntityTypeBuilder<BondingAnalysis> b)
+        {
+            b.ToTable("BondingAnalysis");
+            b.HasKey(x => x.BondingRecordId);
+            b.HasOne(x => x.BondingRecord)
+             .WithOne(r => r.Analysis)
+             .HasForeignKey<BondingAnalysis>(x => x.BondingRecordId)
+             .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class BondingCoordinateConfig : IEntityTypeConfiguration<BondingCoordinate>
+    {
+        public void Configure(EntityTypeBuilder<BondingCoordinate> b)
+        {
+            b.ToTable("BondingCoordinate");
+            b.HasKey(x => x.BondingRecordId);
+            b.HasOne(x => x.BondingRecord)
+             .WithOne(r => r.Coordinate)
+             .HasForeignKey<BondingCoordinate>(x => x.BondingRecordId)
+             .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class BondingResultConfig : IEntityTypeConfiguration<BondingResult>
+    {
+        public void Configure(EntityTypeBuilder<BondingResult> b)
+        {
+            b.ToTable("BondingResult");
+            b.HasKey(x => x.BondingRecordId);
+            b.HasOne(x => x.BondingRecord)
+             .WithOne(r => r.Result)
+             .HasForeignKey<BondingResult>(x => x.BondingRecordId)
+             .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
 }

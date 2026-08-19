@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Entity.Type;
+using HCB.Data.Repository;
 using HCB.IoC;
 using Serilog;
 using System;
@@ -32,6 +33,10 @@ namespace HCB.UI
         private readonly ECParamService _ecParamService;
         private readonly IOManager _ioManager;
         private readonly SettingsViewModel _settings;
+        private readonly BondingRecordRepository _bondingRepo;
+
+        // 재측정(ReMeasure) 레코드를 직전 Bonding 레코드에 연결하기 위한 Id 캐시
+        private int? _lastBondingRecordId;
 
         public RecipeService RecipeService => _recipeService;
         public SettingsViewModel Settings => _settings;
@@ -275,10 +280,12 @@ namespace HCB.UI
             ECParamService eCParamService,
             RecipeService recipeService,
             SettingsViewModel settingsViewModel,
+            BondingRecordRepository bondingRepo,
             ILogger logger)
         {
             _logger = logger.ForContext<StepSeqTabViewModel>();
             _settings = settingsViewModel;
+            _bondingRepo = bondingRepo;
             SequenceServiceVM = sequenceServiceVM;
             _sequenceService = sequenceService;
             _sequenceHelper = sequenceHelper;
@@ -599,7 +606,7 @@ namespace HCB.UI
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
                 await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, _cts.Token));
                 TopBondingState = StepState.Completed;
-                ExportHcbData();
+                await SaveHcbDataAsync();
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
             catch (Exception e) { TopBondingState = StepState.Failed; _logger.Error(e, "TopBonding Failed"); }
@@ -616,7 +623,7 @@ namespace HCB.UI
                 BondingHistory = new ObservableCollection<BondingDataPoint>();
                 
                 await RunNoStop(() => _sequenceService.BondingTest(BondingHistory, _cts.Token));
-                ExportHcbData();
+                await SaveHcbDataAsync();
                 TopBondingState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopBondingState = StepState.Idle; }
@@ -666,7 +673,7 @@ namespace HCB.UI
                     _sequenceService.ProcessMeasurement(hcbData, 2);
                     TopCorrState = StepState.Completed;
 
-                    ExportHcbData();
+                    await SaveHcbDataAsync();
                 }
 
                 // 6. 본딩
@@ -801,9 +808,9 @@ namespace HCB.UI
                 _logger.Error(e, "TopRunFullSequence Failed");
             }finally
             {
-                ExportHcbData(hcbData, "Bonding");
+                await SaveHcbDataAsync(hcbData, "Bonding");
                 if (_reMeasureData != null)
-                    ExportHcbData(_reMeasureData, "ReMeasure");
+                    await SaveHcbDataAsync(_reMeasureData, "ReMeasure");
             }
         }
 
@@ -1086,173 +1093,34 @@ namespace HCB.UI
             _logger.Information("Vernier CSV 저장: {Path}", path);
         }
 
-        private void ExportHcbData() => ExportHcbData(hcbData, "Bonding");
+        private Task SaveHcbDataAsync() => SaveHcbDataAsync(hcbData, "Bonding");
 
-        // kind: 행 구분 태그 ("Bonding" = 본딩 측정, "ReMeasure" = 보정 후 재측정)
-        private void ExportHcbData(AlignData data, string kind)
+        // kind: "Bonding" = 본딩 측정, "ReMeasure" = 보정 후 재측정.
+        // 재측정 레코드는 직전 Bonding 레코드에 ParentRecordId로 연결된다.
+        private async Task SaveHcbDataAsync(AlignData data, string kind)
         {
             if (data == null) return;
 
-            Directory.CreateDirectory(Settings.CsvDataDir);
-            var path = Settings.ResolveCsvPath(Settings.CsvDataDir, Settings.CsvDataFileName);
+            var bondingKind = kind == "ReMeasure" ? BondingKind.ReMeasure : BondingKind.Bonding;
+            var record = BondingRecordMapper.ToEntity(data, VernierResult, bondingKind);
 
-            _sequenceService.ComputeDistances(data);
+            if (bondingKind == BondingKind.ReMeasure)
+                record.ParentRecordId = _lastBondingRecordId;
 
-            bool writeHeader = !File.Exists(path) || new FileInfo(path).Length == 0;
-            var sb = new StringBuilder();
-
-            if (writeHeader)
+            try
             {
-                sb.AppendLine(string.Join(",",
-                    "Time", "AvgMode",
-                    "TopRF_StageX", "TopRF_StageY", "TopRF_DxCam", "TopRF_DyCam", "TopRF_CenterX", "TopRF_CenterY",
-                    "TopRA_StageX", "TopRA_StageY", "TopRA_DxCam", "TopRA_DyCam", "TopRA_CenterX", "TopRA_CenterY",
-                    "TopLF_StageX", "TopLF_StageY", "TopLF_DxCam", "TopLF_DyCam", "TopLF_CenterX", "TopLF_CenterY",
-                    "TopLA_StageX", "TopLA_StageY", "TopLA_DxCam", "TopLA_DyCam", "TopLA_CenterX", "TopLA_CenterY",
-                    "BtmRF_StageX", "BtmRF_StageY", "BtmRF_DxCam", "BtmRF_DyCam", "BtmRF_CenterX", "BtmRF_CenterY",
-                    "BtmRA_StageX", "BtmRA_StageY", "BtmRA_DxCam", "BtmRA_DyCam", "BtmRA_CenterX", "BtmRA_CenterY",
-                    "BtmLF_StageX", "BtmLF_StageY", "BtmLF_DxCam", "BtmLF_DyCam", "BtmLF_CenterX", "BtmLF_CenterY",
-                    "BtmLA_StageX", "BtmLA_StageY", "BtmLA_DxCam", "BtmLA_DyCam", "BtmLA_CenterX", "BtmLA_CenterY",
-                    "PcTRad", "Hc1Rad", "Hc2Rad",
-                    "Hcro_X", "Hcro_Y", "Hc2Offset_X", "Hc2Offset_Y",
-                    "OffsetX", "OffsetY", "OffsetT",
-                    "LDist_X", "LDist_Y", "RDist_X", "RDist_Y",
-                    "BFL_X", "BFL_Y", "BFR_X", "BFR_Y",
-                    "BL_X", "BL_Y", "BR_X", "BR_Y",
-                    "TL_X", "TL_Y", "TR_X", "TR_Y",
-                    "SpecTheta", "BTheta", "TTheta", "ThetaF", "ThetaFRad",
-                    "TCenter_X", "TCenter_Y", "BCenter_X", "BCenter_Y",
-                    "ResultX", "ResultY", "ResultT",
-                    "BtmAlignDist", "BtmAlignDistX", "BtmAlignDistY",
-                    "TopAlignDist", "TopAlignDistX", "TopAlignDistY",
-                    "BtmFidDist", "BtmFidDistX", "BtmFidDistY",
-                    "TopFidDist", "TopFidDistX", "TopFidDistY",
-                    "Vernier_OffsetX", "Vernier_OffsetY", "Vernier_OffsetT",
-                    "HC1_Cur_X", "HC1_Cur_Y", "HC1_Ref_X", "HC1_Ref_Y", "HC1_Drift_X", "HC1_Drift_Y",
-                    "HC2_Cur_X", "HC2_Cur_Y", "HC2_Ref_X", "HC2_Ref_Y", "HC2_Drift_X", "HC2_Drift_Y",
-                    "Fid_CurDist",
-                    "P_PC_Fid_DX", "P_PC_Fid_DY", "P_PC_Fid_Dist", "P_PC_Fid_Theta",
-                    "P_PC_Align_DX", "P_PC_Align_DY", "P_PC_Align_Dist", "P_PC_Align_Theta",
-                    "P_HC_Fid_L_X", "P_HC_Fid_L_Y", "P_HC_Fid_R_X", "P_HC_Fid_R_Y",
-                    "P_HC_Fid_DX", "P_HC_Fid_DY", "P_HC_Fid_Dist", "P_HC_Fid_Theta",
-                    "P_HC_Align_L_X", "P_HC_Align_L_Y", "P_HC_Align_R_X", "P_HC_Align_R_Y",
-                    "P_HC_Align_DX", "P_HC_Align_DY", "P_HC_Align_Dist", "P_HC_Align_Theta",
-                    "W_HC_Fid_L_X", "W_HC_Fid_L_Y", "W_HC_Fid_R_X", "W_HC_Fid_R_Y",
-                    "W_HC_Fid_DX", "W_HC_Fid_DY", "W_HC_Fid_Dist", "W_HC_Fid_Theta",
-                    "W_HC_Align_L_X", "W_HC_Align_L_Y", "W_HC_Align_R_X", "W_HC_Align_R_Y",
-                    "W_HC_Align_DX", "W_HC_Align_DY", "W_HC_Align_Dist", "W_HC_Align_Theta",
-                    "RightFidSimTheta", "RightFidSimScale", "Kind"));
+                await _bondingRepo.AddAsync(record);
+
+                if (bondingKind == BondingKind.Bonding)
+                    _lastBondingRecordId = record.Id;   // 다음 ReMeasure가 참조
+
+                _logger.Information("본딩 데이터 저장({Kind}) — Id={Id}, Parent={Parent}",
+                    kind, record.Id, record.ParentRecordId);
             }
-
-            sb.AppendLine(string.Join(",",
-                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                data.AvgMove,
-                MarkFields(data.TopRightFidRaw),
-                MarkFields(data.TopRightAlignRaw),
-                MarkFields(data.TopLeftFidRaw),
-                MarkFields(data.TopLeftAlignRaw),
-                PointAsMark(data.BtmRightFidRaw),
-                PointAsMark(data.BtmRightAlignRaw),
-                PointAsMark(data.BtmLeftFidRaw),
-                PointAsMark(data.BtmLeftAlignRaw),
-                F(data.PcTRad), F(data.Hc1Rad), F(data.Hc2Rad),
-                data.Hcro != null ? F(data.Hcro.X) : "", data.Hcro != null ? F(data.Hcro.Y) : "",
-                data.Hc2Offset != null ? F(data.Hc2Offset.X) : "", data.Hc2Offset != null ? F(data.Hc2Offset.Y) : "",
-                data.OffsetXY != null ? F(data.OffsetXY.X) : "", data.OffsetXY != null ? F(data.OffsetXY.Y) : "",
-                F(data.OffsetT),
-                Pt(data.LDist), Pt(data.RDist),
-                Pt(data.BFL), Pt(data.BFR),
-                Pt(data.BL), Pt(data.BR),
-                Pt(data.TL), Pt(data.TR),
-                F(data.SpecTheta), F(data.BTheta), F(data.TTheta),
-                F(data.ThetaF), F(data.ThetaFRad),
-                Pt(data.TCenter), Pt(data.BCenter),
-                F(data.ResultX), F(data.ResultY), F(data.ResultT),
-                F(data.BtmAlignDist), F(data.BtmAlignDistX), F(data.BtmAlignDistY),
-                F(data.TopAlignDist), F(data.TopAlignDistX), F(data.TopAlignDistY),
-                F(data.BtmFidDist), F(data.BtmFidDistX), F(data.BtmFidDistY),
-                F(data.TopFidDist), F(data.TopFidDistX), F(data.TopFidDistY),
-                F(VernierResult?.OffsetX), F(VernierResult?.OffsetY), F(VernierResult?.OffsetT),
-                Pt(data.Hc1FidCurrent),
-                Pt(data.Hc1FidRef),
-                Pt(data.Hc1FidDrift),
-                Pt(data.Hc2FidCurrent),
-                Pt(data.Hc2FidRef),
-                Pt(data.Hc2FidDrift),
-                F(data.FidCurrentDist),
-                CsvMeasurementData(data),
-                F(data.RightFidSimTheta), F(data.RightFidSimScale), kind));
-
-            File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
-
-            _logger.Information(
-                "선분 길이({Kind}) — BtmAlign: {BA:F4}mm, TopAlign: {TA:F4}mm, BtmFid: {BF:F4}mm, TopFid: {TF:F4}mm",
-                kind, data.BtmAlignDist, data.TopAlignDist,
-                data.BtmFidDist, data.TopFidDist);
-
-            _logger.Information("본딩 데이터 저장({Kind}): {Path}", kind, path);
-        }
-
-        private string CsvMeasurementData(AlignData data)
-        {
-            var vals = new List<string>(40);
-            var offset = data?.Hc2Offset;
-
-            // ── 측정1: P_TABLE PC_Camera ──
-            if (data?.TopLeftFidRaw != null && data?.TopRightFidRaw != null)
+            catch (Exception e)
             {
-                var r = CalibrationMath.CalcRelative(data.TopLeftFidRaw.CenterX, data.TopLeftFidRaw.CenterY,
-                    data.TopRightFidRaw.CenterX, data.TopRightFidRaw.CenterY);
-                vals.AddRange(new[] { F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
+                _logger.Error(e, "본딩 데이터 DB 저장 실패({Kind})", kind);
             }
-            else vals.AddRange(new[] { "", "", "", "" });
-
-            if (data?.TopLeftAlignRaw != null && data?.TopRightAlignRaw != null)
-            {
-                var r = CalibrationMath.CalcRelative(data.TopLeftAlignRaw.CenterX, data.TopLeftAlignRaw.CenterY,
-                    data.TopRightAlignRaw.CenterX, data.TopRightAlignRaw.CenterY);
-                vals.AddRange(new[] { F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
-            }
-            else vals.AddRange(new[] { "", "", "", "" });
-
-            // ── 측정2: P_TABLE HC1/HC2 ──
-            if (offset != null && data?.Hc1FidCurrent != null && data?.Hc2FidCurrent != null)
-            {
-                double lx = -data.Hc1FidCurrent.X, ly = -data.Hc1FidCurrent.Y;
-                double rx = offset.X - data.Hc2FidCurrent.X, ry = offset.Y - data.Hc2FidCurrent.Y;
-                var r = CalibrationMath.CalcRelative(lx, ly, rx, ry);
-                vals.AddRange(new[] { F(lx), F(ly), F(rx), F(ry), F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
-            }
-            else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
-
-            if (data?.TL != null && data?.TR != null)
-            {
-                var r = CalibrationMath.CalcRelative(data.TL.X, data.TL.Y, data.TR.X, data.TR.Y);
-                vals.AddRange(new[] { F(data.TL.X), F(data.TL.Y), F(data.TR.X), F(data.TR.Y),
-                    F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
-            }
-            else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
-
-            // ── 측정3: W_TABLE HC1/HC2 ──
-            if (offset != null && data?.BtmLeftFidRaw != null && data?.BtmRightFidRaw != null)
-            {
-                double lx = -data.BtmLeftFidRaw.X, ly = -data.BtmLeftFidRaw.Y;
-                double rx = offset.X - data.BtmRightFidRaw.X, ry = offset.Y - data.BtmRightFidRaw.Y;
-                var r = CalibrationMath.CalcRelative(lx, ly, rx, ry);
-                vals.AddRange(new[] { F(lx), F(ly), F(rx), F(ry), F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
-            }
-            else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
-
-            if (offset != null && data?.BtmLeftAlignRaw != null && data?.BtmRightAlignRaw != null)
-            {
-                double lx = -data.BtmLeftAlignRaw.X, ly = -data.BtmLeftAlignRaw.Y;
-                double rx = offset.X - data.BtmRightAlignRaw.X, ry = offset.Y - data.BtmRightAlignRaw.Y;
-                var r = CalibrationMath.CalcRelative(lx, ly, rx, ry);
-                vals.AddRange(new[] { F(lx), F(ly), F(rx), F(ry), F(r.dx), F(r.dy), F(r.dist), F(r.theta) });
-            }
-            else vals.AddRange(new[] { "", "", "", "", "", "", "", "" });
-
-            return string.Join(",", vals);
         }
 
         // 사용 레시피 변경 중 재진입 방지
@@ -1298,14 +1166,6 @@ namespace HCB.UI
             }
         }
 
-        private static string Pt(Point2D p) => p == null ? "," : $"{F(p.X)},{F(p.Y)}";
-        private static string MarkFields(VisionMarkResult m) =>
-            m == null ? ",,,,," : string.Join(",", F(m.StageX), F(m.StageY), F(m.DxCamToMark), F(m.DyCamToMark), F(m.CenterX), F(m.CenterY));
-        private static string PointAsMark(Point2D p) =>
-            p == null ? ",,,,," : string.Join(",", "", "", F(p.X), F(p.Y), "", "");
-        private static string NullMark() => ",,,,,";
-        private static string NullPt() => ",";
-        private static string F(double? v) => v?.ToString("F6") ?? "";
         private static string Fn(double? v) => v.HasValue ? v.Value.ToString("F6") : string.Empty;
     }
 }
