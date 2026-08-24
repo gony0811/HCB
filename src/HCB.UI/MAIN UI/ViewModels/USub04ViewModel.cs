@@ -22,6 +22,10 @@ namespace HCB.UI
         private readonly AlarmHistoryRepository alarmHistoryRepository;
         private readonly AlarmService alarmService;
         private readonly BondingRecordRepository bondingRecordRepository;
+        private readonly SettingsViewModel settings;
+
+        // CSV 출력 폴더·파일명 설정 (XAML 바인딩용). 파일명에 {date}, {time} 토큰 사용 가능.
+        public SettingsViewModel Settings => settings;
 
         [ObservableProperty]
         private ObservableCollection<AlarmHistoryDto> alarmHistoryList = new();
@@ -67,11 +71,13 @@ namespace HCB.UI
         public USub04ViewModel(
             AlarmService alarmService,
             AlarmHistoryRepository alarmHistoryRepository,
-            BondingRecordRepository bondingRecordRepository)
+            BondingRecordRepository bondingRecordRepository,
+            SettingsViewModel settings)
         {
             this.alarmService = alarmService;
             this.alarmHistoryRepository = alarmHistoryRepository;
             this.bondingRecordRepository = bondingRecordRepository;
+            this.settings = settings;
 
             alarmService.AlarmHistoryAdded += OnAlarmHistoryAdded;
             alarmService.AlarmHistoryReset += OnAlarmHistoryReset;
@@ -185,19 +191,24 @@ namespace HCB.UI
                 return;
             }
 
-            var dlg = new Microsoft.Win32.SaveFileDialog
-            {
-                Title = "본딩 데이터 CSV 출력 (현재 페이지)",
-                Filter = "CSV 파일 (*.csv)|*.csv",
-                FileName = $"Bonding_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
-            };
-            if (dlg.ShowDialog() != true) return;
-
             try
             {
+                // 설정된 저장 폴더·파일명 사용 ({date}/{time} 토큰 치환, 확장자 자동 보정)
+                var dir = string.IsNullOrWhiteSpace(settings.CsvBondingQueryDir)
+                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "본딩 조회")
+                    : settings.CsvBondingQueryDir;
+                Directory.CreateDirectory(dir);
+
+                var pattern = string.IsNullOrWhiteSpace(settings.CsvBondingQueryFileName)
+                    ? "Bonding_{date}_{time}.csv"
+                    : settings.CsvBondingQueryFileName;
+                var path = settings.ResolveCsvPath(dir, pattern);
+                if (!path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+                    path += ".csv";
+
                 var csv = BondingCsvExporter.BuildCsv(bondingPageRecords);
-                File.WriteAllText(dlg.FileName, csv, new UTF8Encoding(true)); // BOM: Excel 한글 대응
-                MessageBox.Show($"CSV 출력 완료 ({bondingPageRecords.Count}건)\n{dlg.FileName}",
+                File.WriteAllText(path, csv, new UTF8Encoding(true)); // BOM: Excel 한글 대응
+                MessageBox.Show($"CSV 출력 완료 ({bondingPageRecords.Count}건)\n{path}",
                     "CSV 출력", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -287,6 +298,14 @@ namespace HCB.UI
         public double? VernierOffsetY { get; set; }
         public double? VernierOffsetT { get; set; }
 
+        // 상세 자식 테이블(측정/설비/설정/분석/통합좌표) — 그리드에서 전체 컬럼을 하위 경로로 바인딩한다.
+        // Include 로 이미 로드되어 있어 참조만 전달한다. (null 이면 셀은 빈칸)
+        public BondingMeasurement? Measurement { get; set; }
+        public BondingEquipment? Equipment { get; set; }
+        public BondingSetting? Setting { get; set; }
+        public BondingAnalysis? Analysis { get; set; }
+        public BondingCoordinate? Coordinate { get; set; }
+
         public static BondingRecordRow From(BondingRecord r) => new BondingRecordRow
         {
             Id = r.Id,
@@ -305,6 +324,11 @@ namespace HCB.UI
             VernierOffsetX = r.Result?.Vernier_OffsetX,
             VernierOffsetY = r.Result?.Vernier_OffsetY,
             VernierOffsetT = r.Result?.Vernier_OffsetT,
+            Measurement = r.Measurement,
+            Equipment = r.Equipment,
+            Setting = r.Setting,
+            Analysis = r.Analysis,
+            Coordinate = r.Coordinate,
         };
     }
 }

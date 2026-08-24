@@ -25,6 +25,10 @@ namespace HCB.UI
         [ObservableProperty] private string csvDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "데이터");
         [ObservableProperty] private string csvDataFileName = "bonding_hcb_{date}.csv";
 
+        // 본딩 정보 조회 화면(USub04) CSV 출력 설정
+        [ObservableProperty] private string csvBondingQueryDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "본딩 조회");
+        [ObservableProperty] private string csvBondingQueryFileName = "Bonding_{date}_{time}.csv";
+
         [RelayCommand]
         public void ChangeAvgMode() => AvgMode = !AvgMode;
 
@@ -84,9 +88,23 @@ namespace HCB.UI
                 CsvDataDir = dlg.FolderName;
         }
 
+        [RelayCommand]
+        private void BrowseBondingQueryDir()
+        {
+            var dlg = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = "본딩 조회 CSV 저장 폴더 선택",
+                InitialDirectory = Directory.Exists(CsvBondingQueryDir) ? CsvBondingQueryDir : ""
+            };
+            if (dlg.ShowDialog() == true)
+                CsvBondingQueryDir = dlg.FolderName;
+        }
+
         public string ResolveCsvPath(string dir, string fileNamePattern)
         {
-            var resolved = fileNamePattern.Replace("{date}", DateTime.Now.ToString("yyyyMMdd"));
+            var resolved = fileNamePattern
+                .Replace("{date}", DateTime.Now.ToString("yyyyMMdd"))
+                .Replace("{time}", DateTime.Now.ToString("HHmmss"));
             return Path.Combine(dir, resolved);
         }
     }
