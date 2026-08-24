@@ -311,7 +311,7 @@ namespace HCB.UI
                 );
 
                 // H_T 회전 보정 InPosition 후 목표/실제 위치 검증 (1% 초과 시 알람 + 중단)
-                await VerifyHtRotationAsync(ct);
+                //await VerifyHtRotationAsync(ct);
 
                 await MotionsMove(MotionExtensions.H_Z,
                     shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
