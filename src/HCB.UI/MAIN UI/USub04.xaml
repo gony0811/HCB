@@ -465,9 +465,128 @@
                                          Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,4"/>
                                 <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
 
-                                <Button Content="CSV 출력 (현재 페이지)"
+                                <Button Content="CSV 출력 (검색 전체)"
                                         Style="{StaticResource SearchButton}"
                                         Command="{Binding ExportBondingCsvCommand}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ════════ 탭 4 : 버니어 ════════ -->
+            <TabItem Header="버니어">
+                <Grid Margin="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.85*"/>
+                        <ColumnDefinition Width="0.15*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ── 버니어 로그 그리드 ── -->
+                    <Border Grid.Column="0"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8" Margin="0,0,6,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="버니어 측정"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                            <DataGrid Grid.Row="1"
+                                      Style="{StaticResource LogDataGrid}"
+                                      ColumnHeaderStyle="{StaticResource LogColumnHeader}"
+                                      CellStyle="{StaticResource LogCell}"
+                                      ItemsSource="{Binding VernierList}"
+                                      Margin="8,6,8,4">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="시각"    Binding="{Binding Time, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" Width="160"/>
+                                    <DataGridTextColumn Header="Pos"     Binding="{Binding Name}"                                          Width="Auto"/>
+                                    <DataGridTextColumn Header="V1_X"    Binding="{Binding V1X, StringFormat='{}{0:F6}'}"                   Width="*"/>
+                                    <DataGridTextColumn Header="V1_Y"    Binding="{Binding V1Y, StringFormat='{}{0:F6}'}"                   Width="*"/>
+                                    <DataGridTextColumn Header="V3_X"    Binding="{Binding V3X, StringFormat='{}{0:F6}'}"                   Width="*"/>
+                                    <DataGridTextColumn Header="V3_Y"    Binding="{Binding V3Y, StringFormat='{}{0:F6}'}"                   Width="*"/>
+                                    <DataGridTextColumn Header="OffsetX" Binding="{Binding OffsetX, StringFormat='{}{0:F4}'}"               Width="*"/>
+                                    <DataGridTextColumn Header="OffsetY" Binding="{Binding OffsetY, StringFormat='{}{0:F4}'}"               Width="*"/>
+                                    <DataGridTextColumn Header="OffsetT" Binding="{Binding OffsetT, StringFormat='{}{0:F4}'}"               Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- 페이저 (50개/페이지) -->
+                            <telerik:RadDataPager Grid.Row="2"
+                                                  Margin="8,0,8,8"
+                                                  DisplayMode="FirstLastPreviousNextNumeric"
+                                                  IsTotalItemCountFixed="False"
+                                                  PageSize="{Binding VernierPageSize}"
+                                                  ItemCount="{Binding VernierTotalCount}"
+                                                  PageIndex="{Binding VernierCurrentPageIndex, Mode=TwoWay}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── 우측 검색·출력 패널 ── -->
+                    <Border Grid.Column="1"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="검색 · 출력"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                            <StackPanel Grid.Row="1" Margin="12,10,12,12">
+                                <TextBlock Text="Begin" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker
+                                    SelectedValue="{Binding VernierStartDate, Mode=TwoWay}"
+                                    InputMode="DatePicker"
+                                    Margin="0,0,0,8"/>
+
+                                <TextBlock Text="End" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker
+                                    SelectedValue="{Binding VernierEndDate, Mode=TwoWay}"
+                                    InputMode="DatePicker"
+                                    Margin="0,0,0,12"/>
+
+                                <Button Content="검색"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding VernierSearchCommand}"
+                                        Margin="0,0,0,12"/>
+
+                                <Rectangle Height="1" Fill="#1C3A52" Margin="0,0,0,10"/>
+
+                                <!-- ── CSV 출력 저장 폴더·파일명 설정 ── -->
+                                <TextBlock Text="저장 폴더" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding Settings.CsvVernierQueryDir, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
+                                             Padding="6,4" VerticalContentAlignment="Center"
+                                             ToolTip="{Binding Settings.CsvVernierQueryDir}"/>
+                                    <Button Grid.Column="1" Content="..."
+                                            Command="{Binding Settings.BrowseVernierQueryDirCommand}"
+                                            Width="34" Margin="4,0,0,0"/>
+                                </Grid>
+
+                                <TextBlock Text="파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Settings.CsvVernierQueryFileName, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
+                                         Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,4"/>
+                                <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
+
+                                <Button Content="CSV 출력 (검색 전체)"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding ExportVernierCsvCommand}"/>
                             </StackPanel>
                         </Grid>
                     </Border>

@@ -29,6 +29,10 @@ namespace HCB.UI
         [ObservableProperty] private string csvBondingQueryDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "본딩 조회");
         [ObservableProperty] private string csvBondingQueryFileName = "Bonding_{date}_{time}.csv";
 
+        // 버니어 조회 화면(USub04) CSV 출력 설정
+        [ObservableProperty] private string csvVernierQueryDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "버니어 조회");
+        [ObservableProperty] private string csvVernierQueryFileName = "Vernier_{date}_{time}.csv";
+
         [RelayCommand]
         public void ChangeAvgMode() => AvgMode = !AvgMode;
 
@@ -98,6 +102,18 @@ namespace HCB.UI
             };
             if (dlg.ShowDialog() == true)
                 CsvBondingQueryDir = dlg.FolderName;
+        }
+
+        [RelayCommand]
+        private void BrowseVernierQueryDir()
+        {
+            var dlg = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = "버니어 조회 CSV 저장 폴더 선택",
+                InitialDirectory = Directory.Exists(CsvVernierQueryDir) ? CsvVernierQueryDir : ""
+            };
+            if (dlg.ShowDialog() == true)
+                CsvVernierQueryDir = dlg.FolderName;
         }
 
         public string ResolveCsvPath(string dir, string fileNamePattern)

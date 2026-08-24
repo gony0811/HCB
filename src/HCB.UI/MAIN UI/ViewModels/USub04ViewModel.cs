@@ -22,6 +22,7 @@ namespace HCB.UI
         private readonly AlarmHistoryRepository alarmHistoryRepository;
         private readonly AlarmService alarmService;
         private readonly BondingRecordRepository bondingRecordRepository;
+        private readonly VernierLogRepository vernierLogRepository;
         private readonly SettingsViewModel settings;
 
         // CSV 출력 폴더·파일명 설정 (XAML 바인딩용). 파일명에 {date}, {time} 토큰 사용 가능.
@@ -61,9 +62,21 @@ namespace HCB.UI
         [ObservableProperty] private DateTime bondingStartDate = DateTime.Now.AddDays(-7);
         [ObservableProperty] private DateTime bondingEndDate = DateTime.Now;
 
-        // 현재 페이지의 전체 상세(자식 포함) — CSV 출력에 사용
-        private IReadOnlyList<BondingRecord> bondingPageRecords = Array.Empty<BondingRecord>();
         private bool isBondingLoading;
+        // =========================================================
+
+        // ================ 버니어 로그 (페이징·검색·CSV) ==========
+        [ObservableProperty]
+        private ObservableCollection<VernierLog> vernierList = new();
+
+        [ObservableProperty] private int vernierPageSize = 50;
+        [ObservableProperty] private int vernierTotalCount;
+        [ObservableProperty] private int vernierCurrentPageIndex = 0;
+
+        [ObservableProperty] private DateTime vernierStartDate = DateTime.Now.AddDays(-7);
+        [ObservableProperty] private DateTime vernierEndDate = DateTime.Now;
+
+        private bool isVernierLoading;
         // =========================================================
 
         private bool isLoading;
@@ -72,11 +85,13 @@ namespace HCB.UI
             AlarmService alarmService,
             AlarmHistoryRepository alarmHistoryRepository,
             BondingRecordRepository bondingRecordRepository,
+            VernierLogRepository vernierLogRepository,
             SettingsViewModel settings)
         {
             this.alarmService = alarmService;
             this.alarmHistoryRepository = alarmHistoryRepository;
             this.bondingRecordRepository = bondingRecordRepository;
+            this.vernierLogRepository = vernierLogRepository;
             this.settings = settings;
 
             alarmService.AlarmHistoryAdded += OnAlarmHistoryAdded;
@@ -85,6 +100,7 @@ namespace HCB.UI
 
             _ = LoadPageData();
             _ = LoadBondingPageAsync();
+            _ = LoadVernierPageAsync();
         }
 
         partial void OnCurrentPageIndexChanged(int value)
@@ -95,6 +111,11 @@ namespace HCB.UI
         partial void OnBondingCurrentPageIndexChanged(int value)
         {
             _ = LoadBondingPageAsync();
+        }
+
+        partial void OnVernierCurrentPageIndexChanged(int value)
+        {
+            _ = LoadVernierPageAsync();
         }
 
         [RelayCommand]
@@ -159,7 +180,6 @@ namespace HCB.UI
                 var (items, total) = await bondingRecordRepository.ListPageWithDetailsAsync(
                     start, end, BondingCurrentPageIndex * BondingPageSize, BondingPageSize);
 
-                bondingPageRecords = items;
                 BondingTotalCount = total;
                 BondingList = new ObservableCollection<BondingRecordRow>(
                     items.Select(BondingRecordRow.From));
@@ -182,17 +202,22 @@ namespace HCB.UI
         }
 
         [RelayCommand]
-        public void ExportBondingCsv()
+        public async Task ExportBondingCsv()
         {
-            if (bondingPageRecords == null || bondingPageRecords.Count == 0)
-            {
-                MessageBox.Show("출력할 본딩 데이터가 없습니다.", "CSV 출력",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
             try
             {
+                // 현재 페이지가 아니라 검색 조건(날짜 범위) 전체를 조회해 출력한다.
+                var start = BondingStartDate.Date;
+                var end = BondingEndDate.Date.AddDays(1).AddTicks(-1);
+                var records = await bondingRecordRepository.ListAllWithDetailsAsync(start, end);
+
+                if (records == null || records.Count == 0)
+                {
+                    MessageBox.Show("출력할 본딩 데이터가 없습니다.", "CSV 출력",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
                 // 설정된 저장 폴더·파일명 사용 ({date}/{time} 토큰 치환, 확장자 자동 보정)
                 var dir = string.IsNullOrWhiteSpace(settings.CsvBondingQueryDir)
                     ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "본딩 조회")
@@ -206,9 +231,87 @@ namespace HCB.UI
                 if (!path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
                     path += ".csv";
 
-                var csv = BondingCsvExporter.BuildCsv(bondingPageRecords);
+                var csv = BondingCsvExporter.BuildCsv(records);
                 File.WriteAllText(path, csv, new UTF8Encoding(true)); // BOM: Excel 한글 대응
-                MessageBox.Show($"CSV 출력 완료 ({bondingPageRecords.Count}건)\n{path}",
+                MessageBox.Show($"CSV 출력 완료 ({records.Count}건)\n{path}",
+                    "CSV 출력", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"CSV 출력 실패\n{ex.Message}", "CSV 출력",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /* ============================
+         * 버니어 로그 (페이징·검색·CSV)
+         * ============================ */
+        public async Task LoadVernierPageAsync()
+        {
+            if (isVernierLoading) return;
+
+            try
+            {
+                isVernierLoading = true;
+
+                var start = VernierStartDate.Date;
+                var end = VernierEndDate.Date.AddDays(1).AddTicks(-1);
+
+                var (items, total) = await vernierLogRepository.ListPageAsync(
+                    start, end, VernierCurrentPageIndex * VernierPageSize, VernierPageSize);
+
+                VernierTotalCount = total;
+                VernierList = new ObservableCollection<VernierLog>(items);
+            }
+            catch (Exception)
+            {
+                // 조회 실패 시 조용히 무시 (다른 조회 패턴과 동일)
+            }
+            finally
+            {
+                isVernierLoading = false;
+            }
+        }
+
+        [RelayCommand]
+        public async Task VernierSearch()
+        {
+            VernierCurrentPageIndex = 0;
+            await LoadVernierPageAsync();
+        }
+
+        [RelayCommand]
+        public async Task ExportVernierCsv()
+        {
+            try
+            {
+                // 현재 페이지가 아니라 검색 조건(날짜 범위) 전체를 조회해 출력한다.
+                var start = VernierStartDate.Date;
+                var end = VernierEndDate.Date.AddDays(1).AddTicks(-1);
+                var records = await vernierLogRepository.ListAllAsync(start, end);
+
+                if (records == null || records.Count == 0)
+                {
+                    MessageBox.Show("출력할 버니어 데이터가 없습니다.", "CSV 출력",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var dir = string.IsNullOrWhiteSpace(settings.CsvVernierQueryDir)
+                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "버니어 조회")
+                    : settings.CsvVernierQueryDir;
+                Directory.CreateDirectory(dir);
+
+                var pattern = string.IsNullOrWhiteSpace(settings.CsvVernierQueryFileName)
+                    ? "Vernier_{date}_{time}.csv"
+                    : settings.CsvVernierQueryFileName;
+                var path = settings.ResolveCsvPath(dir, pattern);
+                if (!path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+                    path += ".csv";
+
+                var csv = VernierCsvExporter.BuildCsv(records);
+                File.WriteAllText(path, csv, new UTF8Encoding(true)); // BOM: Excel 한글 대응
+                MessageBox.Show($"CSV 출력 완료 ({records.Count}건)\n{path}",
                     "CSV 출력", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)

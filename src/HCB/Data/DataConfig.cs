@@ -724,4 +724,20 @@ namespace HCB.Data
              .OnDelete(DeleteBehavior.Cascade);
         }
     }
+
+    public class VernierLogConfig : IEntityTypeConfiguration<VernierLog>
+    {
+        public void Configure(EntityTypeBuilder<VernierLog> b)
+        {
+            b.ToTable("VernierLog");
+            b.HasKey(x => x.Id);
+
+            b.Property(x => x.Id)
+             .ValueGeneratedOnAdd()
+             .HasAnnotation("Sqlite:Autoincrement", true);
+
+            b.Property(x => x.Name).HasMaxLength(50);
+            b.HasIndex(x => x.Time);
+        }
+    }
 }

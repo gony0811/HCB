@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using HCB.Data.Entity.Type;
 using HCB.Data.Repository;
 using HCB.IoC;
+using VernierLog = HCB.Data.Entity.VernierLog;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -34,6 +35,7 @@ namespace HCB.UI
         private readonly IOManager _ioManager;
         private readonly SettingsViewModel _settings;
         private readonly BondingRecordRepository _bondingRepo;
+        private readonly VernierLogRepository _vernierRepo;
 
         // 재측정(ReMeasure) 레코드를 직전 Bonding 레코드에 연결하기 위한 Id 캐시
         private int? _lastBondingRecordId;
@@ -281,11 +283,13 @@ namespace HCB.UI
             RecipeService recipeService,
             SettingsViewModel settingsViewModel,
             BondingRecordRepository bondingRepo,
+            VernierLogRepository vernierRepo,
             ILogger logger)
         {
             _logger = logger.ForContext<StepSeqTabViewModel>();
             _settings = settingsViewModel;
             _bondingRepo = bondingRepo;
+            _vernierRepo = vernierRepo;
             SequenceServiceVM = sequenceServiceVM;
             _sequenceService = sequenceService;
             _sequenceHelper = sequenceHelper;
@@ -778,7 +782,7 @@ namespace HCB.UI
                             V3Y = vernier.v3.Count > i ? vernier.v3[i].Y : null,
                         });
                     }
-                    ExportHighResult();
+                    await SaveVernierAsync();
                     _logger.Information(
                         "버니어 결과 — OffsetX: {X:F4}, OffsetY: {Y:F4}, OffsetT: {T:F4}",
                         vernier.OffsetX, vernier.OffsetY, vernier.OffsetT);
@@ -880,7 +884,7 @@ namespace HCB.UI
                         V3Y = result.v3.Count > i ? result.v3[i].Y : null,
                     });
                 }
-                ExportHighResult();
+                await SaveVernierAsync();
                 _logger.Information("Vernier 측정 완료 — {Count}포인트", result.v1.Count);
             }
             catch (OperationCanceledException) { _logger.Information("Vernier 측정 정지됨"); }
@@ -1091,6 +1095,41 @@ namespace HCB.UI
 
             File.AppendAllText(path, sb.ToString(), Encoding.UTF8);
             _logger.Information("Vernier CSV 저장: {Path}", path);
+        }
+
+        // 현재 버니어 측정(VernierRows + VernierResult)을 VernierLog 테이블에 포인트 단위로 저장한다.
+        private async Task SaveVernierAsync()
+        {
+            if (VernierRows == null || VernierRows.Count == 0) return;
+
+            try
+            {
+                var now = DateTime.Now;
+                var ox = VernierResult?.OffsetX;
+                var oy = VernierResult?.OffsetY;
+                var ot = VernierResult?.OffsetT;
+
+                var logs = VernierRows.Select(row => new VernierLog
+                {
+                    Time = now,
+                    Name = row.Name ?? "",
+                    V1X = row.V1X,
+                    V1Y = row.V1Y,
+                    V3X = row.V3X,
+                    V3Y = row.V3Y,
+                    OffsetX = ox,
+                    OffsetY = oy,
+                    OffsetT = ot,
+                }).ToList();
+
+                await _vernierRepo.AddRangeAsync(logs);
+                _logger.Information("버니어 측정 저장 — {Count}포인트, Offset({X:F4},{Y:F4},{T:F4})",
+                    logs.Count, ox ?? 0, oy ?? 0, ot ?? 0);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "버니어 DB 저장 실패");
+            }
         }
 
         private Task SaveHcbDataAsync() => SaveHcbDataAsync(hcbData, "Bonding");
