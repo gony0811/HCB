@@ -44,5 +44,9 @@ namespace HCB.Data.Entity
         public BondingAnalysis? Analysis { get; set; }
         public BondingCoordinate? Coordinate { get; set; }
         public BondingResult? Result { get; set; }
+
+        // 카메라 거리·회전중심 측정 원본 (Manual 트레이싱에서만 존재)
+        public CamDistMeasurement? CamDist { get; set; }
+        public ICollection<HcroMeasurementPoint> HcroPoints { get; set; } = new List<HcroMeasurementPoint>();
     }
 }

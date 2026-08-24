@@ -258,6 +258,7 @@
   <Compile Include="Models\AlignOffset.cs" />
   <Compile Include="Models\BondingCsvExporter.cs" />
   <Compile Include="Models\VernierCsvExporter.cs" />
+  <Compile Include="Models\CamHcroCsvExporter.cs" />
   <Compile Include="Models\BondingRecordMapper.cs" />
   <Compile Include="Models\LabelValue.cs" />
   <Compile Include="Models\VernierResult.cs" />

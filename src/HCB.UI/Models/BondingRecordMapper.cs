@@ -1,6 +1,7 @@
 using HCB.Data.Entity;
 using HCB.Data.Entity.Type;
 using System;
+using System.Collections.Generic;
 using static HCB.UI.SERVICE.CalibrationService;
 
 namespace HCB.UI
@@ -29,7 +30,59 @@ namespace HCB.UI
                 Analysis = BuildAnalysis(d),
                 Coordinate = BuildCoordinate(d),
                 Result = BuildResult(d, vernier),
+                CamDist = BuildCamDist(d),
+                HcroPoints = BuildHcroPoints(d),
             };
+        }
+
+        // 카메라 거리 측정 원본 (Manual 트레이싱에서 측정된 경우만). 미측정이면 null → 행 미생성.
+        private static CamDistMeasurement BuildCamDist(AlignData d)
+        {
+            if (!d.CamDistMeasured) return null;
+
+            return new CamDistMeasurement
+            {
+                Hc1_StageX = d.CamDistHc1Stage?.X ?? 0,
+                Hc1_StageY = d.CamDistHc1Stage?.Y ?? 0,
+                Hc1_DxCam = d.CamDistHc1Residual?.X ?? 0,
+                Hc1_DyCam = d.CamDistHc1Residual?.Y ?? 0,
+                Hc1_CenterX = d.CamDistHc1Center?.X ?? 0,
+                Hc1_CenterY = d.CamDistHc1Center?.Y ?? 0,
+                Hc2_StageX = d.CamDistHc2Stage?.X ?? 0,
+                Hc2_StageY = d.CamDistHc2Stage?.Y ?? 0,
+                Hc2_DxCam = d.CamDistHc2Residual?.X ?? 0,
+                Hc2_DyCam = d.CamDistHc2Residual?.Y ?? 0,
+                Hc2_CenterX = d.CamDistHc2Center?.X ?? 0,
+                Hc2_CenterY = d.CamDistHc2Center?.Y ?? 0,
+                Hc2Offset_X = d.Hc2Offset?.X ?? 0,
+                Hc2Offset_Y = d.Hc2Offset?.Y ?? 0,
+            };
+        }
+
+        // 회전중심 측정점 (Hc1RoRaw/Hc2RoRaw + HcroAngles). 미측정이면 빈 목록 → 행 미생성.
+        private static List<HcroMeasurementPoint> BuildHcroPoints(AlignData d)
+        {
+            var list = new List<HcroMeasurementPoint>();
+            if (d.Hc1RoRaw == null || d.Hc1RoRaw.Count == 0) return list;
+
+            int n = d.Hc1RoRaw.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var hc1 = d.Hc1RoRaw[i];
+                var hc2 = (d.Hc2RoRaw != null && i < d.Hc2RoRaw.Count) ? d.Hc2RoRaw[i] : null;
+                double angle = (d.HcroAngles != null && i < d.HcroAngles.Count) ? d.HcroAngles[i] : 0;
+
+                list.Add(new HcroMeasurementPoint
+                {
+                    PointIndex = i,
+                    Angle = angle,
+                    Hc1_X = hc1?.X ?? 0,
+                    Hc1_Y = hc1?.Y ?? 0,
+                    Hc2_X = hc2?.X ?? 0,
+                    Hc2_Y = hc2?.Y ?? 0,
+                });
+            }
+            return list;
         }
 
         private static BondingMeasurement BuildMeasurement(AlignData d)

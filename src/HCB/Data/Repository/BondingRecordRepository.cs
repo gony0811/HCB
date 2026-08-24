@@ -24,6 +24,8 @@ namespace HCB.Data.Repository
                 .Include(x => x.Analysis)
                 .Include(x => x.Coordinate)
                 .Include(x => x.Result)
+                .Include(x => x.CamDist)
+                .Include(x => x.HcroPoints)
                 .Include(x => x.ReMeasures)
                 .FirstOrDefaultAsync(x => x.Id == id, ct)
                 .ConfigureAwait(false);
@@ -81,6 +83,27 @@ namespace HCB.Data.Repository
                 .Include(x => x.Analysis)
                 .Include(x => x.Coordinate)
                 .Include(x => x.Result)
+                .ToListAsync(ct)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// 기간(start~end) 내 카메라 거리(CamDist) 또는 회전중심(HcroPoints) 측정이 있는 본딩 레코드를
+        /// 최신순으로 조회한다(부모 Time 확보용). HCRO/카메라거리 전용 탭 표시·CSV에 사용.
+        /// </summary>
+        public async Task<IReadOnlyList<BondingRecord>> ListWithCamHcroAsync(
+            DateTime start, DateTime end, CancellationToken ct = default)
+        {
+            using var db = CreateDb();
+
+            return await db.Set<BondingRecord>()
+                .AsNoTracking()
+                .Where(x => x.Time >= start && x.Time <= end
+                            && (x.CamDist != null || x.HcroPoints.Any()))
+                .OrderByDescending(x => x.Time)
+                .ThenByDescending(x => x.Id)
+                .Include(x => x.CamDist)
+                .Include(x => x.HcroPoints)
                 .ToListAsync(ct)
                 .ConfigureAwait(false);
         }

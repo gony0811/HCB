@@ -740,4 +740,37 @@ namespace HCB.Data
             b.HasIndex(x => x.Time);
         }
     }
+
+    public class CamDistMeasurementConfig : IEntityTypeConfiguration<CamDistMeasurement>
+    {
+        public void Configure(EntityTypeBuilder<CamDistMeasurement> b)
+        {
+            b.ToTable("CamDistMeasurement");
+            b.HasKey(x => x.BondingRecordId);
+            b.HasOne(x => x.BondingRecord)
+             .WithOne(r => r.CamDist)
+             .HasForeignKey<CamDistMeasurement>(x => x.BondingRecordId)
+             .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class HcroMeasurementPointConfig : IEntityTypeConfiguration<HcroMeasurementPoint>
+    {
+        public void Configure(EntityTypeBuilder<HcroMeasurementPoint> b)
+        {
+            b.ToTable("HcroMeasurementPoint");
+            b.HasKey(x => x.Id);
+
+            b.Property(x => x.Id)
+             .ValueGeneratedOnAdd()
+             .HasAnnotation("Sqlite:Autoincrement", true);
+
+            b.HasOne(x => x.BondingRecord)
+             .WithMany(r => r.HcroPoints)
+             .HasForeignKey(x => x.BondingRecordId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasIndex(x => x.BondingRecordId);
+        }
+    }
 }

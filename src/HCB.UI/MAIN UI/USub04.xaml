@@ -593,6 +593,167 @@
                 </Grid>
             </TabItem>
 
+            <!-- ════════ 탭 5 : HCRO / 카메라 거리 ════════ -->
+            <TabItem Header="HCRO/카메라거리">
+                <Grid Margin="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.85*"/>
+                        <ColumnDefinition Width="0.15*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ── 좌측: 카메라 거리 + 회전중심 2개 그리드 ── -->
+                    <Border Grid.Column="0"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8" Margin="0,0,6,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 카메라 거리 -->
+                            <Grid Grid.Row="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="카메라 거리"/>
+                                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+                                <ScrollViewer Grid.Row="1"
+                                              HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Disabled"
+                                              Margin="8,6,8,4">
+                                <DataGrid Style="{StaticResource LogDataGrid}"
+                                          ColumnHeaderStyle="{StaticResource LogColumnHeader}"
+                                          CellStyle="{StaticResource LogCell}"
+                                          ItemsSource="{Binding CamDistList}"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          VerticalScrollBarVisibility="Auto">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="시각"        Binding="{Binding Time, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" Width="160"/>
+                                        <DataGridTextColumn Header="본딩ID"      Binding="{Binding BondingId}"                                     Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_StageX"  Binding="{Binding Hc1_StageX, StringFormat='{}{0:F6}'}"            Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_StageY"  Binding="{Binding Hc1_StageY, StringFormat='{}{0:F6}'}"            Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_DxCam"   Binding="{Binding Hc1_DxCam, StringFormat='{}{0:F6}'}"             Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_DyCam"   Binding="{Binding Hc1_DyCam, StringFormat='{}{0:F6}'}"             Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_CenterX" Binding="{Binding Hc1_CenterX, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_CenterY" Binding="{Binding Hc1_CenterY, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_StageX"  Binding="{Binding Hc2_StageX, StringFormat='{}{0:F6}'}"            Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_StageY"  Binding="{Binding Hc2_StageY, StringFormat='{}{0:F6}'}"            Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_DxCam"   Binding="{Binding Hc2_DxCam, StringFormat='{}{0:F6}'}"             Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_DyCam"   Binding="{Binding Hc2_DyCam, StringFormat='{}{0:F6}'}"             Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_CenterX" Binding="{Binding Hc2_CenterX, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_CenterY" Binding="{Binding Hc2_CenterY, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2Offset_X" Binding="{Binding Hc2Offset_X, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2Offset_Y" Binding="{Binding Hc2Offset_Y, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                </ScrollViewer>
+                            </Grid>
+
+                            <!-- 회전중심 -->
+                            <Grid Grid.Row="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="회전중심 (HCRO)"/>
+                                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+                                <DataGrid Grid.Row="1"
+                                          Style="{StaticResource LogDataGrid}"
+                                          ColumnHeaderStyle="{StaticResource LogColumnHeader}"
+                                          CellStyle="{StaticResource LogCell}"
+                                          ItemsSource="{Binding HcroList}"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          ScrollViewer.CanContentScroll="False"
+                                          Margin="8,6,8,4">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="시각"    Binding="{Binding Time, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" Width="160"/>
+                                        <DataGridTextColumn Header="본딩ID"  Binding="{Binding BondingId}"                                     Width="Auto"/>
+                                        <DataGridTextColumn Header="Idx"     Binding="{Binding PointIndex}"                                    Width="Auto"/>
+                                        <DataGridTextColumn Header="Angle"   Binding="{Binding Angle, StringFormat='{}{0:F3}'}"                 Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_X"   Binding="{Binding Hc1_X, StringFormat='{}{0:F6}'}"                 Width="*"/>
+                                        <DataGridTextColumn Header="Hc1_Y"   Binding="{Binding Hc1_Y, StringFormat='{}{0:F6}'}"                 Width="*"/>
+                                        <DataGridTextColumn Header="Hc2_X"   Binding="{Binding Hc2_X, StringFormat='{}{0:F6}'}"                 Width="*"/>
+                                        <DataGridTextColumn Header="Hc2_Y"   Binding="{Binding Hc2_Y, StringFormat='{}{0:F6}'}"                 Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── 우측 검색·출력 패널 ── -->
+                    <Border Grid.Column="1"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="검색 · 출력"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="12,10,12,12">
+                                <TextBlock Text="Begin" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker SelectedValue="{Binding CamHcroStartDate, Mode=TwoWay}" InputMode="DatePicker" Margin="0,0,0,8"/>
+
+                                <TextBlock Text="End" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker SelectedValue="{Binding CamHcroEndDate, Mode=TwoWay}" InputMode="DatePicker" Margin="0,0,0,12"/>
+
+                                <Button Content="검색"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding CamHcroSearchCommand}"
+                                        Margin="0,0,0,12"/>
+
+                                <Rectangle Height="1" Fill="#1C3A52" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="저장 폴더" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding Settings.CsvCamHcroQueryDir, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
+                                             Padding="6,4" VerticalContentAlignment="Center"
+                                             ToolTip="{Binding Settings.CsvCamHcroQueryDir}"/>
+                                    <Button Grid.Column="1" Content="..."
+                                            Command="{Binding Settings.BrowseCamHcroQueryDirCommand}"
+                                            Width="34" Margin="4,0,0,0"/>
+                                </Grid>
+
+                                <TextBlock Text="카메라거리 파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Settings.CsvCamDistFileName, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
+                                         Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,8"/>
+
+                                <TextBlock Text="회전중심 파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Settings.CsvHcroFileName, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
+                                         Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,4"/>
+                                <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
+
+                                <Button Content="카메라거리 CSV (검색 전체)"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding ExportCamDistCsvCommand}"
+                                        Margin="0,0,0,8"/>
+                                <Button Content="회전중심 CSV (검색 전체)"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding ExportHcroCsvCommand}"/>
+                            </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
         </TabControl>
     </Grid>
 </Page>

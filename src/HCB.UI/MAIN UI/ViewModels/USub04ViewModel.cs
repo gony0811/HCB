@@ -79,6 +79,16 @@ namespace HCB.UI
         private bool isVernierLoading;
         // =========================================================
 
+        // ================ HCRO / 카메라 거리 =====================
+        [ObservableProperty] private ObservableCollection<CamDistRow> camDistList = new();
+        [ObservableProperty] private ObservableCollection<HcroPointRow> hcroList = new();
+
+        [ObservableProperty] private DateTime camHcroStartDate = DateTime.Now.AddDays(-7);
+        [ObservableProperty] private DateTime camHcroEndDate = DateTime.Now;
+
+        private bool isCamHcroLoading;
+        // =========================================================
+
         private bool isLoading;
 
         public USub04ViewModel(
@@ -101,6 +111,7 @@ namespace HCB.UI
             _ = LoadPageData();
             _ = LoadBondingPageAsync();
             _ = LoadVernierPageAsync();
+            _ = LoadCamHcroAsync();
         }
 
         partial void OnCurrentPageIndexChanged(int value)
@@ -322,6 +333,116 @@ namespace HCB.UI
         }
 
         /* ============================
+         * HCRO / 카메라 거리 (조회·CSV)
+         * ============================ */
+        public async Task LoadCamHcroAsync()
+        {
+            if (isCamHcroLoading) return;
+
+            try
+            {
+                isCamHcroLoading = true;
+
+                var start = CamHcroStartDate.Date;
+                var end = CamHcroEndDate.Date.AddDays(1).AddTicks(-1);
+                var records = await bondingRecordRepository.ListWithCamHcroAsync(start, end);
+
+                CamDistList = new ObservableCollection<CamDistRow>(
+                    records.Where(r => r.CamDist != null).Select(CamDistRow.From));
+
+                HcroList = new ObservableCollection<HcroPointRow>(
+                    records.SelectMany(r => r.HcroPoints
+                        .OrderBy(p => p.PointIndex)
+                        .Select(p => HcroPointRow.From(r.Time, r.Id, p))));
+            }
+            catch (Exception)
+            {
+                // 조회 실패 시 조용히 무시 (다른 조회 패턴과 동일)
+            }
+            finally
+            {
+                isCamHcroLoading = false;
+            }
+        }
+
+        [RelayCommand]
+        public async Task CamHcroSearch() => await LoadCamHcroAsync();
+
+        [RelayCommand]
+        public async Task ExportCamDistCsv()
+        {
+            try
+            {
+                var start = CamHcroStartDate.Date;
+                var end = CamHcroEndDate.Date.AddDays(1).AddTicks(-1);
+                var records = await bondingRecordRepository.ListWithCamHcroAsync(start, end);
+                var rows = records.Where(r => r.CamDist != null).Select(CamDistRow.From).ToList();
+
+                if (rows.Count == 0)
+                {
+                    MessageBox.Show("출력할 카메라 거리 데이터가 없습니다.", "CSV 출력",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var path = ResolveCamHcroPath(settings.CsvCamDistFileName, "CamDist_{date}_{time}.csv");
+                File.WriteAllText(path, CamHcroCsvExporter.BuildCamDistCsv(rows), new UTF8Encoding(true));
+                MessageBox.Show($"CSV 출력 완료 ({rows.Count}건)\n{path}",
+                    "CSV 출력", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"CSV 출력 실패\n{ex.Message}", "CSV 출력",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        [RelayCommand]
+        public async Task ExportHcroCsv()
+        {
+            try
+            {
+                var start = CamHcroStartDate.Date;
+                var end = CamHcroEndDate.Date.AddDays(1).AddTicks(-1);
+                var records = await bondingRecordRepository.ListWithCamHcroAsync(start, end);
+                var rows = records.SelectMany(r => r.HcroPoints
+                    .OrderBy(p => p.PointIndex)
+                    .Select(p => HcroPointRow.From(r.Time, r.Id, p))).ToList();
+
+                if (rows.Count == 0)
+                {
+                    MessageBox.Show("출력할 회전중심 데이터가 없습니다.", "CSV 출력",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var path = ResolveCamHcroPath(settings.CsvHcroFileName, "Hcro_{date}_{time}.csv");
+                File.WriteAllText(path, CamHcroCsvExporter.BuildHcroCsv(rows), new UTF8Encoding(true));
+                MessageBox.Show($"CSV 출력 완료 ({rows.Count}건)\n{path}",
+                    "CSV 출력", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"CSV 출력 실패\n{ex.Message}", "CSV 출력",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private string ResolveCamHcroPath(string fileNamePattern, string defaultPattern)
+        {
+            var dir = string.IsNullOrWhiteSpace(settings.CsvCamHcroQueryDir)
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "HCRO 조회")
+                : settings.CsvCamHcroQueryDir;
+            Directory.CreateDirectory(dir);
+
+            var pattern = string.IsNullOrWhiteSpace(fileNamePattern) ? defaultPattern : fileNamePattern;
+            var path = settings.ResolveCsvPath(dir, pattern);
+            if (!path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+                path += ".csv";
+            return path;
+        }
+
+        /* ============================
          * Event Handlers
          * ============================ */
         private void OnAlarmHistoryAdded(AlarmHistoryDto dto)
@@ -432,6 +553,72 @@ namespace HCB.UI
             Setting = r.Setting,
             Analysis = r.Analysis,
             Coordinate = r.Coordinate,
+        };
+    }
+
+    /// <summary>카메라 거리 측정 표시 행 (본딩 Time·Id + CamDistMeasurement 필드).</summary>
+    public class CamDistRow
+    {
+        public DateTime Time { get; set; }
+        public int BondingId { get; set; }
+        public double Hc1_StageX { get; set; }
+        public double Hc1_StageY { get; set; }
+        public double Hc1_DxCam { get; set; }
+        public double Hc1_DyCam { get; set; }
+        public double Hc1_CenterX { get; set; }
+        public double Hc1_CenterY { get; set; }
+        public double Hc2_StageX { get; set; }
+        public double Hc2_StageY { get; set; }
+        public double Hc2_DxCam { get; set; }
+        public double Hc2_DyCam { get; set; }
+        public double Hc2_CenterX { get; set; }
+        public double Hc2_CenterY { get; set; }
+        public double Hc2Offset_X { get; set; }
+        public double Hc2Offset_Y { get; set; }
+
+        public static CamDistRow From(BondingRecord r) => new CamDistRow
+        {
+            Time = r.Time,
+            BondingId = r.Id,
+            Hc1_StageX = r.CamDist.Hc1_StageX,
+            Hc1_StageY = r.CamDist.Hc1_StageY,
+            Hc1_DxCam = r.CamDist.Hc1_DxCam,
+            Hc1_DyCam = r.CamDist.Hc1_DyCam,
+            Hc1_CenterX = r.CamDist.Hc1_CenterX,
+            Hc1_CenterY = r.CamDist.Hc1_CenterY,
+            Hc2_StageX = r.CamDist.Hc2_StageX,
+            Hc2_StageY = r.CamDist.Hc2_StageY,
+            Hc2_DxCam = r.CamDist.Hc2_DxCam,
+            Hc2_DyCam = r.CamDist.Hc2_DyCam,
+            Hc2_CenterX = r.CamDist.Hc2_CenterX,
+            Hc2_CenterY = r.CamDist.Hc2_CenterY,
+            Hc2Offset_X = r.CamDist.Hc2Offset_X,
+            Hc2Offset_Y = r.CamDist.Hc2Offset_Y,
+        };
+    }
+
+    /// <summary>회전중심 측정점 표시 행 (본딩 Time·Id + HcroMeasurementPoint 필드).</summary>
+    public class HcroPointRow
+    {
+        public DateTime Time { get; set; }
+        public int BondingId { get; set; }
+        public int PointIndex { get; set; }
+        public double Angle { get; set; }
+        public double Hc1_X { get; set; }
+        public double Hc1_Y { get; set; }
+        public double Hc2_X { get; set; }
+        public double Hc2_Y { get; set; }
+
+        public static HcroPointRow From(DateTime time, int bondingId, HcroMeasurementPoint p) => new HcroPointRow
+        {
+            Time = time,
+            BondingId = bondingId,
+            PointIndex = p.PointIndex,
+            Angle = p.Angle,
+            Hc1_X = p.Hc1_X,
+            Hc1_Y = p.Hc1_Y,
+            Hc2_X = p.Hc2_X,
+            Hc2_Y = p.Hc2_Y,
         };
     }
 }

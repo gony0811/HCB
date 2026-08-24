@@ -1100,7 +1100,11 @@ namespace HCB.UI
                 {
                     var v1 = await VisionResult(CameraType.HC1_HIGH, MarkType.ALIGN_MARK, DirectType.LEFT, MotionExtensions.W_Y, ct);
                     if (Math.Abs(v1.DxCamToMark) <= Tolerance && Math.Abs(v1.DyCamToMark) <= Tolerance)
+                    {
+                        d.CamDistHc1Residual = Point2D.of(v1.DxCamToMark, v1.DyCamToMark);
+                        d.CamDistHc1Center = Point2D.of(v1.CenterX, v1.CenterY);
                         break;
+                    }
                     await Task.WhenAll(
                         RelativeMotionsMove(MotionExtensions.H_X, -v1.DxCamToMark, ct),
                         RelativeMotionsMove(MotionExtensions.W_Y, -v1.DyCamToMark, ct));
@@ -1109,6 +1113,7 @@ namespace HCB.UI
                 }
                 double hc1StageX = await GetCurrentPosition(MotionExtensions.H_X, ct);
                 double hc1StageY = await GetCurrentPosition(MotionExtensions.W_Y, ct);
+                d.CamDistHc1Stage = Point2D.of(hc1StageX, hc1StageY);
 
                 // ── HC2 위치로 이동 ──
                 await Task.WhenAll(
@@ -1120,7 +1125,11 @@ namespace HCB.UI
                 {
                     var v2 = await VisionResult(CameraType.HC2_HIGH, MarkType.ALIGN_MARK, DirectType.RIGHT, MotionExtensions.W_Y, ct);
                     if (Math.Abs(v2.DxCamToMark) <= Tolerance && Math.Abs(v2.DyCamToMark) <= Tolerance)
+                    {
+                        d.CamDistHc2Residual = Point2D.of(v2.DxCamToMark, v2.DyCamToMark);
+                        d.CamDistHc2Center = Point2D.of(v2.CenterX, v2.CenterY);
                         break;
+                    }
                     await Task.WhenAll(
                         RelativeMotionsMove(MotionExtensions.H_X, -v2.DxCamToMark, ct),
                         RelativeMotionsMove(MotionExtensions.W_Y, -v2.DyCamToMark, ct));
@@ -1129,9 +1138,11 @@ namespace HCB.UI
                 }
                 double hc2StageX = await GetCurrentPosition(MotionExtensions.H_X, ct);
                 double hc2StageY = await GetCurrentPosition(MotionExtensions.W_Y, ct);
+                d.CamDistHc2Stage = Point2D.of(hc2StageX, hc2StageY);
 
                 // 카메라 거리 = 동일 마크를 센터링한 두 스테이지 위치의 차이
                 d.Hc2Offset = Point2D.of(hc1StageX - hc2StageX, hc1StageY - hc2StageY);
+                d.CamDistMeasured = true;
 
                 await Task.WhenAll(
                     MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", HcCenterErrorX, ct),
@@ -1161,6 +1172,7 @@ namespace HCB.UI
         {
             var hc1Raw = new List<Point2D>();
             var hc2Raw = new List<Point2D>();
+            var angleList = new List<double>();   // 각 측정점의 H_T 각도(hc1Raw/hc2Raw와 병렬)
 
             // 반복 횟수: EC 파라미터 HCRO_REPEAT_N (미설정 시 1)
             // 강체 피팅 불확도 ≈ σ/(2sin(β/2)·√rep) — rep=5면 1회 대비 √5배 개선
@@ -1199,6 +1211,7 @@ namespace HCB.UI
 
                         hc1Raw.Add(Point2D.of(v1.X, v1.Y));
                         hc2Raw.Add(Point2D.of(v2.X, v2.Y));
+                        angleList.Add(angle);
 
                         _logger.Information(
                             "MeasureHcroPoints — rep={Rep} H_T={Angle:F2}° Hc1=({H1x:F5},{H1y:F5}) Hc2=({H2x:F5},{H2y:F5})",
@@ -1208,6 +1221,7 @@ namespace HCB.UI
 
                 // H_T 복귀
                 await MotionsMove(MotionExtensions.H_T, 0, ct);
+                d.HcroAngles = angleList;
 
                 _logger.Information("MeasureHcroPoints — reps={Reps}, Hc1={Hc1Count}, Hc2={Hc2Count}",
                     repeatN, hc1Raw.Count, hc2Raw.Count);

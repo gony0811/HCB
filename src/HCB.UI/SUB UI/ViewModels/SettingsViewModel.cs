@@ -33,6 +33,11 @@ namespace HCB.UI
         [ObservableProperty] private string csvVernierQueryDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "버니어 조회");
         [ObservableProperty] private string csvVernierQueryFileName = "Vernier_{date}_{time}.csv";
 
+        // HCRO/카메라거리 조회 화면(USub04) CSV 출력 설정
+        [ObservableProperty] private string csvCamHcroQueryDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "HCRO 조회");
+        [ObservableProperty] private string csvCamDistFileName = "CamDist_{date}_{time}.csv";
+        [ObservableProperty] private string csvHcroFileName = "Hcro_{date}_{time}.csv";
+
         [RelayCommand]
         public void ChangeAvgMode() => AvgMode = !AvgMode;
 
@@ -114,6 +119,18 @@ namespace HCB.UI
             };
             if (dlg.ShowDialog() == true)
                 CsvVernierQueryDir = dlg.FolderName;
+        }
+
+        [RelayCommand]
+        private void BrowseCamHcroQueryDir()
+        {
+            var dlg = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = "HCRO/카메라거리 CSV 저장 폴더 선택",
+                InitialDirectory = Directory.Exists(CsvCamHcroQueryDir) ? CsvCamHcroQueryDir : ""
+            };
+            if (dlg.ShowDialog() == true)
+                CsvCamHcroQueryDir = dlg.FolderName;
         }
 
         public string ResolveCsvPath(string dir, string fileNamePattern)
