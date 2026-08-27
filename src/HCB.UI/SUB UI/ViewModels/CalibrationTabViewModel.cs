@@ -236,7 +236,7 @@ namespace HCB.UI
 
                     CalibStatus = $"WarmUp #{WarmUpCycle} — Max 이동";
                     await Task.WhenAll(Array.ConvertAll(axes,
-                        a => _sequenceService.MotionsMove(a.Name, a.Axis.LimitMaxPosition - 5, ct)));
+                        a => _sequenceService.MotionsMove(a.Name, a.Axis.LimitMaxPosition - 5,ct)));
 
                     ct.ThrowIfCancellationRequested();
 
@@ -246,6 +246,12 @@ namespace HCB.UI
 
                     await _sequenceService.MotionsMove(MotionExtensions.H_Z, 95, ct);
                     await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.HEAD_SAFETY, ct);
+
+                    await _sequenceService.MotionsMove(MotionExtensions.h_z, 1.7, ct);
+                    await _sequenceService.MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, ct);
+
+                    await _sequenceService.MotionsMove(MotionExtensions.H_T, 1.5, 20, ct);
+                    await _sequenceService.MotionsMove(MotionExtensions.H_T, -1.5, 20, ct);
 
                 }
             }
