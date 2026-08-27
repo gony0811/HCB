@@ -84,6 +84,44 @@
                 </Setter>
             </Style>
 
+            <!-- CSV 저장 폴더·파일명 입력용 다크 TextBox (포커스 시 흰 배경 방지) -->
+            <Style x:Key="DarkTextBox" TargetType="TextBox">
+                <Setter Property="Background" Value="#0A1628"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="CaretBrush" Value="#ECF0F1"/>
+                <Setter Property="SelectionBrush" Value="#2A5A8C"/>
+                <Setter Property="BorderBrush" Value="#1C3A52"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="6,4"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4">
+                                <ScrollViewer x:Name="PART_ContentHost"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#2A5A8C"/>
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#3498DB"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="#6B7280"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
         </ResourceDictionary>
     </Page.Resources>
 
@@ -451,8 +489,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBox Grid.Column="0"
                                              Text="{Binding Settings.CsvBondingQueryDir, UpdateSourceTrigger=PropertyChanged}"
-                                             Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
-                                             Padding="6,4" VerticalContentAlignment="Center"
+                                             Style="{StaticResource DarkTextBox}"
                                              ToolTip="{Binding Settings.CsvBondingQueryDir}"/>
                                     <Button Grid.Column="1" Content="..."
                                             Command="{Binding Settings.BrowseBondingQueryDirCommand}"
@@ -461,8 +498,7 @@
 
                                 <TextBlock Text="파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding Settings.CsvBondingQueryFileName, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
-                                         Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,4"/>
+                                         Style="{StaticResource DarkTextBox}" Margin="0,0,0,4"/>
                                 <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
 
                                 <TextBlock Text="정렬 (날짜)" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -577,8 +613,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBox Grid.Column="0"
                                              Text="{Binding Settings.CsvVernierQueryDir, UpdateSourceTrigger=PropertyChanged}"
-                                             Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
-                                             Padding="6,4" VerticalContentAlignment="Center"
+                                             Style="{StaticResource DarkTextBox}"
                                              ToolTip="{Binding Settings.CsvVernierQueryDir}"/>
                                     <Button Grid.Column="1" Content="..."
                                             Command="{Binding Settings.BrowseVernierQueryDirCommand}"
@@ -587,8 +622,7 @@
 
                                 <TextBlock Text="파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding Settings.CsvVernierQueryFileName, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
-                                         Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,4"/>
+                                         Style="{StaticResource DarkTextBox}" Margin="0,0,0,4"/>
                                 <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
 
                                 <TextBlock Text="정렬 (날짜)" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -735,8 +769,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBox Grid.Column="0"
                                              Text="{Binding Settings.CsvCamHcroQueryDir, UpdateSourceTrigger=PropertyChanged}"
-                                             Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
-                                             Padding="6,4" VerticalContentAlignment="Center"
+                                             Style="{StaticResource DarkTextBox}"
                                              ToolTip="{Binding Settings.CsvCamHcroQueryDir}"/>
                                     <Button Grid.Column="1" Content="..."
                                             Command="{Binding Settings.BrowseCamHcroQueryDirCommand}"
@@ -745,13 +778,11 @@
 
                                 <TextBlock Text="카메라거리 파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding Settings.CsvCamDistFileName, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
-                                         Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,8"/>
+                                         Style="{StaticResource DarkTextBox}" Margin="0,0,0,8"/>
 
                                 <TextBlock Text="회전중심 파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding Settings.CsvHcroFileName, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
-                                         Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,4"/>
+                                         Style="{StaticResource DarkTextBox}" Margin="0,0,0,4"/>
                                 <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
 
                                 <TextBlock Text="정렬 (날짜)" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
