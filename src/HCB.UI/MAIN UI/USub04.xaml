@@ -465,6 +465,13 @@
                                          Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,4"/>
                                 <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
 
+                                <TextBlock Text="정렬 (날짜)" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadComboBox SelectedIndex="{Binding CsvSortOrderIndex, Mode=TwoWay}"
+                                                     Margin="0,0,0,12">
+                                    <telerik:RadComboBoxItem Content="오름차순 (과거→최신)"/>
+                                    <telerik:RadComboBoxItem Content="내림차순 (최신→과거)"/>
+                                </telerik:RadComboBox>
+
                                 <Button Content="CSV 출력 (검색 전체)"
                                         Style="{StaticResource SearchButton}"
                                         Command="{Binding ExportBondingCsvCommand}"/>
@@ -583,6 +590,13 @@
                                          Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
                                          Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,4"/>
                                 <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="정렬 (날짜)" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadComboBox SelectedIndex="{Binding CsvSortOrderIndex, Mode=TwoWay}"
+                                                     Margin="0,0,0,12">
+                                    <telerik:RadComboBoxItem Content="오름차순 (과거→최신)"/>
+                                    <telerik:RadComboBoxItem Content="내림차순 (최신→과거)"/>
+                                </telerik:RadComboBox>
 
                                 <Button Content="CSV 출력 (검색 전체)"
                                         Style="{StaticResource SearchButton}"
@@ -739,6 +753,13 @@
                                          Background="#0A1628" Foreground="#ECF0F1" BorderBrush="#1C3A52"
                                          Padding="6,4" VerticalContentAlignment="Center" Margin="0,0,0,4"/>
                                 <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="정렬 (날짜)" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadComboBox SelectedIndex="{Binding CsvSortOrderIndex, Mode=TwoWay}"
+                                                     Margin="0,0,0,12">
+                                    <telerik:RadComboBoxItem Content="오름차순 (과거→최신)"/>
+                                    <telerik:RadComboBoxItem Content="내림차순 (최신→과거)"/>
+                                </telerik:RadComboBox>
 
                                 <Button Content="카메라거리 CSV (검색 전체)"
                                         Style="{StaticResource SearchButton}"
