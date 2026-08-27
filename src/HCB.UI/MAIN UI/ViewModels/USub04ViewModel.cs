@@ -89,6 +89,15 @@ namespace HCB.UI
         private bool isCamHcroLoading;
         // =========================================================
 
+        // ================ CSV 날짜 정렬 (공통) ===================
+        // 0 = 오름차순(과거→최신), 1 = 내림차순(최신→과거). 모든 CSV 출력에 적용.
+        [ObservableProperty] private int csvSortOrderIndex = 0;
+
+        /// <summary>CsvSortOrderIndex 에 따라 날짜 기준 오름/내림차순으로 정렬한 리스트를 반환한다.</summary>
+        private List<T> SortByDate<T>(IEnumerable<T> src, Func<T, DateTime> dateKey)
+            => (CsvSortOrderIndex == 1 ? src.OrderByDescending(dateKey) : src.OrderBy(dateKey)).ToList();
+        // =========================================================
+
         private bool isLoading;
 
         public USub04ViewModel(
@@ -242,9 +251,10 @@ namespace HCB.UI
                 if (!path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
                     path += ".csv";
 
-                var csv = BondingCsvExporter.BuildCsv(records);
+                var ordered = SortByDate(records, r => r.Time);
+                var csv = BondingCsvExporter.BuildCsv(ordered);
                 File.WriteAllText(path, csv, new UTF8Encoding(true)); // BOM: Excel 한글 대응
-                MessageBox.Show($"CSV 출력 완료 ({records.Count}건)\n{path}",
+                MessageBox.Show($"CSV 출력 완료 ({ordered.Count}건)\n{path}",
                     "CSV 출력", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -320,9 +330,10 @@ namespace HCB.UI
                 if (!path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
                     path += ".csv";
 
-                var csv = VernierCsvExporter.BuildCsv(records);
+                var ordered = SortByDate(records, r => r.Time);
+                var csv = VernierCsvExporter.BuildCsv(ordered);
                 File.WriteAllText(path, csv, new UTF8Encoding(true)); // BOM: Excel 한글 대응
-                MessageBox.Show($"CSV 출력 완료 ({records.Count}건)\n{path}",
+                MessageBox.Show($"CSV 출력 완료 ({ordered.Count}건)\n{path}",
                     "CSV 출력", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -376,7 +387,8 @@ namespace HCB.UI
                 var start = CamHcroStartDate.Date;
                 var end = CamHcroEndDate.Date.AddDays(1).AddTicks(-1);
                 var records = await bondingRecordRepository.ListWithCamHcroAsync(start, end);
-                var rows = records.Where(r => r.CamDist != null).Select(CamDistRow.From).ToList();
+                var rows = SortByDate(
+                    records.Where(r => r.CamDist != null).Select(CamDistRow.From), r => r.Time);
 
                 if (rows.Count == 0)
                 {
@@ -405,9 +417,13 @@ namespace HCB.UI
                 var start = CamHcroStartDate.Date;
                 var end = CamHcroEndDate.Date.AddDays(1).AddTicks(-1);
                 var records = await bondingRecordRepository.ListWithCamHcroAsync(start, end);
-                var rows = records.SelectMany(r => r.HcroPoints
-                    .OrderBy(p => p.PointIndex)
-                    .Select(p => HcroPointRow.From(r.Time, r.Id, p))).ToList();
+                var flat = records.SelectMany(r => r.HcroPoints
+                    .Select(p => HcroPointRow.From(r.Time, r.Id, p)));
+                // 날짜 기준 오름/내림차순, 같은 측정 내에서는 PointIndex 오름차순 유지
+                var rows = (CsvSortOrderIndex == 1
+                        ? flat.OrderByDescending(r => r.Time).ThenBy(r => r.PointIndex)
+                        : flat.OrderBy(r => r.Time).ThenBy(r => r.PointIndex))
+                    .ToList();
 
                 if (rows.Count == 0)
                 {
