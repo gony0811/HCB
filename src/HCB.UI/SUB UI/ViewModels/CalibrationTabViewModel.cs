@@ -1028,7 +1028,7 @@ namespace HCB.UI
                 ("HC1_X", hc1X), ("HC1_Y", hc1Y),
                 ("HC2_X", hc2X), ("HC2_Y", hc2Y),
             };
-
+                bool centered = false;
             foreach (var (name, value) in updates)
             {
                 var param = _ecParamService.FindByName(name);
@@ -1090,8 +1090,8 @@ namespace HCB.UI
 
                 await _sequenceService.MotionsMove(MotionExtensions.H_X,
                     _hxAxis!.CurrentPosition + 0.55, ct);
-
-                await _communication.RequestAFStart(cameraType, markType, ct);
+                );
+                // 4. 이동 후 비전 좌표 읽기
                 var afterVision = await _communication.RequestVisionMarkPosition(
                     markType, cameraType, directType.ToString());
                 if (afterVision == null) throw new Exception("afterVision 응답 null");
@@ -1099,11 +1099,15 @@ namespace HCB.UI
 
                 double fullDx = afterVision.X - beforeVision.X;
                 double fullDy = afterVision.Y - beforeVision.Y;
-
+                var afterVision = await _communication.RequestVisionMarkPosition(markType, cameraType, directType.ToString());
                 double theta = Math.Atan2(fullDy, fullDx);
                 if (theta > Math.PI / 2) theta -= Math.PI;
                 else if (theta < -Math.PI / 2) theta += Math.PI;
                 return theta;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception e)

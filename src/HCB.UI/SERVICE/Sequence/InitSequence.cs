@@ -532,7 +532,7 @@ namespace HCB.UI
                 await _sequenceHelper.WTableLiftPin(eUpDown.Down, ct);
                 _sequenceServiceVM.InitializeProgress = 30;
                 // 3. 전체 Servo On 
-                _sequenceServiceVM.ServoOn= StepState.InProgress;
+                _sequenceServiceVM.ServoOn = StepState.InProgress;
                 bool servoResult = await Init_ServoAllOn(ct);
                 if (!servoResult)
                 {
@@ -575,7 +575,7 @@ namespace HCB.UI
                 await TInit(ct);
                 await Task.Delay(1000);
                 var hx = motionDevice.FindMotionByName(MotionExtensions.H_X);
-                var ht= motionDevice.FindMotionByName(MotionExtensions.H_T);
+                var ht = motionDevice.FindMotionByName(MotionExtensions.H_T);
                 var xt = new List<IAxis> { hx, ht };
 
                 _sequenceServiceVM.HXHome = StepState.InProgress;
@@ -630,6 +630,29 @@ namespace HCB.UI
                 throw;
             }
         }
+
+
+        public async Task TInit(CancellationToken ct = default)
+        {
+            var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            await device.SendCommand("enable plc 9");
+
+            var timeout = TimeSpan.FromSeconds(300);
+            var pollInterval = TimeSpan.FromMilliseconds(100);
+
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(timeout);
+
+            while (true)
+            {
+                timeoutCts.Token.ThrowIfCancellationRequested();
+
+                string result = await device.SendCommand<string>("Encpha");
+                if (result.Equals("1"))
+                    break;
+
+                await Task.Delay(pollInterval, timeoutCts.Token);
+            }
 
         public async Task DVacAllOnOff(bool onOff, CancellationToken ct = default )
         {
