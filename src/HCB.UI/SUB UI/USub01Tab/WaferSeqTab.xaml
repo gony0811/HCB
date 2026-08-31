@@ -153,6 +153,11 @@
                                     Visibility="{Binding IsBonding, Converter={StaticResource BoolToVis}}"/>
                             </Grid>
 
+                            <!-- 본딩 후 배치 검증: Top/Btm Align 4점 측정 → Error X/Y/θ 산출 -->
+                            <Button DockPanel.Dock="Bottom" Content="결과 측정 (4점 검증)"
+                                Command="{Binding VerifyPlacementCommand}"
+                                Height="40" FontSize="14" FontWeight="Bold" Margin="0,8,0,0"/>
+
                             <!-- 선택 Die를 저배/고배 카메라로 보기 (해당 Die 위치로 이동 후 측정) -->
                             <Grid DockPanel.Dock="Bottom" Margin="0,8,0,0">
                                 <Grid.ColumnDefinitions>
@@ -232,6 +237,60 @@
                                                        Foreground="#2ECC71" FontSize="13"/>
                                         </Grid>
                                     </Border>
+
+                                    <!-- PLACEMENT VERIFY RESULT (4점 검증 결과) -->
+                                    <StackPanel Margin="0,16,0,0"
+                                                Visibility="{Binding HasPlacementResult, Converter={StaticResource BoolToVis}}">
+                                        <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
+                                                HorizontalAlignment="Left" Margin="0,0,0,12">
+                                            <TextBlock Text="배치 검증 (4점)" Foreground="#3498DB"
+                                                       FontSize="12" FontWeight="Bold"/>
+                                        </Border>
+
+                                        <Border Background="#0A1628" CornerRadius="6" Padding="14"
+                                                BorderBrush="#1C3A52" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <!-- 상태 -->
+                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="상태"
+                                                           Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,10"/>
+                                                <TextBlock Grid.Row="0" Grid.Column="1"
+                                                           Text="{Binding PlacementStatus}" TextWrapping="Wrap"
+                                                           Foreground="#F39C12" FontSize="13" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                                <!-- Error X -->
+                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Error X (µm)"
+                                                           Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="1"
+                                                           Text="{Binding ErrorX, StringFormat=F2}"
+                                                           Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas" Margin="0,0,0,8"/>
+
+                                                <!-- Error Y -->
+                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Error Y (µm)"
+                                                           Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,8"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="1"
+                                                           Text="{Binding ErrorY, StringFormat=F2}"
+                                                           Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas" Margin="0,0,0,8"/>
+
+                                                <!-- Error Theta -->
+                                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Error θ (°)"
+                                                           Foreground="#5E8BAA" FontSize="13" Margin="0,0,20,0"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="1"
+                                                           Text="{Binding ErrorTheta, StringFormat=F4}"
+                                                           Foreground="#ECF0F1" FontSize="13" FontFamily="Consolas"/>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
 
                                     <!-- SEQUENCE PROGRESS (본딩 진행 중에만 표시) -->
                                     <StackPanel Margin="0,16,0,0"
@@ -405,6 +464,60 @@
                                     Command="{Binding ApplyAndSaveCommand}"
                                     Height="36" FontSize="13"/>
                             </Grid>
+
+                            <!-- ═══════════ 배치 검증 설정 (4점 Align) ═══════════ -->
+                            <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"
+                                    HorizontalAlignment="Left" Margin="0,20,0,12">
+                                <TextBlock Text="배치 검증 설정 (4점 Align)" Foreground="#3498DB"
+                                           FontSize="12" FontWeight="Bold"/>
+                            </Border>
+
+                            <Border Background="#0A1628" CornerRadius="6" Padding="14"
+                                    BorderBrush="#1C3A52" BorderThickness="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Top Align 상대거리 X (mm)"
+                                               Foreground="#5E8BAA" FontSize="13"
+                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1"
+                                             Text="{Binding AlignTopSpacingX}" Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Top Align 상대거리 Y (mm)"
+                                               Foreground="#5E8BAA" FontSize="13"
+                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
+                                    <TextBox Grid.Row="1" Grid.Column="1"
+                                             Text="{Binding AlignTopSpacingY}" Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Btm→Top 상대거리 X (mm)"
+                                               Foreground="#5E8BAA" FontSize="13"
+                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
+                                    <TextBox Grid.Row="2" Grid.Column="1"
+                                             Text="{Binding AlignTopBtmSpacingX}" Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Btm→Top 상대거리 Y (mm)"
+                                               Foreground="#5E8BAA" FontSize="13"
+                                               VerticalAlignment="Center" Margin="0,0,16,8"/>
+                                    <TextBox Grid.Row="3" Grid.Column="1"
+                                             Text="{Binding AlignTopBtmSpacingY}" Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="설계 θ (°)"
+                                               Foreground="#5E8BAA" FontSize="13"
+                                               VerticalAlignment="Center" Margin="0,0,16,0"/>
+                                    <TextBox Grid.Row="4" Grid.Column="1"
+                                             Text="{Binding DesignThetaDeg}"/>
+                                </Grid>
+                            </Border>
 
                             <!-- ═══════════ WAFER 중심 찾기 (Scribeline) ═══════════ -->
                             <Border Background="#1A3A5C" CornerRadius="4" Padding="10,4"

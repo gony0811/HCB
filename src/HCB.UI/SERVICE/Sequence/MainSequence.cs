@@ -1369,5 +1369,178 @@ namespace HCB.UI
             var p = _recipeService.FindByParam(paramName);
             return p != null ? double.Parse(p.Value) : 0.0;
         }
+
+
+        // ═══════════════════════════════════════════════════
+        //  Hc1 단일 카메라 4점 촬상 (설계치 예측 이동)
+        // ═══════════════════════════════════════════════════
+
+        /// <summary>
+        /// 바닥(Wafer Table)에 놓인 BtmDie·TopDie의 Left/Right Align 마크 4점을 Hc1 카메라 하나로 촬상한다.
+        /// 첫 점(BtmLeft)만 FOV 중앙으로 정밀 센터링해 기준점을 잡고, 이후 점들은 <b>설계치로 상대 위치를
+        /// 예측</b>해 그만큼 이동한 뒤 단발 촬상한다. 4점 모두 동일 Hc1/스테이지 프레임의 마크 절대좌표
+        /// (CenterX/Y, mm)로 반환되어 <see cref="SimpleMeasurement"/>에 바로 사용 가능하다.
+        ///
+        ///   1) BtmLeft 개략 위치(btmLeftStage)로 이동
+        ///   2) 마크를 Hc1 중앙으로 당겨(센터링) 촬상
+        ///   3) TopLeft  = 설계 (topLeftDesign  − btmLeftDesign) 만큼 상대 이동 후 촬상
+        ///   4) TopRight = 설계 (topRightDesign − topLeftDesign) 만큼 상대 이동 후 촬상
+        ///   5) BtmRight = 설계 (btmRightDesign − topRightDesign) 만큼 상대 이동 후 촬상
+        ///
+        /// 설계좌표(4점)는 하나의 공통 설계 프레임(mm)이어야 한다(예: Btm 중심 기준, Top은 설계 편차 포함).
+        /// 사이즈·마크 위치가 바뀌면 이 설계좌표만 바꾸면 대응된다. Die가 약간 틀어져 있어도 예측 이동은
+        /// 개략 위치로 충분하며(단발 촬상이 실제 위치를 잡음), 첫 점 센터링이 기준을 정밀화한다.
+        /// </summary>
+        /// <param name="btmLeftStage">BtmLeft 마크의 개략 스테이지 위치 (H_X, W_Y) — 이동 시작점</param>
+        /// <param name="topRelative">Top Align Mark간 상대거리 (공통 프레임, mm)</param>
+        /// <param name="topBtmRelative">Btm Align Mark와 Top Align Mark 사이의 상대거리</param>
+        public async Task<(Point2D topLeft, Point2D topRight, Point2D btmLeft, Point2D btmRight)>
+            ResultMeasurement(
+                Point2D btmLeftStage, Point2D topRelative, Point2D topBtmRelative,
+                CancellationToken ct)
+        {
+            try
+            {
+                EQStatusCheck();
+                _logger.Information("MeasureFourMarksHc1 시작 — Hc1 단일, 설계치 예측 이동");
+
+                await Init_Head(ct);
+
+                // 1) BtmLeft 개략 위치로 이동
+                await Task.WhenAll(
+                    MotionsMove(MotionExtensions.H_X, btmLeftStage.X, ct),
+                    MotionsMove(MotionExtensions.W_Y, btmLeftStage.Y, ct));
+
+                double topDieThickness = await GetRecipe("TopDieThickness");
+                double btmDieThickness = await GetRecipe("BtmDieThickness");
+                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
+
+                await MotionsMove(MotionExtensions.H_Z,
+                    shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
+
+                // 실제 측정 위치와 동일하게 h_z/H_Z를 FID_ALIGN_GAP만큼 이동 (align/fid 측정 갭)
+                double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
+                await RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
+                await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
+
+                // Btm Left Align Mark 촬상
+                var btmLeft = await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
+
+                // Btm Left Align Mark를 카메라 중심으로 옮긴 후 재촬상
+                await Task.WhenAll(
+                    MotionsMove(MotionExtensions.H_X, btmLeft.CenterX, ct),
+                    MotionsMove(MotionExtensions.W_Y, btmLeft.CenterY, ct));
+                btmLeft = await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
+
+                // Top Left Align Mark로 이동 후 촬상 
+                await Task.WhenAll(
+                    RelativeMotionsMove(MotionExtensions.H_X, topBtmRelative.X, ct),
+                    RelativeMotionsMove(MotionExtensions.W_Y, topBtmRelative.Y, ct));
+
+                var topLeft = await MeasureWithRetry(MarkType.ALIGN_MARK_TOP, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
+
+                // Top Right Align Mark로 이동 후 촬상 
+                await Task.WhenAll(
+                    RelativeMotionsMove(MotionExtensions.H_X, topRelative.X, ct),
+                    RelativeMotionsMove(MotionExtensions.W_Y, topRelative.Y, ct));
+
+                var topRight = await MeasureWithRetry(MarkType.ALIGN_MARK_TOP, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
+
+                // Btm Right Align Mark로 이동 후 촬상 
+                await Task.WhenAll(
+                    RelativeMotionsMove(MotionExtensions.H_X, topBtmRelative.X, ct),
+                    RelativeMotionsMove(MotionExtensions.W_Y, topBtmRelative.Y, ct));
+
+                var btmRight = await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
+                
+                await Init_Head(ct);
+
+                return
+                    (
+                        Point2D.of(topLeft.CenterX, topLeft.CenterY),
+                        Point2D.of(topRight.CenterX, topRight.CenterY),
+                        Point2D.of(btmLeft.CenterX, btmLeft.CenterY),
+                        Point2D.of(btmRight.CenterX, btmRight.CenterY)
+                    );
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Warning("MeasureFourMarksHc1 취소됨");
+                throw;
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "MeasureFourMarksHc1 실패");
+                throw;
+            }
+        }
+
+
+        // ═══════════════════════════════════════════════════
+        //  SimpleMeasurement — 단일 카메라(Hc1) 간이 배치 검증
+        // ═══════════════════════════════════════════════════
+
+        /// <summary>
+        /// 단일 카메라(Hc1)로 측정한 Top/Btm 각 2점(Left/Right Align)만으로 Top이 Btm 위에 올바르게
+        /// 놓였는지 간이 검증한다. TopAlign·BtmAlign 이 모두 동일한 Hc1 프레임에서 측정되었으므로
+        /// 좌표계 통합(부호/오프셋 변환) 없이 직접 비교할 수 있다.
+        ///
+        /// 절차:
+        ///   1) 각 Die를 2점 선분으로 자세화 — θ = 선분 각도, center = 두 점의 중점.
+        ///   2) Top−Btm 중심 벡터(ErrorX/ErrorY)와 상대 회전(ErrorTheta = topθ − btmθ − designThetaDeg)을 산출.
+        ///
+        /// 주의: 2점 기반이라 강체 3자유도(X,Y,θ)만 검증한다(크기·형상 오류는 못 잡음).
+        /// 모든 좌표는 동일 단위(mm)·동일 Hc1 프레임이어야 하며, Left/Right 대응이 맞아야 한다.
+        /// </summary>
+        /// <param name="topLeft">Top Left Align 측정점 (Hc1 프레임, mm)</param>
+        /// <param name="topRight">Top Right Align 측정점 (Hc1 프레임, mm)</param>
+        /// <param name="btmLeft">Btm Left Align 측정점 (Hc1 프레임, mm)</param>
+        /// <param name="btmRight">Btm Right Align 측정점 (Hc1 프레임, mm)</param>
+        /// <param name="designThetaDeg">설계상 Top−Btm 목표 상대 각도 (기본 0°)</param>
+        public SimplePlacementResult SimpleMeasurement(
+            Point2D topLeft, Point2D topRight,
+            Point2D btmLeft, Point2D btmRight,
+            double designThetaDeg = 0.0)
+        {
+            if (topLeft == null || topRight == null || btmLeft == null || btmRight == null)
+                throw new ArgumentNullException(nameof(topLeft), "측정 마크(4점)가 null 입니다.");
+
+            // 1) 각 Die: 선분 각도 θ + 중점 center
+            double btmTheta = CalibrationMath.ComputeLineAngle(btmLeft, btmRight);   // atan2(dy,dx) rad
+            double topTheta = CalibrationMath.ComputeLineAngle(topLeft, topRight);
+            var btmCenter = Point2D.of((btmLeft.X + btmRight.X) / 2.0, (btmLeft.Y + btmRight.Y) / 2.0);
+            var topCenter = Point2D.of((topLeft.X + topRight.X) / 2.0, (topLeft.Y + topRight.Y) / 2.0);
+
+            // 2) 상대 회전 + Top 중심을 Btm 프레임으로 변환
+            double dThetaRad = SimpleNormalizeAngle(topTheta - btmTheta - designThetaDeg.ToRadian());
+            double dThetaDeg = dThetaRad.ToDegree();
+
+            var delta = Point2D.of(topCenter.X - btmCenter.X, topCenter.Y - btmCenter.Y);
+
+            var result = new SimplePlacementResult
+            {
+                ErrorX = delta.X,
+                ErrorY = delta.Y,
+                ErrorTheta = dThetaDeg
+            };
+
+            return result;
+        }
+
+        /// <summary>각도를 (−π, π] 범위로 정규화 (SimpleMeasurement 전용).</summary>
+        private static double SimpleNormalizeAngle(double rad)
+        {
+            while (rad > Math.PI) rad -= 2.0 * Math.PI;
+            while (rad <= -Math.PI) rad += 2.0 * Math.PI;
+            return rad;
+        }
+    }
+
+    /// <summary>SimpleMeasurement(단일 카메라 Hc1 간이 배치 검증) 결과. ErrorX/ErrorY=mm, ErrorTheta=deg.</summary>
+    public sealed class SimplePlacementResult
+    {
+        public double ErrorX { get; set; }        // Top−Btm 중심 X 오차 (mm)
+        public double ErrorY { get; set; }        // Top−Btm 중심 Y 오차 (mm)
+        public double ErrorTheta { get; set; }    // Top−Btm 상대 회전 오차 (deg)
     }
 }

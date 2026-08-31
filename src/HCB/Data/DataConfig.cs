@@ -741,6 +741,22 @@ namespace HCB.Data
         }
     }
 
+    public class PlacementResultConfig : IEntityTypeConfiguration<PlacementResult>
+    {
+        public void Configure(EntityTypeBuilder<PlacementResult> b)
+        {
+            b.ToTable("PlacementResult");
+            b.HasKey(x => x.Id);
+
+            b.Property(x => x.Id)
+             .ValueGeneratedOnAdd()
+             .HasAnnotation("Sqlite:Autoincrement", true);
+
+            b.HasIndex(x => x.Time);
+            b.HasIndex(x => new { x.Row, x.Col });
+        }
+    }
+
     public class CamDistMeasurementConfig : IEntityTypeConfiguration<CamDistMeasurement>
     {
         public void Configure(EntityTypeBuilder<CamDistMeasurement> b)
