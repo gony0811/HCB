@@ -3,6 +3,7 @@ using System;
 using HCB.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HCB.Migrations
 {
     [DbContext(typeof(AppDb))]
-    partial class AppDbModelSnapshot : ModelSnapshot
+    [Migration("20260819043931_AddBondingModeFlags")]
+    partial class AddBondingModeFlags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.11");
@@ -477,58 +480,6 @@ namespace HCB.Migrations
                     b.ToTable("BondingSetting", (string)null);
                 });
 
-            modelBuilder.Entity("HCB.Data.Entity.CamDistMeasurement", b =>
-                {
-                    b.Property<int>("BondingRecordId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<double>("Hc1_CenterX")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc1_CenterY")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc1_DxCam")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc1_DyCam")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc1_StageX")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc1_StageY")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc2Offset_X")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc2Offset_Y")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc2_CenterX")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc2_CenterY")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc2_DxCam")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc2_DyCam")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc2_StageX")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc2_StageY")
-                        .HasColumnType("REAL");
-
-                    b.HasKey("BondingRecordId");
-
-                    b.ToTable("CamDistMeasurement", (string)null);
-                });
-
             modelBuilder.Entity("HCB.Data.Entity.Device", b =>
                 {
                     b.Property<int>("Id")
@@ -610,41 +561,6 @@ namespace HCB.Migrations
                         .IsUnique();
 
                     b.ToTable("ECParam", (string)null);
-                });
-
-            modelBuilder.Entity("HCB.Data.Entity.HcroMeasurementPoint", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasAnnotation("Sqlite:Autoincrement", true);
-
-                    b.Property<double>("Angle")
-                        .HasColumnType("REAL");
-
-                    b.Property<int>("BondingRecordId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<double>("Hc1_X")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc1_Y")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc2_X")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Hc2_Y")
-                        .HasColumnType("REAL");
-
-                    b.Property<int>("PointIndex")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BondingRecordId");
-
-                    b.ToTable("HcroMeasurementPoint", (string)null);
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.IoDataEntity", b =>
@@ -900,40 +816,6 @@ namespace HCB.Migrations
                         .IsUnique();
 
                     b.ToTable("MotionPosition", (string)null);
-                });
-
-            modelBuilder.Entity("HCB.Data.Entity.PlacementResult", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasAnnotation("Sqlite:Autoincrement", true);
-
-                    b.Property<int>("Col")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<double>("ErrorTheta")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("ErrorX")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("ErrorY")
-                        .HasColumnType("REAL");
-
-                    b.Property<int>("Row")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("Time")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Time");
-
-                    b.HasIndex("Row", "Col");
-
-                    b.ToTable("PlacementResult", (string)null);
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.Recipe", b =>
@@ -1219,49 +1101,6 @@ namespace HCB.Migrations
                     b.ToTable("StepRecipe", (string)null);
                 });
 
-            modelBuilder.Entity("HCB.Data.Entity.VernierLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasAnnotation("Sqlite:Autoincrement", true);
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<double?>("OffsetT")
-                        .HasColumnType("REAL");
-
-                    b.Property<double?>("OffsetX")
-                        .HasColumnType("REAL");
-
-                    b.Property<double?>("OffsetY")
-                        .HasColumnType("REAL");
-
-                    b.Property<DateTime>("Time")
-                        .HasColumnType("TEXT");
-
-                    b.Property<double?>("V1X")
-                        .HasColumnType("REAL");
-
-                    b.Property<double?>("V1Y")
-                        .HasColumnType("REAL");
-
-                    b.Property<double?>("V3X")
-                        .HasColumnType("REAL");
-
-                    b.Property<double?>("V3Y")
-                        .HasColumnType("REAL");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Time");
-
-                    b.ToTable("VernierLog", (string)null);
-                });
-
             modelBuilder.Entity("HCB.Data.Entity.AlarmHistory", b =>
                 {
                     b.HasOne("HCB.Data.Entity.Alarm", "Alarm")
@@ -1343,28 +1182,6 @@ namespace HCB.Migrations
                     b.HasOne("HCB.Data.Entity.BondingRecord", "BondingRecord")
                         .WithOne("Setting")
                         .HasForeignKey("HCB.Data.Entity.BondingSetting", "BondingRecordId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BondingRecord");
-                });
-
-            modelBuilder.Entity("HCB.Data.Entity.CamDistMeasurement", b =>
-                {
-                    b.HasOne("HCB.Data.Entity.BondingRecord", "BondingRecord")
-                        .WithOne("CamDist")
-                        .HasForeignKey("HCB.Data.Entity.CamDistMeasurement", "BondingRecordId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BondingRecord");
-                });
-
-            modelBuilder.Entity("HCB.Data.Entity.HcroMeasurementPoint", b =>
-                {
-                    b.HasOne("HCB.Data.Entity.BondingRecord", "BondingRecord")
-                        .WithMany("HcroPoints")
-                        .HasForeignKey("BondingRecordId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1501,13 +1318,9 @@ namespace HCB.Migrations
                 {
                     b.Navigation("Analysis");
 
-                    b.Navigation("CamDist");
-
                     b.Navigation("Coordinate");
 
                     b.Navigation("Equipment");
-
-                    b.Navigation("HcroPoints");
 
                     b.Navigation("Measurement");
 

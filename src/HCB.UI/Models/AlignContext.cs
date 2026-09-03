@@ -195,6 +195,18 @@ namespace HCB.UI
         //   HcRO 회전중심 계산용 raw 측정점(0°/±0.75°). 계산은 ComputeHcroCenter에서.
         public System.Collections.Generic.List<Point2D> Hc1RoRaw { get; set; }
         public System.Collections.Generic.List<Point2D> Hc2RoRaw { get; set; }
+        //   회전중심 각 측정점의 H_T 각도(Hc1RoRaw/Hc2RoRaw와 병렬). DB 저장/추적용.
+        public System.Collections.Generic.List<double> HcroAngles { get; set; }
+
+        // ── 카메라 거리(CameraDist) 측정 원본 — Manual 트레이싱에서만 채워짐 ──
+        //   센터링 완료 시점의 스테이지 위치(모션)와 최종 비전 잔차(DxCam/DyCam).
+        public bool CamDistMeasured { get; set; }
+        public Point2D CamDistHc1Stage { get; set; } = Point2D.Zero;     // HC1 센터링 스테이지 (H_X, W_Y)
+        public Point2D CamDistHc2Stage { get; set; } = Point2D.Zero;     // HC2 센터링 스테이지 (H_X, W_Y)
+        public Point2D CamDistHc1Residual { get; set; } = Point2D.Zero;  // HC1 최종 비전 잔차 (DxCam, DyCam)
+        public Point2D CamDistHc2Residual { get; set; } = Point2D.Zero;  // HC2 최종 비전 잔차 (DxCam, DyCam)
+        public Point2D CamDistHc1Center { get; set; } = Point2D.Zero;    // HC1 비전 절대 중심 (CenterX, CenterY)
+        public Point2D CamDistHc2Center { get; set; } = Point2D.Zero;    // HC2 비전 절대 중심 (CenterX, CenterY)
 
         /// <summary>
         /// 얕은 복사본을 생성한다. 캘리브레이션(Hcro/Hc2Offset/Hc1RoRaw 등)과 모드 플래그를

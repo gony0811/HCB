@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HCB.Data.Entity;
 using HCB.Data.Entity.Type;
+using HCB.Data.Repository;
 using HCB.IoC;
 using Serilog;
 using System;
@@ -50,7 +52,10 @@ namespace HCB.UI
 
         [ObservableProperty] private List<DieData> dieList;
         [ObservableProperty] private DieData selectedDie;
-        [ObservableProperty] private bool hasDieSelected;
+
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(VerifyPlacementCommand))]
+        private bool hasDieSelected;
 
         public SettingsViewModel Settings { get; }      // SettingsSidebar가 {Binding Settings.*}로 사용
         public StepSeqTabViewModel StepSeqTab { get; }
@@ -61,9 +66,11 @@ namespace HCB.UI
         private readonly SequenceService _sequenceService;
         private readonly EqpCommunicationService _communication;
         private readonly ECParamService _ecParamService;
+        private readonly PlacementResultRepository _placementRepo;   // 배치 검증 결과 저장/조회
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(CancelOperationCommand))]
+        [NotifyCanExecuteChangedFor(nameof(VerifyPlacementCommand))]
         [NotifyPropertyChangedFor(nameof(IsBusy))]
         [NotifyPropertyChangedFor(nameof(IsNotBonding))]
         private bool isBonding;
@@ -81,6 +88,7 @@ namespace HCB.UI
             SequenceService sequenceService,
             EqpCommunicationService communication,
             ECParamService ecParamService,
+            PlacementResultRepository placementRepo,
             ILogger logger)
         {
             RecipeService = recipeService;
@@ -89,6 +97,7 @@ namespace HCB.UI
             _sequenceService = sequenceService;
             _communication = communication;
             _ecParamService = ecParamService;
+            _placementRepo = placementRepo;
             _logger = logger.ForContext<WaferSeqTabViewModel>();
 
             // Interlock 발생 시 진행 중인 측정/시프트를 즉시 취소
@@ -109,6 +118,13 @@ namespace HCB.UI
             try { GapY = RecipeService.FindByParamDouble("GapY"); } catch { }
             try { ScribeShiftX = RecipeService.FindByParamDouble("ScribeShiftX"); } catch { }
             try { ScribeShiftY = RecipeService.FindByParamDouble("ScribeShiftY"); } catch { }
+
+            // 배치 검증(4점 Align) 설계 파라미터
+            try { AlignTopSpacingX = RecipeService.FindByParamDouble("AlignTopSpacingX"); } catch { }
+            try { AlignTopSpacingY = RecipeService.FindByParamDouble("AlignTopSpacingY"); } catch { }
+            try { AlignTopBtmSpacingX = RecipeService.FindByParamDouble("AlignTopBtmSpacingX"); } catch { }
+            try { AlignTopBtmSpacingY = RecipeService.FindByParamDouble("AlignTopBtmSpacingY"); } catch { }
+            try { DesignThetaDeg = RecipeService.FindByParamDouble("DesignThetaDeg"); } catch { }
         }
 
         [RelayCommand]
@@ -123,6 +139,13 @@ namespace HCB.UI
             await SaveParam("GapY", GapY.ToString(), ValueType.Double, UnitType.mm);
             await SaveParam("ScribeShiftX", ScribeShiftX.ToString(), ValueType.Double, UnitType.mm);
             await SaveParam("ScribeShiftY", ScribeShiftY.ToString(), ValueType.Double, UnitType.mm);
+
+            // 배치 검증(4점 Align) 설계 파라미터
+            await SaveParam("AlignTopSpacingX", AlignTopSpacingX.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("AlignTopSpacingY", AlignTopSpacingY.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("AlignTopBtmSpacingX", AlignTopBtmSpacingX.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("AlignTopBtmSpacingY", AlignTopBtmSpacingY.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("DesignThetaDeg", DesignThetaDeg.ToString(), ValueType.Double, UnitType.None);
 
             GenerateWaferMap();
         }
@@ -269,6 +292,9 @@ namespace HCB.UI
             if (die == null) return;
             SelectedDie = die;
             HasDieSelected = true;
+
+            // 선택 Die의 최신 배치 검증 결과를 DB에서 불러와 표시
+            _ = LoadPlacementResultAsync(die.Row, die.Col);
         }
 
         [RelayCommand]
@@ -330,6 +356,117 @@ namespace HCB.UI
             if (!IsBonding) return;
             await StepSeqTab.Stop();
             _logger.Information("Wafer Bonding 취소");
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  본딩 후 배치 검증 (4점 측정 → SimpleMeasurement)
+        //   선택 Die 위(고배 위치)에서 Hc1 단일 카메라로 Top/Btm Left·Right Align 4점을
+        //   측정(ResultMeasurement)한 뒤, 강체 3자유도(ErrorX/ErrorY/ErrorTheta)로 배치 오차를 검증한다.
+        //   결과는 DB(PlacementResult)에 Die 단위로 저장하고, Die 선택 시 최신 결과를 다시 불러온다.
+        // ═══════════════════════════════════════════════════════════════
+
+        // 설계 레이아웃(mm) — ResultMeasurement에 넘길 Align Mark 상대거리.
+        // Recipe(AlignTopSpacingX/Y, AlignTopBtmSpacingX/Y, DesignThetaDeg)에서 로드하며,
+        // 미설정 시 아래 기본값(Cr mask 사양 기반)을 사용한다. Setting 탭 Apply로 Recipe에 저장.
+        [ObservableProperty] private double alignTopSpacingX = 11.6;    // Top Left→Right Align 상대거리 X
+        [ObservableProperty] private double alignTopSpacingY = 6.9;     // Top Left→Right Align 상대거리 Y
+        [ObservableProperty] private double alignTopBtmSpacingX = 0.5;  // Btm→Top Align 상대거리 X
+        [ObservableProperty] private double alignTopBtmSpacingY = 0;    // Btm→Top Align 상대거리 Y
+        [ObservableProperty] private double designThetaDeg = 0;         // 설계상 Top−Btm 목표 상대 각도(°)
+
+        // 검증 결과 (ErrorX/ErrorY = µm, ErrorTheta = deg)
+        [ObservableProperty] private bool hasPlacementResult;
+        [ObservableProperty] private string placementStatus = "-";
+        [ObservableProperty] private double errorX;        // Top−Btm 중심 X 오차(µm)
+        [ObservableProperty] private double errorY;        // Top−Btm 중심 Y 오차(µm)
+        [ObservableProperty] private double errorTheta;    // Top−Btm 상대 회전 오차(°)
+
+        /// <summary>본딩 완료 Die의 Top/Btm Align 4점을 측정해 배치 오차(ErrorX/ErrorY/ErrorTheta)를 검증·저장한다.</summary>
+        [RelayCommand(CanExecute = nameof(CanVerifyPlacement))]
+        private async Task VerifyPlacement()
+        {
+            if (SelectedDie == null || IsBusy) return;
+
+            // Die 고배 위치는 중심 계산 후에만 유효
+            if (!HasCoarseCenter && !HasScribeMeasure)
+            {
+                PlacementStatus = "중심 미계산 — 1차(또는 2차)로 Die 위치를 먼저 계산하세요.";
+                return;
+            }
+
+            IsAligning = true;
+            _alignCts = new CancellationTokenSource();
+            var ct = _alignCts.Token;
+
+            try
+            {
+                var btmLeftStage = Point2D.of(SelectedDie.HighPositionX, SelectedDie.HighPositionY);
+                var topRelative = Point2D.of(AlignTopSpacingX, AlignTopSpacingY);
+                var topBtmRelative = Point2D.of(AlignTopBtmSpacingX, AlignTopBtmSpacingY);
+
+                PlacementStatus = $"Die({SelectedDie.Row},{SelectedDie.Col}) 4점 측정 중...";
+                _logger.Information(
+                    "배치 검증 4점 측정 시작 — Die({R},{C}) btmLeftStage=({X:F4},{Y:F4}) topRel={TR:F4}mm topBtmRel={TB:F4}mm",
+                    SelectedDie.Row, SelectedDie.Col, btmLeftStage.X, btmLeftStage.Y, topRelative.X, topBtmRelative.X);
+
+                var (topLeft, topRight, btmLeft, btmRight) =
+                    await _sequenceService.ResultMeasurement(btmLeftStage, topRelative, topBtmRelative, ct);
+
+                var res = _sequenceService.SimpleMeasurement(topLeft, topRight, btmLeft, btmRight, DesignThetaDeg);
+
+                // 결과 반영 (mm → µm) 및 DB 저장
+                ErrorX = res.ErrorX * 1000.0;
+                ErrorY = res.ErrorY * 1000.0;
+                ErrorTheta = res.ErrorTheta;
+                HasPlacementResult = true;
+                PlacementStatus = $"검증 완료 — Die({SelectedDie.Row},{SelectedDie.Col})";
+
+                await _placementRepo.AddAsync(new PlacementResult
+                {
+                    Row = SelectedDie.Row,
+                    Col = SelectedDie.Col,
+                    ErrorX = ErrorX,
+                    ErrorY = ErrorY,
+                    ErrorTheta = ErrorTheta,
+                }, ct);
+
+                _logger.Information("배치 검증 완료·저장 — Die({R},{C}) ErrorX={EX:F2}µm ErrorY={EY:F2}µm ErrorTheta={ET:F4}°",
+                    SelectedDie.Row, SelectedDie.Col, ErrorX, ErrorY, ErrorTheta);
+            }
+            catch (OperationCanceledException) { PlacementStatus = "배치 검증 중단됨"; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "배치 검증 오류");
+                PlacementStatus = $"오류: {e.Message}";
+            }
+            finally { IsAligning = false; }
+        }
+
+        private bool CanVerifyPlacement() => !IsBusy && HasDieSelected;
+
+        /// <summary>선택 Die의 최신 배치 검증 결과를 DB에서 불러와 표시한다(없으면 결과 숨김).</summary>
+        private async Task LoadPlacementResultAsync(int row, int col)
+        {
+            try
+            {
+                var saved = await _placementRepo.FindLatestByDieAsync(row, col);
+                if (saved == null)
+                {
+                    HasPlacementResult = false;
+                    PlacementStatus = "-";
+                    return;
+                }
+
+                ErrorX = saved.ErrorX;
+                ErrorY = saved.ErrorY;
+                ErrorTheta = saved.ErrorTheta;
+                HasPlacementResult = true;
+                PlacementStatus = $"저장된 결과 — {saved.Time:yyyy-MM-dd HH:mm:ss}";
+            }
+            catch (Exception e)
+            {
+                _logger.Warning(e, "배치 검증 결과 조회 실패 — Die({R},{C})", row, col);
+            }
         }
 
         // ── 선택 Die를 저배/고배 카메라로 보기 (해당 Die 위치로 모션 이동 후 그 카메라로 측정) ──
@@ -518,6 +655,7 @@ namespace HCB.UI
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(CancelOperationCommand))]
+        [NotifyCanExecuteChangedFor(nameof(VerifyPlacementCommand))]
         [NotifyPropertyChangedFor(nameof(IsBusy))]
         private bool isAligning;          // 측정/시프트 진행 중 busy 플래그
         [ObservableProperty] private string scribeCenterStatus = "-";

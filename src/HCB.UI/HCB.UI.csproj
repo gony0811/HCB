@@ -122,6 +122,9 @@
   <Page Include="SUB UI\USub01Tab\CalibrationTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\USub01Tab\Mapping2DWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub01Tab\VisionTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -256,6 +259,10 @@
   <Compile Include="MAIN UI\VisionPage.xaml.cs" />
   <Compile Include="Models\AlignContext.cs" />
   <Compile Include="Models\AlignOffset.cs" />
+  <Compile Include="Models\BondingCsvExporter.cs" />
+  <Compile Include="Models\VernierCsvExporter.cs" />
+  <Compile Include="Models\CamHcroCsvExporter.cs" />
+  <Compile Include="Models\BondingRecordMapper.cs" />
   <Compile Include="Models\LabelValue.cs" />
   <Compile Include="Models\VernierResult.cs" />
   <Compile Include="SERVICE\CalibrationService.cs" />
@@ -303,6 +310,7 @@
   <Compile Include="SUB UI\USub01Tab\AutoTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\BondingInfoWindow.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\CalibrationTab.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\Mapping2DWindow.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\VisionTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\LoadingTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\ManualTab.xaml.cs" />

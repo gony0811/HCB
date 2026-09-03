@@ -3,6 +3,7 @@ using System;
 using HCB.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HCB.Migrations
 {
     [DbContext(typeof(AppDb))]
-    partial class AppDbModelSnapshot : ModelSnapshot
+    [Migration("20260824081946_AddCamDistCenter")]
+    partial class AddCamDistCenter
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.11");
@@ -900,40 +903,6 @@ namespace HCB.Migrations
                         .IsUnique();
 
                     b.ToTable("MotionPosition", (string)null);
-                });
-
-            modelBuilder.Entity("HCB.Data.Entity.PlacementResult", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasAnnotation("Sqlite:Autoincrement", true);
-
-                    b.Property<int>("Col")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<double>("ErrorTheta")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("ErrorX")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("ErrorY")
-                        .HasColumnType("REAL");
-
-                    b.Property<int>("Row")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("Time")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Time");
-
-                    b.HasIndex("Row", "Col");
-
-                    b.ToTable("PlacementResult", (string)null);
                 });
 
             modelBuilder.Entity("HCB.Data.Entity.Recipe", b =>

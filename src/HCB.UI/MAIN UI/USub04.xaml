@@ -84,6 +84,44 @@
                 </Setter>
             </Style>
 
+            <!-- CSV 저장 폴더·파일명 입력용 다크 TextBox (포커스 시 흰 배경 방지) -->
+            <Style x:Key="DarkTextBox" TargetType="TextBox">
+                <Setter Property="Background" Value="#0A1628"/>
+                <Setter Property="Foreground" Value="#ECF0F1"/>
+                <Setter Property="CaretBrush" Value="#ECF0F1"/>
+                <Setter Property="SelectionBrush" Value="#2A5A8C"/>
+                <Setter Property="BorderBrush" Value="#1C3A52"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="6,4"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4">
+                                <ScrollViewer x:Name="PART_ContentHost"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#2A5A8C"/>
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#3498DB"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="#6B7280"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
         </ResourceDictionary>
     </Page.Resources>
 
@@ -244,6 +282,528 @@
                         </DataGrid>
                     </Grid>
                 </Border>
+            </TabItem>
+
+            <!-- ════════ 탭 3 : 본딩 정보 ════════ -->
+            <TabItem Header="본딩 정보">
+                <Grid Margin="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.85*"/>
+                        <ColumnDefinition Width="0.15*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ── 본딩 정보 그리드 ── -->
+                    <Border Grid.Column="0"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8" Margin="0,0,6,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="본딩 정보"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                            <ScrollViewer Grid.Row="1"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          Margin="8,6,8,4">
+                            <DataGrid Style="{StaticResource LogDataGrid}"
+                                      ColumnHeaderStyle="{StaticResource LogColumnHeader}"
+                                      CellStyle="{StaticResource LogCell}"
+                                      ItemsSource="{Binding BondingList}"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID"        Binding="{Binding Id}"                                              Width="Auto"/>
+                                    <DataGridTextColumn Header="시각"      Binding="{Binding Time, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}"   Width="160"/>
+                                    <DataGridTextColumn Header="종류"      Binding="{Binding Kind}"                                            Width="Auto"/>
+                                    <DataGridTextColumn Header="원본ID"    Binding="{Binding ParentRecordId}"                                  Width="Auto"/>
+                                    <DataGridTextColumn Header="평균이동"  Binding="{Binding AvgMode}"                                         Width="Auto"/>
+                                    <DataGridTextColumn Header="2D매핑"    Binding="{Binding Use2DMapping}"                                    Width="Auto"/>
+                                    <DataGridTextColumn Header="Tracing"   Binding="{Binding TracingMode}"                                     Width="Auto"/>
+                                    <DataGridTextColumn Header="Btm개별"   Binding="{Binding UseBtmIndividualMeasure}"                         Width="Auto"/>
+                                    <DataGridTextColumn Header="Fid추적"   Binding="{Binding UseFiducialTracking}"                             Width="Auto"/>
+                                    <DataGridTextColumn Header="R.Fid닮음" Binding="{Binding UseRightFidSimilarity}"                           Width="Auto"/>
+                                    <DataGridTextColumn Header="ResultX"   Binding="{Binding ResultX, StringFormat='{}{0:F4}'}"                Width="110"/>
+                                    <DataGridTextColumn Header="ResultY"   Binding="{Binding ResultY, StringFormat='{}{0:F4}'}"                Width="110"/>
+                                    <DataGridTextColumn Header="ResultT"   Binding="{Binding ResultT, StringFormat='{}{0:F4}'}"                Width="110"/>
+                                    <DataGridTextColumn Header="Vern.X"    Binding="{Binding VernierOffsetX, StringFormat='{}{0:F4}'}"         Width="110"/>
+                                    <DataGridTextColumn Header="Vern.Y"    Binding="{Binding VernierOffsetY, StringFormat='{}{0:F4}'}"         Width="110"/>
+                                    <DataGridTextColumn Header="Vern.T"    Binding="{Binding VernierOffsetT, StringFormat='{}{0:F4}'}"         Width="110"/>
+
+                                    <!-- ══ 설비 정보 ══ -->
+                                    <DataGridTextColumn Header="PcTRad"      Binding="{Binding Equipment.PcTRad, StringFormat='{}{0:F6}'}"      Width="Auto"/>
+                                    <DataGridTextColumn Header="Hc1Rad"      Binding="{Binding Equipment.Hc1Rad, StringFormat='{}{0:F6}'}"      Width="Auto"/>
+                                    <DataGridTextColumn Header="Hc2Rad"      Binding="{Binding Equipment.Hc2Rad, StringFormat='{}{0:F6}'}"      Width="Auto"/>
+                                    <DataGridTextColumn Header="Hcro_X"      Binding="{Binding Equipment.Hcro_X, StringFormat='{}{0:F6}'}"      Width="Auto"/>
+                                    <DataGridTextColumn Header="Hcro_Y"      Binding="{Binding Equipment.Hcro_Y, StringFormat='{}{0:F6}'}"      Width="Auto"/>
+                                    <DataGridTextColumn Header="Hc2Offset_X" Binding="{Binding Equipment.Hc2Offset_X, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Hc2Offset_Y" Binding="{Binding Equipment.Hc2Offset_Y, StringFormat='{}{0:F6}'}" Width="Auto"/>
+
+                                    <!-- ══ 추가 설정 ══ -->
+                                    <DataGridTextColumn Header="OffsetX"     Binding="{Binding Setting.OffsetX, StringFormat='{}{0:F6}'}"       Width="Auto"/>
+                                    <DataGridTextColumn Header="OffsetY"     Binding="{Binding Setting.OffsetY, StringFormat='{}{0:F6}'}"       Width="Auto"/>
+                                    <DataGridTextColumn Header="OffsetT"     Binding="{Binding Setting.OffsetT, StringFormat='{}{0:F6}'}"       Width="Auto"/>
+
+                                    <!-- ══ 측정 정보 (Top) ══ -->
+                                    <DataGridTextColumn Header="TopRF_StageX"  Binding="{Binding Measurement.TopRF_StageX, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRF_StageY"  Binding="{Binding Measurement.TopRF_StageY, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRF_DxCam"   Binding="{Binding Measurement.TopRF_DxCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRF_DyCam"   Binding="{Binding Measurement.TopRF_DyCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRF_CenterX" Binding="{Binding Measurement.TopRF_CenterX, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRF_CenterY" Binding="{Binding Measurement.TopRF_CenterY, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRA_StageX"  Binding="{Binding Measurement.TopRA_StageX, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRA_StageY"  Binding="{Binding Measurement.TopRA_StageY, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRA_DxCam"   Binding="{Binding Measurement.TopRA_DxCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRA_DyCam"   Binding="{Binding Measurement.TopRA_DyCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRA_CenterX" Binding="{Binding Measurement.TopRA_CenterX, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="TopRA_CenterY" Binding="{Binding Measurement.TopRA_CenterY, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLF_StageX"  Binding="{Binding Measurement.TopLF_StageX, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLF_StageY"  Binding="{Binding Measurement.TopLF_StageY, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLF_DxCam"   Binding="{Binding Measurement.TopLF_DxCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLF_DyCam"   Binding="{Binding Measurement.TopLF_DyCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLF_CenterX" Binding="{Binding Measurement.TopLF_CenterX, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLF_CenterY" Binding="{Binding Measurement.TopLF_CenterY, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLA_StageX"  Binding="{Binding Measurement.TopLA_StageX, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLA_StageY"  Binding="{Binding Measurement.TopLA_StageY, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLA_DxCam"   Binding="{Binding Measurement.TopLA_DxCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLA_DyCam"   Binding="{Binding Measurement.TopLA_DyCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLA_CenterX" Binding="{Binding Measurement.TopLA_CenterX, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="TopLA_CenterY" Binding="{Binding Measurement.TopLA_CenterY, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <!-- ══ 측정 정보 (Btm) ══ -->
+                                    <DataGridTextColumn Header="BtmRF_DxCam"   Binding="{Binding Measurement.BtmRF_DxCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="BtmRF_DyCam"   Binding="{Binding Measurement.BtmRF_DyCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="BtmRA_DxCam"   Binding="{Binding Measurement.BtmRA_DxCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="BtmRA_DyCam"   Binding="{Binding Measurement.BtmRA_DyCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="BtmLF_DxCam"   Binding="{Binding Measurement.BtmLF_DxCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="BtmLF_DyCam"   Binding="{Binding Measurement.BtmLF_DyCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="BtmLA_DxCam"   Binding="{Binding Measurement.BtmLA_DxCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="BtmLA_DyCam"   Binding="{Binding Measurement.BtmLA_DyCam, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+
+                                    <!-- ══ 분석 데이터 ══ -->
+                                    <DataGridTextColumn Header="P_PC_Fid_DX"    Binding="{Binding Analysis.P_PC_Fid_DX, StringFormat='{}{0:F6}'}"    Width="Auto"/>
+                                    <DataGridTextColumn Header="P_PC_Fid_DY"    Binding="{Binding Analysis.P_PC_Fid_DY, StringFormat='{}{0:F6}'}"    Width="Auto"/>
+                                    <DataGridTextColumn Header="P_PC_Fid_Dist"  Binding="{Binding Analysis.P_PC_Fid_Dist, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="P_PC_Fid_Theta" Binding="{Binding Analysis.P_PC_Fid_Theta, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="P_PC_Align_DX"    Binding="{Binding Analysis.P_PC_Align_DX, StringFormat='{}{0:F6}'}"    Width="Auto"/>
+                                    <DataGridTextColumn Header="P_PC_Align_DY"    Binding="{Binding Analysis.P_PC_Align_DY, StringFormat='{}{0:F6}'}"    Width="Auto"/>
+                                    <DataGridTextColumn Header="P_PC_Align_Dist"  Binding="{Binding Analysis.P_PC_Align_Dist, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="P_PC_Align_Theta" Binding="{Binding Analysis.P_PC_Align_Theta, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="P_HC_Fid_L_X"   Binding="{Binding Analysis.P_HC_Fid_L_X, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="P_HC_Fid_L_Y"   Binding="{Binding Analysis.P_HC_Fid_L_Y, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="P_HC_Fid_R_X"   Binding="{Binding Analysis.P_HC_Fid_R_X, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="P_HC_Fid_R_Y"   Binding="{Binding Analysis.P_HC_Fid_R_Y, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="P_HC_Fid_DX"    Binding="{Binding Analysis.P_HC_Fid_DX, StringFormat='{}{0:F6}'}"    Width="Auto"/>
+                                    <DataGridTextColumn Header="P_HC_Fid_DY"    Binding="{Binding Analysis.P_HC_Fid_DY, StringFormat='{}{0:F6}'}"    Width="Auto"/>
+                                    <DataGridTextColumn Header="P_HC_Fid_Dist"  Binding="{Binding Analysis.P_HC_Fid_Dist, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="P_HC_Fid_Theta" Binding="{Binding Analysis.P_HC_Fid_Theta, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Fid_L_X"   Binding="{Binding Analysis.W_HC_Fid_L_X, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Fid_L_Y"   Binding="{Binding Analysis.W_HC_Fid_L_Y, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Fid_R_X"   Binding="{Binding Analysis.W_HC_Fid_R_X, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Fid_R_Y"   Binding="{Binding Analysis.W_HC_Fid_R_Y, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Fid_DX"    Binding="{Binding Analysis.W_HC_Fid_DX, StringFormat='{}{0:F6}'}"    Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Fid_DY"    Binding="{Binding Analysis.W_HC_Fid_DY, StringFormat='{}{0:F6}'}"    Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Fid_Dist"  Binding="{Binding Analysis.W_HC_Fid_Dist, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Fid_Theta" Binding="{Binding Analysis.W_HC_Fid_Theta, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Align_L_X"   Binding="{Binding Analysis.W_HC_Align_L_X, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Align_L_Y"   Binding="{Binding Analysis.W_HC_Align_L_Y, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Align_R_X"   Binding="{Binding Analysis.W_HC_Align_R_X, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Align_R_Y"   Binding="{Binding Analysis.W_HC_Align_R_Y, StringFormat='{}{0:F6}'}"   Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Align_DX"    Binding="{Binding Analysis.W_HC_Align_DX, StringFormat='{}{0:F6}'}"    Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Align_DY"    Binding="{Binding Analysis.W_HC_Align_DY, StringFormat='{}{0:F6}'}"    Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Align_Dist"  Binding="{Binding Analysis.W_HC_Align_Dist, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="W_HC_Align_Theta" Binding="{Binding Analysis.W_HC_Align_Theta, StringFormat='{}{0:F6}'}" Width="Auto"/>
+
+                                    <!-- ══ 통합 좌표 ══ -->
+                                    <DataGridTextColumn Header="BFL_X" Binding="{Binding Coordinate.BFL_X, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="BFL_Y" Binding="{Binding Coordinate.BFL_Y, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="BFR_X" Binding="{Binding Coordinate.BFR_X, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="BFR_Y" Binding="{Binding Coordinate.BFR_Y, StringFormat='{}{0:F6}'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="BL_X"  Binding="{Binding Coordinate.BL_X, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="BL_Y"  Binding="{Binding Coordinate.BL_Y, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="BR_X"  Binding="{Binding Coordinate.BR_X, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="BR_Y"  Binding="{Binding Coordinate.BR_Y, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TL_X"  Binding="{Binding Coordinate.TL_X, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TL_Y"  Binding="{Binding Coordinate.TL_Y, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TR_X"  Binding="{Binding Coordinate.TR_X, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                    <DataGridTextColumn Header="TR_Y"  Binding="{Binding Coordinate.TR_Y, StringFormat='{}{0:F6}'}"  Width="Auto"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            </ScrollViewer>
+
+                            <!-- 페이저 (50개/페이지) -->
+                            <telerik:RadDataPager Grid.Row="2"
+                                                  Margin="8,0,8,8"
+                                                  DisplayMode="FirstLastPreviousNextNumeric"
+                                                  IsTotalItemCountFixed="False"
+                                                  PageSize="{Binding BondingPageSize}"
+                                                  ItemCount="{Binding BondingTotalCount}"
+                                                  PageIndex="{Binding BondingCurrentPageIndex, Mode=TwoWay}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── 우측 검색·출력 패널 ── -->
+                    <Border Grid.Column="1"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="검색 · 출력"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                            <StackPanel Grid.Row="1" Margin="12,10,12,12">
+                                <TextBlock Text="Begin" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker
+                                    SelectedValue="{Binding BondingStartDate, Mode=TwoWay}"
+                                    InputMode="DatePicker"
+                                    Margin="0,0,0,8"/>
+
+                                <TextBlock Text="End" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker
+                                    SelectedValue="{Binding BondingEndDate, Mode=TwoWay}"
+                                    InputMode="DatePicker"
+                                    Margin="0,0,0,12"/>
+
+                                <Button Content="검색"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding BondingSearchCommand}"
+                                        Margin="0,0,0,12"/>
+
+                                <Rectangle Height="1" Fill="#1C3A52" Margin="0,0,0,10"/>
+
+                                <!-- ── CSV 출력 저장 폴더·파일명 설정 ── -->
+                                <TextBlock Text="저장 폴더" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding Settings.CsvBondingQueryDir, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource DarkTextBox}"
+                                             ToolTip="{Binding Settings.CsvBondingQueryDir}"/>
+                                    <Button Grid.Column="1" Content="..."
+                                            Command="{Binding Settings.BrowseBondingQueryDirCommand}"
+                                            Width="34" Margin="4,0,0,0"/>
+                                </Grid>
+
+                                <TextBlock Text="파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Settings.CsvBondingQueryFileName, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource DarkTextBox}" Margin="0,0,0,4"/>
+                                <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="정렬 (날짜)" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadComboBox SelectedIndex="{Binding CsvSortOrderIndex, Mode=TwoWay}"
+                                                     Margin="0,0,0,12">
+                                    <telerik:RadComboBoxItem Content="오름차순 (과거→최신)"/>
+                                    <telerik:RadComboBoxItem Content="내림차순 (최신→과거)"/>
+                                </telerik:RadComboBox>
+
+                                <Button Content="CSV 출력 (검색 전체)"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding ExportBondingCsvCommand}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ════════ 탭 4 : 버니어 ════════ -->
+            <TabItem Header="버니어">
+                <Grid Margin="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.85*"/>
+                        <ColumnDefinition Width="0.15*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ── 버니어 로그 그리드 ── -->
+                    <Border Grid.Column="0"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8" Margin="0,0,6,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="버니어 측정"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                            <DataGrid Grid.Row="1"
+                                      Style="{StaticResource LogDataGrid}"
+                                      ColumnHeaderStyle="{StaticResource LogColumnHeader}"
+                                      CellStyle="{StaticResource LogCell}"
+                                      ItemsSource="{Binding VernierList}"
+                                      Margin="8,6,8,4">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="시각"    Binding="{Binding Time, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" Width="160"/>
+                                    <DataGridTextColumn Header="Pos"     Binding="{Binding Name}"                                          Width="Auto"/>
+                                    <DataGridTextColumn Header="V1_X"    Binding="{Binding V1X, StringFormat='{}{0:F6}'}"                   Width="*"/>
+                                    <DataGridTextColumn Header="V1_Y"    Binding="{Binding V1Y, StringFormat='{}{0:F6}'}"                   Width="*"/>
+                                    <DataGridTextColumn Header="V3_X"    Binding="{Binding V3X, StringFormat='{}{0:F6}'}"                   Width="*"/>
+                                    <DataGridTextColumn Header="V3_Y"    Binding="{Binding V3Y, StringFormat='{}{0:F6}'}"                   Width="*"/>
+                                    <DataGridTextColumn Header="OffsetX" Binding="{Binding OffsetX, StringFormat='{}{0:F4}'}"               Width="*"/>
+                                    <DataGridTextColumn Header="OffsetY" Binding="{Binding OffsetY, StringFormat='{}{0:F4}'}"               Width="*"/>
+                                    <DataGridTextColumn Header="OffsetT" Binding="{Binding OffsetT, StringFormat='{}{0:F4}'}"               Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- 페이저 (50개/페이지) -->
+                            <telerik:RadDataPager Grid.Row="2"
+                                                  Margin="8,0,8,8"
+                                                  DisplayMode="FirstLastPreviousNextNumeric"
+                                                  IsTotalItemCountFixed="False"
+                                                  PageSize="{Binding VernierPageSize}"
+                                                  ItemCount="{Binding VernierTotalCount}"
+                                                  PageIndex="{Binding VernierCurrentPageIndex, Mode=TwoWay}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── 우측 검색·출력 패널 ── -->
+                    <Border Grid.Column="1"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="검색 · 출력"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                            <StackPanel Grid.Row="1" Margin="12,10,12,12">
+                                <TextBlock Text="Begin" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker
+                                    SelectedValue="{Binding VernierStartDate, Mode=TwoWay}"
+                                    InputMode="DatePicker"
+                                    Margin="0,0,0,8"/>
+
+                                <TextBlock Text="End" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker
+                                    SelectedValue="{Binding VernierEndDate, Mode=TwoWay}"
+                                    InputMode="DatePicker"
+                                    Margin="0,0,0,12"/>
+
+                                <Button Content="검색"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding VernierSearchCommand}"
+                                        Margin="0,0,0,12"/>
+
+                                <Rectangle Height="1" Fill="#1C3A52" Margin="0,0,0,10"/>
+
+                                <!-- ── CSV 출력 저장 폴더·파일명 설정 ── -->
+                                <TextBlock Text="저장 폴더" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding Settings.CsvVernierQueryDir, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource DarkTextBox}"
+                                             ToolTip="{Binding Settings.CsvVernierQueryDir}"/>
+                                    <Button Grid.Column="1" Content="..."
+                                            Command="{Binding Settings.BrowseVernierQueryDirCommand}"
+                                            Width="34" Margin="4,0,0,0"/>
+                                </Grid>
+
+                                <TextBlock Text="파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Settings.CsvVernierQueryFileName, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource DarkTextBox}" Margin="0,0,0,4"/>
+                                <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="정렬 (날짜)" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadComboBox SelectedIndex="{Binding CsvSortOrderIndex, Mode=TwoWay}"
+                                                     Margin="0,0,0,12">
+                                    <telerik:RadComboBoxItem Content="오름차순 (과거→최신)"/>
+                                    <telerik:RadComboBoxItem Content="내림차순 (최신→과거)"/>
+                                </telerik:RadComboBox>
+
+                                <Button Content="CSV 출력 (검색 전체)"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding ExportVernierCsvCommand}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ════════ 탭 5 : HCRO / 카메라 거리 ════════ -->
+            <TabItem Header="HCRO/카메라거리">
+                <Grid Margin="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.85*"/>
+                        <ColumnDefinition Width="0.15*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ── 좌측: 카메라 거리 + 회전중심 2개 그리드 ── -->
+                    <Border Grid.Column="0"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8" Margin="0,0,6,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 카메라 거리 -->
+                            <Grid Grid.Row="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="카메라 거리"/>
+                                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+                                <ScrollViewer Grid.Row="1"
+                                              HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Disabled"
+                                              Margin="8,6,8,4">
+                                <DataGrid Style="{StaticResource LogDataGrid}"
+                                          ColumnHeaderStyle="{StaticResource LogColumnHeader}"
+                                          CellStyle="{StaticResource LogCell}"
+                                          ItemsSource="{Binding CamDistList}"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          VerticalScrollBarVisibility="Auto">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="시각"        Binding="{Binding Time, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" Width="160"/>
+                                        <DataGridTextColumn Header="본딩ID"      Binding="{Binding BondingId}"                                     Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_StageX"  Binding="{Binding Hc1_StageX, StringFormat='{}{0:F6}'}"            Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_StageY"  Binding="{Binding Hc1_StageY, StringFormat='{}{0:F6}'}"            Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_DxCam"   Binding="{Binding Hc1_DxCam, StringFormat='{}{0:F6}'}"             Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_DyCam"   Binding="{Binding Hc1_DyCam, StringFormat='{}{0:F6}'}"             Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_CenterX" Binding="{Binding Hc1_CenterX, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_CenterY" Binding="{Binding Hc1_CenterY, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_StageX"  Binding="{Binding Hc2_StageX, StringFormat='{}{0:F6}'}"            Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_StageY"  Binding="{Binding Hc2_StageY, StringFormat='{}{0:F6}'}"            Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_DxCam"   Binding="{Binding Hc2_DxCam, StringFormat='{}{0:F6}'}"             Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_DyCam"   Binding="{Binding Hc2_DyCam, StringFormat='{}{0:F6}'}"             Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_CenterX" Binding="{Binding Hc2_CenterX, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2_CenterY" Binding="{Binding Hc2_CenterY, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2Offset_X" Binding="{Binding Hc2Offset_X, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc2Offset_Y" Binding="{Binding Hc2Offset_Y, StringFormat='{}{0:F6}'}"           Width="Auto"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                </ScrollViewer>
+                            </Grid>
+
+                            <!-- 회전중심 -->
+                            <Grid Grid.Row="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="회전중심 (HCRO)"/>
+                                <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                           VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+                                <DataGrid Grid.Row="1"
+                                          Style="{StaticResource LogDataGrid}"
+                                          ColumnHeaderStyle="{StaticResource LogColumnHeader}"
+                                          CellStyle="{StaticResource LogCell}"
+                                          ItemsSource="{Binding HcroList}"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          ScrollViewer.CanContentScroll="False"
+                                          Margin="8,6,8,4">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="시각"    Binding="{Binding Time, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" Width="160"/>
+                                        <DataGridTextColumn Header="본딩ID"  Binding="{Binding BondingId}"                                     Width="Auto"/>
+                                        <DataGridTextColumn Header="Idx"     Binding="{Binding PointIndex}"                                    Width="Auto"/>
+                                        <DataGridTextColumn Header="Angle"   Binding="{Binding Angle, StringFormat='{}{0:F3}'}"                 Width="Auto"/>
+                                        <DataGridTextColumn Header="Hc1_X"   Binding="{Binding Hc1_X, StringFormat='{}{0:F6}'}"                 Width="*"/>
+                                        <DataGridTextColumn Header="Hc1_Y"   Binding="{Binding Hc1_Y, StringFormat='{}{0:F6}'}"                 Width="*"/>
+                                        <DataGridTextColumn Header="Hc2_X"   Binding="{Binding Hc2_X, StringFormat='{}{0:F6}'}"                 Width="*"/>
+                                        <DataGridTextColumn Header="Hc2_Y"   Binding="{Binding Hc2_Y, StringFormat='{}{0:F6}'}"                 Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── 우측 검색·출력 패널 ── -->
+                    <Border Grid.Column="1"
+                            Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
+                            CornerRadius="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <local:HeaderBar Grid.Row="0" Margin="12,10,12,0" Title="검색 · 출력"/>
+                            <Rectangle Grid.Row="0" Height="1" Fill="#1C3A52"
+                                       VerticalAlignment="Bottom" Margin="12,32,12,0"/>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="12,10,12,12">
+                                <TextBlock Text="Begin" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker SelectedValue="{Binding CamHcroStartDate, Mode=TwoWay}" InputMode="DatePicker" Margin="0,0,0,8"/>
+
+                                <TextBlock Text="End" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadDatePicker SelectedValue="{Binding CamHcroEndDate, Mode=TwoWay}" InputMode="DatePicker" Margin="0,0,0,12"/>
+
+                                <Button Content="검색"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding CamHcroSearchCommand}"
+                                        Margin="0,0,0,12"/>
+
+                                <Rectangle Height="1" Fill="#1C3A52" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="저장 폴더" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding Settings.CsvCamHcroQueryDir, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource DarkTextBox}"
+                                             ToolTip="{Binding Settings.CsvCamHcroQueryDir}"/>
+                                    <Button Grid.Column="1" Content="..."
+                                            Command="{Binding Settings.BrowseCamHcroQueryDirCommand}"
+                                            Width="34" Margin="4,0,0,0"/>
+                                </Grid>
+
+                                <TextBlock Text="카메라거리 파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Settings.CsvCamDistFileName, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource DarkTextBox}" Margin="0,0,0,8"/>
+
+                                <TextBlock Text="회전중심 파일명" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Settings.CsvHcroFileName, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource DarkTextBox}" Margin="0,0,0,4"/>
+                                <TextBlock Text="{}{date}, {time} 토큰 사용 가능" Foreground="#5E8BAA" FontSize="10" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="정렬 (날짜)" Foreground="#5E8BAA" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <telerik:RadComboBox SelectedIndex="{Binding CsvSortOrderIndex, Mode=TwoWay}"
+                                                     Margin="0,0,0,12">
+                                    <telerik:RadComboBoxItem Content="오름차순 (과거→최신)"/>
+                                    <telerik:RadComboBoxItem Content="내림차순 (최신→과거)"/>
+                                </telerik:RadComboBox>
+
+                                <Button Content="카메라거리 CSV (검색 전체)"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding ExportCamDistCsvCommand}"
+                                        Margin="0,0,0,8"/>
+                                <Button Content="회전중심 CSV (검색 전체)"
+                                        Style="{StaticResource SearchButton}"
+                                        Command="{Binding ExportHcroCsvCommand}"/>
+                            </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
             </TabItem>
 
         </TabControl>
