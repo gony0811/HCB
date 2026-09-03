@@ -1421,8 +1421,8 @@ namespace HCB.UI
             double hcErrX = await GetRecipeSafe("HcCenterErrorX");
             double hcErrY = await GetRecipeSafe("HcCenterErrorY");
 
-            double hx = lowCenter.X + shankLowX + hcErrX;
-            double wy = lowCenter.Y + shankLowY + hcErrY;
+            double hx = lowCenter.X + shankLowX;
+            double wy = lowCenter.Y + shankLowY - hcErrY;
             await Task.WhenAll(
                 _sequenceService.MotionsMove(WaferXAxis, hx, ct),
                 _sequenceService.MotionsMove(WaferYAxis, wy, ct));
@@ -1493,8 +1493,11 @@ namespace HCB.UI
                 WaferCenterStatus = "[1/3] Wafer Edge 3점 센터 찾기...";
                 var lowCenter = await FindEdgeCenterAsync(ct);
                 if (lowCenter == null) return;   // 상태 메시지는 FindEdgeCenterAsync에서 설정
-                WaferFoundCenterX = lowCenter.X;
-                WaferFoundCenterY = lowCenter.Y;
+                
+                var x = _recipeService.FindByParamDouble("HcCenterErrorX");
+                var y = _recipeService.FindByParamDouble("HcCenterErrorY");
+                WaferFoundCenterX = lowCenter.X + -0.5;
+                WaferFoundCenterY = lowCenter.Y + -0.5;
 
                 // ── 2) 센터 이동 + 고배 전환 ──
                 WaferCenterStatus = "[2/3] 센터 이동 후 고배 전환...";
