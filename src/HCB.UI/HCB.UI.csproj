@@ -122,6 +122,9 @@
   <Page Include="SUB UI\USub01Tab\CalibrationTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\USub01Tab\Mapping2DWindow.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub01Tab\VisionTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -307,6 +310,7 @@
   <Compile Include="SUB UI\USub01Tab\AutoTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\BondingInfoWindow.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\CalibrationTab.xaml.cs" />
+  <Compile Include="SUB UI\USub01Tab\Mapping2DWindow.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\VisionTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\LoadingTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\ManualTab.xaml.cs" />
