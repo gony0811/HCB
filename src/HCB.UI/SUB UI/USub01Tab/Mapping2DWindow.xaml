@@ -14,6 +14,8 @@
                 <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DefaultResource.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
             <!-- 실행 버튼 -->
             <Style x:Key="CalibBtnStyle" TargetType="Button">
                 <Setter Property="Background" Value="#1A3A5C"/>
@@ -309,11 +311,49 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- ── 웨이퍼 맵 (2/3) ── -->
-                <Border Grid.Column="0" Background="#0A1628" BorderBrush="#2A5A8C"
-                        BorderThickness="1" CornerRadius="6" ClipToBounds="True">
-                    <Canvas x:Name="WaferCanvas" Background="Transparent"
-                            SizeChanged="WaferCanvas_SizeChanged"/>
-                </Border>
+                <Grid Grid.Column="0">
+                    <Border Background="#0A1628" BorderBrush="#2A5A8C"
+                            BorderThickness="1" CornerRadius="6" ClipToBounds="True">
+                        <Canvas x:Name="WaferCanvas" Background="Transparent"
+                                SizeChanged="WaferCanvas_SizeChanged"
+                                MouseLeftButtonDown="WaferCanvas_Click"/>
+                    </Border>
+
+                    <!-- 셀 클릭 → 고배 좌표 확인·이동 패널 -->
+                    <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="10"
+                            Background="#0D1B2A" BorderBrush="#3498DB" BorderThickness="1"
+                            CornerRadius="6" Padding="14,10"
+                            Visibility="{Binding HasSelectedCell, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Foreground="#ECF0F1" FontSize="14" FontWeight="SemiBold"
+                                       Text="{Binding SelectedCellInfo, StringFormat=선택 Cell — {0}}"/>
+                            <TextBlock Foreground="#8FB0C8" FontSize="13" Margin="0,4,0,0">
+                                <Run Text="고배 좌표  X="/><Run Text="{Binding SelectedCellHighX, StringFormat=F4}" Foreground="#2ECC71"/>
+                                <Run Text="   Y="/><Run Text="{Binding SelectedCellHighY, StringFormat=F4}" Foreground="#2ECC71"/>
+                                <Run Text=" mm"/>
+                            </TextBlock>
+                            <TextBlock Text="이 위치로 이동하시겠습니까?" Foreground="#E67E22"
+                                       FontSize="13" Margin="0,6,0,8"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="이동" Width="90"
+                                        Style="{StaticResource CalibBtnStyle}"
+                                        Command="{Binding MoveToCellCommand}"
+                                        IsEnabled="{Binding IsNotBusy}" Margin="0,0,8,0"/>
+                                <Button Content="취소" Width="90" Height="52" FontSize="16" Cursor="Hand"
+                                        Foreground="#ECF0F1" Command="{Binding CancelMoveToCellCommand}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="#3A4652" BorderBrush="#5E6B78"
+                                                    BorderThickness="1" CornerRadius="6">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
 
                 <!-- ── 설정 (1/3) ── -->
                 <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
@@ -478,6 +518,37 @@
                                 CornerRadius="6" Padding="10,8">
                             <TextBlock Text="{Binding WaferCenterStatus}"
                                        Foreground="#3498DB" FontSize="13" TextWrapping="Wrap"/>
+                        </Border>
+
+                        <!-- ── 전수 순회 측정 ── -->
+                        <Rectangle Height="1" Fill="#1C3A52" Margin="0,16,0,12"/>
+                        <TextBlock Text="전수 측정 (Cell 순회)" Foreground="#5E8BAA"
+                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBlock Foreground="#3D5A72" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10">
+                            유효 영역 내 모든 Cell을 순회하며 Cell당 대표 Mark 1개를 측정합니다.
+                            결과는 Desktop/HCB/2D Mapping 에 CSV로 저장됩니다.
+                        </TextBlock>
+
+                        <!-- 상태 범례 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Rectangle Width="12" Height="12" Fill="#992ECC71" VerticalAlignment="Center"/>
+                            <TextBlock Text="완료" Foreground="#8FB0C8" FontSize="12" Margin="4,0,10,0" VerticalAlignment="Center"/>
+                            <Rectangle Width="12" Height="12" Fill="#AAE67E22" VerticalAlignment="Center"/>
+                            <TextBlock Text="측정중" Foreground="#8FB0C8" FontSize="12" Margin="4,0,10,0" VerticalAlignment="Center"/>
+                            <Rectangle Width="12" Height="12" Stroke="#5E8BAA" StrokeThickness="1" Fill="Transparent" VerticalAlignment="Center"/>
+                            <TextBlock Text="미측정" Foreground="#8FB0C8" FontSize="12" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Button Style="{StaticResource CalibBtnStyle}"
+                                Content="전수 측정 실행"
+                                Command="{Binding MappingMeasurementCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                Margin="0,0,0,10"/>
+
+                        <Border Background="#0A1628" BorderBrush="#2A5A8C" BorderThickness="1"
+                                CornerRadius="6" Padding="10,8">
+                            <TextBlock Text="{Binding TraversalProgress}"
+                                       Foreground="#E67E22" FontSize="13" TextWrapping="Wrap"/>
                         </Border>
 
                     </StackPanel>

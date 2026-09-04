@@ -1584,14 +1584,14 @@ namespace HCB.UI
                 WaferFoundCenterX = ox; WaferFoundCenterY = oy;
 
                 // 3-1) Mark 단위 — step = 마크 피치, 총 (셀 축 마크 수)개, 부호 교대 배수 스윕
-                int markCount = Math.Max(2, centerCell.MarkGrid);
+                int markCount = Math.Max(2, centerCell.MarkGrid - 3);
                 WaferCenterStatus = "[3-1] Mark 단위 θ 보정...";
                 if (!await CorrectThetaStageAsync("3-1 Mark", centerCell, WaferMarkPitch, markCount, WaferHighCamera, ct))
                     return;
 
                 // 3-2) Grid 단위 — step = 그리드 사이즈 + 그리드 간격(셀 피치), 총 (행 셀 수 − 1)개
                 double gridStep = WaferCellSize + WaferCellGap;
-                int gridCount = Math.Max(2, rowCells - 1);
+                int gridCount = Math.Max(2, rowCells - 3);
                 WaferCenterStatus = "[3-2] Grid 단위 θ 보정...";
                 if (!await CorrectThetaStageAsync("3-2 Grid", centerCell, gridStep, gridCount, WaferHighCamera, ct))
                     return;
@@ -1617,9 +1617,205 @@ namespace HCB.UI
             finally { IsNotBusy = true; }
         }
 
+
+
+        
+
+        #endregion
+
+        // ══════════════════════════════════════════════
+        //  2D Mapping — Wafer 전수 순회 측정 (Cell당 대표 Mark 1개)
+        //   Clipped(유효 영역 밖·불완전) Cell은 방문 제외.
+        //   상태(미측정/측정중/완료)를 뷰에 반영하고, 결과를 CSV로 저장한다. (RunMapping2D 참조)
+        // ══════════════════════════════════════════════
+        #region ── 2D Mapping (Wafer) 전수 측정 ──
+
+        [ObservableProperty] private string traversalProgress = "-";
+
+        /// <summary>
+        /// Wafer 내 모든 Cell을 전수 순회하며 Cell당 대표 Mark 1개를 측정한다.
+        /// ※ 전제: 카메라가 측정 높이(초점)에 있고, 현재 위치가 "1번 Cell(Id 1)" 위라고 가정.
+        ///   (현재 위치를 1번 Cell로 보고 원점=웨이퍼 센터를 역산 → 첫 이동 없이 그 자리에서 시작)
+        /// </summary>
+        [RelayCommand]
+        public async Task MappingMeasurement()
+        {
+            if (!IsNotBusy) return;
+            if (WaferCells.Count == 0) { TraversalProgress = "먼저 Wafer를 생성하세요."; return; }
+
+            IsNotBusy = false;
+            var ct = GetToken();
+            try
+            {
+                // 방문 대상: 전체 셀 (Id 순)
+                var targets = WaferCells.OrderBy(c => c.Id).ToList();
+                var anchor = targets[0];   // 1번 Cell = 시작 기준
+
+                // 상태 초기화
+                foreach (var c in WaferCells)
+                {
+                    c.State = CellMeasureState.NotMeasured;
+                    c.HasResult = false;
+                }
+                WaferMapChanged?.Invoke();
+
+                // 현재 위치 = 1번 Cell 위로 가정 → 원점(웨이퍼 센터) 역산
+                double ox = _hxAxis!.CurrentPosition - WaferXMoveSign * anchor.CenterX;
+                double oy = _wyAxis!.CurrentPosition - WaferYMoveSign * anchor.CenterY;
+
+                await _communication.RequestAFStart(MappingCamera, MappingMark, ct);
+
+                int total = targets.Count, done = 0;
+                foreach (var cell in targets)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    cell.State = CellMeasureState.Measuring;
+                    TraversalProgress = $"측정중 {done + 1}/{total} — ID {cell.Id} (행 {cell.Row}, 열 {cell.Col})";
+                    WaferMapChanged?.Invoke();
+
+                    await Task.WhenAll(
+                        _sequenceService.MotionsMove(WaferXAxis, ox + WaferXMoveSign * cell.CenterX, ct),
+                        _sequenceService.MotionsMove(WaferYAxis, oy + WaferYMoveSign * cell.CenterY, ct));
+
+                    var v = await _communication.RequestVisionMarkPosition(
+                        MappingMark, MappingCamera, MappingDirect.ToString());
+                    double cx = await _sequenceService.GetCurrentPosition(WaferXAxis, ct);
+                    double cy = await _sequenceService.GetCurrentPosition(WaferYAxis, ct);
+
+                    if (v != null && v.Result != Result.NG)
+                    {
+                        cell.OffsetXUm = v.X * 1000.0;
+                        cell.OffsetYUm = v.Y * 1000.0;
+                        cell.MeasuredX = cx + WaferXVisionSign * v.X;
+                        cell.MeasuredY = cy + WaferYVisionSign * v.Y;
+                        cell.HasResult = true;
+                    }
+                    else
+                    {
+                        cell.HasResult = false;
+                        _logger.Warning("전수 측정 — 비전 NG (Cell ID {Id})", cell.Id);
+                    }
+
+                    cell.State = CellMeasureState.Measured;
+                    done++;
+                    WaferMapChanged?.Invoke();
+                }
+
+                // 원점 복귀
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(WaferXAxis, ox, ct),
+                    _sequenceService.MotionsMove(WaferYAxis, oy, ct));
+
+                string path = SaveTraversalCsv(targets);
+                TraversalProgress = $"완료 {total} Cell → {Path.GetFileName(path)}";
+                _logger.Information("Wafer 전수 측정 완료 — {N} Cell, CSV: {Path}", total, path);
+            }
+            catch (OperationCanceledException) { TraversalProgress = "중지됨"; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "MappingMeasurement failed");
+                TraversalProgress = $"오류: {e.Message}";
+            }
+            finally { IsNotBusy = true; }
+        }
+
+        /// <summary>전수 측정 결과를 CSV로 저장(Desktop/HCB/2D Mapping). RunMapping2D 저장 규약 참조.</summary>
+        private string SaveTraversalCsv(List<WaferMapCell> cells)
+        {
+            string folder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "HCB", "2D Mapping");
+            Directory.CreateDirectory(folder);
+            string path = Path.Combine(folder,
+                $"WaferTraversal_{MappingCamera}_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+
+            using var sw = new StreamWriter(path, false, System.Text.Encoding.UTF8);
+            sw.WriteLine("ID,Row,Col,NominalX(mm),NominalY(mm),StageX(mm),StageY(mm),OffsetX(um),OffsetY(um),Result");
+            foreach (var c in cells)
+            {
+                string res = c.HasResult ? "OK" : "NG";
+                sw.WriteLine(
+                    $"{c.Id},{c.Row},{c.Col}," +
+                    $"{c.CenterX:F4},{c.CenterY:F4}," +
+                    $"{c.MeasuredX:F4},{c.MeasuredY:F4}," +
+                    $"{c.OffsetXUm:F1},{c.OffsetYUm:F1},{res}");
+            }
+            return path;
+        }
+
+        #endregion
+
+        // ══════════════════════════════════════════════
+        //  2D Mapping — Cell 클릭 → 고배 좌표 확인 후 이동
+        // ══════════════════════════════════════════════
+        #region ── Cell 클릭 → 이동 ──
+
+        [ObservableProperty] private WaferMapCell? selectedCell;   // 클릭된 셀(뷰 강조용)
+        [ObservableProperty] private bool hasSelectedCell;         // 이동 확인 패널 표시 여부
+        [ObservableProperty] private string selectedCellInfo = "-";
+        [ObservableProperty] private double selectedCellHighX;     // 이동 목표 X(고배 스테이지, mm)
+        [ObservableProperty] private double selectedCellHighY;     // 이동 목표 Y(고배 스테이지, mm)
+
+        /// <summary>셀 클릭 시 호출 — 해당 셀의 고배 좌표를 계산해 이동 확인 패널을 띄운다.</summary>
+        public void SelectCell(WaferMapCell cell)
+        {
+            SelectedCell = cell;
+            // 고배 좌표 = 웨이퍼 센터(고배) + 셀 nominal 오프셋
+            SelectedCellHighX = WaferFoundCenterX + WaferXMoveSign * cell.CenterX;
+            SelectedCellHighY = WaferFoundCenterY + WaferYMoveSign * cell.CenterY;
+            SelectedCellInfo = $"ID {cell.Id}  (행 {cell.Row}, 열 {cell.Col})";
+            HasSelectedCell = true;
+            WaferMapChanged?.Invoke();   // 강조 표시 갱신
+        }
+
+        /// <summary>이동 확인 취소 — 선택 해제.</summary>
+        [RelayCommand]
+        private void CancelMoveToCell()
+        {
+            HasSelectedCell = false;
+            SelectedCell = null;
+            WaferMapChanged?.Invoke();
+        }
+
+        /// <summary>선택 셀의 고배 좌표로 이동한다.</summary>
+        [RelayCommand]
+        public async Task MoveToCell()
+        {
+            if (SelectedCell == null || !IsNotBusy) return;
+            IsNotBusy = false;
+            var ct = GetToken();
+            try
+            {
+                double tx = SelectedCellHighX, ty = SelectedCellHighY;
+                TraversalProgress = $"Cell ID {SelectedCell.Id} 로 이동 중... ({tx:F4},{ty:F4})";
+                await Task.WhenAll(
+                    _sequenceService.MotionsMove(WaferXAxis, tx, ct),
+                    _sequenceService.MotionsMove(WaferYAxis, ty, ct));
+                TraversalProgress = $"Cell ID {SelectedCell.Id} 이동 완료 ({tx:F4},{ty:F4})";
+                _logger.Information("Cell 이동 — ID {Id} → ({X:F4},{Y:F4})", SelectedCell.Id, tx, ty);
+            }
+            catch (OperationCanceledException) { TraversalProgress = "이동 중지됨"; }
+            catch (Exception e)
+            {
+                _logger.Error(e, "MoveToCell failed");
+                TraversalProgress = $"오류: {e.Message}";
+            }
+            finally
+            {
+                IsNotBusy = true;
+                HasSelectedCell = false;
+                SelectedCell = null;
+                WaferMapChanged?.Invoke();
+            }
+        }
+
         #endregion
 
     }
+
+    /// <summary>Cell 측정 상태.</summary>
+    public enum CellMeasureState { NotMeasured, Measuring, Measured }
+
 
     /// <summary>
     /// 웨이퍼 맵 셀(사각형). 고유 ID와 마크를 보유.
@@ -1638,6 +1834,14 @@ namespace HCB.UI
         public double GridY { get; }      // [그리기] 단위 격자 Y(위쪽 +)
         public int MarkGrid { get; }      // [그리기] 셀 내부 마크 축당 개수(정사각 격자)
         public List<WaferMapMark> Marks { get; } = new();
+
+        // ── 전수 측정 상태/결과 ──
+        public CellMeasureState State { get; set; } = CellMeasureState.NotMeasured;
+        public bool HasResult { get; set; }
+        public double MeasuredX { get; set; }   // 측정된 마크 절대 X(mm)
+        public double MeasuredY { get; set; }   // 측정된 마크 절대 Y(mm)
+        public double OffsetXUm { get; set; }   // 비전 오프셋 X(µm)
+        public double OffsetYUm { get; set; }   // 비전 오프셋 Y(µm)
 
         public WaferMapCell(int id, int row, int col,
             double centerX, double centerY, double size,

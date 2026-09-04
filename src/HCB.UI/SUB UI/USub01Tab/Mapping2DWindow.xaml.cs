@@ -17,6 +17,10 @@ namespace HCB.UI
     {
         private readonly CalibrationTabViewModel _vm;
 
+        // 맵 좌표 변환(격자 → 픽셀). 클릭 히트테스트에 사용.
+        private double _mapUnit, _mapCx0, _mapCy0;
+        private bool _mapValid;
+
         public Mapping2DWindow(CalibrationTabViewModel vm)
         {
             InitializeComponent();
@@ -42,11 +46,27 @@ namespace HCB.UI
 
         private void WaferCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawWaferMap();
 
+        // 셀 클릭 → 해당 셀 선택(고배 좌표 확인·이동 패널 표시)
+        private void WaferCanvas_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (!_mapValid || _mapUnit <= 0) return;
+            var p = e.GetPosition(WaferCanvas);
+            double gx = (p.X - _mapCx0) / _mapUnit;
+            double gy = (_mapCy0 - p.Y) / _mapUnit;   // 위쪽 +
+            foreach (var cell in _vm.WaferCells)
+                if (System.Math.Abs(gx - cell.GridX) <= 0.5 && System.Math.Abs(gy - cell.GridY) <= 0.5)
+                {
+                    _vm.SelectCell(cell);
+                    return;
+                }
+        }
+
         // ── 전체 웨이퍼 맵 (셀 그리드만; 마크 미표시) ──
         //   그리기는 논리 격자(GridX/Y)만 사용한다 — mm(그리드 사이즈/간격/마크 피치) 미사용.
         //   셀·ID는 각각 하나의 Frozen Geometry(단일 Path)로 배치 렌더링한다.
         private void DrawWaferMap()
         {
+            _mapValid = false;
             var canvas = WaferCanvas;
             if (canvas == null) return;
             canvas.Children.Clear();
@@ -70,10 +90,17 @@ namespace HCB.UI
             double ToX(double gx) => cx0 + gx * unit;
             double ToY(double gy) => cy0 - gy * unit;   // 위쪽 +
 
+            // 클릭 히트테스트용 변환 저장
+            _mapUnit = unit; _mapCx0 = cx0; _mapCy0 = cy0; _mapValid = true;
+
             double sPix = unit * 0.9;   // 그리기용 셀 크기(칸의 90% → 시각적 간격)
             bool showId = sPix >= 22;   // 셀이 충분히 클 때만 ID 라벨 표시
 
-            var cellGeo = new GeometryGroup();
+            // 상태별 채움 버킷(배치 렌더) + 전체 외곽선 + ID 텍스트
+            var gStroke = new GeometryGroup();          // 모든 셀 외곽선
+            var gMeasured = new GeometryGroup();        // 완료
+            var gMeasuring = new GeometryGroup();       // 측정중
+            var gSelected = new GeometryGroup();        // 선택(클릭)
             GeometryGroup? textGeo = showId ? new GeometryGroup() : null;
             var typeface = new Typeface("Segoe UI");
             double idFont = System.Math.Min(12, sPix * 0.28);
@@ -83,7 +110,12 @@ namespace HCB.UI
             {
                 double left = ToX(cell.GridX) - sPix / 2.0;
                 double top = ToY(cell.GridY) - sPix / 2.0;
-                cellGeo.Children.Add(new RectangleGeometry(new Rect(left, top, sPix, sPix)));
+                var rect = new RectangleGeometry(new Rect(left, top, sPix, sPix));
+                gStroke.Children.Add(rect);
+
+                if (ReferenceEquals(cell, _vm.SelectedCell)) gSelected.Children.Add(rect);
+                if (cell.State == CellMeasureState.Measured) gMeasured.Children.Add(rect);
+                else if (cell.State == CellMeasureState.Measuring) gMeasuring.Children.Add(rect);
 
                 if (textGeo != null)
                 {
@@ -95,13 +127,19 @@ namespace HCB.UI
                     textGeo.Children.Add(tg);
                 }
             }
-            cellGeo.Freeze();
 
+            // 채움(상태별) — 외곽선보다 먼저
+            AddFill(canvas, gMeasured, Color.FromArgb(150, 0x2E, 0xCC, 0x71));  // 완료: 초록
+            AddFill(canvas, gMeasuring, Color.FromArgb(170, 0xE6, 0x7E, 0x22)); // 측정중: 주황
+            AddFill(canvas, gSelected, Color.FromArgb(150, 0x34, 0x98, 0xDB));  // 선택: 파랑
+
+            // 전체 외곽선
+            gStroke.Freeze();
             var cellStroke = new SolidColorBrush(Color.FromArgb(180, 0x5E, 0x8B, 0xAA));
             cellStroke.Freeze();
             canvas.Children.Add(new Path
             {
-                Data = cellGeo,
+                Data = gStroke,
                 Stroke = cellStroke,
                 StrokeThickness = 1,
                 IsHitTestVisible = false
@@ -119,6 +157,16 @@ namespace HCB.UI
                     IsHitTestVisible = false
                 });
             }
+        }
+
+        // 상태별 채움 Path 추가(비어있으면 생략).
+        private static void AddFill(Canvas canvas, GeometryGroup geo, Color color)
+        {
+            if (geo.Children.Count == 0) return;
+            geo.Freeze();
+            var brush = new SolidColorBrush(color);
+            brush.Freeze();
+            canvas.Children.Add(new Path { Data = geo, Fill = brush, IsHitTestVisible = false });
         }
     }
 }
