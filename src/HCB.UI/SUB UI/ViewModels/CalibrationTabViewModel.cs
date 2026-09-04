@@ -1308,7 +1308,6 @@ namespace HCB.UI
         [ObservableProperty] private string waferCenterStatus = "-";
         [ObservableProperty] private double waferThetaTolDeg = 0.01;// θ 보정 임계각(° 미만이면 종료)
         [ObservableProperty] private int waferCenterMaxIter = 3;    // 센터·θ 측정·보정 반복 상한
-        [ObservableProperty] private int waferThetaStepCells = 1;   // 대칭 쌍 확장 단위(셀 수)
         [ObservableProperty] private double waferThetaSign = -1.0;  // θ 부호(WaferSeq ThetaSign; 반대면 +1)
         [ObservableProperty] private CameraType waferHighCamera = CameraType.HC1_HIGH; // θ 측정용 고배 카메라
 
@@ -1319,10 +1318,6 @@ namespace HCB.UI
             else if (deg < -90) deg += 180;
             return deg;
         }
-
-        /// <summary>중심 행에서 GridX가 gx에 가장 근접한 셀(없으면 null).</summary>
-        private static WaferMapCell? RowCellAt(List<WaferMapCell> row, double gx)
-            => row.FirstOrDefault(c => Math.Abs(c.GridX - gx) < 0.25);
 
         /// <summary>원점 기준 셀 nominal 위치로 이동 후 지정 카메라로 마크를 1회 측정 → 절대(스테이지) 좌표(실패 시 null).</summary>
         private async Task<(double X, double Y)?> MeasureCellAbsAsync(
@@ -1429,6 +1424,88 @@ namespace HCB.UI
             return (hx, wy);
         }
 
+        /// <summary>목표 스테이지 좌표로 이동 후 마크 1회 측정 → 절대(스테이지) 좌표(실패 시 null).</summary>
+        private async Task<(double X, double Y)?> MeasureAtAsync(
+            double targetX, double targetY, CameraType camera, CancellationToken ct)
+        {
+            await Task.WhenAll(
+                _sequenceService.MotionsMove(WaferXAxis, targetX, ct),
+                _sequenceService.MotionsMove(WaferYAxis, targetY, ct));
+
+            var v = await _communication.RequestVisionMarkPosition(
+                MappingMark, camera, MappingDirect.ToString());
+            if (v == null || v.Result == Result.NG) return null;
+
+            double cx = await _sequenceService.GetCurrentPosition(WaferXAxis, ct);
+            double cy = await _sequenceService.GetCurrentPosition(WaferYAxis, ct);
+            return (cx + WaferXVisionSign * v.X, cy + WaferYVisionSign * v.Y);
+        }
+
+        /// <summary>측정점들의 최소자승 직선 기울기(dy/dx). 점이 부족하면 0.</summary>
+        private static double FitLineSlope(List<(double x, double y)> pts)
+        {
+            int n = pts.Count;
+            if (n < 2) return 0;
+            double sx = 0, sy = 0;
+            foreach (var p in pts) { sx += p.x; sy += p.y; }
+            double mx = sx / n, my = sy / n, sxx = 0, sxy = 0;
+            foreach (var p in pts)
+            {
+                double dx = p.x - mx, dy = p.y - my;
+                sxx += dx * dx; sxy += dx * dy;
+            }
+            return sxx > 1e-12 ? sxy / sxx : 0;
+        }
+
+        /// <summary>
+        /// Theta 보정 1단계(공용) — 기준(=0)에서 시작해 부호를 번갈아(+1,−2,+3,−4 …) step 배수만큼
+        /// X로 이동·촬상하며 총 count개 마크를 측정하고, 직선 기울기로 θ를 산출해 W_T를 보정한다.
+        /// 임계각(WaferThetaTolDeg) 이내가 되거나 반복 소진 시 종료. 기준 미검출이면 false.
+        /// </summary>
+        private async Task<bool> CorrectThetaStageAsync(
+            string tag, WaferMapCell centerCell, double step, int count, CameraType cam, CancellationToken ct)
+        {
+            for (int iter = 0; iter < Math.Max(1, WaferCenterMaxIter); iter++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                // 기준(A/B = 0): 센터 셀 마크 측정 → 원점·기준 좌표 확정
+                var c0 = await MeasureCellAbsAsync(centerCell, WaferFoundCenterX, WaferFoundCenterY, cam, ct);
+                if (c0 == null) { WaferCenterStatus = $"[{tag}] 기준 마크 미검출 (ID {centerCell.Id})"; return false; }
+                WaferFoundCenterX = c0.Value.X - WaferXMoveSign * centerCell.CenterX;
+                WaferFoundCenterY = c0.Value.Y - WaferYMoveSign * centerCell.CenterY;
+                double baseX = c0.Value.X, baseY = c0.Value.Y;
+
+                // 부호 교대 배수 스윕: 0, +1, −2, +3, −4 … (×step), X축 이동·촬상
+                var pts = new List<(double x, double y)> { (baseX, baseY) };
+                for (int k = 1; k < Math.Max(2, count); k++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    int mult = (k % 2 == 1) ? k : -k;   // +1, −2, +3, −4 …
+                    WaferCenterStatus = $"[{tag}] {k + 1}/{count} (×{mult:+0;-0})...";
+                    var p = await MeasureAtAsync(baseX + mult * step, baseY, cam, ct);
+                    if (p != null) pts.Add(p.Value);
+                }
+                if (pts.Count < 2) { WaferCenterStatus = $"[{tag}] 측정점 부족"; return false; }
+
+                double thetaDeg = NormalizeAngle(Math.Atan(FitLineSlope(pts)).ToDegree());
+                WaferFoundThetaDeg = thetaDeg;
+                _logger.Information("{Tag} θ={T:F4}° (측정점 {N}, step {S:F4}mm)", tag, thetaDeg, pts.Count, step);
+
+                if (Math.Abs(thetaDeg) < WaferThetaTolDeg)
+                {
+                    WaferCenterStatus = $"[{tag}] 완료 — θ={thetaDeg:F4}° (임계 이내, 측정점 {pts.Count})";
+                    return true;
+                }
+
+                double corr = WaferThetaSign * thetaDeg;
+                WaferCenterStatus = $"[{tag}] θ={thetaDeg:F4}° → W_T {-corr:F4}° 회전...";
+                _logger.Information("{Tag} θ 보정 — W_T {Rot:F4}° 회전", tag, -corr);
+                await _sequenceService.RelativeMotionsMove(WaferThetaAxis, -corr, ct);
+            }
+            return true;
+        }
+
         /// <summary>웨이퍼 센터 찾기 — 엣지 3점 원 피팅으로 중심을 산출하고 그 위치로 이동한다.</summary>
         [RelayCommand]
         public async Task FindWaferCenter()
@@ -1487,7 +1564,6 @@ namespace HCB.UI
                 var centerCell = WaferCells.OrderBy(c => c.GridX * c.GridX + c.GridY * c.GridY).First();
                 var rowCells = WaferCells.Where(c => Math.Abs(c.GridY - centerCell.GridY) < 0.25)
                                          .OrderBy(c => c.GridX).ToList();
-                int step = Math.Max(1, WaferThetaStepCells);
 
                 // ── 1) 저배 엣지 3점 → 센터 ──
                 WaferCenterStatus = "[1/3] Wafer Edge 3점 센터 찾기...";
@@ -1505,70 +1581,29 @@ namespace HCB.UI
                 _logger.Information("Wafer 고배 전환 — 저배센터=({LX:F4},{LY:F4}) → 고배센터=({HX:F4},{HY:F4})",
                     lowCenter.X, lowCenter.Y, ox, oy);
 
-                // ── 3) 좌우 이동 Theta 보정 (고배 마크, 대칭 쌍) ──
+                // ── 3) Theta 보정 (2단계: Mark 단위 → Grid 단위) ──
                 await _communication.RequestAFStart(WaferHighCamera, MappingMark, ct);
-                double thetaDeg = 0;
-                for (int iter = 0; iter < Math.Max(1, WaferCenterMaxIter); iter++)
-                {
-                    ct.ThrowIfCancellationRequested();
+                WaferFoundCenterX = ox; WaferFoundCenterY = oy;
 
-                    // 회전 후 원점(고배 센터) 재고정: 센터 셀 마크 측정
-                    var c0 = await MeasureCellAbsAsync(centerCell, ox, oy, WaferHighCamera, ct);
-                    if (c0 == null) { WaferCenterStatus = $"[3/3] 고배 센터 셀 미검출 (ID {centerCell.Id})"; return; }
-                    ox = c0.Value.X - WaferXMoveSign * centerCell.CenterX;
-                    oy = c0.Value.Y - WaferYMoveSign * centerCell.CenterY;
-                    WaferFoundCenterX = ox; WaferFoundCenterY = oy;
+                // 3-1) Mark 단위 — step = 마크 피치, 총 (셀 축 마크 수)개, 부호 교대 배수 스윕
+                int markCount = Math.Max(2, centerCell.MarkGrid);
+                WaferCenterStatus = "[3-1] Mark 단위 θ 보정...";
+                if (!await CorrectThetaStageAsync("3-1 Mark", centerCell, WaferMarkPitch, markCount, WaferHighCamera, ct))
+                    return;
 
-                    // 대칭 쌍을 안쪽→바깥 확장, 최장 baseline 1회 산출
-                    (double X, double Y)? bestL = null, bestR = null;
-                    double bestBase = 0;
-                    for (int m = step; ; m += step)
-                    {
-                        ct.ThrowIfCancellationRequested();
-                        var lc = RowCellAt(rowCells, centerCell.GridX - m);
-                        var rc = RowCellAt(rowCells, centerCell.GridX + m);
-                        if (lc == null || rc == null) break;              // 행 끝 도달
-
-                        WaferCenterStatus = $"[3/3] 대칭 쌍 ±{m} 측정 (ID {lc.Id}/{rc.Id})...";
-                        var l = await MeasureCellAbsAsync(lc, ox, oy, WaferHighCamera, ct);
-                        var r = await MeasureCellAbsAsync(rc, ox, oy, WaferHighCamera, ct);
-                        if (l == null || r == null) break;               // 미검출 → 지금까지 최장 쌍 사용
-
-                        bestL = l; bestR = r;
-                        bestBase = Math.Abs(rc.CenterX - lc.CenterX);
-                    }
-
-                    if (bestL == null || bestR == null)
-                    {
-                        WaferCenterStatus = $"완료 — 고배센터=({ox:F4},{oy:F4}) / 대칭 쌍 없음(θ 보정 생략)";
-                        break;
-                    }
-
-                    thetaDeg = NormalizeAngle(
-                        Math.Atan2(bestR.Value.Y - bestL.Value.Y, bestR.Value.X - bestL.Value.X).ToDegree());
-                    WaferFoundThetaDeg = thetaDeg;
-                    _logger.Information("Wafer θ [{Iter}] — 고배센터=({X:F4},{Y:F4}), θ={T:F4}° (baseline {B:F2}mm)",
-                        iter + 1, ox, oy, thetaDeg, bestBase);
-
-                    if (Math.Abs(thetaDeg) < WaferThetaTolDeg)
-                    {
-                        WaferCenterStatus = $"완료 — 고배센터=({ox:F4},{oy:F4}), Theta={thetaDeg:F4}° (baseline {bestBase:F2}mm, 임계 이내)";
-                        break;
-                    }
-
-                    // θ 보정: W_T를 −corr 회전 (corr = ThetaSign·θ) — WaferSeq 규약
-                    double corr = WaferThetaSign * thetaDeg;
-                    WaferCenterStatus = $"[3/3] Theta {thetaDeg:F4}° → W_T {-corr:F4}° 회전 (baseline {bestBase:F2}mm)";
-                    _logger.Information("Wafer θ 보정 — W_T {Rot:F4}° 회전(θ={T:F4}°)", -corr, thetaDeg);
-                    await _sequenceService.RelativeMotionsMove(WaferThetaAxis, -corr, ct);
-                }
+                // 3-2) Grid 단위 — step = 그리드 사이즈 + 그리드 간격(셀 피치), 총 (행 셀 수 − 1)개
+                double gridStep = WaferCellSize + WaferCellGap;
+                int gridCount = Math.Max(2, rowCells.Count - 1);
+                WaferCenterStatus = "[3-2] Grid 단위 θ 보정...";
+                if (!await CorrectThetaStageAsync("3-2 Grid", centerCell, gridStep, gridCount, WaferHighCamera, ct))
+                    return;
 
                 // 고배 센터 복귀
                 await Task.WhenAll(
-                    _sequenceService.MotionsMove(WaferXAxis, ox, ct),
-                    _sequenceService.MotionsMove(WaferYAxis, oy, ct));
+                    _sequenceService.MotionsMove(WaferXAxis, WaferFoundCenterX, ct),
+                    _sequenceService.MotionsMove(WaferYAxis, WaferFoundCenterY, ct));
                 _logger.Information("Wafer 전체 시퀀스 완료 — 고배센터=({X:F4},{Y:F4}), θ={T:F4}°",
-                    ox, oy, WaferFoundThetaDeg);
+                    WaferFoundCenterX, WaferFoundCenterY, WaferFoundThetaDeg);
             }
             catch (OperationCanceledException) { WaferCenterStatus = "중지됨"; }
             catch (Exception e) when (e is InvalidOperationException or ArgumentException)
