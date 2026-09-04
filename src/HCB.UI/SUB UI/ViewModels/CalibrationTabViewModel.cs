@@ -1562,9 +1562,7 @@ namespace HCB.UI
             {
                 // 그리드 센터 셀·중심 행(θ 대칭 쌍 측정용)
                 var centerCell = WaferCells.OrderBy(c => c.GridX * c.GridX + c.GridY * c.GridY).First();
-                var rowCells = WaferCells.Where(c => Math.Abs(c.GridY - centerCell.GridY) < 0.25)
-                                         .OrderBy(c => c.GridX).ToList();
-
+                var rowCells = DrawingRowCounts.Max();
                 // ── 1) 저배 엣지 3점 → 센터 ──
                 WaferCenterStatus = "[1/3] Wafer Edge 3점 센터 찾기...";
                 var lowCenter = await FindEdgeCenterAsync(ct);
@@ -1593,7 +1591,7 @@ namespace HCB.UI
 
                 // 3-2) Grid 단위 — step = 그리드 사이즈 + 그리드 간격(셀 피치), 총 (행 셀 수 − 1)개
                 double gridStep = WaferCellSize + WaferCellGap;
-                int gridCount = Math.Max(2, rowCells.Count - 1);
+                int gridCount = Math.Max(2, rowCells - 1);
                 WaferCenterStatus = "[3-2] Grid 단위 θ 보정...";
                 if (!await CorrectThetaStageAsync("3-2 Grid", centerCell, gridStep, gridCount, WaferHighCamera, ct))
                     return;
