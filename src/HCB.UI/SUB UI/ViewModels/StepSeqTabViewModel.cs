@@ -709,15 +709,19 @@ namespace HCB.UI
         {
             ResetCts();
             var ct = _cts.Token;
+
+            // Top Die 미로드 시: try/finally 진입 전에 즉시 종료해 이전 사이클 데이터가
+            // finally에서 중복 저장되는 것을 방지한다.
+            if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
+
+            // 이번 사이클 측정 데이터 초기화 (직전 사이클 값이 finally에서 재저장되지 않도록)
+            hcbData = null;
+            _reMeasureData = null;
+
             TrackStep("TopFull", StepState.InProgress);
             TrackStep("TopFullExMeasure", StepState.InProgress);
             try
             {
-                if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); TrackStep("TopFull", StepState.Idle); TrackStep("TopFullExMeasure", StepState.Idle); return; }
-
-                // 이번 사이클 재측정 결과 초기화 (미수행 시 ReMeasure 행 미기록)
-                _reMeasureData = null;
-
                 // 1. 회전중심 + 카메라 거리 측정 (Pickup 이전) + 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
                 hcbData = await _sequenceService.MeasureCamDistAndHcro(NewAlignData(), ct);
