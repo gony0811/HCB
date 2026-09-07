@@ -52,7 +52,7 @@ namespace HCB.UI
             if (!_mapValid || _mapUnit <= 0) return;
             var p = e.GetPosition(WaferCanvas);
             double gx = (p.X - _mapCx0) / _mapUnit;
-            double gy = (_mapCy0 - p.Y) / _mapUnit;   // 위쪽 +
+            double gy = (p.Y - _mapCy0) / _mapUnit;   // 상하 반전(위쪽 −)
             foreach (var cell in _vm.WaferCells)
                 if (System.Math.Abs(gx - cell.GridX) <= 0.5 && System.Math.Abs(gy - cell.GridY) <= 0.5)
                 {
@@ -88,7 +88,7 @@ namespace HCB.UI
             double cx0 = w / 2.0;
             double cy0 = h / 2.0;
             double ToX(double gx) => cx0 + gx * unit;
-            double ToY(double gy) => cy0 - gy * unit;   // 위쪽 +
+            double ToY(double gy) => cy0 + gy * unit;   // 상하 반전(위쪽 −)
 
             // 클릭 히트테스트용 변환 저장
             _mapUnit = unit; _mapCx0 = cx0; _mapCy0 = cy0; _mapValid = true;

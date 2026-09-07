@@ -1730,13 +1730,12 @@ namespace HCB.UI
                 $"WaferTraversal_{MappingCamera}_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
 
             using var sw = new StreamWriter(path, false, System.Text.Encoding.UTF8);
-            sw.WriteLine("ID,Row,Col,NominalX(mm),NominalY(mm),StageX(mm),StageY(mm),OffsetX(um),OffsetY(um),Result");
+            sw.WriteLine("ID,Row,Col,StageX(mm),StageY(mm),OffsetX(um),OffsetY(um),Result");
             foreach (var c in cells)
             {
                 string res = c.HasResult ? "OK" : "NG";
                 sw.WriteLine(
                     $"{c.Id},{c.Row},{c.Col}," +
-                    $"{c.CenterX:F4},{c.CenterY:F4}," +
                     $"{c.MeasuredX:F4},{c.MeasuredY:F4}," +
                     $"{c.OffsetXUm:F1},{c.OffsetYUm:F1},{res}");
             }
