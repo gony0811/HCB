@@ -856,6 +856,8 @@ namespace HCB.UI
             await pmac.SendCommand("CompTable[1].sf[0]=1");
             await pmac.SendCommand("CompTable[2].sf[0]=0");
             await pmac.SendCommand("CompTable[3].sf[0]=0");
+            await pmac.SendCommand("CompTable[4].sf[0]=0");
+            await pmac.SendCommand("CompTable[5].sf[0]=0");
             await pmac.SendCommand("sys.Compenable=2");
         }
 
@@ -868,9 +870,26 @@ namespace HCB.UI
             await pmac.SendCommand("CompTable[1].sf[0]=0");
             await pmac.SendCommand("CompTable[2].sf[0]=1");
             await pmac.SendCommand("CompTable[3].sf[0]=1");
+            await pmac.SendCommand("CompTable[4].sf[0]=0");
+            await pmac.SendCommand("CompTable[5].sf[0]=0");
             await pmac.SendCommand("sys.Compenable=4");
 
         }
+        public async Task WTableWafer2DMappingOn()
+        {
+            var pmac = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+
+            await pmac.SendCommand("CompTable[0].sf[0]=0");
+            await pmac.SendCommand("CompTable[1].sf[0]=0");
+            await pmac.SendCommand("CompTable[2].sf[0]=0");
+            await pmac.SendCommand("CompTable[3].sf[0]=0");
+            await pmac.SendCommand("CompTable[4].sf[0]=1");
+            await pmac.SendCommand("CompTable[5].sf[0]=1");
+            await pmac.SendCommand("sys.Compenable=6");
+
+        }
+
+
 
         public async Task MappingOff()
         {
