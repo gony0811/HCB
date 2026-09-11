@@ -728,10 +728,7 @@ namespace HCB.UI
                     ParseDouble(hc2YParam.Value));
 
                 // 현재 레시피의 컴포넌트에 맞춰 W-Table 매핑 (DIE=CompTable[2,3], WAFER=CompTable[4,5])
-                await WTable2DMappingOn(
-                    _recipeService.UseRecipe?.Component == ComponentType.DIE
-                        ? ComponentType.DIE
-                        : ComponentType.WAFER);
+                await WTable2DMappingOn(ComponentType.WAFER);
                 await TopDieSet(ct);
 
                 var hcLeftFid = await BtmDieVisionLeftFid(avgMode, ct);
@@ -1437,6 +1434,7 @@ namespace HCB.UI
 
                 double topDieThickness = await GetRecipe("TopDieThickness");
                 double btmDieThickness = await GetRecipe("BtmDieThickness");
+                double topbtmGap = await GetRecipe("TopBtmGap");
                 double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
 
                 await MotionsMove(MotionExtensions.H_Z,
@@ -1460,21 +1458,20 @@ namespace HCB.UI
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, topBtmRelative.X, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, -topBtmRelative.Y, ct));
-
+                await RelativeMotionsMove(MotionExtensions.H_Z, -topbtmGap, ct);
                 var topLeft = await MeasureWithRetry(MarkType.ALIGN_MARK_TOP, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
 
                 // Top Right Align Mark로 이동 후 촬상 
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, topRelative.X, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, -topRelative.Y, ct));
-
                 var topRight = await MeasureWithRetry(MarkType.ALIGN_MARK_TOP, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
 
                 // Btm Right Align Mark로 이동 후 촬상 
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, topBtmRelative.X, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, -topBtmRelative.Y, ct));
-
+                await RelativeMotionsMove(MotionExtensions.H_Z, topbtmGap, ct);
                 var btmRight = await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
                 
                 await Init_Head(ct);
