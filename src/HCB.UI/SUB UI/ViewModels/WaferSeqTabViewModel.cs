@@ -122,9 +122,9 @@ namespace HCB.UI
             // 배치 검증(4점 Align) 설계 파라미터
             try { AlignTopSpacingX = RecipeService.FindByParamDouble("AlignTopSpacingX"); } catch { }
             try { AlignTopSpacingY = RecipeService.FindByParamDouble("AlignTopSpacingY"); } catch { }
-            try { AlignTopBtmSpacingX = RecipeService.FindByParamDouble("AlignTopBtmSpacingX"); } catch { }
-            try { AlignTopBtmSpacingY = RecipeService.FindByParamDouble("AlignTopBtmSpacingY"); } catch { }
-            try { DesignThetaDeg = RecipeService.FindByParamDouble("DesignThetaDeg"); } catch { }
+            try { SpecX = RecipeService.FindByParamDouble("SPEC_X"); } catch { }
+            try { SpecY = RecipeService.FindByParamDouble("SPEC_Y"); } catch { }
+            try { SpecTheta = RecipeService.FindByParamDouble("SPEC_THETA"); } catch { }
         }
 
         [RelayCommand]
@@ -143,9 +143,9 @@ namespace HCB.UI
             // 배치 검증(4점 Align) 설계 파라미터
             await SaveParam("AlignTopSpacingX", AlignTopSpacingX.ToString(), ValueType.Double, UnitType.mm);
             await SaveParam("AlignTopSpacingY", AlignTopSpacingY.ToString(), ValueType.Double, UnitType.mm);
-            await SaveParam("AlignTopBtmSpacingX", AlignTopBtmSpacingX.ToString(), ValueType.Double, UnitType.mm);
-            await SaveParam("AlignTopBtmSpacingY", AlignTopBtmSpacingY.ToString(), ValueType.Double, UnitType.mm);
-            await SaveParam("DesignThetaDeg", DesignThetaDeg.ToString(), ValueType.Double, UnitType.None);
+            await SaveParam("SPEC_X", SpecX.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("SPEC_Y", SpecY.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("SPEC_THETA", SpecTheta.ToString(), ValueType.Double, UnitType.None);
 
             GenerateWaferMap();
         }
@@ -366,13 +366,14 @@ namespace HCB.UI
         // ═══════════════════════════════════════════════════════════════
 
         // 설계 레이아웃(mm) — ResultMeasurement에 넘길 Align Mark 상대거리.
-        // Recipe(AlignTopSpacingX/Y, AlignTopBtmSpacingX/Y, DesignThetaDeg)에서 로드하며,
+        // Recipe(AlignTopSpacingX/Y, SPEC_X/SPEC_Y, SPEC_THETA)에서 로드하며,
         // 미설정 시 아래 기본값(Cr mask 사양 기반)을 사용한다. Setting 탭 Apply로 Recipe에 저장.
+        // ※ SPEC_X/SPEC_Y/SPEC_THETA는 본딩 시퀀스(MainSequence)와 공유하는 단일 레시피다.
         [ObservableProperty] private double alignTopSpacingX = 11.6;    // Top Left→Right Align 상대거리 X
         [ObservableProperty] private double alignTopSpacingY = 6.9;     // Top Left→Right Align 상대거리 Y
-        [ObservableProperty] private double alignTopBtmSpacingX = 0.5;  // Btm→Top Align 상대거리 X
-        [ObservableProperty] private double alignTopBtmSpacingY = 0;    // Btm→Top Align 상대거리 Y
-        [ObservableProperty] private double designThetaDeg = 0;         // 설계상 Top−Btm 목표 상대 각도(°)
+        [ObservableProperty] private double specX = 0.5;               // (SPEC_X) Btm→Top Align 상대거리 X
+        [ObservableProperty] private double specY = 0;                 // (SPEC_Y) Btm→Top Align 상대거리 Y
+        [ObservableProperty] private double specTheta = 0;            // (SPEC_THETA) 설계상 Top−Btm 목표 상대 각도(°)
 
         // 검증 결과 (ErrorX/ErrorY = µm, ErrorTheta = deg)
         [ObservableProperty] private bool hasPlacementResult;
@@ -402,7 +403,7 @@ namespace HCB.UI
             {
                 var btmLeftStage = Point2D.of(SelectedDie.HighPositionX, SelectedDie.HighPositionY);
                 var topRelative = Point2D.of(AlignTopSpacingX, AlignTopSpacingY);
-                var topBtmRelative = Point2D.of(AlignTopBtmSpacingX, AlignTopBtmSpacingY);
+                var topBtmRelative = Point2D.of(SpecX, SpecY);
 
                 PlacementStatus = $"Die({SelectedDie.Row},{SelectedDie.Col}) 4점 측정 중...";
                 _logger.Information(
@@ -412,7 +413,7 @@ namespace HCB.UI
                 var (topLeft, topRight, btmLeft, btmRight) =
                     await _sequenceService.ResultMeasurement(btmLeftStage, topRelative, topBtmRelative, ct);
 
-                var res = _sequenceService.SimpleMeasurement(topLeft, topRight, btmLeft, btmRight, DesignThetaDeg);
+                var res = _sequenceService.SimpleMeasurement(topLeft, topRight, btmLeft, btmRight, SpecTheta);
 
                 // 결과 반영 (mm → µm) 및 DB 저장
                 ErrorX = res.ErrorX * 1000.0;

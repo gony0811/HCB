@@ -1454,21 +1454,21 @@ namespace HCB.UI
                 // Top Left Align Mark로 이동 후 촬상 
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, topBtmRelative.X, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, topBtmRelative.Y, ct));
+                    RelativeMotionsMove(MotionExtensions.W_Y, -topBtmRelative.Y, ct));
 
                 var topLeft = await MeasureWithRetry(MarkType.ALIGN_MARK_TOP, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
 
                 // Top Right Align Mark로 이동 후 촬상 
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, topRelative.X, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, topRelative.Y, ct));
+                    RelativeMotionsMove(MotionExtensions.W_Y, -topRelative.Y, ct));
 
                 var topRight = await MeasureWithRetry(MarkType.ALIGN_MARK_TOP, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
 
                 // Btm Right Align Mark로 이동 후 촬상 
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, topBtmRelative.X, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, topBtmRelative.Y, ct));
+                    RelativeMotionsMove(MotionExtensions.W_Y, -topBtmRelative.Y, ct));
 
                 var btmRight = await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
                 
