@@ -1,4 +1,5 @@
-﻿using MediaFoundation;
+﻿using HCB.Data.Entity.Type;
+using MediaFoundation;
 using Microsoft.Extensions.Hosting;
 using SharpDX;
 using System;
@@ -258,8 +259,8 @@ namespace HCB.UI
                 await MappingOff();
                 if (data.TracingMode == TracingMode.Manual)
                 {
-                    bool isDieRecipe = _recipeService.UseRecipe?.Component == HCB.Data.Entity.Type.ComponentType.DIE;
-                    if (isDieRecipe && data.Use2DMapping) await WTable2DMappingOn();
+                    var isDieRecipe = _recipeService.UseRecipe?.Component ?? ComponentType.DIE;
+                    if (data.Use2DMapping) await WTable2DMappingOn(isDieRecipe);
 
                     // 측정 위치: 오버라이드(WaferCenter)가 있으면 그 위치, 없으면 기존 PLACE_CENTER
                     await TopDieSet(ct, CamHcroCenterOverride);
@@ -308,7 +309,11 @@ namespace HCB.UI
 
                 if (data.Use2DMapping)
                 {
-                    await WTable2DMappingOn();
+                    // 현재 레시피의 컴포넌트에 맞춰 W-Table 매핑 (DIE=CompTable[2,3], WAFER=CompTable[4,5])
+                    await WTable2DMappingOn(
+                        _recipeService.UseRecipe?.Component == HCB.Data.Entity.Type.ComponentType.DIE
+                            ? HCB.Data.Entity.Type.ComponentType.DIE
+                            : HCB.Data.Entity.Type.ComponentType.WAFER);
                 }
 
                 await TopDieSet(ct, placeCenter);

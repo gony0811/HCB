@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using HCB.Data.Entity.Type;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -726,7 +727,11 @@ namespace HCB.UI
                     ParseDouble(hc2XParam.Value),
                     ParseDouble(hc2YParam.Value));
 
-                await WTable2DMappingOn();
+                // 현재 레시피의 컴포넌트에 맞춰 W-Table 매핑 (DIE=CompTable[2,3], WAFER=CompTable[4,5])
+                await WTable2DMappingOn(
+                    _recipeService.UseRecipe?.Component == ComponentType.DIE
+                        ? ComponentType.DIE
+                        : ComponentType.WAFER);
                 await TopDieSet(ct);
 
                 var hcLeftFid = await BtmDieVisionLeftFid(avgMode, ct);
@@ -856,21 +861,40 @@ namespace HCB.UI
             await pmac.SendCommand("CompTable[1].sf[0]=1");
             await pmac.SendCommand("CompTable[2].sf[0]=0");
             await pmac.SendCommand("CompTable[3].sf[0]=0");
+            await pmac.SendCommand("CompTable[4].sf[0]=0");
+            await pmac.SendCommand("CompTable[5].sf[0]=0");
             await pmac.SendCommand("sys.Compenable=2");
         }
 
 
-        public async Task WTable2DMappingOn()
+        public async Task WTable2DMappingOn(ComponentType componentType)
         {
             var pmac = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            
+            if (componentType == ComponentType.DIE)
+            {
+                await pmac.SendCommand("CompTable[0].sf[0]=0");
+                await pmac.SendCommand("CompTable[1].sf[0]=0");
+                await pmac.SendCommand("CompTable[2].sf[0]=1");
+                await pmac.SendCommand("CompTable[3].sf[0]=1");
+                await pmac.SendCommand("CompTable[4].sf[0]=0");
+                await pmac.SendCommand("CompTable[5].sf[0]=0");
+                await pmac.SendCommand("sys.Compenable=4");
+            }else
+            {
 
-            await pmac.SendCommand("CompTable[0].sf[0]=0");
-            await pmac.SendCommand("CompTable[1].sf[0]=0");
-            await pmac.SendCommand("CompTable[2].sf[0]=1");
-            await pmac.SendCommand("CompTable[3].sf[0]=1");
-            await pmac.SendCommand("sys.Compenable=4");
-
+                await pmac.SendCommand("CompTable[0].sf[0]=0");
+                await pmac.SendCommand("CompTable[1].sf[0]=0");
+                await pmac.SendCommand("CompTable[2].sf[0]=0");
+                await pmac.SendCommand("CompTable[3].sf[0]=0");
+                await pmac.SendCommand("CompTable[4].sf[0]=1");
+                await pmac.SendCommand("CompTable[5].sf[0]=1");
+                await pmac.SendCommand("sys.Compenable=6");
+            }
+            
         }
+
+
 
         public async Task MappingOff()
         {
@@ -1435,21 +1459,21 @@ namespace HCB.UI
                 // Top Left Align Mark로 이동 후 촬상 
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, topBtmRelative.X, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, topBtmRelative.Y, ct));
+                    RelativeMotionsMove(MotionExtensions.W_Y, -topBtmRelative.Y, ct));
 
                 var topLeft = await MeasureWithRetry(MarkType.ALIGN_MARK_TOP, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
 
                 // Top Right Align Mark로 이동 후 촬상 
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, topRelative.X, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, topRelative.Y, ct));
+                    RelativeMotionsMove(MotionExtensions.W_Y, -topRelative.Y, ct));
 
                 var topRight = await MeasureWithRetry(MarkType.ALIGN_MARK_TOP, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
 
                 // Btm Right Align Mark로 이동 후 촬상 
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, topBtmRelative.X, ct),
-                    RelativeMotionsMove(MotionExtensions.W_Y, topBtmRelative.Y, ct));
+                    RelativeMotionsMove(MotionExtensions.W_Y, -topBtmRelative.Y, ct));
 
                 var btmRight = await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
                 

@@ -503,19 +503,19 @@
                                                Foreground="#5E8BAA" FontSize="13"
                                                VerticalAlignment="Center" Margin="0,0,16,8"/>
                                     <TextBox Grid.Row="2" Grid.Column="1"
-                                             Text="{Binding AlignTopBtmSpacingX}" Margin="0,0,0,8"/>
+                                             Text="{Binding SpecX}" Margin="0,0,0,8"/>
 
                                     <TextBlock Grid.Row="3" Grid.Column="0" Text="Btm→Top 상대거리 Y (mm)"
                                                Foreground="#5E8BAA" FontSize="13"
                                                VerticalAlignment="Center" Margin="0,0,16,8"/>
                                     <TextBox Grid.Row="3" Grid.Column="1"
-                                             Text="{Binding AlignTopBtmSpacingY}" Margin="0,0,0,8"/>
+                                             Text="{Binding SpecY}" Margin="0,0,0,8"/>
 
                                     <TextBlock Grid.Row="4" Grid.Column="0" Text="설계 θ (°)"
                                                Foreground="#5E8BAA" FontSize="13"
                                                VerticalAlignment="Center" Margin="0,0,16,0"/>
                                     <TextBox Grid.Row="4" Grid.Column="1"
-                                             Text="{Binding DesignThetaDeg}"/>
+                                             Text="{Binding SpecTheta}"/>
                                 </Grid>
                             </Border>
 
