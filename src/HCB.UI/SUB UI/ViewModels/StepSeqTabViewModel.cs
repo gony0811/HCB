@@ -188,7 +188,11 @@ namespace HCB.UI
                 }
                 else
                 {
-                    await _sequenceService.WTable2DMappingOn();
+                    // 현재 레시피의 컴포넌트에 맞춰 W-Table 매핑 (DIE=CompTable[2,3], WAFER=CompTable[4,5])
+                    await _sequenceService.WTable2DMappingOn(
+                        _recipeService.UseRecipe?.Component == ComponentType.DIE
+                            ? ComponentType.DIE
+                            : ComponentType.WAFER);
                     IsWTableMappingOn = true;
                     IsPTableMappingOn = false;
                     _logger.Information("W Table 2D Mapping ON");

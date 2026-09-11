@@ -328,7 +328,7 @@ namespace HCB.UI
                 else await _ecParamService.UpdateParam(dto);
 
                 CalibStatus = "Hc1 캘리브레이션 중...";
-                await _sequenceService.WTable2DMappingOn();
+                await _sequenceService.WTable2DMappingOn(ComponentType.DIE);
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC1_T_OFFSET", ct);
 
@@ -386,7 +386,7 @@ namespace HCB.UI
                 else await _ecParamService.UpdateParam(dto);
 
                 CalibStatus = "Hc2 캘리브레이션 중...";
-                await _sequenceService.WTable2DMappingOn();
+                await _sequenceService.WTable2DMappingOn(ComponentType.DIE);
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC2_T_OFFSET", ct);
                 double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
@@ -441,7 +441,7 @@ namespace HCB.UI
             try
             {
                 CalibStatus = "카메라 거리측정 시작";
-                await _sequenceService.WTable2DMappingOn();
+                await _sequenceService.WTable2DMappingOn(ComponentType.DIE);
                 await _sequenceService.Init_Head(ct);
                 double hcCenterErrorX = await _sequenceService.GetRecipe("HcCenterErrorX");
                 double hcCenterErrorY= await _sequenceService.GetRecipe("HcCenterErrorY");
