@@ -27,6 +27,11 @@ namespace HCB.UI
 
         public event Action InterlockActivated;
 
+        // 가압(BONDING_START=1) 실제 시작~완료 구간을 알림.
+        // 파라미터 설정·Z 하강 등 시작 전 구간은 제외되며, 이 구간에서만 STOP 시 Force 긴급 정시 시퀀스를 수행한다.
+        public event Action<bool> BondingPressingChanged;
+        private void SetBondingPressing(bool value) => BondingPressingChanged?.Invoke(value);
+
         public void RaiseInterlock()
         {
             _logger.Warning("Interlock 발생 — 모든 시퀀스 취소 요청");

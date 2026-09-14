@@ -140,9 +140,14 @@ namespace HCB.UI
         public const string BONDING_CURRENT2 = "Slave_1007_Plat_00920002_1007_22F3_8_SubIndex008";      // 최종 전류 CURRENT? x 1000
         public const string BONDING_PGAIN = "Slave_1007_Plat_00920002_1007_22F3_9_SubIndex009";      // P GAIN x 1000
 
-        // INPUT 
+        // 긴급 정지 (가압 중 STOP)
+        public const string BONDING_FORCE_STOP = "Slave_1007_Plat_00920002_1007_22F3_14_SubIndex014";       // 1: Force 진행 정지명령, 0: 초기화
+        public const string BONDING_FORCE_ZERO_SPEED = "Slave_1007_Plat_00920002_1007_22F3_15_SubIndex015";  // Force 0 속도
+        public const string BONDING_STATUS_ZERO = "Slave_1007_Plat_00920002_1007_22F3_16_SubIndex016";       // 0: Status 0 확인
+
+        // INPUT
         public const string BONDING_STATUS_COMPLETE = "Slave_1007_Plat_00920002_1007_22F3_10_SubIndex010";  // 0:DEFAULT  1: 종료
-        public const string BONDING_STATUS_PROGRESS = "Slave_1007_Plat_00920002_1007_22F3_11_SubIndex011";  // 0: DEFAULT  6: 종료
+        public const string BONDING_STATUS_PROGRESS = "Slave_1007_Plat_00920002_1007_22F3_11_SubIndex011";  // 0: DEFAULT  6: 종료 (Force 정지 확인=1)
 
     }
 }

@@ -121,7 +121,8 @@ namespace HCB.UI
                 await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={step.Current}");
                 await device.SendCommand(MotionExtensions.BONDING_CURRENT2 + $"={step.Current2}");
                 await device.SendCommand(MotionExtensions.BONDING_START + "=1");
-                
+                SetBondingPressing(true);   // Pickup 가압 시작 — 이 시점부터 STOP 시 Force 긴급 정시 시퀀스 수행
+
                 const int pollingIntervalMs = 100;
                 int timeoutMs = step.AccTime + step.AccTime2 + step.ContTime + step.DecTime + 2000;
                 var sw = Stopwatch.StartNew();
@@ -224,14 +225,19 @@ namespace HCB.UI
             }
             finally
             {
+                SetBondingPressing(false);   // 가압 구간 종료
                 try
                 {
-                    var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
-                    await device.SendCommand(MotionExtensions.BONDING_START + "=0");
-                    await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
-                    await Task.Delay(100);
-                    await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
-                    _logger.Information("Pickup press 초기화 완료");
+                    // 긴급 정지 진행 중이면 리셋은 BondingEmergencyStop이 수행하므로 중복 명령을 건너뛴다.
+                    if (!_bondingEmergencyStopping)
+                    {
+                        var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+                        await device.SendCommand(MotionExtensions.BONDING_START + "=0");
+                        await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
+                        await Task.Delay(100);
+                        await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
+                        _logger.Information("Pickup press 초기화 완료");
+                    }
                 }
                 catch (Exception ex)
                 {

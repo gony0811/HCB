@@ -356,6 +356,7 @@ namespace HCB.UI
         private async Task CancelBonding()
         {
             if (!IsBonding) return;
+            // StepSeqTab.Stop()이 가압(BondingPress) 구간이면 Force 긴급 정시 시퀀스를 수행한다.
             await StepSeqTab.Stop();
             _logger.Information("Wafer Bonding 취소");
         }
@@ -713,6 +714,7 @@ namespace HCB.UI
             try { _alignCts?.Cancel(); }
             catch (ObjectDisposedException) { }
 
+            // 본딩 중이면 StepSeqTab.Stop()이 가압 구간에서 Force 긴급 정시 시퀀스를 수행한다.
             if (IsBonding)
                 await StepSeqTab.Stop();
         }

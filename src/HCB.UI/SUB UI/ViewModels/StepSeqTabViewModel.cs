@@ -324,6 +324,7 @@ namespace HCB.UI
             _elapsedTimer.Start();
 
             _sequenceService.InterlockActivated += OnInterlockActivated;
+            _sequenceService.BondingPressingChanged += OnBondingPressingChanged;
         }
 
         private void OnInterlockActivated()
@@ -341,10 +342,36 @@ namespace HCB.UI
         [NotifyCanExecuteChangedFor(nameof(StopCommand))]
         private bool canStop = true;
 
+        // 가압(BondingPress/BondingTest) 진행 중 여부.
+        // 가압 중에는 일반 정지(RunNoStop) 대신 Force 긴급 정시 시퀀스를 수행해야 하며,
+        // 가압 중에도 STOP 버튼이 활성화되도록 CanExecute에 포함한다.
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(StopCommand))]
+        private bool isPressing;
+
+        private bool CanStopExecute() => CanStop || IsPressing;
+
         // 2. Stop 커맨드에 CanExecute 조건 추가
-        [RelayCommand(CanExecute = nameof(CanStop))]
+        [RelayCommand(CanExecute = nameof(CanStopExecute))]
         public async Task Stop()
         {
+            // 가압 중 정지 — PMAC Force 긴급 정시 시퀀스 수행 후 취소.
+            // (모션 EStop 대신 가압 제어 루틴을 제어된 방식으로 중단)
+            if (IsPressing)
+            {
+                _cts?.Cancel();   // 가압 폴링 루프 종료 유도
+                try { await _sequenceService.BondingEmergencyStop(CancellationToken.None); }
+                catch (Exception e) { _logger.Error(e, "가압 긴급 정지 실패"); }
+
+                // Force 정지 후 축 EStop 병행
+                await _sequenceService.StopAsync(CancellationToken.None);
+
+                InitState = StepState.Idle;
+                BtmLowAlignState = BtmPickupState = BtmHighAlignState = BtmPlaceState = StepState.Idle;
+                TopLowAlignState = TopPickupState = TopHighAlignState = TopCorrState = TopBondingState = StepState.Idle;
+                return;
+            }
+
             if (_cts == null || _cts.IsCancellationRequested) return;
             _cts.Cancel();
             await _sequenceService.StopAsync(CancellationToken.None);
@@ -358,6 +385,17 @@ namespace HCB.UI
             CanStop = false;
             try { await action(); }
             finally { CanStop = true; }
+        }
+
+        // 가압 실제 시작~완료 구간을 서비스 이벤트로 받아 IsPressing에 반영한다.
+        // (파라미터 설정·Z 하강 등 시작 전 구간은 제외 — 이 구간에서만 STOP 시 Force 긴급 정시 시퀀스 동작)
+        private void OnBondingPressingChanged(bool pressing)
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher != null && !dispatcher.CheckAccess())
+                dispatcher.Invoke(() => IsPressing = pressing);
+            else
+                IsPressing = pressing;
         }
         // ═════════════════════════════════════════════════════
         //  INIT

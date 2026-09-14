@@ -367,6 +367,88 @@ namespace HCB.UI
             }
         }
 
+        // 가압 긴급 정지 진행 중 플래그.
+        // BondingEmergencyStop이 BONDING_START/INIT 리셋을 직접 수행하므로,
+        // 이 값이 true인 동안에는 BondingPress/BondingTest의 finally 초기화를 건너뛰어
+        // 동일 PMAC 채널에 대한 리셋 명령 충돌을 방지한다.
+        private volatile bool _bondingEmergencyStopping;
+
+        /// <summary>
+        /// 가압(BondingPress/BondingTest) 진행 중 STOP 시 수행하는 Force 긴급 정시 시퀀스.
+        /// PMAC EtherCAT 변수로 진행 중인 Force를 안전하게 정지하고 값을 초기화한다.
+        /// (모션 EStop 대신 가압 제어 루틴을 제어된 방식으로 중단)
+        /// </summary>
+        public async Task BondingEmergencyStop(CancellationToken ct = default)
+        {
+            _bondingEmergencyStopping = true;
+            var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
+            try
+            {
+                _logger.Warning("가압 긴급 정지 시퀀스 시작");
+
+                const int waitTimeoutMs = 5000;
+
+                // Force 0 속도 설정
+                await device.SendCommand(MotionExtensions.BONDING_FORCE_ZERO_SPEED + "=500");
+
+                // 1. 본딩 Start 명령 0
+                await device.SendCommand(MotionExtensions.BONDING_START + "=0");
+
+                // 2. Force 진행 정지명령
+                await device.SendCommand(MotionExtensions.BONDING_FORCE_STOP + "=1");
+
+                // 3. Force 정지 확인 (SubIndex011 == 1)
+                if (!await WaitBondingValueAsync(device, MotionExtensions.BONDING_STATUS_PROGRESS, 1, waitTimeoutMs, ct))
+                    _logger.Warning("가압 긴급 정지 — Force 정지 확인(11==1) 시간 초과");
+
+                // 4. Force 진행 정지명령 초기화
+                await device.SendCommand(MotionExtensions.BONDING_FORCE_STOP + "=0");
+
+                // 5. 전체값 초기화
+                await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
+
+                // 6. Status 0 확인 (SubIndex016 == 0 && SubIndex011 == 0)
+                if (!await WaitBondingValueAsync(device, MotionExtensions.BONDING_STATUS_ZERO, 0, waitTimeoutMs, ct) ||
+                    !await WaitBondingValueAsync(device, MotionExtensions.BONDING_STATUS_PROGRESS, 0, waitTimeoutMs, ct))
+                    _logger.Warning("가압 긴급 정지 — Status 0 확인(16==0 && 11==0) 시간 초과");
+
+                // 7. 전체값 초기화 해제
+                await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
+
+                _logger.Warning("가압 긴급 정지 시퀀스 완료");
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "가압 긴급 정지 시퀀스 실패");
+                throw;
+            }
+            finally
+            {
+                _bondingEmergencyStopping = false;
+            }
+        }
+
+        // PMAC 변수를 폴링하며 expected 값이 될 때까지 대기(타임아웃 시 false).
+        private async Task<bool> WaitBondingValueAsync(
+            PowerPmacDevice device, string variable, int expected, int timeoutMs, CancellationToken ct)
+        {
+            var sw = Stopwatch.StartNew();
+            while (true)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                string resp = await device.SendCommand<string>(variable);
+                string first = resp?.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                if (int.TryParse(first?.Trim(), out int v) && v == expected)
+                    return true;
+
+                if (sw.ElapsedMilliseconds > timeoutMs)
+                    return false;
+
+                await Task.Delay(50, ct);
+            }
+        }
+
         /// <summary>
         /// 2단계: 가압 본딩 (PMAC 가압 + 폴링 + 진공 해제)
         /// </summary>
@@ -406,6 +488,7 @@ namespace HCB.UI
                 await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={step.Current}");
                 await device.SendCommand(MotionExtensions.BONDING_CURRENT2 + $"={step.Current2}");
                 await device.SendCommand(MotionExtensions.BONDING_START + "=1");
+                SetBondingPressing(true);   // 본딩 시작 — 이 시점부터 STOP 시 Force 긴급 정시 시퀀스 수행
 
                 _logger.Information("BONDING Step={StepName}: ACC={Acc}, ACC2={Acc2}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}, CURRENT2={Cur2}",
                     step.Name, step.AccTime, step.AccTime2, step.ContTime, step.DecTime, step.LoadCell, step.Current, step.Current2);
@@ -492,15 +575,20 @@ namespace HCB.UI
             }
             finally
             {
+                SetBondingPressing(false);   // 가압 구간 종료
                 try
                 {
-                    await device.SendCommand(MotionExtensions.BONDING_START + "=0");
-                    await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
-                    await Task.Delay(5000);
-                    await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
-                    _logger.Information("BondingPress 초기화 완료");
+                    // 긴급 정지 진행 중이면 리셋은 BondingEmergencyStop이 수행하므로 중복 명령을 건너뛴다.
+                    if (!_bondingEmergencyStopping)
+                    {
+                        await device.SendCommand(MotionExtensions.BONDING_START + "=0");
+                        await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
+                        await Task.Delay(5000);
+                        await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
+                        _logger.Information("BondingPress 초기화 완료");
+                    }
                     await MappingOff();
-                 
+
             }
                 catch (Exception ex)
                 {
@@ -554,6 +642,7 @@ namespace HCB.UI
                 await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={step.Current}");
                 await device.SendCommand(MotionExtensions.BONDING_CURRENT2 + $"={step.Current2}");
                 await device.SendCommand(MotionExtensions.BONDING_START + "=1");
+                SetBondingPressing(true);   // 본딩 시작 — 이 시점부터 STOP 시 Force 긴급 정시 시퀀스 수행
 
                 _logger.Information("BONDING Step={StepName}: ACC={Acc}, ACC2={Acc2}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}, CURRENT2={Cur2}",
                     step.Name, step.AccTime, step.AccTime2, step.ContTime, step.DecTime, step.LoadCell, step.Current, step.Current2);
@@ -628,13 +717,18 @@ namespace HCB.UI
             }
             finally
             {
+                SetBondingPressing(false);   // 가압 구간 종료
                 try
                 {
-                    await device.SendCommand(MotionExtensions.BONDING_START + "=0");
-                    await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
-                    await Task.Delay(100);
-                    await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
-                    _logger.Information("BondingPress 초기화 완료");
+                    // 긴급 정지 진행 중이면 리셋은 BondingEmergencyStop이 수행하므로 중복 명령을 건너뛴다.
+                    if (!_bondingEmergencyStopping)
+                    {
+                        await device.SendCommand(MotionExtensions.BONDING_START + "=0");
+                        await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
+                        await Task.Delay(100);
+                        await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
+                        _logger.Information("BondingPress 초기화 완료");
+                    }
                 }
                 catch (Exception ex)
                 {
