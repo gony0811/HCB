@@ -87,7 +87,7 @@ namespace HCB.UI
                 double corrX = correction?.X ?? 0;
                 double corrY = correction?.Y ?? 0;
                 double corrT = correction?.Theta ?? 0;
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, xOffset - corrX + xLowErrorOffset, ct),
                     RelativeMotionsMove(MotionExtensions.D_Y,  yOffset - corrY + yLowErrorOffset, ct),
