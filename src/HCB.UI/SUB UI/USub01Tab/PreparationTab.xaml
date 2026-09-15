@@ -309,6 +309,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Background="#2A1A4A" CornerRadius="14"
                                     Width="28" Height="28" Margin="0,0,10,0">
@@ -321,10 +322,16 @@
                                 <TextBlock Text="WAFER LOAD" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
                                 <TextBlock Text="Wafer Cassette Load" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
+
+                            <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}" Margin="0,0,6,0"
+                                    Command="{Binding WaferThetaResetLoadCommand}">
+                                <TextBlock Text="RESET_START" FontSize="13" FontWeight="Bold"/>
+                            </Button>
+                            <Button Grid.Column="4" Style="{StaticResource StartButtonStyle}"
                                     Command="{Binding WaferLoadCommand}">
                                 <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>
                             </Button>
+                           
                         </Grid>
                     </Border>
 

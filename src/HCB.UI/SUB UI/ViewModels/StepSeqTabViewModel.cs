@@ -457,6 +457,18 @@ namespace HCB.UI
             await _sequenceService.MotionsMove(MotionExtensions.W_Y, 0, _cts.Token);
         }
 
+        [RelayCommand]
+        public async Task WaferThetaResetLoad()
+        {
+            ResetCts();
+            await _sequenceService.Init_Head(_cts.Token);
+            await Task.WhenAll
+            (
+                _sequenceService.MotionsMove(MotionExtensions.W_Y, 0, _cts.Token),
+                _sequenceService.MotionsMove(MotionExtensions.W_T, 0, _cts.Token)
+            );
+        }
+
         // ═════════════════════════════════════════════════════
         //  Info 팝업
         // ═════════════════════════════════════════════════════
