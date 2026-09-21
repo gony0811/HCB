@@ -29,8 +29,13 @@ namespace HCB.UI
         [ObservableProperty] private IDevice selectedDevice;
         [ObservableProperty] private IDeviceDetailViewModel selectedDetailViewModel;
 
-        public USub08ViewModel(ILogger logger, DeviceManager deviceManager, DeviceDetailViewModelFactory deviceDetailViewModelFactory, DialogService dialogService, AxisInterlockService interlockService)
+        private readonly InterlockService _interlockMonitor;
+        [ObservableProperty] private bool isInterlockEnabled;
+
+        public USub08ViewModel(ILogger logger, DeviceManager deviceManager, DeviceDetailViewModelFactory deviceDetailViewModelFactory, DialogService dialogService, AxisInterlockService interlockService, InterlockService interlockMonitor)
         {
+            this._interlockMonitor = interlockMonitor;
+            IsInterlockEnabled = interlockMonitor.IsEnabled;
             this._dialogService = dialogService;
             this.logger = logger.ForContext<USub08ViewModel>();
             this.deviceManager = deviceManager;
@@ -43,6 +48,23 @@ namespace HCB.UI
         partial void OnSelectedDeviceChanged(IDevice value)
         {
             SelectedDetailViewModel = deviceDetailViewModelFactory.Create(value);
+        }
+
+        [RelayCommand]
+        public void ToggleInterlock()
+        {
+            bool enable = !_interlockMonitor.IsEnabled;
+
+            // 끄는 경우에만 확인 (안전 기능 해제)
+            if (!enable)
+            {
+                bool ask = _dialogService.ShowConfirm("인터락 해제",
+                    "인터락 서비스를 끄면 라이트 커튼 등 안전 감시가 동작하지 않습니다.\n계속하시겠습니까?");
+                if (!ask) return;
+            }
+
+            _interlockMonitor.SetEnabled(enable);
+            IsInterlockEnabled = _interlockMonitor.IsEnabled;
         }
 
         [RelayCommand]

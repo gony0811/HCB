@@ -13,8 +13,21 @@ using System.Threading.Tasks;
 namespace HCB.UI
 {
     [Service(Lifetime.Singleton)]
-    internal class InterlockService : BackgroundService
+    public class InterlockService : BackgroundService
     {
+        private volatile bool _isEnabled = true;
+
+        /// <summary>인터락 감시 활성화 여부 (프로그램 시작 시 항상 활성화)</summary>
+        public bool IsEnabled => _isEnabled;
+
+        public void SetEnabled(bool enabled)
+        {
+            if (_isEnabled == enabled) return;
+
+            _isEnabled = enabled;
+            _logger.Warning("InterlockService {State} (사용자 조작)", enabled ? "활성화" : "비활성화");
+        }
+
         private ILogger _logger;
         private DeviceManager _deviceManager;
         private readonly ISequenceHelper _sequenceHelper;
@@ -57,6 +70,8 @@ namespace HCB.UI
                 {
                     try
                     {
+                        if (!_isEnabled) return;
+
                         var status = _operationService.Status;
 
                         if (status.Availability == Availability.Down) return;

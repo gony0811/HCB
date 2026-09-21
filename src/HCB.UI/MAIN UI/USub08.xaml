@@ -91,6 +91,47 @@
             </Setter>
         </Style>
 
+        <!-- 인터락 ON/OFF 버튼 (ON: 녹색 / OFF: 적색) -->
+        <Style x:Key="InterlockToggleButton" TargetType="Button">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Width" Value="160"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#ECF0F1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Content" Value="인터락 : ON"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="#0F3D20"
+                                BorderBrush="#27AE60"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsInterlockEnabled}" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#4A1414"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#E74C3C"/>
+                            </DataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsInterlockEnabled}" Value="False">
+                    <Setter Property="Content" Value="인터락 : OFF"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
     </Page.Resources>
 
     <Grid Margin="6">
@@ -138,6 +179,12 @@
                         <DataGridTextColumn Header="상태"        Binding="{Binding IsConnected}"  Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>
+
+                <Button Grid.Row="2"
+                        Style="{StaticResource InterlockToggleButton}"
+                        Command="{Binding ToggleInterlockCommand}"
+                        HorizontalAlignment="Left"
+                        Margin="12,6,12,10"/>
 
                 <Button Grid.Row="2"
                         Content="디바이스 생성"
