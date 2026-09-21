@@ -247,6 +247,22 @@ namespace HCB.UI
             catch (Exception ex) { _logger.Error(ex, "Wafer Vacuum OFF 실패"); }
         }
 
+        // Wafer Vac 전체 On/Off 토글 (ManualTab의 WVacAllOnOff와 동일 동작 재사용)
+        [ObservableProperty] private bool isWaferVacOn;
+
+        [RelayCommand]
+        private async Task WaferVacAllOnOff()
+        {
+            ResetCts();
+            try
+            {
+                IsWaferVacOn = !IsWaferVacOn;
+                await _sequenceService.WVAcOnOff(1, IsWaferVacOn, 5000, _cts.Token);
+                _logger.Information("Wafer Vacuum {State}", IsWaferVacOn ? "ON" : "OFF");
+            }
+            catch (Exception ex) { _logger.Error(ex, "Wafer Vacuum All On/Off 실패"); }
+        }
+
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
 

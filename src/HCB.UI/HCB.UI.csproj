@@ -137,6 +137,9 @@
   <Page Include="SUB UI\SettingsSidebar.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\SeqSidebar.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\USub01Tab\StepSeqTab.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -318,6 +321,7 @@
   <Compile Include="SUB UI\USub01Tab\RunningStatus.cs" />
   <Compile Include="SUB UI\USub01Tab\StepLamp.cs" />
   <Compile Include="SUB UI\SettingsSidebar.xaml.cs" />
+  <Compile Include="SUB UI\SeqSidebar.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\StepSeqTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\WaferSeqTab.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\PreparationTab.xaml.cs" />

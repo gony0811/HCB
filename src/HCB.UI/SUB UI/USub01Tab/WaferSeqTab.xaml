@@ -841,22 +841,8 @@
                 </Style>
             </Border.Style>
 
-            <Grid Width="420">
-                <Border HorizontalAlignment="Left" Width="16"
-                        Background="#152238" CornerRadius="6,0,0,6" Opacity="0.8">
-                    <Path Data="M 9 6 L 4 12 L 9 18"
-                          Stroke="#3498DB" StrokeThickness="1.5" StrokeLineJoin="Round"
-                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-                <Border Margin="16,0,0,0" Background="#0D1B2A"
-                        BorderBrush="#1C3A52" BorderThickness="1,0,0,0">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="16">
-                            <local:SettingsSidebar/>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Border>
-            </Grid>
+            <!-- StepSeq 탭과 동일한 사이드바 공유 (DataContext = StepSeqTabViewModel) -->
+            <local:SeqSidebar DataContext="{Binding StepSeqTab}"/>
         </Border>
 
     </Grid>
