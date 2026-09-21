@@ -68,11 +68,14 @@ namespace HCB.UI
         public async Task LoadIoData()
         {
             var ioList = await ioRepository.ListAsync(x => x.IsEnabled);
-            
+
             AnalogInput.Clear();
             AnalogOutput.Clear();
             DigitalInput.Clear();
             DigitalOutput.Clear();
+
+            // 출력 신호의 초기 On/Off 상태 확인용 (하드웨어 캐시 값 기준)
+            var ioDevice = deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
 
             foreach (var group in ioList.GroupBy(x => x.IoDataType))
             {
@@ -95,7 +98,13 @@ namespace HCB.UI
                             break;
                         case IoType.DigitalOutput:
                             var dio = ioManager.CreateIoVM(io.Address, io.Name, "", io.Description);
-                            if (dio != null) DigitalOutput.Add(dio);
+                            if (dio != null)
+                            {
+                                // 프로그램 시작 시 출력 신호의 현재 On/Off 상태를 확인 후 토글에 반영
+                                if (ioDevice != null)
+                                    dio.IsChecked = ioDevice.GetDigital(io.Name);
+                                DigitalOutput.Add(dio);
+                            }
                             break;
                     }
                 }
