@@ -498,6 +498,8 @@ namespace HCB.UI
                 var sw = Stopwatch.StartNew();
                 bool bondingComplete = false;
                 bool vacuumOff = false;
+                bool blowOn = false;
+                bool blowOff = false;
 
                 bondingDataPoints.Clear();
 
@@ -514,6 +516,24 @@ namespace HCB.UI
                         vacuumOff = true;
                         _logger.Information("Vacuum OFF ({Elapsed}ms, 설정={VacOffMs}ms)",
                             elapsed, step.VacOffTime);
+                    }
+
+                    // Blow ON
+                    if (step.BlowEnable && !blowOn && elapsed >= step.BlowOnTime)
+                    {
+                        BlowOnOff(true);
+                        blowOn = true;
+                        _logger.Information("Blow ON ({Elapsed}ms, 설정={BlowOnMs}ms)",
+                            elapsed, step.BlowOnTime);
+                    }
+
+                    // Blow OFF (BlowOnTime + BlowDuration 경과 시)
+                    if (step.BlowEnable && blowOn && !blowOff && elapsed >= step.BlowOnTime + step.BlowDuration)
+                    {
+                        BlowOnOff(false);
+                        blowOff = true;
+                        _logger.Information("Blow OFF ({Elapsed}ms, 유지={BlowDurationMs}ms)",
+                            elapsed, step.BlowDuration);
                     }
 
                     double forceValue = 0;
@@ -576,6 +596,7 @@ namespace HCB.UI
             finally
             {
                 SetBondingPressing(false);   // 가압 구간 종료
+                BlowOnOff(false);            // Blow 안전 해제
                 try
                 {
                     // 긴급 정지 진행 중이면 리셋은 BondingEmergencyStop이 수행하므로 중복 명령을 건너뛴다.
@@ -588,8 +609,7 @@ namespace HCB.UI
                         _logger.Information("BondingPress 초기화 완료");
                     }
                     await MappingOff();
-
-            }
+                }
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "BondingPress 초기화 실패");
@@ -651,12 +671,34 @@ namespace HCB.UI
                 int timeoutMs = step.AccTime + step.AccTime2 + step.ContTime + step.DecTime + 2000;
                 var sw = Stopwatch.StartNew();
                 bool bondingComplete = false;
+                bool blowOn = false;
+                bool blowOff = false;
 
                 bondingDataPoints.Clear();
 
                 while (!bondingComplete)
                 {
                     ct.ThrowIfCancellationRequested();
+
+                    long elapsed = sw.ElapsedMilliseconds;
+
+                    // Blow ON
+                    if (step.BlowEnable && !blowOn && elapsed >= step.BlowOnTime)
+                    {
+                        BlowOnOff(true);
+                        blowOn = true;
+                        _logger.Information("Blow ON ({Elapsed}ms, 설정={BlowOnMs}ms)",
+                            elapsed, step.BlowOnTime);
+                    }
+
+                    // Blow OFF
+                    if (step.BlowEnable && blowOn && !blowOff && elapsed >= step.BlowOnTime + step.BlowDuration)
+                    {
+                        BlowOnOff(false);
+                        blowOff = true;
+                        _logger.Information("Blow OFF ({Elapsed}ms, 유지={BlowDurationMs}ms)",
+                            elapsed, step.BlowDuration);
+                    }
 
                     double forceValue = 0;
                     string analog = await device.SendCommand<string>(MotionExtensions.ANALOG_INPUT);
@@ -718,6 +760,7 @@ namespace HCB.UI
             finally
             {
                 SetBondingPressing(false);   // 가압 구간 종료
+                BlowOnOff(false);            // Blow 안전 해제
                 try
                 {
                     // 긴급 정지 진행 중이면 리셋은 BondingEmergencyStop이 수행하므로 중복 명령을 건너뛴다.

@@ -96,6 +96,17 @@ namespace HCB.UI
         public const string DO_WTABLE_VAC_5_RELEASE = "DO_WTABLE_VAC_5_RELEASE";                          // W-Table Vacuum 5 Release ON
         public const string DO_WTABLE_N2_BLOW = "DO_WTABLE_N2_BLOW";                                      // W-Table N2 Blow ON
         public const string DO_INDICATOR_ZERO = "DO_INDICATOR_ZERO";                                      // Load Cell Indicator Zeroing
+
+        public static void WTableN2Blow(this ISequenceHelper helper, bool onOff)
+        {
+            var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
+            if (device == null)
+            {
+                helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
+                return;
+            }
+            device.SetDigital(DO_WTABLE_N2_BLOW, onOff);
+        }
         #endregion
 
 

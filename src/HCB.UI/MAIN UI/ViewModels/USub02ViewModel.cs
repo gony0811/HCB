@@ -333,6 +333,9 @@ namespace HCB.UI
                     Current = SelectedStep.Current,
                     Current2 = SelectedStep.Current2,
                     VacOffTime = SelectedStep.VacOffTime,
+                    BlowEnable = SelectedStep.BlowEnable,
+                    BlowOnTime = SelectedStep.BlowOnTime,
+                    BlowDuration = SelectedStep.BlowDuration,
                     Description = SelectedStep.Description
                 };
                 bool? result = await _dialogService.ShowEditDialog(stepEdit);
@@ -347,6 +350,9 @@ namespace HCB.UI
                 SelectedStep.Current = stepEdit.Current;
                 SelectedStep.Current2 = stepEdit.Current2;
                 SelectedStep.VacOffTime = stepEdit.VacOffTime;
+                SelectedStep.BlowEnable = stepEdit.BlowEnable;
+                SelectedStep.BlowOnTime = stepEdit.BlowOnTime;
+                SelectedStep.BlowDuration = stepEdit.BlowDuration;
                 SelectedStep.Description = stepEdit.Description;
 
                 await _recipeService.UpdateStep(SelectedStep);

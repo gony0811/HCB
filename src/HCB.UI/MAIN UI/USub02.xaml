@@ -391,6 +391,9 @@
                             <DataGridTextColumn Header="Current"     Binding="{Binding Current}"    Width="*"/>
                             <DataGridTextColumn Header="Current2"    Binding="{Binding Current2}"   Width="*"/>
                             <DataGridTextColumn Header="VacOff"      Binding="{Binding VacOffTime}" Width="*"/>
+                            <DataGridCheckBoxColumn Header="Blow"   Binding="{Binding BlowEnable}" Width="60"/>
+                            <DataGridTextColumn Header="BlowOn"     Binding="{Binding BlowOnTime}" Width="*"/>
+                            <DataGridTextColumn Header="BlowDur"    Binding="{Binding BlowDuration}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
 

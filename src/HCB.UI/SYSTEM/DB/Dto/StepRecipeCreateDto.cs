@@ -14,6 +14,9 @@ namespace HCB.UI
         [ObservableProperty] private double current;
         [ObservableProperty] private double current2;
         [ObservableProperty] private int vacOffTime;
+        [ObservableProperty] private bool blowEnable;
+        [ObservableProperty] private int blowOnTime;
+        [ObservableProperty] private int blowDuration;
         [ObservableProperty] private string description = "";
     }
 }

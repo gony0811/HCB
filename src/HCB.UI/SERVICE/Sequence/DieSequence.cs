@@ -164,7 +164,7 @@ namespace HCB.UI
             var total = Stopwatch.StartNew();
             try
             {
-                LoadCalibrationInto(data);
+                
                 var sw = Stopwatch.StartNew();;
                 if (data.Use2DMapping) await PTable2DMappingOn();   // P-Table 2D Mapping On
                 await Init_Head(ct);    // Head Z축 안전 위치로 이동
@@ -252,7 +252,7 @@ namespace HCB.UI
         public async Task<AlignData> MeasureCamDistAndHcro(AlignData data, CancellationToken ct)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
-
+            LoadCalibrationInto(data);
             var total = Stopwatch.StartNew();
             try
             {

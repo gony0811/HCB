@@ -17,6 +17,9 @@ namespace HCB.UI
         [ObservableProperty] private double current;
         [ObservableProperty] private double current2;
         [ObservableProperty] private int vacOffTime;
+        [ObservableProperty] private bool blowEnable;
+        [ObservableProperty] private int blowOnTime;
+        [ObservableProperty] private int blowDuration;
         [ObservableProperty] private string description = "";
 
         public StepRecipeDto() { }
@@ -24,6 +27,7 @@ namespace HCB.UI
         private StepRecipeDto(int id, int recipeId, string name, int stepNumber,
             int accTime, int accTime2, int contTime, int decTime,
             double loadCell, double current, double current2, int vacOffTime,
+            bool blowEnable, int blowOnTime, int blowDuration,
             string description)
         {
             Id = id;
@@ -38,6 +42,9 @@ namespace HCB.UI
             Current = current;
             Current2 = current2;
             VacOffTime = vacOffTime;
+            BlowEnable = blowEnable;
+            BlowOnTime = blowOnTime;
+            BlowDuration = blowDuration;
             Description = description;
         }
 
@@ -56,6 +63,9 @@ namespace HCB.UI
                 entity.Current,
                 entity.Current2,
                 entity.VacOffTime,
+                entity.BlowEnable,
+                entity.BlowOnTime,
+                entity.BlowDuration,
                 entity.Description);
         }
 
@@ -75,6 +85,9 @@ namespace HCB.UI
                 Current = this.Current,
                 Current2 = this.Current2,
                 VacOffTime = this.VacOffTime,
+                BlowEnable = this.BlowEnable,
+                BlowOnTime = this.BlowOnTime,
+                BlowDuration = this.BlowDuration,
                 Description = this.Description
             };
         }

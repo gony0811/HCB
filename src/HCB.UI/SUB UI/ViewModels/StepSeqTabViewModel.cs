@@ -794,6 +794,7 @@ namespace HCB.UI
             {
                 // 1. 회전중심 + 카메라 거리 측정 (Pickup 이전) + 저배율 보정 + Pickup
                 TopLowAlignState = StepState.InProgress;
+
                 hcbData = await _sequenceService.MeasureCamDistAndHcro(NewAlignData(), ct);
                 VisionTopLowAlign = await _sequenceService.TopLowMeasure(TopDie, MarkType.DIE_CENTER_TOP, ct);
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));

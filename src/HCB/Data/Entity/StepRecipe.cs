@@ -30,6 +30,12 @@ namespace HCB.Data.Entity
 
         public int VacOffTime { get; set; }
 
+        public bool BlowEnable { get; set; }
+
+        public int BlowOnTime { get; set; }
+
+        public int BlowDuration { get; set; }
+
         [MaxLength(200)]
         public string Description { get; set; } = "";
 

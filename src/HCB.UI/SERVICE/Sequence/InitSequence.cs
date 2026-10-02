@@ -646,6 +646,11 @@ namespace HCB.UI
             await _sequenceHelper.HeadPickerVacuum(onOff ? eOnOff.On: eOnOff.Off, ct);
         }
 
+        public void BlowOnOff(bool onOff)
+        {
+            _sequenceHelper.WTableN2Blow(onOff);
+        }
+
         public async Task TInit(CancellationToken ct = default)
         {
             var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
