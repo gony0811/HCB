@@ -780,9 +780,10 @@ namespace HCB.UI
             for (int attempt = 0; attempt <= retryMax; attempt++)
             {
                 ct.ThrowIfCancellationRequested();
-
+                
                 try
                 {
+                    
                     var xy = await communicationService.RequestVisionMarkPosition(
                         markType, cameraType, directType.ToString(), avgMode);
                     VisionResult(xy);

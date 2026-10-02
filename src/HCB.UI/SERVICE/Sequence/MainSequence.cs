@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Telerik.Windows.Controls;
 using Telerik.Windows.Persistence.Core;
 
 namespace HCB.UI
@@ -1450,7 +1451,7 @@ namespace HCB.UI
                 double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
                 await RelativeMotionsMove(MotionExtensions.h_z, -fidAlignGap, ct);
                 await RelativeMotionsMove(MotionExtensions.H_Z, fidAlignGap, ct);
-
+                await communicationService.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK );
                 // Btm Left Align Mark 촬상
                 var btmLeft = await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
 
@@ -1458,6 +1459,7 @@ namespace HCB.UI
                 await Task.WhenAll(
                     MotionsMove(MotionExtensions.H_X, btmLeft.CenterX, ct),
                     MotionsMove(MotionExtensions.W_Y, btmLeft.CenterY, ct));
+                await communicationService.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK);
                 btmLeft = await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
 
                 // Top Left Align Mark로 이동 후 촬상 
@@ -1465,12 +1467,14 @@ namespace HCB.UI
                     RelativeMotionsMove(MotionExtensions.H_X, topBtmRelative.X, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, -topBtmRelative.Y, ct));
                 await RelativeMotionsMove(MotionExtensions.H_Z, -topbtmGap, ct);
+                await communicationService.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK_TOP);
                 var topLeft = await MeasureWithRetry(MarkType.ALIGN_MARK_TOP, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
 
                 // Top Right Align Mark로 이동 후 촬상 
                 await Task.WhenAll(
                     RelativeMotionsMove(MotionExtensions.H_X, topRelative.X, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, -topRelative.Y, ct));
+
                 var topRight = await MeasureWithRetry(MarkType.ALIGN_MARK_TOP, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
 
                 // Btm Right Align Mark로 이동 후 촬상 
@@ -1478,6 +1482,7 @@ namespace HCB.UI
                     RelativeMotionsMove(MotionExtensions.H_X, topBtmRelative.X, ct),
                     RelativeMotionsMove(MotionExtensions.W_Y, -topBtmRelative.Y, ct));
                 await RelativeMotionsMove(MotionExtensions.H_Z, topbtmGap, ct);
+                await communicationService.RequestAFStart(CameraType.HC1_HIGH, MarkType.ALIGN_MARK);
                 var btmRight = await MeasureWithRetry(MarkType.ALIGN_MARK, CameraType.HC1_HIGH, DirectType.LEFT, MotionExtensions.W_Y, true, ct);
                 
                 await Init_Head(ct);
