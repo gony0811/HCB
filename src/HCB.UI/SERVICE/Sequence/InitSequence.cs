@@ -648,7 +648,7 @@ namespace HCB.UI
 
         public void BlowOnOff(bool onOff)
         {
-            _sequenceHelper.WTableN2Blow(onOff);
+            _sequenceHelper.HeadBlow(onOff);
         }
 
         public async Task TInit(CancellationToken ct = default)

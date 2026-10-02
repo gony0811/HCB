@@ -97,7 +97,8 @@ namespace HCB.UI
         public const string DO_WTABLE_N2_BLOW = "DO_WTABLE_N2_BLOW";                                      // W-Table N2 Blow ON
         public const string DO_INDICATOR_ZERO = "DO_INDICATOR_ZERO";                                      // Load Cell Indicator Zeroing
 
-        public static void WTableN2Blow(this ISequenceHelper helper, bool onOff)
+        // Head Picker Blow On/Off — Head Ejector Vacuum Release(양압) 신호로 제어한다.
+        public static void HeadBlow(this ISequenceHelper helper, bool onOff)
         {
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
             if (device == null)
@@ -105,7 +106,7 @@ namespace HCB.UI
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
                 return;
             }
-            device.SetDigital(DO_WTABLE_N2_BLOW, onOff);
+            device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, onOff);
         }
         #endregion
 
@@ -235,9 +236,9 @@ namespace HCB.UI
             else
             {
                 device.SetDigital(DO_HEADER_EJECTOR_VAC_ON, false);
-                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, true);
-                await Task.Delay(500);
-                device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, false);
+                //device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, true);
+                //await Task.Delay(500);
+                //device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, false);
             }
 
             //return await helper.WaitUntilAsync(
