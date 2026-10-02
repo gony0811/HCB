@@ -55,9 +55,8 @@ namespace HCB.UI
         {
             TracingMode = TracingMode switch
             {
-                TracingMode.Auto => TracingMode.Manual,
                 TracingMode.Manual => TracingMode.None,
-                _ => TracingMode.Auto
+                _ => TracingMode.Manual
             };
         }
 

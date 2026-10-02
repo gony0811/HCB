@@ -338,7 +338,6 @@ namespace HCB.UI
 
     public enum TracingMode
     {
-        Auto,
         Manual,
         None
     }

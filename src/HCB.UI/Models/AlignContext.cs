@@ -158,7 +158,7 @@ namespace HCB.UI
 
         public bool AvgMove { get; set; } = false;
         public bool Use2DMapping { get; set; } = true;
-        public TracingMode TracingMode { get; set; } = TracingMode.Auto;
+        public TracingMode TracingMode { get; set; } = TracingMode.Manual;
         public bool UseBtmIndividualMeasure { get; set; } = false;
         public bool UseFiducialTracking { get; set; } = false;
         public bool UseRightFidSimilarity { get; set; } = false;   // 우측 피듀셜 P-TABLE↔W-TABLE 닮음변환 보정 ON/OFF

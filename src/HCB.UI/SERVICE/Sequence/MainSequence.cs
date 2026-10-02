@@ -406,19 +406,8 @@ namespace HCB.UI
 
                 ApplyMeasurementCorrections(data);
 
-                switch (data.TracingMode)
-                {
-                    case TracingMode.Auto:
-                        CompensateHc2Offset(data);
-                        break;
-                    //case TracingMode.Manual:
-                    //    await CameraDist(data, ct);
-                    //    var (hc1Raw, hc2Raw) = await MeasureHcroPoints(data, ct);
-                    //    ComputeHcroCenter(data, hc1Raw, hc2Raw);
-                    //    break;
-                    case TracingMode.None:
-                        break;
-                }
+                // Manual: HcRO 회전중심은 ApplyMeasurementCorrections에서 실측 기반으로 계산됨.
+                // None  : DB 캘리브레이션 값을 그대로 사용(추가 보정 없음).
 
                 ComputeHc2OffsetDependent(data);
 
@@ -1042,64 +1031,6 @@ namespace HCB.UI
             _logger.Information(
                 "ComputeHc2OffsetDependent — Hc2Offset=({OX:F4},{OY:F4}), M2FidTheta={M2:F4}°, M3FidTheta={M3:F4}°, FidCurrentDist={D:F6}",
                 offset.X, offset.Y, data.M2FidTheta, data.M3FidTheta, data.FidCurrentDist);
-        }
-
-        /// <summary>
-        /// 피듀셜 마크 변화량으로 Hc2Offset을 보정한다.
-        ///   delta = −(dLF − dRF)
-        ///   dLF = 현재 Hc1 DxCam − 기준 Hc1 DxCam
-        ///   dRF = 현재 Hc2 DxCam − 기준 Hc2 DxCam
-        ///   보정 Hc2Offset = 기준 Hc2Offset + delta
-        /// </summary>
-
-        private void CompensateHc2Offset(AlignData d)
-        {
-            if (d?.BtmLeftFidRaw == null || d.BtmRightFidRaw == null
-                || d.Hc2Offset == null || d.Hcro == null)
-                return;
-
-            // 피듀셜 기준값만 DB에서 조회
-            var refLfDxParam = _paramService.FindByName("Hc1FidRefDx");
-            var refLfDyParam = _paramService.FindByName("Hc1FidRefDy");
-            var refRfDxParam = _paramService.FindByName("Hc2FidRefDx");
-            var refRfDyParam = _paramService.FindByName("Hc2FidRefDy");
-            
-            if (string.IsNullOrEmpty(refLfDxParam?.Value) || string.IsNullOrEmpty(refRfDxParam?.Value))
-            {
-                _logger.Warning("피듀셜 기준값 미설정 — 보정 스킵");
-                return;
-            }
-
-            if (!double.TryParse(refLfDxParam.Value, out double refLfDx) ||
-                !double.TryParse(refLfDyParam.Value, out double refLfDy) ||
-                !double.TryParse(refRfDxParam.Value, out double refRfDx) ||
-                !double.TryParse(refRfDyParam.Value, out double refRfDy))
-            {
-                _logger.Warning("피듀셜 기준값 파싱 실패 — 보정 스킵");
-                return;
-            }
-
-            double dLfX = d.BtmLeftFidRaw.X - refLfDx;
-            double dLfY = d.BtmLeftFidRaw.Y - refLfDy;
-            double dRfX = d.BtmRightFidRaw.X - refRfDx;
-            double dRfY = d.BtmRightFidRaw.Y - refRfDy;
-
-            // Hc2Offset 보정: -(dLf - dRf)
-            double hc2DeltaX = -(dLfX - dRfX);
-            double hc2DeltaY = -(dLfY - dRfY);
-            d.Hc2Offset = new Point2D(d.Hc2Offset.X + hc2DeltaX, d.Hc2Offset.Y + hc2DeltaY);
-
-            // HcRO 보정: -dLf (Hc1 원점 드리프트)
-            double hcroDeltaX = -dLfX;
-            double hcroDeltaY = -dLfY;
-            d.Hcro = new Point2D(d.Hcro.X + hcroDeltaX, d.Hcro.Y + hcroDeltaY);
-
-            _logger.Information(
-                "피듀셜 트래킹 보정\n" +
-                "  Hc2Offset Δ({Hc2Dx:F5}, {Hc2Dy:F5}) → ({Hc2X:F6}, {Hc2Y:F6})\n" +
-                "  HcRO      Δ({HcroDx:F5}, {HcroDy:F5}) → ({HcroX:F6}, {HcroY:F6})",
-                hc2DeltaX, hc2DeltaY, d.Hc2Offset.X, d.Hc2Offset.Y,
-                hcroDeltaX, hcroDeltaY, d.Hcro.X, d.Hcro.Y);
         }
 
         /// <summary>
