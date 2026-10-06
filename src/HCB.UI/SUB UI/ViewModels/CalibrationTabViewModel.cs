@@ -219,11 +219,10 @@ namespace HCB.UI
             try
             {
                 CalibStatus = "WarmUp — Z축 상승 중...";
-                await _sequenceService.MotionsMove(MotionExtensions.H_Z, MotionExtensions.HEAD_SAFETY, ct);
-
+                await _sequenceService.MotionsMove(MotionExtensions.H_Z, 0, ct);
+                await _sequenceService.MotionsMove(MotionExtensions.H_X, 0, ct);
                 var axes = new (string Name, IAxis Axis)[]
                 {
-                    (MotionExtensions.H_X, _hxAxis!),
                     (MotionExtensions.W_Y, _wyAxis!),
                     (MotionExtensions.P_Y, _pyAxis!),
                     (MotionExtensions.D_Y, _dyAxis!),
@@ -235,6 +234,8 @@ namespace HCB.UI
                     WarmUpCycle++;
 
                     CalibStatus = $"WarmUp #{WarmUpCycle} — Max 이동";
+
+                    
                     await Task.WhenAll(Array.ConvertAll(axes,
                         a => _sequenceService.MotionsMove(a.Name, a.Axis.LimitMaxPosition - 5,ct)));
 
@@ -253,6 +254,8 @@ namespace HCB.UI
                     await _sequenceService.MotionsMove(MotionExtensions.H_T, 1.5, 20, ct);
                     await _sequenceService.MotionsMove(MotionExtensions.H_T, -1.5, 20, ct);
 
+                    await _sequenceService.MotionsMove(MotionExtensions.H_X, _hxAxis.LimitMaxPosition - 5, ct);
+                    await _sequenceService.MotionsMove(MotionExtensions.H_X, 0, ct);
                 }
             }
             catch (OperationCanceledException)
