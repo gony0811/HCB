@@ -51,10 +51,10 @@ Recipe는 제품(다이/웨이퍼)마다 바뀌는 값이고, ECParameter는 설
 | `ScribeShiftY` | `SCRIBE_SHIFT_Y` | Recipe |
 | `AlignTopSpacingX` | `ALIGN_TOP_SPACING_X` | Recipe |
 | `AlignTopSpacingY` | `ALIGN_TOP_SPACING_Y` | Recipe |
-| `HC1 피듀셜 위치 보정 X` | `HC1_FID_OFFSET_X` | Recipe |
-| `HC1 피듀셜 위치 보정 Y` | `HC1_FID_OFFSET_Y` | Recipe |
-| `HC2 피듀셜 위치 보정 X` | `HC2_FID_OFFSET_X` | Recipe |
-| `HC2 피듀셜 위치 보정 Y` | `HC2_FID_OFFSET_Y` | Recipe |
+| `HC1 피듀셜 위치 보정 X` | `HC1_FID_OFFSET_X` (삭제됨) | Recipe |
+| `HC1 피듀셜 위치 보정 Y` | `HC1_FID_OFFSET_Y` (삭제됨) | Recipe |
+| `HC2 피듀셜 위치 보정 X` | `HC2_FID_OFFSET_X` (삭제됨) | Recipe |
+| `HC2 피듀셜 위치 보정 Y` | `HC2_FID_OFFSET_Y` (삭제됨) | Recipe |
 | `HcCenterErrorX` | `HC_CENTER_ERROR_X` | Recipe |
 | `HcCenterErrorY` | `HC_CENTER_ERROR_Y` | Recipe |
 | `xLowErrorOffset` | `LOW_ERROR_OFFSET_X` | Recipe |
@@ -112,10 +112,6 @@ Recipe는 제품(다이/웨이퍼)마다 바뀌는 값이고, ECParameter는 설
 | `X_ALIGN_OFFSET` | 정렬 보정 | 필수 |  | 0 |
 | `Y_ALIGN_OFFSET` | 정렬 보정 | 필수 |  | 0 |
 | `T_ALIGN_OFFSET` | 정렬 보정 | 필수 |  | 0 |
-| `HC1_FID_OFFSET_X` | 정렬 보정 | 필수 |  | 0 |
-| `HC1_FID_OFFSET_Y` | 정렬 보정 | 필수 |  | 0 |
-| `HC2_FID_OFFSET_X` | 정렬 보정 | 필수 |  | 0 |
-| `HC2_FID_OFFSET_Y` | 정렬 보정 | 필수 |  | 0 |
 | `HC_CENTER_ERROR_X` | 정렬 보정 | 필수 | 필수 | 0 |
 | `HC_CENTER_ERROR_Y` | 정렬 보정 | 필수 | 필수 | 0 |
 | `LOW_ERROR_OFFSET_X` | 정렬 보정 | 필수 |  | 0 |
@@ -154,8 +150,6 @@ Recipe는 제품(다이/웨이퍼)마다 바뀌는 값이고, ECParameter는 설
 | `T_ALIGN_OFFSET` | Double · deg | | 최종 보정 θ 오프셋(`OffsetT`, ResultT에 더함) | 동일 | 필수 |
 | `SPEC_X` / `SPEC_Y` | Double · mm | 0.5 / 0 | 본딩 결과 판정 스펙 | WaferSeq 탭 | 선택 |
 | `SPEC_THETA` | Double · deg | 0 | θ 목표값. thetaF = SPEC_THETA − (측정 각도차) | MainSequence(CoordinateSystemIntegration), WaferSeq 탭 | 필수 |
-| `HC1_FID_OFFSET_X` / `Y` | Double · mm | | HC1 피듀셜 위치 보정(`hc1FidOffset`) | MainSequence(BtmHighAlign) | 필수 |
-| `HC2_FID_OFFSET_X` / `Y` | Double · mm | | HC2 피듀셜 위치 보정(`hc2FidOffset`) | 동일 | 필수 |
 | `HC_CENTER_ERROR_X` / `HC_CENTER_ERROR_Y` | Double · mm | | HC 카메라 센터링 오차 보정 | MainSequence, StepSequence, Calibration 탭 | 필수 |
 | `LOW_ERROR_OFFSET_X` / `LOW_ERROR_OFFSET_Y` | Double · mm | | 저배율 비전 픽업 위치 오차 보정 | MainSequence(Pick Up) | 필수 |
 

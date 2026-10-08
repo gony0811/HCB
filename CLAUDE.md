@@ -108,7 +108,6 @@ Top Die 고배율 비전 측정. PC Table 카메라로 4개 마크 순차 촬상
 Btm Die 고배율 비전 측정. HC1/HC2 카메라 사용.
 - `WTable2DMappingOn()` → Wafer Table 2D 매핑 전환 (옵션)
 - `TopDieSet()` → Head를 본딩 위치(Z축 하강)로 이동
-- HC1/HC2 피듀셜 위치 보정값 적용 (`hc1FidOffset`, `hc2FidOffset`)
 - 개별 측정: RightFid → RightAlign → LeftFid → LeftAlign 순차, 동시 측정: `BtmDieVisionAlign()` 한 번에 4점
 - 출력: `data.BtmRightFidRaw`, `BtmRightAlignRaw`, `BtmLeftFidRaw`, `BtmLeftAlignRaw` (DxCamToMark 카메라 중심 대비 상대거리)
 - **좌표 차이**: Top은 PC카메라 CenterX/Y (절대), Btm은 HC카메라 DxCamToMark (상대)
