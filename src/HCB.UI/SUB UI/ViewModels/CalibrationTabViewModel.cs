@@ -509,32 +509,9 @@ namespace HCB.UI
                 CameraOffsetY = offsetY;
                 await UpdateCameraOffsets(hc1X: 0, hc1Y: 0, hc2X: offsetX, hc2Y: offsetY);
 
-                
-                // ── 피듀셜 기준값 저장 (트래킹 영점) ──
-                CalibStatus = "피듀셜 기준값 측정 중...";
                 await _sequenceService.Init_Head(ct);
-                await _communication.RequestAFStart(CameraType.HC1_HIGH, MarkType.FIDUCIAL, ct);
-                var fid1 = await _communication.RequestVisionMarkPosition(
-                    MarkType.FIDUCIAL, CameraType.HC1_HIGH, DirectType.LEFT.ToString());
-                if (fid1 == null || fid1.Result == Result.NG)
-                    throw new Exception("Hc1 피듀셜 측정 실패");
 
-                await _communication.RequestAFStart(CameraType.HC2_HIGH, MarkType.FIDUCIAL, ct);
-                var fid2 = await _communication.RequestVisionMarkPosition(
-                    MarkType.FIDUCIAL, CameraType.HC2_HIGH, DirectType.RIGHT.ToString());
-                if (fid2 == null || fid2.Result == Result.NG)
-                    throw new Exception("Hc2 피듀셜 측정 실패");
-
-                await _ecParamService.SetOrUpdate("HC1_FID_REF_DX", fid1.X, "Hc1 피듀셜 기준 DxCam");
-                await _ecParamService.SetOrUpdate("HC1_FID_REF_DY", fid1.Y, "Hc1 피듀셜 기준 DyCam");
-                await _ecParamService.SetOrUpdate("HC2_FID_REF_DX", fid2.X, "Hc2 피듀셜 기준 DxCam");
-                await _ecParamService.SetOrUpdate("HC2_FID_REF_DY", fid2.Y, "Hc2 피듀셜 기준 DyCam");
-
-                _logger.Information(
-                    "피듀셜 기준값 저장 — Hc1({Hc1Dx:F6}, {Hc1Dy:F6}), Hc2({Hc2Dx:F6}, {Hc2Dy:F6})",
-                    fid1.X, fid1.Y, fid2.X, fid2.Y);
-
-                CalibStatus = $"완료  ΔX={offsetX:F4}, ΔY={offsetY:F4} | 피듀셜 기준 저장됨";
+                CalibStatus = $"완료  ΔX={offsetX:F4}, ΔY={offsetY:F4}";
             }
             catch (OperationCanceledException) { CalibStatus = "취소됨"; }
             catch (Exception e)

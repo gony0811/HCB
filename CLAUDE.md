@@ -102,7 +102,7 @@ Top Die 고배율 비전 측정. PC Table 카메라로 4개 마크 순차 촬상
 - `PTable2DMappingOn()` → 2D 매핑 보정 활성화 (옵션)
 - RightFid → RightAlign → LeftFid → LeftAlign 순서로 촬상
 - 출력: `data.TopRightFidRaw`, `TopRightAlignRaw`, `TopLeftFidRaw`, `TopLeftAlignRaw` (CenterX/Y 절대 픽셀좌표)
-- 옵션: `MeasureFiducialDrift()` — HC1/HC2 드리프트 측정
+- 옵션(`UseFiducialTracking`): `MeasureFiducialDrift()` — HC1/HC2 피듀셜 현재 위치 측정 → `M2FidTheta` (좌표 통합 θ 보정에 사용)
 
 ### BtmHighAlign (DieSequence.cs)
 Btm Die 고배율 비전 측정. HC1/HC2 카메라 사용.
@@ -114,7 +114,7 @@ Btm Die 고배율 비전 측정. HC1/HC2 카메라 사용.
 
 ### CoordinateSystemIntegration (MainSequence.cs)
 Top/Btm 측정 좌표를 통합하여 보정량(ResultX, ResultY, ResultT) 계산.
-1. **TracingMode 분기**: Auto → `CompensateHc2Offset()` (피듀셜 드리프트 기반 Hc2Offset/Hcro 보정), Manual → `CamDistAndHcro()` (카메라 거리 측정 + 3점 회전으로 FitCircle 회전중심), None → 스킵
+1. **TracingMode 분기**: Manual → 측정한 카메라 거리(Hc2Offset) + 회전 측정점으로 HCRO 계산(`ComputeHcroCenter`), None → DB 캘리브레이션 값 사용
 2. **Theta 보정**: M2/M3 FidTheta 변화량 → Top 마크 4점 `RotateAroundPivot`
 3. **Fid→Align 이동량**: `lDist = TopLeftAlign - TopLeftFid`, `rDist = TopRightAlign - TopRightFid`
 4. **좌표 통합**: Btm Fid 부호 반전(Stage→DxCam), Top Align 위치 = bfl - lDist, Btm Align = (-Raw) or (camOffset - Raw)

@@ -176,10 +176,6 @@ namespace HCB.UI
         // 피듀셜 트래킹 결과
         public Point2D Hc1FidCurrent { get; set; } = Point2D.Zero;
         public Point2D Hc2FidCurrent { get; set; } = Point2D.Zero;
-        public Point2D Hc1FidRef { get; set; } = Point2D.Zero;
-        public Point2D Hc2FidRef { get; set; } = Point2D.Zero;
-        public Point2D Hc1FidDrift { get; set; } = Point2D.Zero;
-        public Point2D Hc2FidDrift { get; set; } = Point2D.Zero;
         public double FidCurrentDist { get; set; }
 
         // 측정2/3 Fiducial Theta (deg)

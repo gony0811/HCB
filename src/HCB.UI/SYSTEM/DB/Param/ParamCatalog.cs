@@ -138,11 +138,6 @@ namespace HCB.UI
             new ParamDef("HCRO_FIT_MODE", "회전중심 (HCRO)", "피팅 방식: rigid | circle (기본 rigid)"),
             new ParamDef("HCRO_REPEAT_N", "회전중심 (HCRO)", "HCRO 측정 반복 횟수 (기본 1)"),
 
-            new ParamDef("HC1_FID_REF_DX", "피듀셜 기준", "HC1_X 피듀셜 트래킹에 사용", Req.Both),
-            new ParamDef("HC1_FID_REF_DY", "피듀셜 기준", "HC1_Y 피듀셜 트래킹에 사용", Req.Both),
-            new ParamDef("HC2_FID_REF_DX", "피듀셜 기준", "HC2_X 피듀셜 트래킹에 사용", Req.Both),
-            new ParamDef("HC2_FID_REF_DY", "피듀셜 기준", "HC2_Y 피듀셜 트래킹에 사용", Req.Both),
-
             new ParamDef("LOW_VISION_RETRY_MAX", "비전 옵션", "저배율 비전 재시도 횟수 (기본 3)"),
             new ParamDef("VISION_RETRY_MAX",     "비전 옵션", "고배율 비전 재시도 횟수 (기본 3)"),
             new ParamDef("VISION_RETRY_STEP_MM", "비전 옵션", "재시도 이동 간격 mm (기본 0.005)"),

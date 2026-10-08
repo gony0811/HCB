@@ -72,10 +72,10 @@ Recipe는 제품(다이/웨이퍼)마다 바뀌는 값이고, ECParameter는 설
 | `ShankLowOffsetX` | `SHANK_LOW_OFFSET_X` | EC |
 | `ShankLowOffsetY` | `SHANK_LOW_OFFSET_Y` | EC |
 | `AlignDistTolerance` | `ALIGN_DIST_TOLERANCE` | EC |
-| `Hc1FidRefDx` | `HC1_FID_REF_DX` | EC |
-| `Hc1FidRefDy` | `HC1_FID_REF_DY` | EC |
-| `Hc2FidRefDx` | `HC2_FID_REF_DX` | EC |
-| `Hc2FidRefDy` | `HC2_FID_REF_DY` | EC |
+| `Hc1FidRefDx` | `HC1_FID_REF_DX` (삭제됨) | EC |
+| `Hc1FidRefDy` | `HC1_FID_REF_DY` (삭제됨) | EC |
+| `Hc2FidRefDx` | `HC2_FID_REF_DX` (삭제됨) | EC |
+| `Hc2FidRefDy` | `HC2_FID_REF_DY` (삭제됨) | EC |
 | `LowVisionRetryMax` | `LOW_VISION_RETRY_MAX` | EC |
 | `VisionRetryMax` | `VISION_RETRY_MAX` | EC |
 | `VisionRetryStepMm` | `VISION_RETRY_STEP_MM` | EC |
@@ -217,8 +217,6 @@ ECParam은 조회하는 메서드에 따라 값이 없을 때의 동작이 다�
 | `PC_T` | Double · deg | PC 카메라 회전 각도 | Calibration → MainSequence, EqpCommunicationService | 동일 |
 | `PC_W_T` | Double · deg | PC 카메라 ↔ Wafer 각도. HC1/HC2_T에 더해서 사용 | EqpCommunicationService | 동일 |
 | `HCRO_X` / `HCRO_Y` | Double · mm | Head 회전중심(HCRO). 좌표 통합 시 마크에서 빼는 값 | Calibration·MainSequence(Manual Tracing) → MainSequence | 동일 |
-| `HC1_FID_REF_DX` / `HC1_FID_REF_DY` | Double · mm | HC1 피듀셜 기준 DxCam/DyCam. 드리프트 측정 기준 | Calibration(`SetOrUpdate`) → DieSequence | 예외 |
-| `HC2_FID_REF_DX` / `HC2_FID_REF_DY` | Double · mm | HC2 피듀셜 기준 DxCam/DyCam | 동일 | 예외 |
 
 ### 알고리즘 옵션 (기본값 있음)
 

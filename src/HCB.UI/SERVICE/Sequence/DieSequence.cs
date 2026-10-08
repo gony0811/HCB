@@ -518,20 +518,9 @@ namespace HCB.UI
                 data.Hc1FidCurrent = Point2D.of(fid1.X, fid1.Y);
                 data.Hc2FidCurrent = Point2D.of(fid2.X, fid2.Y);
 
-                double refHc1Dx = _paramService.GetDouble("HC1_FID_REF_DX");
-                double refHc1Dy = _paramService.GetDouble("HC1_FID_REF_DY");
-                double refHc2Dx = _paramService.GetDouble("HC2_FID_REF_DX");
-                double refHc2Dy = _paramService.GetDouble("HC2_FID_REF_DY");
-
-                data.Hc1FidRef = Point2D.of(refHc1Dx, refHc1Dy);
-                data.Hc2FidRef = Point2D.of(refHc2Dx, refHc2Dy);
-                data.Hc1FidDrift = Point2D.of(fid1.X - refHc1Dx, fid1.Y - refHc1Dy);
-                data.Hc2FidDrift = Point2D.of(fid2.X - refHc2Dx, fid2.Y - refHc2Dy);
-
                 _logger.Information(
-                    "피듀셜 트래킹(raw 수집) — HC1 drift({Hc1Dx:F6},{Hc1Dy:F6}), HC2 drift({Hc2Dx:F6},{Hc2Dy:F6}) | {Elapsed}ms",
-                    data.Hc1FidDrift.X, data.Hc1FidDrift.Y,
-                    data.Hc2FidDrift.X, data.Hc2FidDrift.Y,
+                    "피듀셜 트래킹(raw 수집) — HC1({Hc1Dx:F6},{Hc1Dy:F6}), HC2({Hc2Dx:F6},{Hc2Dy:F6}) | {Elapsed}ms",
+                    fid1.X, fid1.Y, fid2.X, fid2.Y,
                     sw.ElapsedMilliseconds);
 
             }
