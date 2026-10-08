@@ -36,7 +36,7 @@ Recipe는 제품(다이/웨이퍼)마다 바뀌는 값이고, ECParameter는 설
 
 ## 명명 규칙
 
-파라미터 이름은 **대문자 스네이크 케이스**(`TOP_DIE_THICKNESS`)로 통일합니다. 2026-10-07에 기존 이름을 아래와 같이 바꿨습니다. 기존 DB의 행은 앱 시작 시 마이그레이션 `RenameParamsToUpperSnake`가 자동으로 바꿉니다. 같은 레시피(또는 EC)에 새 이름 행이 이미 있으면 그 행은 바꾸지 않고 건너뜁니다.
+파라미터 이름은 **대문자 스네이크 케이스**(`TOP_DIE_THICKNESS`)로 통일합니다. 2026-10-07에 기존 이름을 아래와 같이 바꿨습니다. 기존 DB의 행은 앱 시작 시 마이그레이션 `RenameParamsToUpperSnake`(1차)와 `RenameAlignParamsToUpperSnake`(2차)가 자동으로 바꿉니다. 같은 레시피(또는 EC)에 새 이름 행이 이미 있으면 그 행은 바꾸지 않고 건너뜁니다.
 
 | 이전 이름 | 새 이름 | 구분 |
 | --- | --- | --- |
@@ -67,6 +67,10 @@ Recipe는 제품(다이/웨이퍼)마다 바뀌는 값이고, ECParameter는 설
 | `버니어_거리_X` | `VERNIER_DIST_X` | Recipe |
 | `버니어_거리_Y` | `VERNIER_DIST_Y` | Recipe |
 | `Vision Recipe` | `VISION_RECIPE` | Recipe |
+| `RightAlignHeight` | `RIGHT_ALIGN_HEIGHT` | Recipe (2차 변경) |
+| `LeftAlignHeight` | `LEFT_ALIGN_HEIGHT` | Recipe (2차 변경) |
+| `RefTopAlignDist` | `REF_TOP_ALIGN_DIST` | Recipe (2차 변경) |
+| `RefBtmAlignDist` | `REF_BTM_ALIGN_DIST` | Recipe (2차 변경) |
 | `ShankToWaferOffset` | `SHANK_TO_WAFER_OFFSET` | EC |
 | `ShankToDieOffset` | `SHANK_TO_DIE_OFFSET` | EC |
 | `ShankLowOffsetX` | `SHANK_LOW_OFFSET_X` | EC |
@@ -108,6 +112,8 @@ Recipe는 제품(다이/웨이퍼)마다 바뀌는 값이고, ECParameter는 설
 | `SPEC_X` | 판정 스펙 |  | 필수 | 빈 값(직접 입력) |
 | `SPEC_Y` | 판정 스펙 |  | 필수 | 빈 값(직접 입력) |
 | `SPEC_THETA` | 판정 스펙 | 필수 | 필수 | 0 |
+| `RIGHT_ALIGN_HEIGHT` | 비전 촬상 높이 | 필수 |  | 빈 값(직접 입력) |
+| `LEFT_ALIGN_HEIGHT` | 비전 촬상 높이 | 필수 |  | 빈 값(직접 입력) |
 | `FID_ALIGN_GAP` | 정렬 보정 | 필수 | 필수 | 빈 값(직접 입력) |
 | `X_ALIGN_OFFSET` | 정렬 보정 | 필수 |  | 0 |
 | `Y_ALIGN_OFFSET` | 정렬 보정 | 필수 |  | 0 |
@@ -144,6 +150,9 @@ Recipe는 제품(다이/웨이퍼)마다 바뀌는 값이고, ECParameter는 설
 
 | Name | 타입 · 단위 | 예시값 | 용도 | 사용처 | 필수 |
 | --- | --- | --- | --- | --- | --- |
+| `RIGHT_ALIGN_HEIGHT` / `LEFT_ALIGN_HEIGHT` | Double · mm | | PC 우/좌 Align 마크 촬상 H_Z 높이. Calibration 탭 PC AF가 저장 | StepSequence(TopDieVisionRight/LeftAlign), Calibration 탭 | 필수(DIE) |
+| `BTM_ALIGN_REF_X` / `BTM_ALIGN_REF_Y` | Double · mm | | 도면상 Btm 좌→우 Align 상대거리. Btm θ 보정 기준(미설정 시 0°) | DieSequence | 선택 |
+| `REF_TOP_ALIGN_DIST` / `REF_BTM_ALIGN_DIST` | Double · mm | | Top/Btm Align 마크 간 기준 거리. 정렬 결과 창 비교 표시 | StepSeq 탭 | 선택 |
 | `FID_ALIGN_GAP` | Double · mm | | Fid↔Align 마크 촬상 높이 차(h_z/H_Z 상대 이동량) | DieSequence, MainSequence, Calibration·Vision·WaferSeq 탭 | 필수 |
 | `X_ALIGN_OFFSET` | Double · mm | | 최종 보정 X 오프셋(`OffsetXY.X`, ResultX에 더함) | MainSequence `LoadCalibrationInto` | 필수 |
 | `Y_ALIGN_OFFSET` | Double · mm | | 최종 보정 Y 오프셋(`OffsetXY.Y`) | 동일 | 필수 |

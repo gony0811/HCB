@@ -835,8 +835,8 @@ namespace HCB.UI
                 await SavePositionHeight(MotionExtensions.P_LEFT_FIDUCIAL_HIGH, LeftFidHeight);
 
                 // Align → 레시피 파라미터에 저장
-                await SaveRecipeParam("RightAlignHeight", RightAlignHeight);
-                await SaveRecipeParam("LeftAlignHeight", LeftAlignHeight);
+                await SaveRecipeParam("RIGHT_ALIGN_HEIGHT", RightAlignHeight);
+                await SaveRecipeParam("LEFT_ALIGN_HEIGHT", LeftAlignHeight);
 
                 CalibStatus = "PC AF 높이 저장 완료";
                 _logger.Information("PC AF 높이 저장 — RF:{RF:F4} RA:{RA:F4} LF:{LF:F4} LA:{LA:F4} (Recipe: {Recipe})",

@@ -618,10 +618,6 @@ namespace HCB.UI
             try
             {
                 _logger.Information("피듀셜 각도 추적 시작");
-                double hc1FidOffsetX = _recipeService.FindByParamDouble("HC1_FID_OFFSET_X");
-                double hc1FidOffsetY = _recipeService.FindByParamDouble("HC1_FID_OFFSET_Y");
-                double hc2FidOffsetX = _recipeService.FindByParamDouble("HC2_FID_OFFSET_X");
-                double hc2FidOffsetY = _recipeService.FindByParamDouble("HC2_FID_OFFSET_Y");
 
                 // ── 1. PC TABLE: TopDIE Fiducial 촬상 ──
                 await PTable2DMappingOn();
@@ -629,8 +625,8 @@ namespace HCB.UI
                 var topRightFid = await TopDieVisionRightFid(avgMode, ct);
                 var topLeftFid = await TopDieVisionLeftFid(avgMode, ct);
 
-                result.PcLeftFid = Point2D.of(topLeftFid.CenterX + hc1FidOffsetX, topLeftFid.CenterY + hc1FidOffsetY);
-                result.PcRightFid = Point2D.of(topRightFid.CenterX + hc2FidOffsetX, topRightFid.CenterY + hc2FidOffsetY);
+                result.PcLeftFid = Point2D.of(topLeftFid.CenterX, topLeftFid.CenterY);
+                result.PcRightFid = Point2D.of(topRightFid.CenterX, topRightFid.CenterY);
                 result.PcAngleDeg = CalibrationMath.ToDegree(
                     Math.Atan2(
                         result.PcRightFid.Y - result.PcLeftFid.Y,

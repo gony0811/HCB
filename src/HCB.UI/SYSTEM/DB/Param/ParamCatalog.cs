@@ -92,6 +92,11 @@ namespace HCB.UI
             new ParamDef("SPEC_X",     "판정 스펙", "본딩 결과 판정 스펙 X", Req.Wafer),
             new ParamDef("SPEC_Y",     "판정 스펙", "본딩 결과 판정 스펙 Y", Req.Wafer),
             new ParamDef("SPEC_THETA", "판정 스펙", "θ 목표값 (thetaF = SPEC_THETA − 측정 각도차)", Req.Both, Default: "0", Unit: UnitType.None),
+            new ParamDef("REF_TOP_ALIGN_DIST", "판정 스펙", "Top Align 마크 간 기준 거리 (정렬 결과 창 비교 표시용)"),
+            new ParamDef("REF_BTM_ALIGN_DIST", "판정 스펙", "Btm Align 마크 간 기준 거리 (정렬 결과 창 비교 표시용)"),
+
+            new ParamDef("RIGHT_ALIGN_HEIGHT", "비전 촬상 높이", "PC 우측 Align 마크 촬상 H_Z 높이 (Calibration PC AF에서 저장)", Req.Die),
+            new ParamDef("LEFT_ALIGN_HEIGHT",  "비전 촬상 높이", "PC 좌측 Align 마크 촬상 H_Z 높이 (Calibration PC AF에서 저장)", Req.Die),
 
             new ParamDef("FID_ALIGN_GAP",      "정렬 보정", "Fid↔Align 마크 촬상 높이 차 (H_Z 상대 이동량)", Req.Both),
             new ParamDef("X_ALIGN_OFFSET",     "정렬 보정", "최종 보정 X 오프셋 (ResultX에 더함)", Req.Die, Default: "0"),
@@ -101,6 +106,8 @@ namespace HCB.UI
             new ParamDef("HC_CENTER_ERROR_Y",  "정렬 보정", "HC 카메라 센터링 오차 보정 Y", Req.Both, Default: "0"),
             new ParamDef("LOW_ERROR_OFFSET_X", "정렬 보정", "저배율 비전 픽업 위치 오차 보정 X", Req.Die, Default: "0"),
             new ParamDef("LOW_ERROR_OFFSET_Y", "정렬 보정", "저배율 비전 픽업 위치 오차 보정 Y", Req.Die, Default: "0"),
+            new ParamDef("BTM_ALIGN_REF_X",    "정렬 보정", "도면상 Btm 좌→우 Align 상대거리 X (Btm θ 보정 기준, 미설정 시 0°)"),
+            new ParamDef("BTM_ALIGN_REF_Y",    "정렬 보정", "도면상 Btm 좌→우 Align 상대거리 Y (Btm θ 보정 기준, 미설정 시 0°)"),
 
             new ParamDef("READY_POSITION", "모션 / 본딩", "H_Z 본딩 대기 간격 (Z 하강 식에서 빼는 값)", Req.Die),
             new ParamDef("TOP_BTM_GAP",    "모션 / 본딩", "Top/Btm Die 사이 간격", Req.Both),

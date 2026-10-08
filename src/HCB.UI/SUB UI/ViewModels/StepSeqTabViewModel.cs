@@ -1110,8 +1110,8 @@ namespace HCB.UI
             var recipe = _recipeService?.UseRecipe;
             if (recipe != null)
             {
-                var pt = recipe.ParamList.FirstOrDefault(p => p.Name == "RefTopAlignDist");
-                var pb = recipe.ParamList.FirstOrDefault(p => p.Name == "RefBtmAlignDist");
+                var pt = recipe.ParamList.FirstOrDefault(p => p.Name == "REF_TOP_ALIGN_DIST");
+                var pb = recipe.ParamList.FirstOrDefault(p => p.Name == "REF_BTM_ALIGN_DIST");
                 if (pt != null && double.TryParse(pt.Value, out double t)) refTop = t;
                 if (pb != null && double.TryParse(pb.Value, out double b)) refBtm = b;
             }

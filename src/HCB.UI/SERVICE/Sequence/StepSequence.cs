@@ -165,7 +165,7 @@ namespace HCB.UI
         {
             _logger.Information("Top Die Vision (Right Align) Start");
             EQStatusCheck();
-            string name = "RightAlignHeight";
+            string name = "RIGHT_ALIGN_HEIGHT";
 
             var param = _recipeService.UseRecipe?.ParamList
                .FirstOrDefault(p => p.Name == name);
@@ -199,7 +199,7 @@ namespace HCB.UI
         {
             _logger.Information("Top Die Vision (Left Align) Start");
             EQStatusCheck();
-            string name = "LeftAlignHeight";
+            string name = "LEFT_ALIGN_HEIGHT";
 
             var param = _recipeService.UseRecipe?.ParamList
                .FirstOrDefault(p => p.Name == name);
