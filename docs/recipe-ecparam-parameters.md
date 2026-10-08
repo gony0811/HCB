@@ -217,7 +217,6 @@ ECParam은 조회하는 메서드에 따라 값이 없을 때의 동작이 다�
 | `PC_T` | Double · deg | PC 카메라 회전 각도 | Calibration → MainSequence, EqpCommunicationService | 동일 |
 | `PC_W_T` | Double · deg | PC 카메라 ↔ Wafer 각도. HC1/HC2_T에 더해서 사용 | EqpCommunicationService | 동일 |
 | `HCRO_X` / `HCRO_Y` | Double · mm | Head 회전중심(HCRO). 좌표 통합 시 마크에서 빼는 값 | Calibration·MainSequence(Manual Tracing) → MainSequence | 동일 |
-| `HCRO_PC_X` / `HCRO_PC_Y` | Double · mm | PC 카메라 기준 회전중심 | MainSequence(`LoadCalibrationInto`) | 동일 |
 | `HC1_FID_REF_DX` / `HC1_FID_REF_DY` | Double · mm | HC1 피듀셜 기준 DxCam/DyCam. 드리프트 측정 기준 | Calibration(`SetOrUpdate`) → DieSequence | 예외 |
 | `HC2_FID_REF_DX` / `HC2_FID_REF_DY` | Double · mm | HC2 피듀셜 기준 DxCam/DyCam | 동일 | 예외 |
 

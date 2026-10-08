@@ -607,79 +607,6 @@ namespace HCB.UI
         }
 
 
-        // Pc 좌표계 
-        public async Task PcCoordinateSystemIntegration(AlignData data, CancellationToken ct)
-        {
-            if (data == null) throw new ArgumentNullException(nameof(data));
-            LoadCalibrationInto(data);;
-
-            // ── STEP 1: Btm Die — Fid→Align 이동량 ──
-            //var lDist = Point2D.of(
-            //    data.BtmLeftAlignRaw.CenterX - data.BtmLeftFidRaw.CenterX,
-            //    data.BtmLeftAlignRaw.CenterY - data.BtmLeftFidRaw.CenterY);
-            //var rDist = Point2D.of(
-            //    data.BtmRightAlignRaw.CenterX - data.BtmRightFidRaw.CenterX,
-            //    data.BtmRightAlignRaw.CenterY - data.BtmRightFidRaw.CenterY);
-            var lDist = Point2D.of(
-                data.BtmLeftFidRaw.X - data.BtmLeftAlignRaw.X,
-                data.BtmLeftFidRaw.Y - data.BtmLeftAlignRaw.Y
-                );
-            var rDist = Point2D.of(
-                data.BtmRightFidRaw.X - data.BtmRightAlignRaw.X,
-                data.BtmRightFidRaw.Y - data.BtmRightAlignRaw.Y
-                );
-
-            data.LDist = lDist;
-            data.RDist = rDist;
-
-            Point2D tl = Point2D.of(data.TopLeftAlignRaw.CenterX, data.TopLeftAlignRaw.CenterY);
-            Point2D tr = Point2D.of(data.TopRightAlignRaw.CenterX, data.TopLeftAlignRaw.CenterY);
-
-            Point2D bl = Point2D.of(data.TopLeftFidRaw.CenterX - lDist.X, data.TopLeftFidRaw.CenterY - lDist.Y);
-            Point2D br = Point2D.of(data.TopRightFidRaw.CenterX - rDist.X, data.TopRightFidRaw.CenterY - rDist.Y);
-
-            // ── STEP 3: 회전중심(HCRO) 기준으로 좌표 이동 ──
-            Point2D hcro = data.PcHcro;
-            bl = Point2D.of(bl.X - hcro.X, bl.Y - hcro.Y);
-            br = Point2D.of(br.X - hcro.X, br.Y - hcro.Y);
-            tl = Point2D.of(tl.X - hcro.X, tl.Y - hcro.Y);
-            tr = Point2D.of(tr.X - hcro.X, tr.Y - hcro.Y);
-
-            // ── STEP 4: θ 계산 ──
-            double thetaS = ParseRecipe("SPEC_THETA");
-            double bTheta = Math.Atan2(br.Y - bl.Y, br.X - bl.X);
-            double tTheta = Math.Atan2(tr.Y - tl.Y, tr.X - tl.X);
-            double thetaF = thetaS - CalibrationMath.ToDegree(tTheta - bTheta);
-            double thetaF_rad = CalibrationMath.ToRadian(thetaF);
-
-            data.SpecTheta = thetaS;
-            data.BTheta = bTheta;
-            data.TTheta = tTheta;
-            data.ThetaF = thetaF;
-            data.ThetaFRad = thetaF_rad;
-
-            // ── STEP 5: Top 마크 회전 보정 ──
-            tl = CalibrationMath.ApplyRotation(tl, thetaF_rad);
-            tr = CalibrationMath.ApplyRotation(tr, thetaF_rad);
-
-            // ── STEP 6: Shift 계산 ──
-            Point2D tCenter = Point2D.of((tl.X + tr.X) / 2.0, (tl.Y + tr.Y) / 2.0);
-            Point2D bCenter = Point2D.of((bl.X + br.X) / 2.0, (bl.Y + br.Y) / 2.0);
-
-            data.BL = bl;
-            data.BR = br;
-            data.TL = tl;
-            data.TR = tr;
-            data.TCenter = tCenter;
-            data.BCenter = bCenter;
-
-            double shiftX = tCenter.X - bCenter.X;
-            double shiftY = tCenter.Y - bCenter.Y;
-
-            data.ResultX = shiftX + data.OffsetXY.X;
-            data.ResultY = shiftY + data.OffsetXY.Y;
-            data.ResultT = thetaF + data.OffsetT;
-        }
         #endregion
 
         #region 피듀셜 각도 추적
@@ -908,8 +835,6 @@ namespace HCB.UI
             var hcroXParam = _paramService.FindByName(MotionExtensions.HCRO_X);
             var hcroYParam = _paramService.FindByName(MotionExtensions.HCRO_Y);
 
-            var pcHcroXParam = _paramService.FindByName(MotionExtensions.HCRO_PC_X);
-            var pcHcroYParam = _paramService.FindByName(MotionExtensions.HCRO_PC_Y);
             var hc2XParam = _paramService.FindByName(MotionExtensions.HC2_X);
             var hc2YParam = _paramService.FindByName(MotionExtensions.HC2_Y);
 
@@ -928,7 +853,6 @@ namespace HCB.UI
                 data.Hc2Rad = ParseDouble(hc2T.Value);
                 data.PcTRad = ParseDouble(pcT.Value);
                 data.Hcro = Point2D.of(ParseDouble(hcroXParam.Value), ParseDouble(hcroYParam.Value));
-                data.PcHcro = Point2D.of(ParseDouble(pcHcroXParam.Value), ParseDouble(pcHcroYParam.Value));
 
                 // Manual 트레이싱(또는 DIE 레시피)에서는 카메라 거리(Hc2Offset)를 Pickup 이전 CameraDist로
                 // 직접 측정하므로, 그 측정값을 DB 캘리브레이션 값으로 덮지 않는다.
