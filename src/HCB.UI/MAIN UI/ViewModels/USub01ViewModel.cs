@@ -31,7 +31,7 @@ namespace HCB.UI
 
         [ObservableProperty] public UserControl currentTab;
         [ObservableProperty] public string currentDevice = "UNKNOWN DEVICE";
-        [ObservableProperty] private string selectedTabKey = "LOADING";
+        [ObservableProperty] private string selectedTabKey = "STEP";
 
         public USub01ViewModel(LoadingTab loadingTab, AutoTab autoTab, ManualTab manualTab, StepSeqTab stepSeqTab, WaferSeqTab waferSeqTab, StepSeqTabViewModel stepSeqTabViewModel, CalibrationTab calibrationTab, VisionTab visionTab, USub02ViewModel sub02ViewModel, RecipeService recipeService)
         {
@@ -70,9 +70,8 @@ namespace HCB.UI
             SelectedTabKey = viewName;
             switch (viewName)
             {
-                case "LOADING":
-                    CurrentTab = loadingTab; break;
-                case "AUTO": CurrentTab = autoTab; break;
+                //case "LOADING": CurrentTab = loadingTab; break;
+                //case "AUTO": CurrentTab = autoTab; break;
                 case "MANUAL": CurrentTab = manualTab; break;
                 case "STEP": CurrentTab = stepSeqTab; break;
                 case "WAFER": CurrentTab = waferSeqTab; break;
