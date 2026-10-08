@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -36,8 +37,8 @@ namespace HCB.UI
         [ObservableProperty] private StepRecipeDto selectedStep;
         [ObservableProperty] private bool isBusy;
 
-        [ObservableProperty] private string paramSearchText = string.Empty;
-        [ObservableProperty] private ICollectionView paramListView;
+        /// <summary>구역별 표 + 인라인 수정 상태</summary>
+        public ParamEditor Editor { get; } = new ParamEditor(ParamCatalog.Recipe);
 
         // (필요 시) 기타 UI 상태
         [ObservableProperty] private string currentDevice;
@@ -56,33 +57,79 @@ namespace HCB.UI
             this._dialogService = dialogService;
             this._recipeService = recipeService;
             Recipes = _recipeService.RecipeList;
+            Editor.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(ParamEditor.SelectedRow))
+                    SelectedParam = Editor.SelectedRow?.Source as RecipeParamDto;
+            };
         }
 
-        partial void OnSelectedRecipeChanged(RecipeDto value)
+        partial void OnSelectedRecipeChanging(RecipeDto oldValue, RecipeDto newValue)
         {
-            if (value?.ParamList != null)
-            {
-                ParamListView = CollectionViewSource.GetDefaultView(value.ParamList);
-                ParamListView.Filter = ParamFilter;
-            }
+            // 레시피를 바꾸기 전에 저장하지 않은 입력값 처리
+            var dirty = Editor.DirtyRows;
+            if (dirty.Count == 0 || oldValue == null || ReferenceEquals(oldValue, newValue)) return;
+
+            bool save = _dialogService.ShowConfirm("저장하지 않은 변경",
+                $"[{oldValue.Name}] 레시피에 저장하지 않은 변경 {dirty.Count}건이 있습니다.\n저장하시겠습니까? (아니오: 변경 취소)");
+            if (save && dirty.All(r => !r.HasError))
+                _ = SaveRowsAsync(dirty);
             else
+                Editor.RevertAllCommand.Execute(null);
+        }
+
+        partial void OnSelectedRecipeChanged(RecipeDto oldValue, RecipeDto newValue)
+        {
+            if (oldValue?.ParamList != null) oldValue.ParamList.CollectionChanged -= OnParamListChanged;
+            if (newValue?.ParamList != null) newValue.ParamList.CollectionChanged += OnParamListChanged;
+            ReloadRows();
+        }
+
+        private void OnParamListChanged(object sender, NotifyCollectionChangedEventArgs e) => ReloadRows();
+
+        private void ReloadRows()
+        {
+            if (SelectedRecipe?.ParamList == null) Editor.Clear();
+            else Editor.Load(SelectedRecipe.ParamList.Select(p => ParamRow.From(p, ParamCatalog.Recipe, SelectedRecipe.Component)),
+                             SelectedRecipe.Component);
+        }
+
+        [RelayCommand]
+        public async Task SaveParamChanges()
+        {
+            var dirty = Editor.DirtyRows;
+            if (dirty.Count == 0) return;
+
+            var invalid = dirty.Where(r => r.HasError).ToList();
+            if (invalid.Count > 0)
             {
-                ParamListView = null;
+                _dialogService.ShowMessage("입력 오류", string.Join("\n", invalid.Select(r => $"{r.Name}: {r.Error}")));
+                return;
             }
-            ParamSearchText = string.Empty;
 
+            if (!_dialogService.ShowConfirm("레시피 파라미터 저장",
+                    $"[{SelectedRecipe?.Name}] {dirty.Count}건을 저장하시겠습니까?\n\n{ParamEditor.BuildSummary(dirty)}")) return;
+
+            await SaveRowsAsync(dirty);
         }
 
-        partial void OnParamSearchTextChanged(string value)
+        private async Task SaveRowsAsync(IReadOnlyList<ParamRow> rows)
         {
-            ParamListView?.Refresh();
-        }
-
-        private bool ParamFilter(object obj)
-        {
-            if (string.IsNullOrWhiteSpace(ParamSearchText)) return true;
-            if (obj is not RecipeParamDto item) return false;
-            return item.Name?.Contains(ParamSearchText, StringComparison.OrdinalIgnoreCase) ?? false;
+            int saved = 0;
+            try
+            {
+                foreach (var row in rows)
+                {
+                    row.ApplyToSource();
+                    await _recipeService.UpdateRecipeParam((RecipeParamDto)row.Source);
+                    saved++;
+                }
+                _dialogService.ShowMessage("저장", $"{saved}건 저장되었습니다");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowMessage("저장 실패", $"{saved}건 저장 후 실패: {ex.GetBaseException().Message}");
+            }
         }
 
         [RelayCommand]
@@ -94,17 +141,78 @@ namespace HCB.UI
 
             if (result != true) return;
 
+            RecipeDto added;
             try
             {
-
-                await _recipeService.AddRecipe(new RecipeDto { Name = recipe.Name, IsActive = recipe.IsActive, Component = recipe.Component });
-
-                _dialogService.ShowMessage("저장", "저장되었습니다");
+                added = await _recipeService.AddRecipe(new RecipeDto { Name = recipe.Name, IsActive = recipe.IsActive, Component = recipe.Component });
             }
             catch (DbUpdateException ex)
             {
-                _dialogService.ShowMessage("저장 오류", "저장중 오류가 발생했습니다");
+                _dialogService.ShowMessage("저장 오류", $"저장중 오류가 발생했습니다: {ex.GetBaseException().Message}");
+                return;
             }
+
+            SelectedRecipe = added;
+            var (addedCount, emptyCount, error) = await AddMissingRequiredAsync(added);
+            if (error != null)
+            {
+                _dialogService.ShowMessage("필수 파라미터 추가 실패",
+                    $"[{added.Name}] 레시피는 생성되었지만 필수 파라미터 추가 중 오류가 발생했습니다 ({addedCount}개 추가됨): {error}");
+                return;
+            }
+
+            _dialogService.ShowMessage("저장",
+                $"[{added.Name}] {added.Component} 레시피를 생성하고 필수 파라미터 {addedCount}개를 추가했습니다." +
+                (emptyCount > 0 ? $"\n값이 비어 있는 {emptyCount}개(빨간색)는 직접 입력 후 [변경 저장] 해주세요." : ""));
+        }
+
+        /// <summary>
+        /// 레시피 종류(DIE/WAFER)별 필수 파라미터 중 없는 것을 추가한다.
+        /// 보정 오프셋은 0, 두께·위치 등 물리값은 빈 값(직접 입력 필요)으로 넣는다.
+        /// </summary>
+        private async Task<(int Added, int Empty, string Error)> AddMissingRequiredAsync(RecipeDto recipe)
+        {
+            int addedCount = 0, emptyCount = 0;
+            try
+            {
+                foreach (var def in ParamCatalog.Recipe.RequiredFor(recipe.Component))
+                {
+                    if (recipe.ParamList.Any(p => p.Name == def.Name)) continue;
+                    await _recipeService.AddRecipeParam(new RecipeParamDto
+                    {
+                        RecipeId = recipe.Id,
+                        Name = def.Name,
+                        Value = def.Default ?? "",
+                        ValueType = def.Type,
+                        UnitType = def.Unit,
+                        Description = def.Description
+                    });
+                    addedCount++;
+                    if (def.Default == null) emptyCount++;
+                }
+                return (addedCount, emptyCount, null);
+            }
+            catch (Exception ex)
+            {
+                return (addedCount, emptyCount, ex.GetBaseException().Message);
+            }
+        }
+
+        /// <summary>선택 레시피에 빠진 필수 파라미터 추가 (누락 경고의 [필수 항목 추가])</summary>
+        [RelayCommand]
+        public async Task AddMissingRequired()
+        {
+            if (SelectedRecipe == null) return;
+            var recipe = SelectedRecipe;
+            var (addedCount, emptyCount, error) = await AddMissingRequiredAsync(recipe);
+            if (error != null)
+            {
+                _dialogService.ShowMessage("필수 파라미터 추가 실패", $"{addedCount}개 추가 후 오류: {error}");
+                return;
+            }
+            _dialogService.ShowMessage("추가",
+                $"[{recipe.Name}] {recipe.Component} 필수 파라미터 {addedCount}개를 추가했습니다." +
+                (emptyCount > 0 ? $"\n값이 비어 있는 {emptyCount}개(빨간색)는 직접 입력 후 [변경 저장] 해주세요." : ""));
         }
 
         [RelayCommand]
@@ -129,6 +237,7 @@ namespace HCB.UI
                 SelectedRecipe.IsActive = recipe.IsActive;
                 SelectedRecipe.Component = recipe.Component;
                 await _recipeService.UpdateRecipe(SelectedRecipe);
+                ReloadRows();   // 종류(DIE/WAFER)가 바뀌면 필수 항목 기준도 바뀜
                 _dialogService.ShowMessage("저장", "저장되었습니다");
             }
             catch (DbUpdateException ex)
@@ -188,7 +297,7 @@ namespace HCB.UI
             {
                 bool visionNotified = await _recipeService.SetUseRecipeAsync(SelectedRecipe);
                 if (!visionNotified)
-                    _dialogService.ShowMessage("알림", "Vision Recipe 파라미터가 없어 비전에 통보하지 못했습니다");
+                    _dialogService.ShowMessage("알림", "VISION_RECIPE 파라미터가 없어 비전에 통보하지 못했습니다");
 
                 _dialogService.ShowMessage("변경", "사용 레시피가 변경되었습니다");
             }
@@ -201,20 +310,32 @@ namespace HCB.UI
         [RelayCommand]
         public async Task CreateParam()
         {
-            if (SelectedRecipe == null) return;
+            if (SelectedRecipe == null)
+            {
+                _dialogService.ShowMessage("레시피 선택 필요", "왼쪽 RECIPE LIST에서 파라미터를 추가할 레시피를 먼저 선택해주세요");
+                return;
+            }
+            var recipe = SelectedRecipe;
+
+            // 입력 오류가 있으면 입력값을 유지한 채 다시 연다
+            var param = Editor.NewParamTemplate();
+            while (true)
+            {
+                bool? result = await _dialogService.ShowEditDialog(param);
+                if (result != true) return;
+
+                string error = Editor.ValidateParam(param);
+                if (error == null) break;
+                _dialogService.ShowMessage("입력 확인", error);
+            }
 
             try
             {
-                var param = new ParameterCreateDto();
-                bool? result = await _dialogService.ShowEditDialog(param);
-
-                if (result != true) return;
-
                 var dto = new RecipeParamDto
                 {
-                    RecipeId = SelectedRecipe.Id,
-                    Name = param.Name,
-                    Value = param.Value,
+                    RecipeId = recipe.Id,
+                    Name = param.Name.Trim(),
+                    Value = param.Value.Trim(),
                     Minimum = param.Minimum,
                     Maximum = param.Maximum,
                     ValueType = param.ValueType,
@@ -223,46 +344,63 @@ namespace HCB.UI
                 };
 
                 await _recipeService.AddRecipeParam(dto);
-                _dialogService.ShowMessage("저장", "저장되었습니다");
+                Editor.SelectByName(dto.Name);
+                _dialogService.ShowMessage("저장", $"[{recipe.Name}] {dto.Name} 생성되었습니다");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                MessageBox.Show("저장 실패", "파라미터 저장 실패");
+                _dialogService.ShowMessage("저장 실패", $"파라미터 저장 실패: {ex.GetBaseException().Message}");
             }
-
         }
 
         [RelayCommand]
         public async Task UpdateParam()
         {
-            if (SelectedParam == null) return;
+            if (SelectedParam == null)
+            {
+                _dialogService.ShowMessage("파라미터 선택 필요", "파라미터를 선택해주세요");
+                return;
+            }
+            // 표에서 입력 중이던 값이 있으면 그 값으로 상세 수정을 시작한다
+            var row = Editor.Rows.FirstOrDefault(r => ReferenceEquals(r.Source, SelectedParam));
             try
             {
                 var param = new ParameterCreateDto
                 {
                     Name = SelectedParam.Name,
-                    Value = SelectedParam.Value,
+                    Value = row?.IsDirty == true ? row.EditValue : SelectedParam.Value,
                     Minimum = SelectedParam.Minimum,
                     Maximum = SelectedParam.Maximum,
                     ValueType = SelectedParam.ValueType,
                     UnitType = SelectedParam.UnitType,
                     Description = SelectedParam.Description
                 };
-                bool? result = await _dialogService.ShowEditDialog(param);
-                if (result != true) return;
-                SelectedParam.Name = param.Name;
-                SelectedParam.Value = param.Value;
+                while (true)
+                {
+                    bool? result = await _dialogService.ShowEditDialog(param);
+                    if (result != true) return;
+
+                    string error = Editor.ValidateParam(param, SelectedParam);
+                    if (error == null) break;
+                    _dialogService.ShowMessage("입력 확인", error);
+                }
+
+                // 상세 수정으로 저장한 값이 표의 미저장 입력값보다 우선
+                row?.Revert();
+                SelectedParam.Name = param.Name.Trim();
+                SelectedParam.Value = param.Value.Trim();
                 SelectedParam.Minimum = param.Minimum;
                 SelectedParam.Maximum = param.Maximum;
                 SelectedParam.ValueType = param.ValueType;
                 SelectedParam.UnitType = param.UnitType;
                 SelectedParam.Description = param.Description;
                 await _recipeService.UpdateRecipeParam(SelectedParam);
+                ReloadRows();
                 _dialogService.ShowMessage("저장", "저장되었습니다");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                MessageBox.Show("저장 실패", "파라미터 저장 실패");
+                _dialogService.ShowMessage("저장 실패", $"파라미터 저장 실패: {ex.GetBaseException().Message}");
             }
         }
 

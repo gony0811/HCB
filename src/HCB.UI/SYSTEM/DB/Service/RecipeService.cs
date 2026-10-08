@@ -19,7 +19,7 @@ namespace HCB.UI
     public partial class RecipeService : ObservableObject
     {
         // 사용 레시피 변경 시 비전에 통보할 파라미터 이름
-        public const string VisionRecipeParamName = "Vision Recipe";
+        public const string VisionRecipeParamName = "VISION_RECIPE";
 
         private readonly RecipeRepository _recipeRepo;
         private readonly ParameterRepository _parameterRepo;
@@ -38,9 +38,9 @@ namespace HCB.UI
         }
 
         /// <summary>
-        /// 레시피를 사용(활성) 레시피로 지정하고, Vision Recipe 파라미터가 있으면 비전에 변경을 통보한다.
+        /// 레시피를 사용(활성) 레시피로 지정하고, VISION_RECIPE 파라미터가 있으면 비전에 변경을 통보한다.
         /// </summary>
-        /// <returns>비전에 통보했으면 true, Vision Recipe 파라미터가 없어 통보하지 못했으면 false</returns>
+        /// <returns>비전에 통보했으면 true, VISION_RECIPE 파라미터가 없어 통보하지 못했으면 false</returns>
         public async Task<bool> SetUseRecipeAsync(RecipeDto recipe)
         {
             recipe.IsActive = true;
@@ -94,7 +94,7 @@ namespace HCB.UI
         }
 
 
-        public async Task AddRecipe(RecipeDto recipeDto)
+        public async Task<RecipeDto> AddRecipe(RecipeDto recipeDto)
         {
             // 새 레시피가 활성(true)라면 먼저 기존 활성 레시피를 끄기
             if (recipeDto.IsActive)
@@ -113,6 +113,7 @@ namespace HCB.UI
             }
 
             RecipeList.Add(addedDto);
+            return addedDto;
         }
 
         public async Task UpdateRecipe(RecipeDto recipeDto)

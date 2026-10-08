@@ -335,9 +335,9 @@ namespace HCB.UI
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC1_T_OFFSET", ct);
 
-                double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
-                double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
+                double topDieThickness = await _sequenceService.GetRecipe("TOP_DIE_THICKNESS");
+                double btmDieThickness = await _sequenceService.GetRecipe("BTM_DIE_THICKNESS");
+                double shankToWaferOffset = _ecParamService.GetDouble("SHANK_TO_WAFER_OFFSET");
 
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
@@ -392,9 +392,9 @@ namespace HCB.UI
                 await _sequenceService.WTable2DMappingOn(ComponentType.DIE);
                 await _sequenceService.Init_Head(ct);
                 await _sequenceService.MotionsMove([MotionExtensions.H_X, MotionExtensions.W_Y], "HC2_T_OFFSET", ct);
-                double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
-                double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
+                double topDieThickness = await _sequenceService.GetRecipe("TOP_DIE_THICKNESS");
+                double btmDieThickness = await _sequenceService.GetRecipe("BTM_DIE_THICKNESS");
+                double shankToWaferOffset = _ecParamService.GetDouble("SHANK_TO_WAFER_OFFSET");
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
                 // 실제 측정 위치와 동일하게 h_z/H_Z를 FID_ALIGN_GAP만큼 이동 (align/fid 측정 갭)
@@ -446,15 +446,15 @@ namespace HCB.UI
                 CalibStatus = "카메라 거리측정 시작";
                 await _sequenceService.WTable2DMappingOn(ComponentType.DIE);
                 await _sequenceService.Init_Head(ct);
-                double hcCenterErrorX = await _sequenceService.GetRecipe("HcCenterErrorX");
-                double hcCenterErrorY= await _sequenceService.GetRecipe("HcCenterErrorY");
+                double hcCenterErrorX = await _sequenceService.GetRecipe("HC_CENTER_ERROR_X");
+                double hcCenterErrorY= await _sequenceService.GetRecipe("HC_CENTER_ERROR_Y");
 
                 await Task.WhenAll(
                     _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION,hcCenterErrorX, ct),
                     _sequenceService.MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, hcCenterErrorY, ct));
-                double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
-                double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
+                double topDieThickness = await _sequenceService.GetRecipe("TOP_DIE_THICKNESS");
+                double btmDieThickness = await _sequenceService.GetRecipe("BTM_DIE_THICKNESS");
+                double shankToWaferOffset = _ecParamService.GetDouble("SHANK_TO_WAFER_OFFSET");
 
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z,
                     shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
@@ -525,10 +525,10 @@ namespace HCB.UI
                 if (fid2 == null || fid2.Result == Result.NG)
                     throw new Exception("Hc2 피듀셜 측정 실패");
 
-                await _ecParamService.SetOrUpdate("Hc1FidRefDx", fid1.X, "Hc1 피듀셜 기준 DxCam");
-                await _ecParamService.SetOrUpdate("Hc1FidRefDy", fid1.Y, "Hc1 피듀셜 기준 DyCam");
-                await _ecParamService.SetOrUpdate("Hc2FidRefDx", fid2.X, "Hc2 피듀셜 기준 DxCam");
-                await _ecParamService.SetOrUpdate("Hc2FidRefDy", fid2.Y, "Hc2 피듀셜 기준 DyCam");
+                await _ecParamService.SetOrUpdate("HC1_FID_REF_DX", fid1.X, "Hc1 피듀셜 기준 DxCam");
+                await _ecParamService.SetOrUpdate("HC1_FID_REF_DY", fid1.Y, "Hc1 피듀셜 기준 DyCam");
+                await _ecParamService.SetOrUpdate("HC2_FID_REF_DX", fid2.X, "Hc2 피듀셜 기준 DxCam");
+                await _ecParamService.SetOrUpdate("HC2_FID_REF_DY", fid2.Y, "Hc2 피듀셜 기준 DyCam");
 
                 _logger.Information(
                     "피듀셜 기준값 저장 — Hc1({Hc1Dx:F6}, {Hc1Dy:F6}), Hc2({Hc2Dx:F6}, {Hc2Dy:F6})",
@@ -611,9 +611,9 @@ namespace HCB.UI
                     _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.WAFER_CENTER_POSITION, ct),
                     _sequenceService.MotionsMove(MotionExtensions.W_Y, MotionExtensions.WAFER_CENTER_POSITION, ct));
 
-                double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
-                double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
+                double topDieThickness = await _sequenceService.GetRecipe("TOP_DIE_THICKNESS");
+                double btmDieThickness = await _sequenceService.GetRecipe("BTM_DIE_THICKNESS");
+                double shankToWaferOffset = _ecParamService.GetDouble("SHANK_TO_WAFER_OFFSET");
                 await _sequenceService.MotionsMove(MotionExtensions.H_Z, shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
                 var hc2XParam = _ecParamService.FindByName(MotionExtensions.HC2_X).Value;
@@ -820,7 +820,7 @@ namespace HCB.UI
 
                 // 2. Right Align
                 CalibStatus = "PC AF — Right Align...";
-                double thickness = _recipeService.FindByParamDouble("TopDieThickness");
+                double thickness = _recipeService.FindByParamDouble("TOP_DIE_THICKNESS");
                 var size = _recipeService.FindByParam("TOP_DIE_SIZE");
                 await Task.WhenAll(
                     _sequenceService.MotionsMove(MotionExtensions.H_X, MotionExtensions.P_RIGHT_ALIGN_HIGH + size.Value, ct),
@@ -1297,9 +1297,9 @@ namespace HCB.UI
             double fidAlignGap = _recipeService.FindByParamDouble(MotionExtensions.FID_ALIGN_GAP);
             await _sequenceService.MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, -fidAlignGap, ct);
 
-            double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
-            double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-            double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
+            double topDieThickness = await _sequenceService.GetRecipe("TOP_DIE_THICKNESS");
+            double btmDieThickness = await _sequenceService.GetRecipe("BTM_DIE_THICKNESS");
+            double shankToWaferOffset = _ecParamService.GetDouble("SHANK_TO_WAFER_OFFSET");
             await _sequenceService.MotionsMove(MotionExtensions.H_Z,
                 shankToWaferOffset - topDieThickness - btmDieThickness + fidAlignGap - 0.1, ct);
             _zAtHighMag = true;
@@ -1414,10 +1414,10 @@ namespace HCB.UI
             // 규칙1: 고배 Z 먼저 이동(h_z → H_Z)
             await MoveZForHighMagAsync(ct);
 
-            double shankLowX = _ecParamService.GetDouble("ShankLowOffsetX");
-            double shankLowY = _ecParamService.GetDouble("ShankLowOffsetY");
-            double hcErrX = await GetRecipeSafe("HcCenterErrorX");
-            double hcErrY = await GetRecipeSafe("HcCenterErrorY");
+            double shankLowX = _ecParamService.GetDouble("SHANK_LOW_OFFSET_X");
+            double shankLowY = _ecParamService.GetDouble("SHANK_LOW_OFFSET_Y");
+            double hcErrX = await GetRecipeSafe("HC_CENTER_ERROR_X");
+            double hcErrY = await GetRecipeSafe("HC_CENTER_ERROR_Y");
 
             double hx = lowCenter.X + shankLowX;
             double wy = lowCenter.Y + shankLowY - hcErrY;
@@ -1571,8 +1571,8 @@ namespace HCB.UI
                 var lowCenter = await FindEdgeCenterAsync(ct);
                 if (lowCenter == null) return;   // 상태 메시지는 FindEdgeCenterAsync에서 설정
                 
-                var x = _recipeService.FindByParamDouble("HcCenterErrorX");
-                var y = _recipeService.FindByParamDouble("HcCenterErrorY");
+                var x = _recipeService.FindByParamDouble("HC_CENTER_ERROR_X");
+                var y = _recipeService.FindByParamDouble("HC_CENTER_ERROR_Y");
                 WaferFoundCenterX = lowCenter.X + -0.5;
                 WaferFoundCenterY = lowCenter.Y + -0.5;
 

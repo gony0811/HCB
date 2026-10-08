@@ -542,9 +542,9 @@ namespace HCB.UI
         private async Task Step6BondingCore(CancellationToken ct)
         {
             SeqStatus = "⑥ 본딩 Z 하강...";
-            double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
-            double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-            double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
+            double topDieThickness = await _sequenceService.GetRecipe("TOP_DIE_THICKNESS");
+            double btmDieThickness = await _sequenceService.GetRecipe("BTM_DIE_THICKNESS");
+            double shankToWaferOffset = _paramService.GetDouble("SHANK_TO_WAFER_OFFSET");
             double readyPosition = await _sequenceService.GetRecipe("READY_POSITION");
             await _sequenceService.MotionsMove(MotionExtensions.H_Z,
                 shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);

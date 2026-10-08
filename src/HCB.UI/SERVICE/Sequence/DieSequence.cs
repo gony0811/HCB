@@ -81,7 +81,7 @@ namespace HCB.UI
                 );
                 await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);
 
-                int retryMax = GetEcParamInt("LowVisionRetryMax", 3);
+                int retryMax = GetEcParamInt("LOW_VISION_RETRY_MAX", 3);
                 for (int attempt = 0; attempt <= retryMax; attempt++)
                 {
                     ct.ThrowIfCancellationRequested();
@@ -127,7 +127,7 @@ namespace HCB.UI
 
                 await MotionsMove(MotionExtensions.H_Z, MotionExtensions.DIE_VISION_LOW, ct);
 
-                int retryMax = GetEcParamInt("LowVisionRetryMax", 3);
+                int retryMax = GetEcParamInt("LOW_VISION_RETRY_MAX", 3);
                 for (int attempt = 0; attempt <= retryMax; attempt++)
                 {
                     ct.ThrowIfCancellationRequested();
@@ -450,8 +450,8 @@ namespace HCB.UI
             // ── 측정 θ와 도면 θ의 차이만큼 W_T 회전 보정 ──
             double diffDeg = NormalizeHalfDeg(measThetaDeg + designThetaDeg);
 
-            double thetaSign = GetEcParamDouble("BtmThetaSign", -1.0);   // 하드웨어 방향 반대면 +1
-            double thetaMinDeg = GetEcParamDouble("BtmThetaMinDeg", 0.0); // 데드밴드(° 미만이면 스킵)
+            double thetaSign = GetEcParamDouble("BTM_THETA_SIGN", -1.0);   // 하드웨어 방향 반대면 +1
+            double thetaMinDeg = GetEcParamDouble("BTM_THETA_MIN_DEG", 0.0); // 데드밴드(° 미만이면 스킵)
             if (Math.Abs(diffDeg) >= thetaMinDeg)
             {
                 double corr = thetaSign * diffDeg;
@@ -518,10 +518,10 @@ namespace HCB.UI
                 data.Hc1FidCurrent = Point2D.of(fid1.X, fid1.Y);
                 data.Hc2FidCurrent = Point2D.of(fid2.X, fid2.Y);
 
-                double refHc1Dx = _paramService.GetDouble("Hc1FidRefDx");
-                double refHc1Dy = _paramService.GetDouble("Hc1FidRefDy");
-                double refHc2Dx = _paramService.GetDouble("Hc2FidRefDx");
-                double refHc2Dy = _paramService.GetDouble("Hc2FidRefDy");
+                double refHc1Dx = _paramService.GetDouble("HC1_FID_REF_DX");
+                double refHc1Dy = _paramService.GetDouble("HC1_FID_REF_DY");
+                double refHc2Dx = _paramService.GetDouble("HC2_FID_REF_DX");
+                double refHc2Dy = _paramService.GetDouble("HC2_FID_REF_DY");
 
                 data.Hc1FidRef = Point2D.of(refHc1Dx, refHc1Dy);
                 data.Hc2FidRef = Point2D.of(refHc2Dx, refHc2Dy);

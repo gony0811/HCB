@@ -1,0 +1,509 @@
+<UserControl x:Class="HCB.UI.ParamEditorControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:HCB.UI"
+             mc:Ignorable="d"
+             x:Name="Root">
+
+    <!--
+        열 구성은 헤더(HeaderGrid)와 행 템플릿(RowTemplate)이 동일해야 한다.
+        상태 | 파라미터 | 값 | 이전값 | 단위 | 범위 | 상세
+         14  |   3*    | 2* |   1*   |  60  |  1*  |  56
+        DataGrid는 테마(Telerik Fluent) 스타일에서 열 폭/헤더가 어긋나므로 ListBox + 고정 Grid로 그린다.
+    -->
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- ── 구역 탭 (pill) ── -->
+        <Style x:Key="CategoryItem" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,0,6,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" CornerRadius="14" Padding="12,5"
+                                Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="Txt" Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#8FB3CC" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Count}" FontSize="12" Foreground="#5E8BAA"
+                                           Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                <Border x:Name="DirtyBadge" CornerRadius="8" Padding="5,0" Margin="6,0,0,0"
+                                        Background="#F39C12" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DirtyCount}" FontSize="11" FontWeight="Bold" Foreground="#0D1B2A"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3498DB"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#0F3460"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#4FC3F7"/>
+                                <Setter TargetName="Txt" Property="Foreground" Value="#ECF0F1"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding DirtyCount}" Value="0">
+                                <Setter TargetName="DirtyBadge" Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── 값 입력 TextBox ── -->
+        <!-- 값 입력칸: 테마(Telerik) ScrollViewer 스타일이 PART_ContentHost에 적용되면 글자가 아래로 밀려 잘리므로
+             Decorator를 호스트로 쓰고, 고정 높이·포커스 시 테두리 두께 변화 없이 그린다. -->
+        <Style x:Key="ValueBox" TargetType="TextBox">
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="CaretBrush" Value="#4FC3F7"/>
+            <Setter Property="SelectionBrush" Value="#4FC3F7"/>
+            <Setter Property="SelectionTextBrush" Value="#FFFFFF"/>
+            <Setter Property="SelectionOpacity" Value="0.3"/>
+            <Setter Property="Background" Value="#1A2C47"/>
+            <Setter Property="BorderBrush" Value="#3A6A94"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd" CornerRadius="4" SnapsToDevicePixels="True"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <Decorator x:Name="PART_ContentHost"
+                                       Margin="{TemplateBinding Padding}"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#5DADE2"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#4FC3F7"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#22385A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDirty}" Value="True">
+                    <Setter Property="Background" Value="#4A3A12"/>
+                    <Setter Property="BorderBrush" Value="#F39C12"/>
+                    <Setter Property="Foreground" Value="#FFE3A3"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasError}" Value="True">
+                    <Setter Property="Background" Value="#4A1A1A"/>
+                    <Setter Property="BorderBrush" Value="#E74C3C"/>
+                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                    <Setter Property="ToolTip" Value="{Binding Error}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ── 작은 아이콘 버튼 (되돌리기 / 상세) ── -->
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Foreground" Value="#F39C12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="4" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#24496A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── 하단 버튼 ── -->
+        <Style x:Key="BarButton" TargetType="Button">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#ECF0F1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Tag" Value="#0F3460"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Tag}" BorderBrush="#2A5A8C"
+                                BorderThickness="1" CornerRadius="6" Padding="14,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3498DB"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#0A2040"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#0A1628"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#1C3A52"/>
+                                <Setter Property="Foreground" Value="#3A5A7A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HeaderText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#5E8BAA"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="8,0"/>
+        </Style>
+
+        <!-- ── 파라미터 행 ── -->
+        <Style x:Key="ParamItem" TargetType="ListBoxItem">
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Background="Transparent" BorderBrush="#1C3A52" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Rectangle x:Name="Accent" Width="3" HorizontalAlignment="Left" Fill="#4FC3F7" Visibility="Collapsed"/>
+                                <ContentPresenter/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#0F2238"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#1C3A52"/>
+                                <Setter TargetName="Accent" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="RowTemplate">
+            <Grid MinHeight="46">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="56"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 상태 -->
+                <Ellipse Grid.Column="0" Width="8" Height="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="Transparent"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDirty}" Value="True">
+                                    <Setter Property="Fill" Value="#F39C12"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding HasError}" Value="True">
+                                    <Setter Property="Fill" Value="#E74C3C"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+
+                <!-- 이름 + 설명 -->
+                <StackPanel Grid.Column="1" Margin="8,5" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="#ECF0F1" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text=" *" Foreground="#E74C3C" FontWeight="Bold" ToolTip="필수 파라미터"
+                                   Visibility="{Binding IsRequired, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding Description}" FontSize="12" Foreground="#7FA3BC"
+                               TextTrimming="CharacterEllipsis" ToolTip="{Binding Description}"/>
+                </StackPanel>
+
+                <!-- 값 (바로 입력) -->
+                <Grid Grid.Column="2" Margin="8,0" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0"
+                             Style="{StaticResource ValueBox}"
+                             Text="{Binding EditValue, UpdateSourceTrigger=PropertyChanged}"
+                             GotKeyboardFocus="ValueBox_GotKeyboardFocus"
+                             PreviewKeyDown="ValueBox_PreviewKeyDown"/>
+                    <Button Grid.Column="1" Style="{StaticResource IconButton}" Margin="4,0,0,0"
+                            ToolTip="되돌리기" Click="RevertButton_Click"
+                            Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="↺" FontSize="16" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+
+                <!-- 이전값 -->
+                <TextBlock Grid.Column="3" Margin="8,0" VerticalAlignment="Center"
+                           Text="{Binding OriginalValue}" FontSize="13" Foreground="#7FA3BC"
+                           TextDecorations="Strikethrough" TextTrimming="CharacterEllipsis"
+                           Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}"/>
+
+                <!-- 단위 -->
+                <TextBlock Grid.Column="4" Margin="8,0" VerticalAlignment="Center"
+                           Text="{Binding UnitText}" FontSize="14" Foreground="#ECF0F1"/>
+
+                <!-- 범위 -->
+                <TextBlock Grid.Column="5" Margin="8,0" VerticalAlignment="Center"
+                           Text="{Binding RangeText}" FontSize="13" Foreground="#7FA3BC"
+                           TextTrimming="CharacterEllipsis"/>
+
+                <!-- 상세 수정 -->
+                <Button Grid.Column="6" Style="{StaticResource IconButton}" Foreground="#4FC3F7"
+                        HorizontalAlignment="Center" ToolTip="상세 수정 (이름/범위/단위/설명)"
+                        Click="DetailButton_Click">
+                    <TextBlock Text="✎" FontSize="17"/>
+                </Button>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══ 상단: 구역 탭 + 검색 ══ -->
+        <Grid Grid.Row="0" Margin="12,8,12,2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <ListBox Grid.Column="0"
+                     ItemsSource="{Binding Categories}"
+                     SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                     ItemContainerStyle="{StaticResource CategoryItem}"
+                     Background="Transparent" BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="8,0,0,0">
+                <CheckBox Content="변경 항목만" IsChecked="{Binding ShowDirtyOnly}"
+                          Foreground="#8FB3CC" FontSize="13" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                <Border Background="#152233" BorderBrush="#2E6B8A"
+                        BorderThickness="1.5" CornerRadius="6" Padding="10,4" Width="220" Height="32">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Path Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0"
+                              Fill="#6A9BB5" Width="12" Height="12" Stretch="Uniform"
+                              Data="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        <TextBlock Grid.Column="1" Text="이름 / 설명 검색"
+                                   Foreground="#6A9BB5" FontSize="13" VerticalAlignment="Center"
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SearchText}" Value="">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Foreground="#4FC3F7" FontSize="14" FontWeight="Medium"
+                                 BorderThickness="0" VerticalAlignment="Center" CaretBrush="#4FC3F7">
+                            <TextBox.Template>
+                                <ControlTemplate TargetType="TextBox">
+                                    <ScrollViewer x:Name="PART_ContentHost" Background="Transparent"/>
+                                </ControlTemplate>
+                            </TextBox.Template>
+                        </TextBox>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <!-- ══ 필수 파라미터 누락 경고 ══ -->
+        <Border Grid.Row="1" Margin="12,2,12,4" Padding="10,6" CornerRadius="6"
+                Background="#3A1414" BorderBrush="#E74C3C" BorderThickness="1"
+                Visibility="{Binding HasMissing, Converter={StaticResource BoolToVis}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding MissingText}" Foreground="#FF9A8F" FontSize="13"
+                           TextWrapping="Wrap" VerticalAlignment="Center"/>
+                <Button x:Name="AddMissingButton" Grid.Column="1" Content="필수 항목 추가" Style="{StaticResource BarButton}"
+                        Tag="#7A2020" Margin="10,0,0,0" Height="30" Click="AddMissingButton_Click" Visibility="Collapsed"/>
+            </Grid>
+        </Border>
+
+        <!-- ══ 파라미터 목록 (구역별 그룹) ══ -->
+        <ListBox x:Name="ParamList"
+                 Grid.Row="2"
+                 Margin="8,2,8,4"
+                 ItemsSource="{Binding View}"
+                 SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                 ItemTemplate="{StaticResource RowTemplate}"
+                 ItemContainerStyle="{StaticResource ParamItem}"
+                 Background="Transparent" BorderThickness="0" Padding="0"
+                 SelectionMode="Single"
+                 HorizontalContentAlignment="Stretch"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 KeyboardNavigation.TabNavigation="Cycle"
+                 MouseDoubleClick="List_MouseDoubleClick"
+                 PreviewMouseLeftButtonDown="List_PreviewMouseLeftButtonDown"
+                 PreviewMouseMove="List_PreviewMouseMove"
+                 PreviewMouseLeftButtonUp="List_PreviewMouseLeftButtonUp"
+                 LostMouseCapture="List_LostMouseCapture">
+            <!-- 열 헤더를 스크롤 영역과 같은 열에 두어 행과 폭이 항상 일치하게 한다.
+                 그룹 사용 시 항목 단위 스크롤(CanContentScroll)은 구역 단위로 건너뛰어 긴 구역 안을 볼 수 없으므로 픽셀 스크롤 사용.
+                 PanningMode: 터치 드래그 스크롤 -->
+            <ListBox.Template>
+                <ControlTemplate TargetType="ListBox">
+                    <ScrollViewer x:Name="PART_ListScroll" Focusable="False"
+                                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                                  CanContentScroll="False" PanningMode="VerticalOnly">
+                        <ScrollViewer.Template>
+                            <ControlTemplate TargetType="ScrollViewer">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0" Grid.Column="0" Background="#0A1628" BorderBrush="#1C3A52" BorderThickness="0,0,0,1">
+                                        <Grid Height="36">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="14"/>
+                                                <ColumnDefinition Width="3*"/>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="56"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="1" Text="파라미터" Style="{StaticResource HeaderText}"/>
+                                            <TextBlock Grid.Column="2" Text="값" Style="{StaticResource HeaderText}"/>
+                                            <TextBlock Grid.Column="3" Text="이전값" Style="{StaticResource HeaderText}"/>
+                                            <TextBlock Grid.Column="4" Text="단위" Style="{StaticResource HeaderText}"/>
+                                            <TextBlock Grid.Column="5" Text="범위" Style="{StaticResource HeaderText}"/>
+                                            <TextBlock Grid.Column="6" Text="상세" Style="{StaticResource HeaderText}" HorizontalAlignment="Center" Margin="0"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <ScrollContentPresenter Grid.Row="1" Grid.Column="0" CanContentScroll="{TemplateBinding CanContentScroll}"/>
+
+                                    <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
+                                               Orientation="Vertical"
+                                               Value="{TemplateBinding VerticalOffset}"
+                                               Maximum="{TemplateBinding ScrollableHeight}"
+                                               ViewportSize="{TemplateBinding ViewportHeight}"
+                                               Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+                                </Grid>
+                            </ControlTemplate>
+                        </ScrollViewer.Template>
+                        <ItemsPresenter/>
+                    </ScrollViewer>
+                </ControlTemplate>
+            </ListBox.Template>
+            <ListBox.GroupStyle>
+                <GroupStyle>
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate>
+                            <Border Background="#102A44" BorderBrush="#2E6B8A" BorderThickness="3,0,0,0"
+                                    Padding="10,6" Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="Bold" Foreground="#4FC3F7"/>
+                                    <TextBlock Text="{Binding ItemCount, StringFormat='  ({0})'}" FontSize="13"
+                                               Foreground="#5E8BAA" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </ListBox.GroupStyle>
+        </ListBox>
+
+        <!-- ══ 하단: 생성/상세 수정/삭제 + 변경 요약 + 저장 ══ -->
+        <Grid Grid.Row="3" Margin="12,6,12,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="생성" Style="{StaticResource BarButton}" Margin="0,0,6,0" Click="CreateButton_Click"/>
+                <Button Content="상세 수정" Style="{StaticResource BarButton}" Margin="0,0,6,0" Click="DetailSelectedButton_Click"/>
+                <Button Content="삭제" Style="{StaticResource BarButton}" Click="DeleteButton_Click"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock VerticalAlignment="Center" FontSize="14" Margin="0,0,12,0" Foreground="#F39C12"
+                           Visibility="{Binding HasChanges, Converter={StaticResource BoolToVis}}">
+                    <Run Text="변경"/>
+                    <Run Text="{Binding DirtyCount, Mode=OneWay}" FontWeight="Bold"/>
+                    <Run Text="건"/>
+                </TextBlock>
+                <TextBlock VerticalAlignment="Center" FontSize="14" Margin="0,0,12,0" Foreground="#E74C3C"
+                           Text="{Binding ErrorCount, StringFormat='입력 오류 {0}건'}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ErrorCount}" Value="0">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <Button Content="되돌리기" Style="{StaticResource BarButton}" Margin="0,0,6,0"
+                        Click="RevertAllButton_Click" IsEnabled="{Binding HasChanges}"/>
+                <Button Content="변경 저장" Style="{StaticResource BarButton}" Tag="#1E6B3A"
+                        Click="SaveButton_Click" IsEnabled="{Binding HasChanges}"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

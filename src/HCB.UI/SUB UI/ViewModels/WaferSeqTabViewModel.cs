@@ -111,17 +111,17 @@ namespace HCB.UI
         private void LoadRecipeParams()
         {
             if (RecipeService.UseRecipe == null) return;
-            try { WaferSize = (int)RecipeService.FindByParamDouble("WaferSize"); } catch { }
-            try { DieSizeX = RecipeService.FindByParamDouble("DieSizeX"); } catch { }
-            try { DieSizeY = RecipeService.FindByParamDouble("DieSizeY"); } catch { }
-            try { GapX = RecipeService.FindByParamDouble("GapX"); } catch { }
-            try { GapY = RecipeService.FindByParamDouble("GapY"); } catch { }
-            try { ScribeShiftX = RecipeService.FindByParamDouble("ScribeShiftX"); } catch { }
-            try { ScribeShiftY = RecipeService.FindByParamDouble("ScribeShiftY"); } catch { }
+            try { WaferSize = (int)RecipeService.FindByParamDouble("WAFER_SIZE"); } catch { }
+            try { DieSizeX = RecipeService.FindByParamDouble("DIE_SIZE_X"); } catch { }
+            try { DieSizeY = RecipeService.FindByParamDouble("DIE_SIZE_Y"); } catch { }
+            try { GapX = RecipeService.FindByParamDouble("GAP_X"); } catch { }
+            try { GapY = RecipeService.FindByParamDouble("GAP_Y"); } catch { }
+            try { ScribeShiftX = RecipeService.FindByParamDouble("SCRIBE_SHIFT_X"); } catch { }
+            try { ScribeShiftY = RecipeService.FindByParamDouble("SCRIBE_SHIFT_Y"); } catch { }
 
             // 배치 검증(4점 Align) 설계 파라미터
-            try { AlignTopSpacingX = RecipeService.FindByParamDouble("AlignTopSpacingX"); } catch { }
-            try { AlignTopSpacingY = RecipeService.FindByParamDouble("AlignTopSpacingY"); } catch { }
+            try { AlignTopSpacingX = RecipeService.FindByParamDouble("ALIGN_TOP_SPACING_X"); } catch { }
+            try { AlignTopSpacingY = RecipeService.FindByParamDouble("ALIGN_TOP_SPACING_Y"); } catch { }
             try { SpecX = RecipeService.FindByParamDouble("SPEC_X"); } catch { }
             try { SpecY = RecipeService.FindByParamDouble("SPEC_Y"); } catch { }
             try { SpecTheta = RecipeService.FindByParamDouble("SPEC_THETA"); } catch { }
@@ -132,17 +132,17 @@ namespace HCB.UI
         {
             if (RecipeService.UseRecipe == null) return;
 
-            await SaveParam("WaferSize", WaferSize.ToString(), ValueType.Integer);
-            await SaveParam("DieSizeX", DieSizeX.ToString(), ValueType.Double, UnitType.mm);
-            await SaveParam("DieSizeY", DieSizeY.ToString(), ValueType.Double, UnitType.mm);
-            await SaveParam("GapX", GapX.ToString(), ValueType.Double, UnitType.mm);
-            await SaveParam("GapY", GapY.ToString(), ValueType.Double, UnitType.mm);
-            await SaveParam("ScribeShiftX", ScribeShiftX.ToString(), ValueType.Double, UnitType.mm);
-            await SaveParam("ScribeShiftY", ScribeShiftY.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("WAFER_SIZE", WaferSize.ToString(), ValueType.Integer);
+            await SaveParam("DIE_SIZE_X", DieSizeX.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("DIE_SIZE_Y", DieSizeY.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("GAP_X", GapX.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("GAP_Y", GapY.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("SCRIBE_SHIFT_X", ScribeShiftX.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("SCRIBE_SHIFT_Y", ScribeShiftY.ToString(), ValueType.Double, UnitType.mm);
 
             // 배치 검증(4점 Align) 설계 파라미터
-            await SaveParam("AlignTopSpacingX", AlignTopSpacingX.ToString(), ValueType.Double, UnitType.mm);
-            await SaveParam("AlignTopSpacingY", AlignTopSpacingY.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("ALIGN_TOP_SPACING_X", AlignTopSpacingX.ToString(), ValueType.Double, UnitType.mm);
+            await SaveParam("ALIGN_TOP_SPACING_Y", AlignTopSpacingY.ToString(), ValueType.Double, UnitType.mm);
             await SaveParam("SPEC_X", SpecX.ToString(), ValueType.Double, UnitType.mm);
             await SaveParam("SPEC_Y", SpecY.ToString(), ValueType.Double, UnitType.mm);
             await SaveParam("SPEC_THETA", SpecTheta.ToString(), ValueType.Double, UnitType.None);
@@ -225,10 +225,10 @@ namespace HCB.UI
             CenterY = centerAbsY;
 
             // 2) 고배율 카메라 센터 = 저배 센터 + ShankLowOffset + HcCenterError
-            double shankLowX = _ecParamService.GetDouble("ShankLowOffsetX");
-            double shankLowY = _ecParamService.GetDouble("ShankLowOffsetY");
-            double hcCenterErrorX = await GetRecipeSafe("HcCenterErrorX");
-            double hcCenterErrorY = await GetRecipeSafe("HcCenterErrorY");
+            double shankLowX = _ecParamService.GetDouble("SHANK_LOW_OFFSET_X");
+            double shankLowY = _ecParamService.GetDouble("SHANK_LOW_OFFSET_Y");
+            double hcCenterErrorX = await GetRecipeSafe("HC_CENTER_ERROR_X");
+            double hcCenterErrorY = await GetRecipeSafe("HC_CENTER_ERROR_Y");
 
             _highOffsetX = shankLowX + hcCenterErrorX;
             _highOffsetY = shankLowY + hcCenterErrorY;
@@ -648,9 +648,9 @@ namespace HCB.UI
             await _sequenceService.MotionsMove(MotionExtensions.h_z, MotionExtensions.HEAD_SAFETY, -fidAlignGap, ct);
 
             // H_Z
-            double topDieThickness = await _sequenceService.GetRecipe("TopDieThickness");
-            double btmDieThickness = await _sequenceService.GetRecipe("BtmDieThickness");
-            double shankToWaferOffset = _ecParamService.GetDouble("ShankToWaferOffset");
+            double topDieThickness = await _sequenceService.GetRecipe("TOP_DIE_THICKNESS");
+            double btmDieThickness = await _sequenceService.GetRecipe("BTM_DIE_THICKNESS");
+            double shankToWaferOffset = _ecParamService.GetDouble("SHANK_TO_WAFER_OFFSET");
             await _sequenceService.MotionsMove(MotionExtensions.H_Z,
                 shankToWaferOffset - topDieThickness - btmDieThickness + fidAlignGap - 0.1, ct);
 
@@ -1212,10 +1212,10 @@ namespace HCB.UI
 
             try
             {
-                double shankLowX = _ecParamService.GetDouble("ShankLowOffsetX");
-                double shankLowY = _ecParamService.GetDouble("ShankLowOffsetY");
-                double hcErrX = await GetRecipeSafe("HcCenterErrorX");
-                double hcErrY = await GetRecipeSafe("HcCenterErrorY");
+                double shankLowX = _ecParamService.GetDouble("SHANK_LOW_OFFSET_X");
+                double shankLowY = _ecParamService.GetDouble("SHANK_LOW_OFFSET_Y");
+                double hcErrX = await GetRecipeSafe("HC_CENTER_ERROR_X");
+                double hcErrY = await GetRecipeSafe("HC_CENTER_ERROR_Y");
 
                 // 저배 Center 기준 고배 Center 절대좌표 (= 저배 Center + ShankLowOffset + HcCenterError)
                 double targetHX = CenterX + shankLowX + hcErrX;

@@ -839,8 +839,8 @@ namespace HCB.UI
                 if (Settings.MeasureVernierAfterBonding)
                 {
                     var vernier = await _sequenceService.GetVernier(ct);
-                    double distX = double.Parse(_recipeService.FindByParam("버니어_거리_X").Value);
-                    double distY = double.Parse(_recipeService.FindByParam("버니어_거리_Y").Value);
+                    double distX = double.Parse(_recipeService.FindByParam("VERNIER_DIST_X").Value);
+                    double distY = double.Parse(_recipeService.FindByParam("VERNIER_DIST_Y").Value);
                     vernier.Preprocess(distX, distY);
 
                     VernierResult = vernier;
@@ -1127,7 +1127,7 @@ namespace HCB.UI
             if (hcbData == null) return true;
             if (hcbData.TopAlignDist == 0 || hcbData.BtmAlignDist == 0) return true;
 
-            var param = _ecParamService.FindByName("AlignDistTolerance");
+            var param = _ecParamService.FindByName("ALIGN_DIST_TOLERANCE");
             if (string.IsNullOrEmpty(param?.Value) || !double.TryParse(param.Value, out double tolerance) || tolerance <= 0)
                 return true;
 
@@ -1262,7 +1262,7 @@ namespace HCB.UI
 
                 bool visionNotified = await _recipeService.SetUseRecipeAsync(recipe);
                 if (!visionNotified)
-                    _logger.Warning("Vision Recipe 파라미터가 없어 비전에 통보하지 못했습니다 — {Name}", recipe.Name);
+                    _logger.Warning("VISION_RECIPE 파라미터가 없어 비전에 통보하지 못했습니다 — {Name}", recipe.Name);
 
                 RecipeSelectState = StepState.Completed;
                 _logger.Information("사용 레시피 변경: {Name}", recipe.Name);

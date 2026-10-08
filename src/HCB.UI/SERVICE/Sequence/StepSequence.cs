@@ -259,9 +259,9 @@ namespace HCB.UI
         {
             try
             {
-                double topDieThickness = await GetRecipe("TopDieThickness");
-                double btmDieThickness = await GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
+                double topDieThickness = await GetRecipe("TOP_DIE_THICKNESS");
+                double btmDieThickness = await GetRecipe("BTM_DIE_THICKNESS");
+                double shankToWaferOffset = _paramService.GetDouble("SHANK_TO_WAFER_OFFSET");
 
                 await Init_Head(ct);
 
@@ -275,8 +275,8 @@ namespace HCB.UI
                 }
                 else
                 {
-                    double HcCenterErrorX = await GetRecipe("HcCenterErrorX");
-                    double HcCenterErrorY = await GetRecipe("HcCenterErrorY");
+                    double HcCenterErrorX = await GetRecipe("HC_CENTER_ERROR_X");
+                    double HcCenterErrorY = await GetRecipe("HC_CENTER_ERROR_Y");
                     await Task.WhenAll(
                         MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", HcCenterErrorX, ct),
                         MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", HcCenterErrorY, ct)
@@ -299,9 +299,9 @@ namespace HCB.UI
                 _logger.Information("BondingAlign Start | ResultX={X}, ResultY={Y}, ResultT={T}",
                     data.ResultX, data.ResultY, data.ResultT);
 
-                double topDieThickness = await GetRecipe("TopDieThickness");
-                double btmDieThickness = await GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
+                double topDieThickness = await GetRecipe("TOP_DIE_THICKNESS");
+                double btmDieThickness = await GetRecipe("BTM_DIE_THICKNESS");
+                double shankToWaferOffset = _paramService.GetDouble("SHANK_TO_WAFER_OFFSET");
                 double readyPosition = await GetRecipe("READY_POSITION");
                 
                 await Task.WhenAll(
@@ -625,9 +625,9 @@ namespace HCB.UI
                 _logger.Information("BondingPress Start (No Vacuum Off)");
 
                 var step = _recipeService.FindStepByName("TOP PRESS");
-                double topDieThickness = await GetRecipe("TopDieThickness");
-                double btmDieThickness = await GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
+                double topDieThickness = await GetRecipe("TOP_DIE_THICKNESS");
+                double btmDieThickness = await GetRecipe("BTM_DIE_THICKNESS");
+                double shankToWaferOffset = _paramService.GetDouble("SHANK_TO_WAFER_OFFSET");
                 double readyPosition = await GetRecipe("READY_POSITION");
 
                 await Task.WhenAll(
@@ -808,8 +808,8 @@ namespace HCB.UI
             MarkType markType, CameraType cameraType, DirectType directType,
             string yAxisName, bool avgMode, CancellationToken ct)
         {
-            int retryMax = GetEcParamInt("VisionRetryMax", 3);
-            double retryStep = GetEcParamDouble("VisionRetryStepMm", 0.005);
+            int retryMax = GetEcParamInt("VISION_RETRY_MAX", 3);
+            double retryStep = GetEcParamDouble("VISION_RETRY_STEP_MM", 0.005);
 
             VisionMarkResult mark = new VisionMarkResult
             {

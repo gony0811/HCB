@@ -64,16 +64,16 @@ namespace HCB.UI
                 var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
                 // ── 공통 EC 파라미터 ──
-                double xOffset = _paramService.GetDouble("ShankLowOffsetX");
-                double yOffset = _paramService.GetDouble("ShankLowOffsetY");
+                double xOffset = _paramService.GetDouble("SHANK_LOW_OFFSET_X");
+                double yOffset = _paramService.GetDouble("SHANK_LOW_OFFSET_Y");
 
-                double xLowErrorOffset = await GetRecipe("xLowErrorOffset");
-                double yLowErrorOffset = await GetRecipe("yLowErrorOffset");
+                double xLowErrorOffset = await GetRecipe("LOW_ERROR_OFFSET_X");
+                double yLowErrorOffset = await GetRecipe("LOW_ERROR_OFFSET_Y");
 
-                double shankToDieOffset = _paramService.GetDouble("ShankToDieOffset");
+                double shankToDieOffset = _paramService.GetDouble("SHANK_TO_DIE_OFFSET");
 
                 // ── Die 타입별 레시피 ──
-                string thicknessKey = dieType == DieType.TOP ? "TopDieThickness" : "BtmDieThickness";
+                string thicknessKey = dieType == DieType.TOP ? "TOP_DIE_THICKNESS" : "BTM_DIE_THICKNESS";
                 double dieThickness = await GetRecipe(thicknessKey);
 
                 // ── Bonding Step ──
@@ -266,8 +266,8 @@ namespace HCB.UI
 
                 var device = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
 
-                double btmDieThickness = await GetRecipe("BtmDieThickness");
-                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
+                double btmDieThickness = await GetRecipe("BTM_DIE_THICKNESS");
+                double shankToWaferOffset = _paramService.GetDouble("SHANK_TO_WAFER_OFFSET");
 
                 // ── Bonding Step ──
                 var step = _recipeService.FindStepByName("BTM PRESS");
@@ -691,10 +691,10 @@ namespace HCB.UI
             try
             {
                 _logger.Information("피듀셜 각도 추적 시작");
-                double hc1FidOffsetX = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 X");
-                double hc1FidOffsetY = _recipeService.FindByParamDouble("HC1 피듀셜 위치 보정 Y");
-                double hc2FidOffsetX = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 X");
-                double hc2FidOffsetY = _recipeService.FindByParamDouble("HC2 피듀셜 위치 보정 Y");
+                double hc1FidOffsetX = _recipeService.FindByParamDouble("HC1_FID_OFFSET_X");
+                double hc1FidOffsetY = _recipeService.FindByParamDouble("HC1_FID_OFFSET_Y");
+                double hc2FidOffsetX = _recipeService.FindByParamDouble("HC2_FID_OFFSET_X");
+                double hc2FidOffsetY = _recipeService.FindByParamDouble("HC2_FID_OFFSET_Y");
 
                 // ── 1. PC TABLE: TopDIE Fiducial 촬상 ──
                 await PTable2DMappingOn();
@@ -751,9 +751,9 @@ namespace HCB.UI
                 await Init_Head(ct);
                 
 
-                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
-                double topDieThickness = await GetRecipe("TopDieThickness");
-                double btmDieThickness = await GetRecipe("BtmDieThickness");
+                double shankToWaferOffset = _paramService.GetDouble("SHANK_TO_WAFER_OFFSET");
+                double topDieThickness = await GetRecipe("TOP_DIE_THICKNESS");
+                double btmDieThickness = await GetRecipe("BTM_DIE_THICKNESS");
                 await MotionsMove(MotionExtensions.H_Z,
                     shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
@@ -944,57 +944,22 @@ namespace HCB.UI
 
         /// <summary>
         /// TopHighAlign/BtmHighAlign에서 raw로만 수집한 측정값에 대해 계산(보정)을 일괄 수행한다.
-        ///   1) Top Align 좌표 → Fid Z 평면 투영 (PC 계수 × ΔZ 를 DxCam/DyCam에 가산)
-        ///   2) Btm Fid 좌표  → Align Z 평면 투영 (HC 계수 × ΔZ 를 BtmFidRaw에 가산)
-        ///   3) (Manual) HcRO 회전중심 계산 (CameraDist로 확정된 Hc2Offset + raw 회전점 + tilt)
-        /// tilt 계수는 레시피에서 읽고, ΔZ는 측정 단계에서 기록한 값을 사용한다.
+        ///   (Manual) HcRO 회전중심 계산 (CameraDist로 확정된 Hc2Offset + raw 회전점)
+        /// ΔZ(Fid/Align 촬상 높이 차)는 측정 단계에서 기록한 값을 로그로만 남긴다.
         /// </summary>
         private void ApplyMeasurementCorrections(AlignData data)
         {
             if (data == null) return;
 
-            // 1) Top: Align → Fid Z 평면 투영
-            double PC_L_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.PC_L_HZ_TILT_X);
-            double PC_L_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.PC_L_HZ_TILT_Y);
-            double PC_R_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.PC_R_HZ_TILT_X);
-            double PC_R_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.PC_R_HZ_TILT_Y);
-
-            if (data.TopRightAlignRaw != null)
-            {
-                data.TopRightAlignRaw.DxCamToMark += PC_R_HZ_TILT_X * data.TopRightDz;
-                data.TopRightAlignRaw.DyCamToMark += PC_R_HZ_TILT_Y * data.TopRightDz;
-            }
-            if (data.TopLeftAlignRaw != null)
-            {
-                data.TopLeftAlignRaw.DxCamToMark += PC_L_HZ_TILT_X * data.TopLeftDz;
-                data.TopLeftAlignRaw.DyCamToMark += PC_L_HZ_TILT_Y * data.TopLeftDz;
-            }
-
-            // 2) Btm: Fid → Align Z 평면 투영 (Right=HC2, Left=HC1)
-            double HC1_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.HC1_HZ_TILT_X);
-            double HC1_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.HC1_HZ_TILT_Y);
-            double HC2_HZ_TILT_X = _recipeService.FindByParamDouble(MotionExtensions.HC2_HZ_TILT_X);
-            double HC2_HZ_TILT_Y = _recipeService.FindByParamDouble(MotionExtensions.HC2_HZ_TILT_Y);
-
-            Point2D lFidTilt = Point2D.of(HC1_HZ_TILT_X * data.BtmDz, HC1_HZ_TILT_Y * data.BtmDz);
-            Point2D rFidTilt = Point2D.of(HC2_HZ_TILT_X * data.BtmDz, HC2_HZ_TILT_Y * data.BtmDz);
-
-            if (data.BtmRightFidRaw != null)
-                data.BtmRightFidRaw = Point2D.of(data.BtmRightFidRaw.X + rFidTilt.X, data.BtmRightFidRaw.Y + rFidTilt.Y);
-            if (data.BtmLeftFidRaw != null)
-                data.BtmLeftFidRaw = Point2D.of(data.BtmLeftFidRaw.X + lFidTilt.X, data.BtmLeftFidRaw.Y + lFidTilt.Y);
-
-            // 3) (Manual) HcRO 회전중심 — CameraDist로 확정된 Hc2Offset + raw 회전점 + tilt
+            // (Manual) HcRO 회전중심 — CameraDist로 확정된 Hc2Offset + raw 회전점
             if (data.TracingMode == TracingMode.Manual && data.Hc1RoRaw != null && data.Hc2RoRaw != null)
             {
-                ComputeHcroCenter(data, data.Hc1RoRaw, data.Hc2RoRaw, lFidTilt, rFidTilt);
+                ComputeHcroCenter(data, data.Hc1RoRaw, data.Hc2RoRaw);
             }
 
             _logger.Information(
-                "ApplyMeasurementCorrections — TopΔZ(R={TRz:F4},L={TLz:F4}), BtmΔZ={BDz:F4}, " +
-                "BtmFidTilt R({RDx:F5},{RDy:F5})/L({LDx:F5},{LDy:F5})",
-                data.TopRightDz, data.TopLeftDz, data.BtmDz,
-                rFidTilt.X, rFidTilt.Y, lFidTilt.X, lFidTilt.Y);
+                "ApplyMeasurementCorrections — TopΔZ(R={TRz:F4},L={TLz:F4}), BtmΔZ={BDz:F4}",
+                data.TopRightDz, data.TopLeftDz, data.BtmDz);
         }
 
         /// <summary>
@@ -1046,8 +1011,8 @@ namespace HCB.UI
 
             try
             {
-                double HcCenterErrorX = await GetRecipe("HcCenterErrorX");
-                double HcCenterErrorY = await GetRecipe("HcCenterErrorY");
+                double HcCenterErrorX = await GetRecipe("HC_CENTER_ERROR_X");
+                double HcCenterErrorY = await GetRecipe("HC_CENTER_ERROR_Y");
 
                 // ── HC1 센터링 ──
                 // 단발 촬상 대신, 마크가 카메라 중심에 오도록 스테이지를 반복 서보한다.
@@ -1199,15 +1164,11 @@ namespace HCB.UI
         /// 원 피팅(기존)과 강체 피팅(신규)을 병행 산출·로그하며, 적용 값은 EC 파라미터
         /// HCRO_FIT_MODE(rigid|circle, 기본 rigid)로 선택한다. 강체 피팅 로그의 βmeas/βcmd
         /// 비율은 H_T 실행 각도 검증을 겸한다.
-        /// <paramref name="hc1Tilt"/>/<paramref name="hc2Tilt"/>가 주어지면 각 측정 점에 카메라별
-        /// H_Z 수직도 보정량을 더해 Fid/Align을 동일 평면으로 맞춘 뒤 피팅한다(미지정 시 0).
         /// </summary>
         private void ComputeHcroCenter(
             AlignData d,
             List<Point2D> hc1Raw,
-            List<Point2D> hc2Raw,
-            Point2D hc1Tilt = null,
-            Point2D hc2Tilt = null)
+            List<Point2D> hc2Raw)
         {
             if (hc1Raw == null || hc2Raw == null || hc1Raw.Count == 0 || hc1Raw.Count != hc2Raw.Count)
                 throw new Exception("회전 중심 계산용 측정 점이 없습니다");
@@ -1215,17 +1176,13 @@ namespace HCB.UI
             var hc2XOffset = d.Hc2Offset.X;
             var hc2YOffset = d.Hc2Offset.Y;
 
-            // 카메라별 H_Z 수직도(tilt) 보정량 (미지정 시 0)
-            double h1tx = hc1Tilt?.X ?? 0.0, h1ty = hc1Tilt?.Y ?? 0.0;
-            double h2tx = hc2Tilt?.X ?? 0.0, h2ty = hc2Tilt?.Y ?? 0.0;
-
             // ── 통합 좌표계 변환 (기존 규약: HC1 부호 반전, HC2는 Hc2Offset − 측정값) ──
             var u1 = new List<Point2D>();   // 좌측 피듀셜 (HC1)
             var u2 = new List<Point2D>();   // 우측 피듀셜 (HC2)
             for (int i = 0; i < hc1Raw.Count; i++)
             {
-                u1.Add(Point2D.of(-(hc1Raw[i].X + h1tx), -(hc1Raw[i].Y + h1ty)));
-                u2.Add(Point2D.of(hc2XOffset - (hc2Raw[i].X + h2tx), hc2YOffset - (hc2Raw[i].Y + h2ty)));
+                u1.Add(Point2D.of(-hc1Raw[i].X, -hc1Raw[i].Y));
+                u2.Add(Point2D.of(hc2XOffset - hc2Raw[i].X, hc2YOffset - hc2Raw[i].Y));
             }
 
             // ── (A) 원 피팅 — 기존 방법, 비교·검증용으로 병행 산출 ──
@@ -1300,12 +1257,12 @@ namespace HCB.UI
             _logger.Information(
                 "ComputeHcroCenter — mode={Mode} 적용 HcRO=({Sx:F5},{Sy:F5}) | " +
                 "circle=({CcX},{CcY}) rigid=({RcX},{RcY}) diff(rigid−circle)=({Dx},{Dy})mm | " +
-                "Hc2Offset=({OffX:F4},{OffY:F4}) tilt(HC1={H1x:F5},{H1y:F5}/HC2={H2x:F5},{H2y:F5}) points={Count} reps={Reps}",
+                "Hc2Offset=({OffX:F4},{OffY:F4}) points={Count} reps={Reps}",
                 fitMode, selected.X, selected.Y,
                 circleCenter?.X, circleCenter?.Y, rigidCenter?.X, rigidCenter?.Y,
                 (circleCenter != null && rigidCenter != null) ? (object)(rigidCenter.X - circleCenter.X) : null,
                 (circleCenter != null && rigidCenter != null) ? (object)(rigidCenter.Y - circleCenter.Y) : null,
-                hc2XOffset, hc2YOffset, h1tx, h1ty, h2tx, h2ty, u1.Count + u2.Count, reps);
+                hc2XOffset, hc2YOffset, u1.Count + u2.Count, reps);
         }
 
         // ═══════════════════════════════════════════════════
@@ -1368,10 +1325,10 @@ namespace HCB.UI
                     MotionsMove(MotionExtensions.H_X, btmLeftStage.X, ct),
                     MotionsMove(MotionExtensions.W_Y, btmLeftStage.Y, ct));
 
-                double topDieThickness = await GetRecipe("TopDieThickness");
-                double btmDieThickness = await GetRecipe("BtmDieThickness");
-                double topbtmGap = await GetRecipe("TopBtmGap");
-                double shankToWaferOffset = _paramService.GetDouble("ShankToWaferOffset");
+                double topDieThickness = await GetRecipe("TOP_DIE_THICKNESS");
+                double btmDieThickness = await GetRecipe("BTM_DIE_THICKNESS");
+                double topbtmGap = await GetRecipe("TOP_BTM_GAP");
+                double shankToWaferOffset = _paramService.GetDouble("SHANK_TO_WAFER_OFFSET");
 
                 await MotionsMove(MotionExtensions.H_Z,
                     shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);

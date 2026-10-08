@@ -3,9 +3,9 @@ using CommunityToolkit.Mvvm.Input;
 using HCB.IoC;
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
+using System.Collections.Specialized;
+using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Data;
 
 namespace HCB.UI
 {
@@ -17,44 +17,84 @@ namespace HCB.UI
 
         [ObservableProperty] private ObservableCollection<ECParamDto> paramList;
         [ObservableProperty] private ECParamDto selectedParam;
-        [ObservableProperty] private string searchText = string.Empty;
 
-        public ICollectionView ParamListView { get; private set; }
+        /// <summary>구역별 표 + 인라인 수정 상태</summary>
+        public ParamEditor Editor { get; } = new ParamEditor(ParamCatalog.EC);
 
         public USub09ViewModel(DialogService dialogService, ECParamService ecParamService)
         {
             _dialogService = dialogService;
             _ecParamService = ecParamService;
             ParamList = _ecParamService.ParamList;
-            ParamListView = CollectionViewSource.GetDefaultView(ParamList);
-            ParamListView.Filter = ParamFilter;
+            ParamList.CollectionChanged += OnParamListChanged;
+            Editor.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(ParamEditor.SelectedRow))
+                    SelectedParam = Editor.SelectedRow?.Source as ECParamDto;
+            };
+            ReloadRows();
         }
 
-        partial void OnSearchTextChanged(string value)
-        {
-            ParamListView.Refresh();
-        }
+        private void OnParamListChanged(object sender, NotifyCollectionChangedEventArgs e) => ReloadRows();
 
-        private bool ParamFilter(object obj)
+        private void ReloadRows()
+            => Editor.Load(ParamList.Select(p => ParamRow.From(p, ParamCatalog.EC)));
+
+        [RelayCommand]
+        public async Task SaveChanges()
         {
-            if (string.IsNullOrWhiteSpace(SearchText)) return true;
-            if (obj is not ECParamDto item) return false;
-            return item.Name?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false;
+            var dirty = Editor.DirtyRows;
+            if (dirty.Count == 0) return;
+
+            var invalid = dirty.Where(r => r.HasError).ToList();
+            if (invalid.Count > 0)
+            {
+                _dialogService.ShowMessage("입력 오류",
+                    string.Join("\n", invalid.Select(r => $"{r.Name}: {r.Error}")));
+                return;
+            }
+
+            string summary = ParamEditor.BuildSummary(dirty);
+            if (!_dialogService.ShowConfirm("EC 파라미터 저장", $"{dirty.Count}건을 저장하시겠습니까?\n\n{summary}")) return;
+
+            int saved = 0;
+            try
+            {
+                foreach (var row in dirty)
+                {
+                    row.ApplyToSource();
+                    await _ecParamService.UpdateParam((ECParamDto)row.Source);
+                    saved++;
+                }
+                _dialogService.ShowMessage("저장", $"{saved}건 저장되었습니다");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowMessage("저장 실패", $"{saved}건 저장 후 실패: {ex.GetBaseException().Message}");
+            }
         }
 
         [RelayCommand]
         public async Task CreateParam()
         {
-            try
+            // 입력 오류가 있으면 입력값을 유지한 채 다시 연다
+            var param = Editor.NewParamTemplate();
+            while (true)
             {
-                var param = new ParameterCreateDto();
                 bool? result = await _dialogService.ShowEditDialog(param);
                 if (result != true) return;
 
+                string error = Editor.ValidateParam(param);
+                if (error == null) break;
+                _dialogService.ShowMessage("입력 확인", error);
+            }
+
+            try
+            {
                 var dto = new ECParamDto
                 {
-                    Name = param.Name,
-                    Value = param.Value,
+                    Name = param.Name.Trim(),
+                    Value = param.Value.Trim(),
                     Minimum = param.Minimum,
                     Maximum = param.Maximum,
                     ValueType = param.ValueType,
@@ -63,35 +103,52 @@ namespace HCB.UI
                 };
 
                 await _ecParamService.AddParam(dto);
-                _dialogService.ShowMessage("저장", "저장되었습니다");
+                Editor.SelectByName(dto.Name);
+                _dialogService.ShowMessage("저장", $"{dto.Name} 생성되었습니다");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                _dialogService.ShowMessage("저장 실패", "파라미터 저장 실패");
+                _dialogService.ShowMessage("저장 실패", $"파라미터 저장 실패: {ex.GetBaseException().Message}");
             }
         }
 
         [RelayCommand]
         public async Task UpdateParam()
         {
-            if (SelectedParam == null) return;
+            if (SelectedParam == null)
+            {
+                _dialogService.ShowMessage("파라미터 선택 필요", "파라미터를 선택해주세요");
+                return;
+            }
+            // 표에서 입력 중이던 값이 있으면 그 값으로 상세 수정을 시작한다
+            var row = Editor.Rows.FirstOrDefault(r => ReferenceEquals(r.Source, SelectedParam));
             try
             {
                 var param = new ParameterCreateDto
                 {
                     Name = SelectedParam.Name,
-                    Value = SelectedParam.Value,
+                    Value = row?.IsDirty == true ? row.EditValue : SelectedParam.Value,
                     Minimum = SelectedParam.Minimum,
                     Maximum = SelectedParam.Maximum,
                     ValueType = SelectedParam.ValueType,
                     UnitType = SelectedParam.UnitType,
                     Description = SelectedParam.Description
                 };
-                bool? result = await _dialogService.ShowEditDialog(param);
-                if (result != true) return;
+                while (true)
+                {
+                    bool? result = await _dialogService.ShowEditDialog(param);
+                    if (result != true) return;
 
-                SelectedParam.Name = param.Name;
-                SelectedParam.Value = param.Value;
+                    string error = Editor.ValidateParam(param, SelectedParam);
+                    if (error == null) break;
+                    _dialogService.ShowMessage("입력 확인", error);
+                }
+
+                // 상세 수정으로 저장한 값이 표의 미저장 입력값보다 우선
+                row?.Revert();
+
+                SelectedParam.Name = param.Name.Trim();
+                SelectedParam.Value = param.Value.Trim();
                 SelectedParam.Minimum = param.Minimum;
                 SelectedParam.Maximum = param.Maximum;
                 SelectedParam.ValueType = param.ValueType;
@@ -99,11 +156,12 @@ namespace HCB.UI
                 SelectedParam.Description = param.Description;
 
                 await _ecParamService.UpdateParam(SelectedParam);
+                ReloadRows();
                 _dialogService.ShowMessage("저장", "저장되었습니다");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                _dialogService.ShowMessage("저장 실패", "파라미터 저장 실패");
+                _dialogService.ShowMessage("저장 실패", $"파라미터 저장 실패: {ex.GetBaseException().Message}");
             }
         }
 

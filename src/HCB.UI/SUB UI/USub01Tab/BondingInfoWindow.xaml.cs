@@ -21,8 +21,8 @@ namespace HCB.UI
     public partial class BondingInfoWindow : RadWindow
     {
         // Recipe 파라미터 키 이름
-        public const string PARAM_FORCE = "BondingForce";
-        public const string PARAM_TIME  = "BondingTime";
+        public const string PARAM_FORCE = "BONDING_FORCE";
+        public const string PARAM_TIME  = "BONDING_TIME";
 
         private readonly RecipeService _recipeService;
         private readonly IReadOnlyList<BondingDataPoint> _history;

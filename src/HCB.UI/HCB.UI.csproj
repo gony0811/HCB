@@ -104,6 +104,9 @@
   <Page Include="SUB UI\SplashView\SplashView.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\ParamEditor\ParamEditorControl.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\Title\Headerbar.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -381,6 +384,10 @@
   <Compile Include="SYSTEM\DB\Dto\SensorIoItemViewModel.cs" />
   <Compile Include="SYSTEM\DB\Service\DialogService.cs" />
   <Compile Include="SYSTEM\DB\Service\ECParamService.cs" />
+  <Compile Include="SYSTEM\DB\Param\ParamCatalog.cs" />
+  <Compile Include="SYSTEM\DB\Param\ParamRow.cs" />
+  <Compile Include="SYSTEM\DB\Param\ParamEditor.cs" />
+  <Compile Include="SUB UI\ParamEditor\ParamEditorControl.xaml.cs" />
   <Compile Include="SYSTEM\DB\Service\RecipeService.cs" />
   <Compile Include="SYSTEM\DB\Service\UserService.cs" />
   <Compile Include="DEVICE\CommonType\MotionType.cs" />

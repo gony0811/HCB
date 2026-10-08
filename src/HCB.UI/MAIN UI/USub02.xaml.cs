@@ -33,6 +33,13 @@ namespace HCB.UI
 
             this.DataContext = vm;
             InitializeComponent();
+
+            // 파라미터 표 하단/행 버튼 → VM 명령 (XAML 상대 바인딩 대신 직접 연결)
+            ParamEditorView.CreateCommand = vm.CreateParamCommand;
+            ParamEditorView.DetailCommand = vm.UpdateParamCommand;
+            ParamEditorView.DeleteCommand = vm.DeleteParamCommand;
+            ParamEditorView.SaveCommand = vm.SaveParamChangesCommand;
+            ParamEditorView.AddMissingCommand = vm.AddMissingRequiredCommand;
         }
     }
 }
