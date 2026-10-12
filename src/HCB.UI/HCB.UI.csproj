@@ -282,6 +282,7 @@
   <Compile Include="SERVICE\Interface\IOperationService.cs" />
   <Compile Include="SERVICE\Interface\ReadyLoad.cs" />
   <Compile Include="SERVICE\InterlockService.cs" />
+  <Compile Include="SERVICE\IoSwitchService.cs" />
   <Compile Include="SERVICE\OperationService.cs" />
   <Compile Include="SERVICE\SequenceService.cs" />
   <Compile Include="SERVICE\Sequence\DieSequence.cs" />
