@@ -10,6 +10,7 @@
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x86</Platforms>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.Extensions.Configuration.Binder.SourceGeneration</InterceptorsNamespaces>
+    <ApplicationIcon>Bestbon-logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -455,6 +456,11 @@
       <LastGenOutput>appsettings.Designer.cs</LastGenOutput>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Bestbon-logo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Bestbon logo.png" />
   </ItemGroup>
   
   <ItemGroup>

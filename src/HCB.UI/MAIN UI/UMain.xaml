@@ -359,8 +359,11 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- HCB 타이틀 버튼 -->
-                <Button Grid.Column="0" Content="HCB" Style="{StaticResource TitleButton}"/>
+                <!-- 로고 타이틀 버튼 -->
+                <Image Source="pack://application:,,,/Bestbon logo.png"
+                        Width="200" Height="90" 
+                        Stretch="Uniform" 
+                        RenderOptions.BitmapScalingMode="HighQuality"/>
 
                 <!-- 상태 램프 5개 -->
                 <UniformGrid Grid.Column="1" Rows="1" Columns="5"
