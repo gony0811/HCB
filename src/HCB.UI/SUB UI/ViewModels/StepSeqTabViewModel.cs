@@ -237,14 +237,27 @@ namespace HCB.UI
         }
 
         // Wafer Vac은 WaferVacuumService(전용 토큰)로 처리 — 시퀀스 _cts를 취소하지 않는다.
+        // Wafer Vac OFF — 5채널 전체
         [RelayCommand(AllowConcurrentExecutions = true)]
-        private Task WaferVacOff() => _waferVacuum.SetAsync(false);
+        private Task WaferVacOff() => _waferVacuum.TurnOffAsync();
 
-        // Wafer Vac 전체(5채널) On/Off 토글 — 표시 상태는 실제 DO 값 기준
+        // Wafer Vac ON — 사이즈 선택창에서 고른 inch에 해당하는 채널만 ON
+        [RelayCommand(AllowConcurrentExecutions = true)]
+        private Task WaferVacOn()
+        {
+            var dialog = new WaferSizeSelector(_waferVacuum.SelectedWaferInch)
+            {
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            dialog.ShowDialog();
+            if (dialog.DialogResult != true || dialog.SelectedInch == 0) return Task.CompletedTask;
+
+            return _waferVacuum.TurnOnAsync(dialog.SelectedInch);
+        }
+
+        // 표시 상태는 실제 DO 값 기준
         public bool IsWaferVacOn => _waferVacuum.IsOn;
-
-        [RelayCommand(AllowConcurrentExecutions = true)]
-        private Task WaferVacAllOnOff() => _waferVacuum.ToggleAsync();
+        public string WaferVacStatusText => _waferVacuum.StatusText;
 
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
@@ -296,6 +309,8 @@ namespace HCB.UI
             {
                 if (e.PropertyName == nameof(WaferVacuumService.IsOn))
                     OnPropertyChanged(nameof(IsWaferVacOn));
+                else if (e.PropertyName == nameof(WaferVacuumService.StatusText))
+                    OnPropertyChanged(nameof(WaferVacStatusText));
             };
             _settings = settingsViewModel;
             _bondingRepo = bondingRepo;

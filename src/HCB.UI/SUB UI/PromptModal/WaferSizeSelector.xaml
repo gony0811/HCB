@@ -1,0 +1,112 @@
+<telerik:RadWindow x:Class="HCB.UI.WaferSizeSelector"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation"
+                    Header="Wafer 사이즈 선택"
+                    Width="400"
+                    Height="560"
+                    ResizeMode="NoResize"
+                    Style="{StaticResource RadWindowStyle}"
+                    CanMove="True"
+                    Background="#FF1A1A2E">
+
+    <telerik:RadWindow.Resources>
+
+        <Style x:Key="SizeButtonStyle" TargetType="telerik:RadButton">
+            <Setter Property="Height"          Value="64"/>
+            <Setter Property="Margin"          Value="0,5"/>
+            <Setter Property="FontSize"        Value="20"/>
+            <Setter Property="FontWeight"      Value="Bold"/>
+            <Setter Property="FontFamily"      Value="Segoe UI"/>
+            <Setter Property="Foreground"      Value="#FFE0E0E0"/>
+            <Setter Property="Background"      Value="#FF16213E"/>
+            <Setter Property="BorderBrush"     Value="#FF0F3460"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="telerik:RadButton">
+                        <Border x:Name="PART_Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12">
+                            <TextBlock x:Name="PART_Text"
+                                       Text="{TemplateBinding Content}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       FontWeight="{TemplateBinding FontWeight}"
+                                       FontFamily="{TemplateBinding FontFamily}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="PART_Border" Property="BorderBrush" Value="#FF533483"/>
+                                <Setter TargetName="PART_Text"   Property="Foreground"  Value="#FFFFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </telerik:RadWindow.Resources>
+
+    <Grid Margin="20,10,20,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- 안내 -->
+            <RowDefinition Height="*"/>
+            <!-- 사이즈 버튼 -->
+            <RowDefinition Height="Auto"/>
+            <!-- 확인/취소 -->
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Wafer 사이즈를 선택하면 해당 Vacuum 채널만 ON 합니다"
+                   FontFamily="Segoe UI" FontSize="13"
+                   Foreground="#FF8899BB" TextWrapping="Wrap"
+                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+        <StackPanel Grid.Row="1" VerticalAlignment="Center">
+            <telerik:RadButton x:Name="Size1Btn"  Content="1 inch   (Vac 1)"
+                               Style="{StaticResource SizeButtonStyle}" Click="SizeButton_Click" Tag="1"/>
+            <telerik:RadButton x:Name="Size4Btn"  Content="4 inch   (Vac 1~2)"
+                               Style="{StaticResource SizeButtonStyle}" Click="SizeButton_Click" Tag="4"/>
+            <telerik:RadButton x:Name="Size6Btn"  Content="6 inch   (Vac 1~3)"
+                               Style="{StaticResource SizeButtonStyle}" Click="SizeButton_Click" Tag="6"/>
+            <telerik:RadButton x:Name="Size8Btn"  Content="8 inch   (Vac 1~4)"
+                               Style="{StaticResource SizeButtonStyle}" Click="SizeButton_Click" Tag="8"/>
+            <telerik:RadButton x:Name="Size12Btn" Content="12 inch  (Vac 1~5)"
+                               Style="{StaticResource SizeButtonStyle}" Click="SizeButton_Click" Tag="12"/>
+        </StackPanel>
+
+        <Grid Grid.Row="2" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <telerik:RadButton Grid.Column="0"
+                               Content="취소"
+                               Click="CancelButton_Click"
+                               Height="40"
+                               FontFamily="Segoe UI" FontSize="14"
+                               Background="#FF16213E"
+                               BorderBrush="#FF334466"
+                               Foreground="#FF8899BB"/>
+
+            <telerik:RadButton Grid.Column="2"
+                               x:Name="ConfirmButton"
+                               Content="Vacuum ON"
+                               Click="ConfirmButton_Click"
+                               Height="40"
+                               FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold"
+                               Background="#FF0F6E56"
+                               BorderBrush="#FF1D9E75"
+                               Foreground="#FFFFFFFF"
+                               IsEnabled="False"/>
+        </Grid>
+    </Grid>
+</telerik:RadWindow>

@@ -96,7 +96,7 @@ namespace HCB.UI
         public const string DO_WTABLE_VAC_5_RELEASE = "DO_WTABLE_VAC_5_RELEASE";                          // W-Table Vacuum 5 Release ON
         public const string DO_WTABLE_N2_BLOW = "DO_WTABLE_N2_BLOW";                                      // W-Table N2 Blow ON
         public const string DO_INDICATOR_ZERO = "DO_INDICATOR_ZERO";                                      // Load Cell Indicator Zeroing
-        public const string DO_ION_BLOW_ON = "DO_ION_BLOW_ON";                                            // Ion Blow ON (Y20D)
+        public const string DO_ION_BLOW_ON = "DI_ION_BLOW";                                               // Ion Blow ON (Y02D)
 
         // Head Picker Blow On/Off — Head Ejector Vacuum Release(양압) 신호로 제어하고, Ion Blow도 동시에 On/Off 한다.
         public static void HeadBlow(this ISequenceHelper helper, bool onOff)
@@ -407,10 +407,13 @@ namespace HCB.UI
 
         public const int WTableVacuumChannelCount = 5;
 
-        public static async Task WTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct, int delayMs = 100)
-        {
+        public static Task WTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct, int delayMs = 100)
+            => helper.WTableVacuumChannels(Enumerable.Range(1, WTableVacuumChannelCount), onOff, ct, delayMs);
 
-            var tasks = Enumerable.Range(1, WTableVacuumChannelCount)
+        // 지정한 W-Table Vacuum 채널들을 동시에 On/Off
+        public static async Task WTableVacuumChannels(this ISequenceHelper helper, IEnumerable<int> channels, eOnOff onOff, CancellationToken ct, int delayMs = 100)
+        {
+            var tasks = channels
                 .Select(channel =>
                     Task.Run(() => helper.WTableVacuum(channel, onOff, ct, delayMs), ct)
                 )

@@ -99,6 +99,9 @@
   <Page Include="SUB UI\PromptModal\VacuumSelector.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SUB UI\PromptModal\WaferSizeSelector.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SUB UI\Slider\LabelSlider.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
@@ -313,6 +316,7 @@
   <Compile Include="SUB UI\PromptModal\RecipeCreateWindow.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\RepeatMeasureDialog.xaml.cs" />
   <Compile Include="SUB UI\PromptModal\VacuumSelector.xaml.cs" />
+  <Compile Include="SUB UI\PromptModal\WaferSizeSelector.xaml.cs" />
   <Compile Include="SUB UI\Slider\LabelSlider.xaml.cs" />
   <Compile Include="SUB UI\Title\Headerbar.xaml.cs" />
   <Compile Include="SUB UI\USub01Tab\AlignResultWindow.xaml.cs" />
