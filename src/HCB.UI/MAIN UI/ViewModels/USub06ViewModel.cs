@@ -76,6 +76,23 @@ namespace HCB.UI
             MotionMoveVM.Axis = newValue;
         }
 
+        // 전 축 Servo ON
+        [RelayCommand]
+        public async Task MotorAllOn()
+        {
+            try
+            {
+                bool result = await _sequenceService.Init_ServoAllOn(CancellationToken.None);
+                if (!result)
+                    dialogService.ShowMessage("모터 ALL ON", "일부 축이 SERVO ON 되지 않았습니다. 로그를 확인해주세요.");
+            }
+            catch (Exception e)
+            {
+                logger.Error(e, "모터 ALL ON 실패");
+                dialogService.ShowMessage("에러", $"{e.Message}");
+            }
+        }
+
         public void Dispose()
         {
             statusSubscription?.Dispose();

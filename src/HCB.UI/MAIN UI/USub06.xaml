@@ -280,12 +280,20 @@
             <!-- 모터 상태 + 조작 -->
             <Grid Grid.Column="1" Margin="3,6,6,6">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="0.4*"/>
                     <RowDefinition Height="0.6*"/>
                 </Grid.RowDefinitions>
 
+                <!-- 모터 ALL ON (전 축 Servo ON) -->
+                <Button Grid.Row="0"
+                        Content="모터 ALL ON"
+                        Style="{StaticResource CreateButton}"
+                        Command="{Binding MotorAllOnCommand}"
+                        Margin="0,0,0,6"/>
+
                 <!-- 모터 상태 관리 -->
-                <Border Grid.Row="0"
+                <Border Grid.Row="1"
                         Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
                         CornerRadius="8" Margin="0,0,0,3">
                     <Grid>
@@ -305,7 +313,7 @@
                 </Border>
 
                 <!-- 조작 -->
-                <Border Grid.Row="1"
+                <Border Grid.Row="2"
                         Background="#0D1B2A" BorderBrush="#1C3A52" BorderThickness="1"
                         CornerRadius="8" Margin="0,3,0,0">
                     <Grid>
