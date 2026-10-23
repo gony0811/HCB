@@ -96,8 +96,9 @@ namespace HCB.UI
         public const string DO_WTABLE_VAC_5_RELEASE = "DO_WTABLE_VAC_5_RELEASE";                          // W-Table Vacuum 5 Release ON
         public const string DO_WTABLE_N2_BLOW = "DO_WTABLE_N2_BLOW";                                      // W-Table N2 Blow ON
         public const string DO_INDICATOR_ZERO = "DO_INDICATOR_ZERO";                                      // Load Cell Indicator Zeroing
+        public const string DO_ION_BLOW_ON = "DO_ION_BLOW_ON";                                            // Ion Blow ON (Y20D)
 
-        // Head Picker Blow On/Off — Head Ejector Vacuum Release(양압) 신호로 제어한다.
+        // Head Picker Blow On/Off — Head Ejector Vacuum Release(양압) 신호로 제어하고, Ion Blow도 동시에 On/Off 한다.
         public static void HeadBlow(this ISequenceHelper helper, bool onOff)
         {
             var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
@@ -107,6 +108,16 @@ namespace HCB.UI
                 return;
             }
             device.SetDigital(DO_HEADER_EJECTOR_VAC_RELEASE_ON, onOff);
+
+            // Ion Blow 실패가 Vacuum Blow(안전 해제 포함)를 막지 않도록 분리 처리
+            try
+            {
+                device.SetDigital(DO_ION_BLOW_ON, onOff);
+            }
+            catch (Exception ex)
+            {
+                helper.Log(LogLevel.Error, $"{DO_ION_BLOW_ON} = {onOff} set failed :: {ex.Message}");
+            }
         }
         #endregion
 
@@ -394,12 +405,14 @@ namespace HCB.UI
         }
 
 
-        public static async Task WTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct)
+        public const int WTableVacuumChannelCount = 5;
+
+        public static async Task WTableVacuumAll(this ISequenceHelper helper, eOnOff onOff, CancellationToken ct, int delayMs = 100)
         {
 
-            var tasks = Enumerable.Range(1, 5)
+            var tasks = Enumerable.Range(1, WTableVacuumChannelCount)
                 .Select(channel =>
-                    Task.Run(() => helper.WTableVacuum(channel, onOff, ct), ct)
+                    Task.Run(() => helper.WTableVacuum(channel, onOff, ct, delayMs), ct)
                 )
                 .ToArray();
 
@@ -429,8 +442,15 @@ namespace HCB.UI
                 {
                     device.SetDigital(doOn, false, helper.IsSimulation);
                     device.SetDigital(doRelease, true, helper.IsSimulation);
-                    await Task.Delay(delayMs);
-                    device.SetDigital(doRelease, false, helper.IsSimulation);
+                    // 취소되어도 Release(양압)가 켜진 채로 남지 않도록 finally에서 해제
+                    try
+                    {
+                        await Task.Delay(delayMs, ct);
+                    }
+                    finally
+                    {
+                        device.SetDigital(doRelease, false, helper.IsSimulation);
+                    }
                 }
                     
 

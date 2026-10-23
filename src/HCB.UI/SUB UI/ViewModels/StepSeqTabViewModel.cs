@@ -36,6 +36,7 @@ namespace HCB.UI
         private readonly SettingsViewModel _settings;
         private readonly BondingRecordRepository _bondingRepo;
         private readonly VernierLogRepository _vernierRepo;
+        private readonly WaferVacuumService _waferVacuum;
 
         // 재측정(ReMeasure) 레코드를 직전 Bonding 레코드에 연결하기 위한 Id 캐시
         private int? _lastBondingRecordId;
@@ -235,33 +236,15 @@ namespace HCB.UI
             catch (Exception ex) { _logger.Error(ex, "Header Vacuum OFF 실패"); }
         }
 
-        [RelayCommand]
-        private async Task WaferVacOff()
-        {
-            ResetCts();
-            try
-            {
-                await _sequenceHelper.WTableVacuum(1, eOnOff.Off, _cts.Token, 5000);
-                _logger.Information("Wafer Vacuum OFF 완료");
-            }
-            catch (Exception ex) { _logger.Error(ex, "Wafer Vacuum OFF 실패"); }
-        }
+        // Wafer Vac은 WaferVacuumService(전용 토큰)로 처리 — 시퀀스 _cts를 취소하지 않는다.
+        [RelayCommand(AllowConcurrentExecutions = true)]
+        private Task WaferVacOff() => _waferVacuum.SetAsync(false);
 
-        // Wafer Vac 전체 On/Off 토글 (ManualTab의 WVacAllOnOff와 동일 동작 재사용)
-        [ObservableProperty] private bool isWaferVacOn;
+        // Wafer Vac 전체(5채널) On/Off 토글 — 표시 상태는 실제 DO 값 기준
+        public bool IsWaferVacOn => _waferVacuum.IsOn;
 
-        [RelayCommand]
-        private async Task WaferVacAllOnOff()
-        {
-            ResetCts();
-            try
-            {
-                IsWaferVacOn = !IsWaferVacOn;
-                await _sequenceService.WVAcOnOff(1, IsWaferVacOn, 5000, _cts.Token);
-                _logger.Information("Wafer Vacuum {State}", IsWaferVacOn ? "ON" : "OFF");
-            }
-            catch (Exception ex) { _logger.Error(ex, "Wafer Vacuum All On/Off 실패"); }
-        }
+        [RelayCommand(AllowConcurrentExecutions = true)]
+        private Task WaferVacAllOnOff() => _waferVacuum.ToggleAsync();
 
         public string RepeatProgressText =>
             IsRepeatRunning ? $"{RepeatCurrent} / {RepeatTotal}" : string.Empty;
@@ -304,9 +287,16 @@ namespace HCB.UI
             SettingsViewModel settingsViewModel,
             BondingRecordRepository bondingRepo,
             VernierLogRepository vernierRepo,
+            WaferVacuumService waferVacuum,
             ILogger logger)
         {
             _logger = logger.ForContext<StepSeqTabViewModel>();
+            _waferVacuum = waferVacuum;
+            _waferVacuum.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(WaferVacuumService.IsOn))
+                    OnPropertyChanged(nameof(IsWaferVacOn));
+            };
             _settings = settingsViewModel;
             _bondingRepo = bondingRepo;
             _vernierRepo = vernierRepo;

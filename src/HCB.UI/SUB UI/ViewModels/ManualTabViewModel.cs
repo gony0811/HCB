@@ -20,6 +20,7 @@ namespace HCB.UI
         private CancellationTokenSource _cts;
         private SequenceService _sequenceService;
         private DeviceManager _deviceManager;
+        private readonly WaferVacuumService _waferVacuum;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private JogWindow? _jogWindow;
         // D-Table
@@ -53,8 +54,7 @@ namespace HCB.UI
         [ObservableProperty]
         private bool isDVacOn;
 
-        [ObservableProperty]
-        private bool isWVacOn;
+        public bool IsWVacOn => _waferVacuum.IsOn;
 
         [ObservableProperty]
         private bool isHVacOn;
@@ -72,9 +72,16 @@ namespace HCB.UI
             ILogger logger,
             IServiceProvider serviceProvider,
             DeviceManager deviceManager,
-            SequenceService sequenceService)
+            SequenceService sequenceService,
+            WaferVacuumService waferVacuum)
         {
             _logger = logger.ForContext<ManualTabViewModel>();
+            _waferVacuum = waferVacuum;
+            _waferVacuum.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(WaferVacuumService.IsOn))
+                    OnPropertyChanged(nameof(IsWVacOn));
+            };
             _serviceProvider = serviceProvider;
             _deviceManager = deviceManager;
             _sequenceService = sequenceService;
@@ -315,15 +322,9 @@ namespace HCB.UI
             await _sequenceService.DVacAllOnOff(IsDVacOn, _cts.Token);
         }
 
-        [RelayCommand]
-        public async Task WVacAllOnOff()
-        {
-            _cts?.Cancel(); _cts?.Dispose(); _cts = new CancellationTokenSource();
-            IsWVacOn = !IsWVacOn;
-
-            //await _sequenceService.WVacAllOnOff(IsWVacOn, _cts.Token);
-            await _sequenceService.WVAcOnOff(1, IsWVacOn, 5000, _cts.Token);
-        }
+        // 사이드바와 동일한 WaferVacuumService 사용 (5채널, 실제 DO 상태, 전용 토큰)
+        [RelayCommand(AllowConcurrentExecutions = true)]
+        public Task WVacAllOnOff() => _waferVacuum.ToggleAsync();
 
         [RelayCommand]
         public async Task HVacAllOnOff()
