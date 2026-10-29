@@ -264,6 +264,15 @@ namespace HCB.UI
          * CRUD Operations
          * ============================ */
         public async Task AddAlarm(List<Alarm> alarmList) => await alarmRepository.AddRangeAsync(alarmList);
+
+        // 코드로 발생시키는 알람이 DB(알람 정의)에 없으면 기본값으로 등록한다. 이미 있으면 사용자 설정을 유지한다.
+        public async Task EnsureAlarm(Alarm alarm)
+        {
+            if (FindAlarm(alarm.Code) != null) return;
+
+            await alarmRepository.AddRangeAsync(new List<Alarm> { alarm });
+            alarmList.Add(alarm);
+        }
         public async Task UpdateAlarm(Alarm alarm) => await alarmRepository.Update(alarm);
         public async Task UpdateAlarm(IEnumerable<Alarm> alarms) => await alarmRepository.UpdateRange(alarms);
         public async Task DeleteAlarm(int alarmId) => await alarmRepository.Remove(alarmId);

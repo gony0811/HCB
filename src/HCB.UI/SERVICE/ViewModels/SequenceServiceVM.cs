@@ -235,6 +235,11 @@ namespace HCB.UI
         [ObservableProperty] private bool visionStatus = false;
         [ObservableProperty] private bool visionAlarm = false;
 
+        // ── N2 투입 상태 (N2MonitorService가 갱신) ──────────────
+        [ObservableProperty] private bool n2On = false;                 // DO_N2_ON 현재 상태
+        [ObservableProperty] private bool n2Overtime = false;           // ON 유지 시간 초과
+        [ObservableProperty] private string n2OnElapsedText = "N2 OFF"; // 램프 표시 텍스트
+
         public void ResetInitProgress()
         {
             InitializeProgress = 0;

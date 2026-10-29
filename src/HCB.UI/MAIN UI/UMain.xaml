@@ -239,6 +239,49 @@
                 </Setter>
             </Style>
 
+            <!-- N2 투입 (ON: 녹색 + 유지시간, 장시간 ON: 적색 블링크) -->
+            <Style x:Key="N2LampStyle" TargetType="ContentControl"
+                   BasedOn="{StaticResource BaseLamp}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContentControl">
+                            <Border x:Name="LampBorder" CornerRadius="5"
+                                    Background="#1C3A52" BorderBrush="#2A5A8C"
+                                    BorderThickness="1" Padding="8,2" Opacity="1">
+                                <TextBlock x:Name="LampText" Text="{Binding SequenceServiceVM.N2OnElapsedText}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="#5E8BAA" FontWeight="Bold" FontSize="12"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.N2On}" Value="True">
+                                    <Setter TargetName="LampBorder" Property="Background"  Value="#0F3D20"/>
+                                    <Setter TargetName="LampBorder" Property="BorderBrush" Value="#2ECC71"/>
+                                    <Setter TargetName="LampText"   Property="Foreground"  Value="#2ECC71"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SequenceServiceVM.N2Overtime}" Value="True">
+                                    <Setter TargetName="LampBorder" Property="Background"  Value="#3D0F0F"/>
+                                    <Setter TargetName="LampBorder" Property="BorderBrush" Value="#E74C3C"/>
+                                    <Setter TargetName="LampText"   Property="Foreground"  Value="#E74C3C"/>
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard x:Name="N2BlinkStoryboard">
+                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                <DoubleAnimation Storyboard.TargetName="LampBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 From="1" To="0.3"
+                                                                 Duration="0:0:0.5"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <RemoveStoryboard BeginStoryboardName="N2BlinkStoryboard"/>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- ══ 네비 메뉴 버튼 ══ -->
             <Style x:Key="NavToggleButton" TargetType="ToggleButton">
                 <Setter Property="Width"  Value="90"/>
@@ -366,8 +409,8 @@
                         Stretch="Uniform" 
                         RenderOptions.BitmapScalingMode="HighQuality"/>
 
-                <!-- 상태 램프 5개 -->
-                <UniformGrid Grid.Column="1" Rows="1" Columns="5"
+                <!-- 상태 램프 6개 -->
+                <UniformGrid Grid.Column="1" Rows="1" Columns="6"
                              HorizontalAlignment="Center" VerticalAlignment="Center"
                              Margin="10,8">
                     <StackPanel Orientation="Vertical" Margin="10,0" HorizontalAlignment="Center">
@@ -399,6 +442,12 @@
                                    FontSize="11" FontWeight="SemiBold"
                                    HorizontalAlignment="Center" Margin="0,0,0,4"/>
                         <ContentControl Style="{StaticResource VisionLampStyle}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Vertical" Margin="10,0" HorizontalAlignment="Center">
+                        <TextBlock Text="N2" Foreground="#5E8BAA"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                        <ContentControl Style="{StaticResource N2LampStyle}"/>
                     </StackPanel>
                 </UniformGrid>
 
