@@ -90,10 +90,10 @@ namespace HCB.UI
                 this._logger.Debug("전체 서보온");
                 var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
                 var motionList = motionDevice.MotionList.ToList();
-
+                await Task.Delay(3000);
                 // 축별로 서보온 결과를 개별 판정하여 어떤 축이 실패했는지 구분한다.
                 var results = await Task.WhenAll(motionList.Select(item => item.ServoOn()));
-                await Task.Delay(100);
+                await Task.Delay(500);
 
                 for (int i = 0; i < motionList.Count; i++)
                 {
