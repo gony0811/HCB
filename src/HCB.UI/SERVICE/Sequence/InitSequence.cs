@@ -85,29 +85,29 @@ namespace HCB.UI
         // 전체 서보온 
         public async Task<bool> Init_ServoAllOn(CancellationToken ct)
         {
+            bool result = false;
             try
             {
                 this._logger.Debug("전체 서보온");
                 var motionDevice = _deviceManager.GetDevice<PowerPmacDevice>(MotionExtensions.PowerPmacDeviceName);
                 var motionList = motionDevice.MotionList.ToList();
-                await Task.Delay(3000);
-                // 축별로 서보온 결과를 개별 판정하여 어떤 축이 실패했는지 구분한다.
-                var results = await Task.WhenAll(motionList.Select(item => item.ServoOn()));
+                await Task.Delay(500);
+                await Task.WhenAll(motionList.Select(item => item.ServoOn()));
                 await Task.Delay(500);
 
                 for (int i = 0; i < motionList.Count; i++)
                 {
-                    if (results[i])
+                    if (motionList[i].IsEnabled)
+                    {
                         this._logger.Debug($"[ServoOn] {motionList[i].Name} 서보온 성공");
-                    else
+                        result = true;
+                    }else
+                    {
                         this._logger.Error($"[ServoOn] {motionList[i].Name} 서보온 실패");
+                        result = false;
+                    }
                 }
-
-                var failed = motionList.Where((_, i) => !results[i]).Select(m => m.Name).ToList();
-                if (failed.Count > 0)
-                    this._logger.Error($"[ServoOn] 서보온 실패 축: {string.Join(", ", failed)}");
-
-                return failed.Count == 0;
+                return result;
             }
             catch(Exception e)
             {
@@ -415,7 +415,12 @@ namespace HCB.UI
                 MotionsMove(MotionExtensions.H_X, "1번 버니어", x_offset, ct),
                 MotionsMove(MotionExtensions.W_Y, "1번 버니어", y_offset, ct)
             );
-            await MotionsMove(MotionExtensions.H_Z, "PLACE_STANBY", ct);
+
+            double shankToWaferOffset = _paramService.GetDouble("SHANK_TO_WAFER_OFFSET");
+            double topDieThickness = await GetRecipe("TOP_DIE_THICKNESS");
+            double btmDieThickness = await GetRecipe("BTM_DIE_THICKNESS");
+            await MotionsMove(MotionExtensions.H_Z,
+                shankToWaferOffset - topDieThickness - btmDieThickness - 0.1, ct);
 
             var points = new VernierPoint[]
             {
@@ -649,6 +654,11 @@ namespace HCB.UI
         public void BlowOnOff(bool onOff)
         {
             _sequenceHelper.HeadBlow(onOff);
+        }
+
+        public void N2Blow(bool onOff)
+        {
+            _sequenceHelper.N2Blow(onOff);
         }
 
         public async Task TInit(CancellationToken ct = default)

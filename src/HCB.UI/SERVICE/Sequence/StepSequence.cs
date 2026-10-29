@@ -488,8 +488,9 @@ namespace HCB.UI
                 await device.SendCommand(MotionExtensions.BONDING_CURRENT + $"={step.Current}");
                 await device.SendCommand(MotionExtensions.BONDING_CURRENT2 + $"={step.Current2}");
                 await device.SendCommand(MotionExtensions.BONDING_START + "=1");
+                N2Blow(true);
                 SetBondingPressing(true);   // 본딩 시작 — 이 시점부터 STOP 시 Force 긴급 정시 시퀀스 수행
-
+                
                 _logger.Information("BONDING Step={StepName}: ACC={Acc}, ACC2={Acc2}, CONT={Cont}, DEC={Dec}, LOADCELL={Load}, CURRENT={Cur}, CURRENT2={Cur2}",
                     step.Name, step.AccTime, step.AccTime2, step.ContTime, step.DecTime, step.LoadCell, step.Current, step.Current2);
 
@@ -595,6 +596,7 @@ namespace HCB.UI
             }
             finally
             {
+                N2Blow(false);
                 SetBondingPressing(false);   // 가압 구간 종료
                 BlowOnOff(false);            // Blow 안전 해제
                 try
@@ -602,6 +604,7 @@ namespace HCB.UI
                     // 긴급 정지 진행 중이면 리셋은 BondingEmergencyStop이 수행하므로 중복 명령을 건너뛴다.
                     if (!_bondingEmergencyStopping)
                     {
+                        N2Blow(false);
                         await device.SendCommand(MotionExtensions.BONDING_START + "=0");
                         await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
                         await Task.Delay(5000);

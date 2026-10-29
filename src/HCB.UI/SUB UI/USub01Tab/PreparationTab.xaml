@@ -292,7 +292,7 @@
                                             State="{Binding DieLoadState}" Margin="0,0,10,0"/>
                             <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                 <TextBlock Text="DIE LOAD" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                <TextBlock Text="Die Cassette Load" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                <TextBlock Text="Die Load" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                             </StackPanel>
                             <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}"
                                     Command="{Binding DieLoadCommand}">
@@ -320,7 +320,7 @@
                                             State="{Binding WaferLoadState}" Margin="0,0,10,0"/>
                             <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                 <TextBlock Text="WAFER LOAD" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
-                                <TextBlock Text="Wafer Cassette Load" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
+                                <TextBlock Text="Wafer Load" Foreground="#5E8BAA" FontSize="12" Margin="0,2,0,0"/>
                             </StackPanel>
 
                             <Button Grid.Column="3" Style="{StaticResource StartButtonStyle}" Margin="0,0,6,0"
@@ -664,28 +664,6 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Column="0" Text="횟수"
-                                           Foreground="#5E8BAA" FontSize="12"
-                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <Border Grid.Column="1" Background="#0A1628" BorderBrush="#2A5A8C"
-                                        BorderThickness="1" CornerRadius="4">
-                                    <TextBox Text="{Binding FidAfRepeatCount, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource DarkTextBox}"
-                                             FontSize="13" HorizontalContentAlignment="Center"
-                                             Height="28"/>
-                                </Border>
-
-                                <TextBlock Grid.Column="2" Text="간격(초)"
-                                           Foreground="#5E8BAA" FontSize="12"
-                                           VerticalAlignment="Center" Margin="10,0,6,0"/>
-                                <Border Grid.Column="3" Background="#0A1628" BorderBrush="#2A5A8C"
-                                        BorderThickness="1" CornerRadius="4">
-                                    <TextBox Text="{Binding FidAfIntervalSeconds, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource DarkTextBox}"
-                                             FontSize="13" HorizontalContentAlignment="Center"
-                                             Height="28"/>
-                                </Border>
-
                                 <Border Grid.Column="4"
                                         Background="#0D2335" CornerRadius="6" Padding="12,6"
                                         Margin="10,0,0,0" HorizontalAlignment="Left"
@@ -701,27 +679,6 @@
 
                             <!-- 버튼 행 -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
-                                        Command="{Binding FidAFCheckCommand}"
-                                        IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
-                                    <TextBlock Text="AF 측정" FontSize="13" FontWeight="Bold"/>
-                                </Button>
-                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
-                                        Command="{Binding FidNoAFCheckCommand}"
-                                        IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
-                                    <TextBlock Text="NoAF 측정" FontSize="13" FontWeight="Bold"/>
-                                </Button>
-                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
-                                        Command="{Binding AlignAFCheckCommand}"
-                                        IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
-                                    <TextBlock Text="Align AF 측정" FontSize="13" FontWeight="Bold"/>
-                                </Button>
-                                <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
-                                        Command="{Binding AlignNoAFCheckCommand}"
-                                        IsEnabled="{Binding IsRepeatRunning, Converter={StaticResource InverseBoolConverter}}">
-                                    <TextBlock Text="Align NoAF 측정" FontSize="13" FontWeight="Bold"/>
-                                </Button>
-
                                 <Button Style="{StaticResource StartButtonStyle}" Width="90" Margin="2"
                                         Command="{Binding BtmFullSequenceCommand}">
                                     <TextBlock Text="START" FontSize="13" FontWeight="Bold"/>

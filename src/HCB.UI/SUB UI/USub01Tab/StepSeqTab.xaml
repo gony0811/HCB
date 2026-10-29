@@ -181,7 +181,7 @@
                                                 State="{Binding BtmLowAlignState}" Margin="0,0,10,0"/>
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="저배율 보정 + PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                        <TextBlock Text="PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
                                         <TextBlock Text="{Binding BtmLowAlignElapsed}" Foreground="#F39C12" FontSize="13"
                                                    FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -301,7 +301,7 @@
                                                 State="{Binding TopLowAlignState}" Margin="0,0,10,0"/>
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="회전중심·카메라 거리 측정 + 저배율 보정 + PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
+                                            <TextBlock Text="PICK UP" Foreground="#ECF0F1" FontSize="17" FontWeight="SemiBold"/>
                                             <TextBlock Text="{Binding TopLowAlignElapsed}" Foreground="#F39C12" FontSize="13"
                                                        FontFamily="Consolas" Margin="10,2,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>

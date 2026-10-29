@@ -97,6 +97,7 @@ namespace HCB.UI
         public const string DO_WTABLE_N2_BLOW = "DO_WTABLE_N2_BLOW";                                      // W-Table N2 Blow ON
         public const string DO_INDICATOR_ZERO = "DO_INDICATOR_ZERO";                                      // Load Cell Indicator Zeroing
         public const string DO_ION_BLOW_ON = "DI_ION_BLOW";                                               // Ion Blow ON (Y02D)
+        public const string DO_N2_BLOW_ON = "DO_N2_ON";                                               // N2 Blow ON (Y028)
 
         // Head Picker Blow On/Off — Head Ejector Vacuum Release(양압) 신호로 제어하고, Ion Blow도 동시에 On/Off 한다.
         public static void HeadBlow(this ISequenceHelper helper, bool onOff)
@@ -117,6 +118,27 @@ namespace HCB.UI
             catch (Exception ex)
             {
                 helper.Log(LogLevel.Error, $"{DO_ION_BLOW_ON} = {onOff} set failed :: {ex.Message}");
+            }
+        }
+
+        public static void N2Blow(this ISequenceHelper helper, bool onOff)
+        {
+            var device = helper.DeviceManager.GetDevice<PmacIoDevice>(IoDeviceName);
+            if (device == null)
+            {
+                helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
+                return;
+            }
+            device.SetDigital(DO_N2_BLOW_ON, onOff);
+
+            // Ion Blow 실패가 Vacuum Blow(안전 해제 포함)를 막지 않도록 분리 처리
+            try
+            {
+                device.SetDigital(DO_N2_BLOW_ON, onOff);
+            }
+            catch (Exception ex)
+            {
+                helper.Log(LogLevel.Error, $"{DO_N2_BLOW_ON} = {onOff} set failed :: {ex.Message}");
             }
         }
         #endregion
