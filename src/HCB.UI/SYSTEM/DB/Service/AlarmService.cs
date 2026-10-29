@@ -57,6 +57,7 @@ namespace HCB.UI
          * ============================ */
         public event Action<AlarmHistoryDto>? AlarmHistoryAdded;
         public event Action<int>? AlarmHistoryReset; // historyId
+        public event Action<string>? AlarmCodeReset; // 해제된 알람 코드 (알람별 후처리용)
         /* ============================
          * Alarm 발생 (Set)
          * ============================ */
@@ -167,6 +168,9 @@ namespace HCB.UI
 
             AlarmHistoryReset?.Invoke(historyId);
             operationService.Status.Alarm = AlarmState.NO_ALARM;
+
+            var code = FindAlarm(entity.AlarmId)?.Code;
+            if (code != null) AlarmCodeReset?.Invoke(code);
         }
 
         // 모든 알람 일괄 해제 (추가된 기능)
@@ -198,7 +202,14 @@ namespace HCB.UI
             operationService.Status.Alarm = AlarmState.NO_ALARM;
             UpdateEQStatus(AlarmLevel.NORMAL);
             _sequenceHelper.SetTowerLamp(green: true, red: false, yellow: false, buzzer: false);
+
+            var resetCodes = activeAlarms
+                .Select(x => FindAlarm(x.AlarmId)?.Code)
+                .Where(c => c != null)
+                .Distinct()
+                .ToList();
             this.currentAlarms.Clear();
+            foreach (var code in resetCodes) AlarmCodeReset?.Invoke(code!);
         }
 
         /* ============================

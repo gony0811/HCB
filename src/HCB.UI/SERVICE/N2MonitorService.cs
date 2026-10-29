@@ -40,6 +40,26 @@ namespace HCB.UI
             _deviceManager = deviceManager;
             _sequenceServiceVM = sequenceServiceVM;
             _alarmService = alarmService;
+            _alarmService.AlarmCodeReset += OnAlarmCodeReset;
+        }
+
+        // N2 장시간 ON 알람(E0037)을 해제하면 N2 Blow(Y028)도 OFF 한다.
+        private void OnAlarmCodeReset(string code)
+        {
+            if (code != PmacErrorCode.N2_ON_OVERTIME) return;
+
+            try
+            {
+                var device = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
+                if (device == null) return;
+
+                device.SetDigital(IoExtensions.DO_N2_BLOW_ON, false);
+                _logger.Information("N2 알람({Code}) 해제 — N2 Blow OFF", code);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "N2 알람 해제 후 N2 Blow OFF 실패");
+            }
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -82,7 +102,7 @@ namespace HCB.UI
             var device = _deviceManager.GetDevice<PmacIoDevice>(IoExtensions.IoDeviceName);
             if (device == null) return;
 
-            bool on = device.GetDigital(IoExtensions.DO_N2_BLOW_ON);
+            bool on = await ReadN2Output(device);
 
             if (on)
             {
@@ -111,6 +131,31 @@ namespace HCB.UI
                     N2OnAlarmSeconds, PmacErrorCode.N2_ON_OVERTIME);
                 await _alarmService.SetAlarm(PmacErrorCode.N2_ON_OVERTIME);
             }
+        }
+
+        // PmacIoDevice는 초기화 이후 출력(DO)을 폴링하지 않아 GetDigital()은 프로그램이 마지막으로 Set한 값만 돌려준다.
+        // PLC가 직접 ON 시킨 경우도 추적하기 위해 PMAC에서 실제 출력값을 읽고, IO 캐시(I/O 화면)도 함께 갱신한다.
+        private async Task<bool> ReadN2Output(PmacIoDevice device)
+        {
+            if (device.FindIoDataByName(IoExtensions.DO_N2_BLOW_ON) is not DigitalOutput io
+                || string.IsNullOrWhiteSpace(io.Address))
+                return device.GetDigital(IoExtensions.DO_N2_BLOW_ON);
+
+            try
+            {
+                string response = await device.SendCommand<string>(io.Address);
+                if (uint.TryParse(response?.Trim(), out uint raw))
+                {
+                    io.Value = raw > 0;   // 캐시 갱신만 수행 (DigitalOutput.Value setter는 출력 명령을 보내지 않음)
+                    return io.Value;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug(ex, "N2 출력 상태 읽기 실패 — 캐시값 사용");
+            }
+
+            return io.Value;
         }
 
         private void UpdateVM(bool on, bool overtime, string text)
