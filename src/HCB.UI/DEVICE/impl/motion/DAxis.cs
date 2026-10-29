@@ -5,6 +5,7 @@ using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 namespace HCB.UI
@@ -81,6 +82,10 @@ namespace HCB.UI
         {
             try
             {
+                // H_T, W_T는 홈 전에 위상(Encpha)이 잡혀 있어야 한다.
+                if (Name == MotionExtensions.H_T || Name == MotionExtensions.W_T)
+                    await EnsureTPhasedAsync(Device, logger);
+
                 string cmd = string.Format("ENABLE PLC {0:D}", HommingProgramNumber);
                 await Device.SendCommand(cmd);
 
@@ -111,6 +116,51 @@ namespace HCB.UI
                 MessageBox.Show($"에러: \n {e.Message}");
             }
 
+        }
+
+        // H_T·W_T가 동시에 홈을 잡아도 PLC 9가 한 번만 실행되도록 직렬화한다.
+        private static readonly SemaphoreSlim _tPhaseLock = new SemaphoreSlim(1, 1);
+
+        /// <summary>
+        /// W_T, H_T 위상(Encpha) 확인 — 이미 위상이 잡혀 있으면(≠0) 재실행하지 않는다.
+        /// Encpha=0 (위상 미완료) → enable plc 9 실행 후 위상 완료까지 대기 (최대 300초)
+        /// </summary>
+        public static async Task EnsureTPhasedAsync(IMotionDevice device, ILogger logger, CancellationToken ct = default)
+        {
+            await _tPhaseLock.WaitAsync(ct);
+            try
+            {
+                string phased = await device.SendCommand<string>("Encpha");
+                if (phased != "0") return;
+
+                logger.Information("[TInit] 위상 시작");
+                await device.SendCommand("enable plc 9");
+
+                using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                timeoutCts.CancelAfter(TimeSpan.FromSeconds(90));
+                var pollInterval = TimeSpan.FromMilliseconds(100);
+
+                while (true)
+                {
+                    if (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
+                        throw new TimeoutException("[TInit] H_T/W_T 위상(Encpha) 완료 시간 초과");
+                    ct.ThrowIfCancellationRequested();
+
+                    string result = await device.SendCommand<string>("Encpha");
+                    string plcStatus = await device.SendCommand<string>("plc[9].active");
+                    if (result == "1" && plcStatus == "0")
+                        break;
+
+                    try { await Task.Delay(pollInterval, timeoutCts.Token); }
+                    catch (OperationCanceledException) when (!ct.IsCancellationRequested) { }
+                }
+
+                logger.Information("[TInit] 위상 종료");
+            }
+            finally
+            {
+                _tPhaseLock.Release();
+            }
         }
 
 
