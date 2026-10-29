@@ -12,7 +12,7 @@ namespace HCB.UI
     /// 장비 판넬 스위치(DI) 감시 → 시퀀스 실행
     ///  · X000 (DI_START_SWITCH) 0→1 : Top Full Sequence 시작 (레시피 Component가 DIE면 Die, WAFER면 선택 Die Wafer 본딩)
     ///  · X001 (DI_STOP_SWITCH)  0→1 : Sequence Stop
-    ///  · X002 (DI_RESET_SWITCH) 1→0 : MachineInitAsync (StepSeqTab Init)
+    ///  · X002 (DI_RESET_SWITCH) 1→0 : Servo All On → 결과 메세지창 표시
     /// </summary>
     public class IoSwitchService : BackgroundService
     {
@@ -21,6 +21,8 @@ namespace HCB.UI
         private readonly ILogger _logger;
         private readonly DeviceManager _deviceManager;
         private readonly RecipeService _recipeService;
+        private readonly SequenceService _sequenceService;
+        private readonly DialogService _dialogService;
         // ViewModel은 UI 스레드에서 생성되어야 하므로(DispatcherTimer 등) 최초 사용 시점에 UI 스레드에서 지연 생성한다.
         private readonly Lazy<StepSeqTabViewModel> _stepSeqTab;
         private readonly Lazy<WaferSeqTabViewModel> _waferSeqTab;
@@ -36,12 +38,16 @@ namespace HCB.UI
             ILogger logger,
             DeviceManager deviceManager,
             RecipeService recipeService,
+            SequenceService sequenceService,
+            DialogService dialogService,
             Lazy<StepSeqTabViewModel> stepSeqTab,
             Lazy<WaferSeqTabViewModel> waferSeqTab)
         {
             _logger = logger.ForContext<IoSwitchService>();
             _deviceManager = deviceManager;
             _recipeService = recipeService;
+            _sequenceService = sequenceService;
+            _dialogService = dialogService;
             _stepSeqTab = stepSeqTab;
             _waferSeqTab = waferSeqTab;
         }
@@ -130,12 +136,37 @@ namespace HCB.UI
         {
             if (!_running.IsCompleted)
             {
-                _logger.Warning("[X002] INIT 무시 — 스위치로 시작한 시퀀스가 진행 중입니다.");
+                _logger.Warning("[X002] SERVO ALL ON 무시 — 스위치로 시작한 시퀀스가 진행 중입니다.");
                 return;
             }
 
-            _logger.Information("[X002] RESET(1→0) — MachineInitAsync 시작");
-            _running = RunOnUi(() => _stepSeqTab.Value.Init());
+            _logger.Information("[X002] RESET(1→0) — Servo All On 시작");
+            //_running = RunOnUi(() => _stepSeqTab.Value.Init());
+            _running = RunOnUi(async () =>
+            {
+                bool result;
+                try
+                {
+                    result = await _sequenceService.Init_ServoAllOn(CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "[X002] Servo All On 실패");
+                    _dialogService.ShowMessage("SERVO ALL ON", $"SERVO ALL ON 실패\n{ex.Message}");
+                    return;
+                }
+
+                if (result)
+                {
+                    _logger.Information("[X002] Servo All On 성공");
+                    _dialogService.ShowMessage("SERVO ALL ON", "모든 축이 SERVO ON 되었습니다.");
+                }
+                else
+                {
+                    _logger.Warning("[X002] Servo All On 일부 실패");
+                    _dialogService.ShowMessage("SERVO ALL ON", "일부 축이 SERVO ON 되지 않았습니다. 로그를 확인해주세요.");
+                }
+            });
         }
 
         // ViewModel 상태가 UI 바인딩되어 있으므로 UI 스레드에서 실행한다.
