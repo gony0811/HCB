@@ -168,6 +168,9 @@
   <Page Include="SYSTEM\COMMON\Styles\ButtonsAndSwitches.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>
+  <Page Include="SYSTEM\COMMON\Styles\DarkComboBox.xaml">
+    <Generator>MSBuild:Compile</Generator>
+  </Page>
   <Page Include="SYSTEM\COMMON\Styles\DefaultResource.xaml">
     <Generator>MSBuild:Compile</Generator>
   </Page>

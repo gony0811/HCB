@@ -615,8 +615,11 @@ namespace HCB.UI
             {
                 if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
                 TopLowAlignState = StepState.InProgress;
-                // 회전중심 + 카메라 거리 측정 (Pickup 이전)
-                hcbData = await _sequenceService.MeasureCamDistAndHcro(NewAlignData(), _cts.Token);
+                // 회전중심 + 카메라 거리 측정 (Pickup 이전) — P8D4_PAD_ARRAY는 고배율 정렬이 없어 생략
+                if (!IsPadArrayRecipe())
+                    hcbData = await _sequenceService.MeasureCamDistAndHcro(NewAlignData(), _cts.Token);
+                else
+                    hcbData = null;   // 이전 사이클 측정 데이터가 TopBonding에서 다시 저장되지 않도록
                 VisionTopLowAlign = await _sequenceService.TopLowMeasure(TopDie, MarkType.DIE_CENTER_TOP, _cts.Token);
                 await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, _cts.Token));
                 TopLowAlignState = StepState.Completed;
@@ -667,7 +670,11 @@ namespace HCB.UI
             try
             {
                 TopCorrState = StepState.InProgress;
-                await _sequenceService.BondingCorr(hcbData, _cts.Token);
+                // P8D4_PAD_ARRAY: 보정량 없이 W_TABLE 이동 + Z 하강만 수행
+                if (IsPadArrayRecipe())
+                    await _sequenceService.TopPlacePadArray(_cts.Token);
+                else
+                    await _sequenceService.BondingCorr(hcbData, _cts.Token);
                 TopCorrState = StepState.Completed;
             }
             catch (OperationCanceledException) { TopCorrState = StepState.Idle; }
@@ -789,6 +796,12 @@ namespace HCB.UI
             // finally에서 중복 저장되는 것을 방지한다.
             if (TopDie == 0) { _logger.Information("Top Die를 Load해주세요"); return; }
 
+            if (IsPadArrayRecipe())
+            {
+                await RunTopPadArraySequence(placeCenter, ct);
+                return;
+            }
+
             // 이번 사이클 측정 데이터 초기화 (직전 사이클 값이 finally에서 재저장되지 않도록)
             hcbData = null;
             _reMeasureData = null;
@@ -895,6 +908,62 @@ namespace HCB.UI
                 await SaveHcbDataAsync(hcbData, "Bonding");
                 if (_reMeasureData != null)
                     await SaveHcbDataAsync(_reMeasureData, "ReMeasure");
+            }
+        }
+
+        // ═════════════════════════════════════════════════════
+        //  P8D4_PAD_ARRAY TOP Full
+        //  저배율 측정 → 보정+픽업 → W_TABLE 이동 → Z 하강 → 가압
+        //  (회전중심·카메라 거리 측정, 고배율 Top/Btm 측정, 좌표 통합 생략)
+        // ═════════════════════════════════════════════════════
+
+        private bool IsPadArrayRecipe() => _recipeService.GetDiePatternType() == DiePatternType.P8D4_PAD_ARRAY;
+
+        private async Task RunTopPadArraySequence(Point2D placeCenter, CancellationToken ct)
+        {
+            hcbData = null;
+            _reMeasureData = null;
+
+            TrackStep("TopFull", StepState.InProgress);
+            try
+            {
+                // 지정 Die Center는 고배율 카메라 기준 좌표라 고배율 정렬이 없는 패턴에는 쓸 수 없다.
+                if (placeCenter != null)
+                    throw new NotSupportedException($"{DiePatternType.P8D4_PAD_ARRAY} 레시피는 지정 Die 위치 본딩(Wafer 본딩)을 지원하지 않습니다.");
+
+                // 1. 저배율 측정 + 보정 + Pickup
+                TopLowAlignState = StepState.InProgress;
+                VisionTopLowAlign = await _sequenceService.TopLowMeasure(TopDie, MarkType.DIE_CENTER_TOP, ct);
+                await RunNoStop(() => _sequenceService.DTablePickup(DieType.TOP, TopDie, VisionTopLowAlign, ct));
+                TopLowAlignState = StepState.Completed;
+
+                // 2. W_TABLE 이동 + Z 하강
+                TopCorrState = StepState.InProgress;
+                await _sequenceService.TopPlacePadArray(ct);
+                TopCorrState = StepState.Completed;
+
+                // 3. 가압
+                TopBondingState = StepState.InProgress;
+                BondingHistory = new ObservableCollection<BondingDataPoint>();
+                await RunNoStop(() => _sequenceService.BondingPress(BondingHistory, ct));
+                TopBondingState = StepState.Completed;
+
+                TrackStep("TopFull", StepState.Completed);
+            }
+            catch (OperationCanceledException)
+            {
+                TopLowAlignState = IfInProgress(TopLowAlignState, StepState.Idle);
+                TopCorrState = IfInProgress(TopCorrState, StepState.Idle);
+                TopBondingState = IfInProgress(TopBondingState, StepState.Idle);
+                TrackStep("TopFull", StepState.Idle);
+            }
+            catch (Exception e)
+            {
+                TopLowAlignState = IfInProgress(TopLowAlignState, StepState.Failed);
+                TopCorrState = IfInProgress(TopCorrState, StepState.Failed);
+                TopBondingState = IfInProgress(TopBondingState, StepState.Failed);
+                TrackStep("TopFull", StepState.Failed);
+                _logger.Error(e, "TopRunFullSequence ({Pattern}) Failed", DiePatternType.P8D4_PAD_ARRAY);
             }
         }
 

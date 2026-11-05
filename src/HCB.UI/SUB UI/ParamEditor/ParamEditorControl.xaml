@@ -111,6 +111,36 @@
             </Style.Triggers>
         </Style>
 
+        <!-- 선택지가 있는 파라미터(예: DIE_PATTERN_TYPE)는 TextBox 대신 드롭다운을 쓴다 -->
+        <Style x:Key="ValueBoxText" TargetType="TextBox" BasedOn="{StaticResource ValueBox}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasOptions}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 공용 Dark.ComboBox(App.xaml) 기반. 수정됨/오류 색만 값 입력칸(ValueBox)과 맞춘다. -->
+        <Style x:Key="ValueCombo" TargetType="ComboBox" BasedOn="{StaticResource Dark.ComboBox}">
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasOptions}" Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsDirty}" Value="True">
+                    <Setter Property="Background" Value="#4A3A12"/>
+                    <Setter Property="BorderBrush" Value="#F39C12"/>
+                    <Setter Property="Foreground" Value="#FFE3A3"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasError}" Value="True">
+                    <Setter Property="Background" Value="#4A1A1A"/>
+                    <Setter Property="BorderBrush" Value="#E74C3C"/>
+                    <Setter Property="ToolTip" Value="{Binding Error}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- ── 작은 아이콘 버튼 (되돌리기 / 상세) ── -->
         <Style x:Key="IconButton" TargetType="Button">
             <Setter Property="Width" Value="30"/>
@@ -252,10 +282,14 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0"
-                             Style="{StaticResource ValueBox}"
+                             Style="{StaticResource ValueBoxText}"
                              Text="{Binding EditValue, UpdateSourceTrigger=PropertyChanged}"
                              GotKeyboardFocus="ValueBox_GotKeyboardFocus"
                              PreviewKeyDown="ValueBox_PreviewKeyDown"/>
+                    <ComboBox Grid.Column="0"
+                              Style="{StaticResource ValueCombo}"
+                              ItemsSource="{Binding Options}"
+                              SelectedItem="{Binding EditValue, Mode=TwoWay}"/>
                     <Button Grid.Column="1" Style="{StaticResource IconButton}" Margin="4,0,0,0"
                             ToolTip="되돌리기" Click="RevertButton_Click"
                             Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}">
