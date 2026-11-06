@@ -404,6 +404,12 @@ namespace HCB.UI
             {
                 if (data == null) throw new ArgumentNullException(nameof(data));
 
+                if (_recipeService.GetDiePatternType() == DiePatternType.P8D4_PAD_ARRAY)
+                {
+                    await CoordinateSystemIntegrationPadArray(data, ct);
+                    return;
+                }
+
                 ApplyMeasurementCorrections(data);
 
                 // Manual: HcRO 회전중심은 ApplyMeasurementCorrections에서 실측 기반으로 계산됨.

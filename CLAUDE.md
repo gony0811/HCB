@@ -135,3 +135,4 @@ CoordinateSystemIntegration 결과를 모션 축에 적용하여 본딩 위치 �
 - Folder structure uses UPPERCASE for major layers: `MAIN UI/`, `SUB UI/`, `DEVICE/`, `SERVICE/`, `SYSTEM/`
 - Logging: inject `ILogger`, call `logger.ForContext<T>()` for class-scoped context
 - Configuration in `src/HCB.UI/appsettings.json` — `Data.Simulation` flag controls hardware simulation mode
+- **드롭다운(ComboBox)은 반드시 공용 다크 스타일 사용**: `Style="{StaticResource Dark.ComboBox}"` (`SYSTEM/COMMON/Styles/DarkComboBox.xaml`, App.xaml에 병합됨). 기본 ComboBox/RadComboBox는 밝은 Windows11 테마로 떠서 다크 네이비 화면과 안 어울린다. 화면별 상태색(수정됨/오류 등)이 필요하면 `BasedOn="{StaticResource Dark.ComboBox}"`로 Background/BorderBrush만 바꾼다. 화면마다 ComboBox 템플릿을 새로 만들지 않는다.

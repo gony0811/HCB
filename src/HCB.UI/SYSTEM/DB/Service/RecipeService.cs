@@ -85,6 +85,24 @@ namespace HCB.UI
             return recipe;
         }
 
+        /// <summary>
+        /// 사용 레시피의 다이 패턴 종류. DIE_PATTERN_TYPE 파라미터가 없는 기존 레시피는 ALIGN_MARK로 본다.
+        /// 값이 정의되지 않은 문자열이면 잘못된 시퀀스로 진행하지 않도록 예외를 던진다.
+        /// </summary>
+        public DiePatternType GetDiePatternType()
+        {
+            if (UseRecipe == null) throw new Exception("사용중인 레시피가 없습니다. 레시피를 선택해주세요");
+            var param = UseRecipe.ParamList.FirstOrDefault(x => x.Name.Equals(ParamCatalog.DiePatternTypeParamName));
+            if (param == null || string.IsNullOrWhiteSpace(param.Value)) return DiePatternType.ALIGN_MARK;
+
+            if (Enum.TryParse(param.Value.Trim(), ignoreCase: true, out DiePatternType type)
+                && Enum.IsDefined(typeof(DiePatternType), type))
+                return type;
+
+            throw new Exception($"{ParamCatalog.DiePatternTypeParamName} 값 '{param.Value}'이(가) 올바르지 않습니다. " +
+                                $"({string.Join(", ", Enum.GetNames(typeof(DiePatternType)))})");
+        }
+
         public double FindByParamDouble(string name)
         {
             if (UseRecipe == null) throw new Exception("사용중인 레시피가 없습니다. 레시피를 선택해주세요");

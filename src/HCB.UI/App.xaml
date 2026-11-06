@@ -37,6 +37,8 @@
                 <ResourceDictionary Source="/Telerik.Windows.Themes.Fluent;component/Themes/telerik.windows.controls.chart.xaml"/>
                 <ResourceDictionary Source="/Telerik.Windows.Themes.Fluent;component/Themes/telerik.windows.controls.expressions.xaml"/>
                 <ResourceDictionary Source="/Telerik.Windows.Themes.Fluent;component/Themes/telerik.windows.controls.fixeddocumentviewers.xaml"/>
+                <!-- 공용 다크 드롭다운 (Style="{StaticResource Dark.ComboBox}") -->
+                <ResourceDictionary Source="/SYSTEM/COMMON/Styles/DarkComboBox.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

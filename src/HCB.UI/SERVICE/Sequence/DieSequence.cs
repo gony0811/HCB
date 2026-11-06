@@ -160,6 +160,9 @@ namespace HCB.UI
         public async Task<AlignData> TopHighAlign(
                 AlignData data, CancellationToken ct, bool resetHt = true)
         {
+            if (_recipeService.GetDiePatternType() == DiePatternType.P8D4_PAD_ARRAY)
+                return await TopHighAlignPadArray(data, ct, resetHt);
+
             data ??= new AlignData();
             var total = Stopwatch.StartNew();
             try
@@ -299,11 +302,14 @@ namespace HCB.UI
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
+            if (_recipeService.GetDiePatternType() == DiePatternType.P8D4_PAD_ARRAY)
+                return await BtmHighAlignPadArray(data, ct, placeCenter);
+
             var total = Stopwatch.StartNew();
             try
             {
                 var sw = Stopwatch.StartNew();
-                
+
                 await MappingOff();
 
                 if (data.Use2DMapping)
@@ -398,6 +404,72 @@ namespace HCB.UI
             }
             
             return data;
+        }
+
+        #endregion
+
+        #region P8D4_PAD_ARRAY 다이 패턴 정렬
+        // DIE_PATTERN_TYPE = P8D4_PAD_ARRAY 일 때 TopHighAlign / BtmHighAlign / CoordinateSystemIntegration 대신 실행된다.
+        // (지름 4µm 원형 패드가 8µm 피치로 배열된 다이 — Fiducial/Align 마크 없음)
+        // 고배율 측정·좌표 통합·보정(HCRO/카메라 거리 측정 포함)은 하지 않는다.
+        // TOP 흐름: 저배율 측정 → 보정+픽업(DTablePickup) → W_TABLE 이동 + Z 하강(TopPlacePadArray) → 가압(BondingPress)
+        // 고배율 단계 메서드는 실수로 호출되면 잘못된 보정으로 본딩하지 않도록 예외로 시퀀스를 중단한다.
+
+        /// <summary>
+        /// P8D4_PAD_ARRAY TOP: 픽업한 Top Die를 BTM Die를 놓은 위치(PLACE_CENTER)로 옮기고 본딩 높이까지 Z 하강.
+        /// XY/θ 보정은 픽업 시 저배율 비전 값으로만 적용되며, BTM DieDrop과 같은 위치·H_T=0으로 맞춘다.
+        /// </summary>
+        public async Task TopPlacePadArray(CancellationToken ct)
+        {
+            try
+            {
+                _logger.Information("TopPlace ({Pattern}) Start", DiePatternType.P8D4_PAD_ARRAY);
+                EQStatusCheck();
+
+                double topDieThickness = await GetRecipe("TOP_DIE_THICKNESS");
+                double btmDieThickness = await GetRecipe("BTM_DIE_THICKNESS");
+                double shankToWaferOffset = _paramService.GetDouble("SHANK_TO_WAFER_OFFSET");
+                double readyPosition = await GetRecipe("READY_POSITION");
+
+                // 1. W_TABLE 이동 (BTM DieDrop과 동일한 위치, 픽업 시 돌린 H_T를 0으로 복귀 → 다이 θ 보정)
+                await Init_Head(ct);
+                await Task.WhenAll(
+                    MotionsMove(MotionExtensions.H_X, "PLACE_CENTER", ct),
+                    MotionsMove(MotionExtensions.W_Y, "PLACE_CENTER", ct),
+                    MotionsMove(MotionExtensions.H_T, 0, ct)
+                );
+
+                // 2. Z 하강 (ALIGN_MARK의 BondingCorr와 같은 본딩 높이)
+                await MotionsMove(MotionExtensions.H_Z,
+                    shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
+
+                _logger.Information("TopPlace ({Pattern}) 완료", DiePatternType.P8D4_PAD_ARRAY);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Warning("TopPlace ({Pattern}) 취소됨", DiePatternType.P8D4_PAD_ARRAY);
+                throw;
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "TopPlace ({Pattern}) 실패", DiePatternType.P8D4_PAD_ARRAY);
+                throw;
+            }
+        }
+
+        private Task<AlignData> TopHighAlignPadArray(AlignData data, CancellationToken ct, bool resetHt)
+            => Task.FromException<AlignData>(PadArrayNotImplemented("TopHighAlign"));
+
+        private Task<AlignData> BtmHighAlignPadArray(AlignData data, CancellationToken ct, Point2D placeCenter)
+            => Task.FromException<AlignData>(PadArrayNotImplemented("BtmHighAlign"));
+
+        private Task CoordinateSystemIntegrationPadArray(AlignData data, CancellationToken ct)
+            => Task.FromException(PadArrayNotImplemented("CoordinateSystemIntegration"));
+
+        private Exception PadArrayNotImplemented(string step)
+        {
+            _logger.Warning("{Step} — {Pattern} 시퀀스가 아직 구현되지 않았습니다", step, DiePatternType.P8D4_PAD_ARRAY);
+            return new NotImplementedException($"{step}: {DiePatternType.P8D4_PAD_ARRAY} 다이 패턴 시퀀스가 아직 구현되지 않았습니다.");
         }
 
         #endregion

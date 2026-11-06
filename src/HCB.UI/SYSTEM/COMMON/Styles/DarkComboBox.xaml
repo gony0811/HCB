@@ -1,0 +1,123 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        공용 드롭다운(ComboBox) 스타일 — 다크 네이비 테마.
+        App.xaml에 병합되어 있으므로 어느 화면에서든 Style="{StaticResource Dark.ComboBox}" 로 바로 쓴다.
+        새 드롭다운을 만들 때는 기본 ComboBox/RadComboBox(밝은 Windows11 테마)를 그대로 두지 말고 이 스타일을 쓴다.
+        화면별로 상태색(수정됨/오류 등)이 필요하면 BasedOn="{StaticResource Dark.ComboBox}" 로 Background/BorderBrush만 바꾼다.
+        색은 파라미터 편집 화면의 값 입력칸(ValueBox)과 같다.
+    -->
+
+    <SolidColorBrush x:Key="Dark.ComboBox.Bg"            Color="#1A2C47"/>
+    <SolidColorBrush x:Key="Dark.ComboBox.Bg.Open"       Color="#22385A"/>
+    <SolidColorBrush x:Key="Dark.ComboBox.Border"        Color="#3A6A94"/>
+    <SolidColorBrush x:Key="Dark.ComboBox.Border.Hover"  Color="#5DADE2"/>
+    <SolidColorBrush x:Key="Dark.ComboBox.Border.Focus"  Color="#4FC3F7"/>
+    <SolidColorBrush x:Key="Dark.ComboBox.Fg"            Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Dark.ComboBox.Arrow"         Color="#7FA3BC"/>
+    <SolidColorBrush x:Key="Dark.ComboBox.Popup.Bg"      Color="#13233A"/>
+    <SolidColorBrush x:Key="Dark.ComboBox.Item.Hover"    Color="#22385A"/>
+    <SolidColorBrush x:Key="Dark.ComboBox.Item.Selected" Color="#2A4F78"/>
+
+    <Style x:Key="Dark.ComboBoxItem" TargetType="ComboBoxItem">
+        <Setter Property="Foreground" Value="{StaticResource Dark.ComboBox.Fg}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="10,7"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}" CornerRadius="3">
+                        <ContentPresenter VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Dark.ComboBox.Item.Selected}"/>
+                        </Trigger>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Dark.ComboBox.Item.Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Dark.ComboBox" TargetType="ComboBox">
+        <Setter Property="Foreground" Value="{StaticResource Dark.ComboBox.Fg}"/>
+        <Setter Property="Background" Value="{StaticResource Dark.ComboBox.Bg}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource Dark.ComboBox.Border}"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="Padding" Value="10,0,0,0"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource Dark.ComboBoxItem}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <!-- 전체 영역을 누르면 열리는 투명 토글 (그림은 아래 Bd/화살표가 담당, 클릭은 통과) -->
+                        <ToggleButton x:Name="Toggle" Focusable="False" ClickMode="Press"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="Transparent"/>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <Border x:Name="Bd" IsHitTestVisible="False" CornerRadius="4"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"/>
+                        <Path IsHitTestVisible="False" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
+                              Data="M 0 0 L 5 5 L 10 0" Stroke="{StaticResource Dark.ComboBox.Arrow}"
+                              StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        <ContentPresenter IsHitTestVisible="False"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          HorizontalAlignment="Left"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"/>
+                        <Popup x:Name="PART_Popup" Placement="Bottom" VerticalOffset="2"
+                               AllowsTransparency="True" Focusable="False" PopupAnimation="Fade"
+                               IsOpen="{TemplateBinding IsDropDownOpen}">
+                            <Border Background="{StaticResource Dark.ComboBox.Popup.Bg}"
+                                    BorderBrush="{StaticResource Dark.ComboBox.Border}"
+                                    BorderThickness="1" CornerRadius="4" Padding="3"
+                                    MinWidth="{TemplateBinding ActualWidth}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                <ScrollViewer SnapsToDevicePixels="True">
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Dark.ComboBox.Border.Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Dark.ComboBox.Border.Focus}"/>
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Dark.ComboBox.Border.Focus}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Dark.ComboBox.Bg.Open}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

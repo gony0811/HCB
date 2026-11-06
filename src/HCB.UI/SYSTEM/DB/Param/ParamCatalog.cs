@@ -17,6 +17,17 @@ namespace HCB.UI
     }
 
     /// <summary>
+    /// 다이 패턴 종류. 레시피 필수 파라미터 DIE_PATTERN_TYPE 값이며, 값에 따라 정렬 시퀀스가 달라진다.
+    /// </summary>
+    public enum DiePatternType
+    {
+        /// <summary>Fiducial/Align 마크 기반 정렬 (기존 시퀀스)</summary>
+        ALIGN_MARK,
+        /// <summary>지름 4µm 원형 패드, 8µm 피치 격자 배열</summary>
+        P8D4_PAD_ARRAY,
+    }
+
+    /// <summary>
     /// 파라미터 이름 → 구역(카테고리), 설명, 필수 여부.
     /// 시퀀스가 이름 문자열로 조회하는 파라미터 목록이며 docs/recipe-ecparam-parameters.md 와 동일하게 유지한다.
     /// <para>Required: 어떤 레시피 종류에서 필수인지. 레시피 생성 시 해당 종류의 필수 항목이 자동 추가되고,
@@ -26,8 +37,12 @@ namespace HCB.UI
     /// 보정 오프셋처럼 0이 "보정 없음"인 항목만 "0"을 지정한다.</para>
     /// </summary>
     public sealed record ParamDef(string Name, string Category, string Description, Req Required = Req.None,
-                                  string? Default = null, ValueType Type = ValueType.Double, UnitType Unit = UnitType.mm)
+                                  string? Default = null, ValueType Type = ValueType.Double, UnitType Unit = UnitType.mm,
+                                  IReadOnlyList<string>? Options = null)
     {
+        /// <summary>선택지가 있으면 값 입력 칸 대신 드롭다운으로 표시한다.</summary>
+        public bool HasOptions => Options != null && Options.Count > 0;
+
         /// <summary>component가 null이면(EC 등 종류 구분 없음) 어느 종류든 필수면 true</summary>
         public bool IsRequiredFor(ComponentType? component) => component switch
         {
@@ -74,8 +89,13 @@ namespace HCB.UI
         // ── Recipe ─────────────────────────────────────────────
         //  DIE  : StepSeq(TopHighAlign → BtmHighAlign → 좌표 통합 → BondingCorr) 흐름에서 조회하는 값
         //  WAFER: WaferSeq(웨이퍼 맵 + ResultMeasurement/SimpleMeasurement) 흐름에서 조회하는 값
+        public const string DiePatternTypeParamName = "DIE_PATTERN_TYPE";
+
         public static ParamCatalog Recipe { get; } = new ParamCatalog(new[]
         {
+            new ParamDef(DiePatternTypeParamName, "다이 / 웨이퍼", "다이 패턴 종류 (정렬 시퀀스 분기)", Req.Both,
+                         Default: nameof(DiePatternType.ALIGN_MARK), Type: ValueType.String, Unit: UnitType.None,
+                         Options: Enum.GetNames(typeof(DiePatternType))),
             new ParamDef("TOP_DIE_THICKNESS", "다이 / 웨이퍼", "Top Die 두께. 본딩·픽업 H_Z 계산", Req.Both),
             new ParamDef("BTM_DIE_THICKNESS", "다이 / 웨이퍼", "Btm Die 두께. 본딩 H_Z 계산", Req.Both),
             new ParamDef("TOP_DIE_SIZE",      "다이 / 웨이퍼", "Top Die 크기 (비전 촬상 위치 예측)", Req.Die),

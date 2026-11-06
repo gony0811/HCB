@@ -1,7 +1,9 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using HCB.Data.Entity.Type;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Globalization;
 using ValueType = HCB.Data.Entity.Type.ValueType;
 
@@ -26,6 +28,10 @@ namespace HCB.UI
         public ValueType ValueType { get; }
         public string Minimum { get; }
         public string Maximum { get; }
+
+        /// <summary>카탈로그에 선택지가 정의된 파라미터(예: DIE_PATTERN_TYPE)는 드롭다운으로 편집한다.</summary>
+        public IReadOnlyList<string> Options { get; }
+        public bool HasOptions => Options.Count > 0;
 
         public string UnitText => UnitType == UnitType.None ? "" : UnitType.ToString();
 
@@ -70,6 +76,7 @@ namespace HCB.UI
             ValueType = valueType;
             Minimum = min;
             Maximum = max;
+            Options = def?.Options ?? Array.Empty<string>();
             originalValue = value ?? "";
             editValue = value ?? "";
             error = Validate(editValue);
@@ -96,7 +103,13 @@ namespace HCB.UI
 
         partial void OnEditValueChanged(string value) => Error = Validate(value);
 
-        private string Validate(string value) => ValidateValue(value, ValueType, Minimum, Maximum);
+        private string Validate(string value)
+        {
+            string error = ValidateValue(value, ValueType, Minimum, Maximum);
+            if (error.Length == 0 && HasOptions && !Options.Contains(value?.Trim() ?? ""))
+                return "목록에서 선택하세요";
+            return error;
+        }
 
         /// <summary>값 형식/범위 검사. 문제 없으면 빈 문자열.</summary>
         public static string ValidateValue(string value, ValueType valueType, string minimum, string maximum)
