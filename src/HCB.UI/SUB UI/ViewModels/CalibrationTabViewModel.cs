@@ -1396,7 +1396,7 @@ namespace HCB.UI
             double hcErrX = await GetRecipeSafe("HC_CENTER_ERROR_X");
             double hcErrY = await GetRecipeSafe("HC_CENTER_ERROR_Y");
 
-            double hx = lowCenter.X + shankLowX;
+            double hx = lowCenter.X + shankLowX - hcErrX;
             double wy = lowCenter.Y + shankLowY - hcErrY;
             await Task.WhenAll(
                 _sequenceService.MotionsMove(WaferXAxis, hx, ct),
