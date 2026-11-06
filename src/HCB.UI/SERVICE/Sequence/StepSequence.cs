@@ -596,26 +596,45 @@ namespace HCB.UI
             }
             finally
             {
-                N2Blow(false);
-                SetBondingPressing(false);   // 가압 구간 종료
-                BlowOnOff(false);            // Blow 안전 해제
+                // 정리 동작은 서로 독립적으로 수행 — 하나가 실패해도 나머지(특히 PMAC 리셋)는 반드시 실행되고,
+                // try 본문의 원래 예외가 finally 예외로 덮이지 않도록 각각 감싼다.
+                try { SetBondingPressing(false); }   // 가압 구간 종료
+                catch (Exception ex) { _logger.Error(ex, "SetBondingPressing(false) 실패"); }
+
+                try { BlowOnOff(false); }            // Blow 안전 해제
+                catch (Exception ex) { _logger.Error(ex, "BlowOnOff(false) 실패"); }
+
                 try
                 {
                     // 긴급 정지 진행 중이면 리셋은 BondingEmergencyStop이 수행하므로 중복 명령을 건너뛴다.
                     if (!_bondingEmergencyStopping)
                     {
-                        N2Blow(false);
                         await device.SendCommand(MotionExtensions.BONDING_START + "=0");
                         await device.SendCommand(MotionExtensions.BONDING_INIT + "=1");
                         await Task.Delay(5000);
                         await device.SendCommand(MotionExtensions.BONDING_INIT + "=0");
                         _logger.Information("BondingPress 초기화 완료");
                     }
-                    await MappingOff();
                 }
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "BondingPress 초기화 실패");
+                }
+                finally
+                {
+                    // N2는 가압 완료 후 PMAC 리셋(BONDING_INIT 5s)이 끝날 때까지 유지한 뒤 OFF 한다.
+                    // (기존: finally 진입 즉시 OFF → 리셋 대기 구간 동안 N2 미투입)
+                    N2Blow(false);
+                    _logger.Information("N2 Blow OFF (BondingPress 정리 완료)");
+                }
+
+                try
+                {
+                    await MappingOff();
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "BondingPress MappingOff 실패");
                 }
             }
         }

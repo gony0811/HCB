@@ -129,9 +129,7 @@ namespace HCB.UI
                 helper.Log(LogLevel.Critical, $"Io Device {IoDeviceName} not found.");
                 return;
             }
-            device.SetDigital(DO_N2_BLOW_ON, onOff);
-
-            // Ion Blow 실패가 Vacuum Blow(안전 해제 포함)를 막지 않도록 분리 처리
+            // N2 출력 실패가 가압 시퀀스나 finally 정리 동작(Blow OFF, PMAC 리셋 등)을 중단시키지 않도록 예외를 삼킨다.
             try
             {
                 device.SetDigital(DO_N2_BLOW_ON, onOff);
