@@ -442,7 +442,7 @@ namespace HCB.UI
                 // 2. Z 하강 (ALIGN_MARK의 BondingCorr와 같은 본딩 높이)
                 await MotionsMove(MotionExtensions.H_Z,
                     shankToWaferOffset - topDieThickness - btmDieThickness - readyPosition, ct);
-
+                await Task.Delay(1000, ct);
                 _logger.Information("TopPlace ({Pattern}) 완료", DiePatternType.P8D4_PAD_ARRAY);
             }
             catch (OperationCanceledException)
