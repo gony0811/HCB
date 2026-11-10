@@ -85,6 +85,7 @@ Recipe는 제품(다이/웨이퍼)마다 바뀌는 값이고, ECParameter는 설
 | `VisionRetryStepMm` | `VISION_RETRY_STEP_MM` | EC |
 | `BtmThetaSign` | `BTM_THETA_SIGN` | EC |
 | `BtmThetaMinDeg` | `BTM_THETA_MIN_DEG` | EC |
+| `N2OnAlarmSec` | `N2_ON_ALARM_SEC` | EC |
 
 ## 레시피 종류별 필수 항목
 
@@ -238,6 +239,12 @@ ECParam은 조회하는 메서드에 따라 값이 없을 때의 동작이 다�
 | `VISION_RETRY_STEP_MM` | Double · mm | 0.005 | 재시도 시 이동 간격 | StepSequence |
 | `BTM_THETA_SIGN` | Double | −1.0 | Btm θ 보정 부호(하드웨어 방향이 반대면 +1) | DieSequence |
 | `BTM_THETA_MIN_DEG` | Double · deg | 0.0 | Btm θ 보정 데드밴드(미만이면 생략) | DieSequence |
+
+### 알람 / 감시 (기본값 있음)
+
+| Name | 타입 · 단위 | 기본값 | 용도 | 사용처 |
+| --- | --- | --- | --- | --- |
+| `N2_ON_ALARM_SEC` | Double · 초 | 60 | N2 투입(Y028)이 이 시간 이상 연속 ON이면 E0037(HEAVY) 알람. 0 이하·숫자 아님도 기본값. 정상 시 N2 ON 시간 ≈ 가압(ACC+ACC2+CONT+DEC) + 리셋 5초이므로 그보다 크게 설정. 매 폴링마다 읽어 재시작 없이 적용 | N2MonitorService |
 
 ## 참고 및 주의사항
 

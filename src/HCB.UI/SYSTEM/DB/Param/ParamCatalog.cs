@@ -170,6 +170,11 @@ namespace HCB.UI
             new ParamDef("VISION_RETRY_STEP_MM", "비전 옵션", "재시도 이동 간격 mm (기본 0.005)"),
             new ParamDef("BTM_THETA_SIGN",       "비전 옵션", "Btm θ 보정 부호 (기본 −1)"),
             new ParamDef("BTM_THETA_MIN_DEG",    "비전 옵션", "Btm θ 보정 데드밴드 ° (기본 0)"),
+
+            new ParamDef(N2OnAlarmSecParamName, "알람 / 감시", "N2 투입(Y028) 연속 ON 알람(E0037) 시간 초 (기본 60, 0 이하: 기본값)",
+                         Default: "60", Unit: UnitType.None),
         });
+
+        public const string N2OnAlarmSecParamName = "N2_ON_ALARM_SEC";
     }
 }
